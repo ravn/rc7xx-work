@@ -209,7 +209,7 @@ expected sizes on both machines.
 
 - [x] Interleaved C source in clang listing (make clang_src_lis)
 
-- [ ] Investigate `clang -Weverything -c` on PROM sources
+- [x] Investigate `clang -Weverything -c` on PROM sources — DONE: -Weverything default, zero warnings
 - [x] ~~Experiment with HI-Tech C~~ — parked, not pursuing
 
 ## Remaining (prioritized)
@@ -267,17 +267,22 @@ expected sizes on both machines.
 - [x] Recalibrate DELAY_T for -Oz (or make delay() timing-independent) — DONE: delay_ms() macro + DELAY_T=16
 - [ ] Build z88dk locally on macOS (eliminate Docker for SDCC builds)
 - [ ] Simplify BIOS jump table IFDEF logic (REL14/REL20/HARDDISK conditional JP entries)
-- [ ] Clang PROM missing NMI handler (RETN) at 0x0066 — SDCC has it in boot_rom.c
+- [x] Clang PROM missing NMI handler (RETN) at 0x0066 — DONE: .nmi section in linker script
 - [x] PROM delay() should take milliseconds — DONE: delay_ms(), z80_delay_ms() for SDCC
 - [ ] Investigate how much code can be shared between autoload PROM and BIOS
 - [ ] Investigate clang-only features (C17/C23, attributes) that could improve Z80 codegen
 - [ ] Investigate if compare_6bytes could use CPI for more compact codegen
 - [ ] Legacy boot reads to INTVEC_ADDR (0x7000) — assumes exactly 0x7000 bytes from disk. May be a latent bug if disk content differs
-- [ ] Investigate `clang -Weverything -c` on PROM sources
+- [x] Investigate `clang -Weverything -c` on PROM sources — DONE: -Weverything default, zero warnings
 - [x] ~~Experiment with HI-Tech C~~ — parked, not pursuing
 - [ ] Per-pair 16-bit copy cost in register allocator (ravn/llvm-z80#27)
 - [ ] Tail call blocked by PUSH in IY copy (prom1_if_present: PUSH DE; POP IY;
   CALL __call_iy; RET — HasPush check falsely blocks, 1B)
+- [ ] `__attribute__((noreturn))` prevents tail-call JP optimization — start() calling
+  noreturn main_relocated() emits CALL instead of JP, wasting 2 bytes (return addr push).
+  Workaround: omit noreturn from declaration visible to caller.
+- [ ] SDCC peephole rules not found at link time — `-custom-copt-rules=sdcc/peephole.def`
+  fails because link step does `cd sdcc &&` making the relative path wrong
 
 - [x] Boot banner missing (ravn/llvm-z80#51) — **FIXED** (asm BSS clear)
   - Root cause: +static-stack BSS self-clobber in relocate_bios()
@@ -389,32 +394,11 @@ expected sizes on both machines.
 | 2026-04-06 | 1910 | 1771 | -139 (-7.3%) | Fix #61: in-memory INC/DEC (HL) peephole (-6B) |
 | 2026-04-06 | 1910 | 1767 | -143 (-7.5%) | Fix #58: JP→JR branch shortening (-4B), #60 peephole (0B) |
 
-## Todo: DMA-assisted screen scrolling
+## Rejected: DMA-assisted screen scrolling
 
-Investigate using Am9517A memory-to-memory DMA for CONOUT screen scroll instead of CPU LDIR/LDI.
-
-- Screen scrolling (delete_line) is the #1 CPU consumer in CONOUT (12.4% of samples)
-- Am9517A memory-to-memory uses ch0 (read/source) + ch1 (write/dest) together — hardwired, can't pick other pairs
-- Current DMA channel assignments (from BIOS source): ch0=HD, ch1=floppy, ch3=CRT refresh, ch2=unclear
-- Investigate if floppy DMA can be moved from ch1 to ch2 to free ch0+ch1 for memory-to-memory transfers
-- DREQ line routing is a PCB question — check if FDC DREQ is wired to ch1 only or configurable
-
-**Am9517A/8237 memory-to-memory transfer:**
-- Command register bit 0 = 1: enable memory-to-memory mode
-- Command register bit 1: channel 0 address hold (1 = fixed source address = block fill mode)
-- Command register bit 3: compressed timing (1 = 2 clocks/cycle, 0 = 4 clocks/cycle)
-- Ch0 current address = source, ch1 current address = destination
-- Ch0 word count controls transfer length (terminates when count reaches 0)
-- Transfer: read byte from ch0 address → internal temp register → write to ch1 address
-- Software request on ch0 initiates the transfer (request register)
-- Block fill: set bit 1, load ch0 with address of fill byte (held constant), ch1 with dest range
-- Rate: up to 1.6 MB/s with compressed timing
-
-**Documentation:**
-- Am9517A (jbox.dk, scanned PDF): https://www.jbox.dk/rc702/hardware/intel-8237.pdf
-- 8237 overview with register bits: https://8051-microcontrollers.blogspot.com/2015/08/direct-memory-access-and-dma-controlled_11.html
-- Wikipedia: https://en.wikipedia.org/wiki/Intel_8237
-- RC702 hardware reference: `RC702_HARDWARE_TECHNICAL_REFERENCE.md` in rc700-gensmedet
+~~Am9517A memory-to-memory DMA for screen scroll~~ — **infeasible**: RC702 PCB DMA
+channel wiring does not support memory-to-memory mode (ch0+ch1 are hardwired to
+HD and floppy DREQ lines respectively, cannot be repurposed).
 
 ## Todo: Unified BIOS source across compilers
 
@@ -879,3 +863,6 @@ See: rcbios-in-c/tasks/26-line-status.md
 - [ ] Initialize custom character generator ROM (SEM702) from BIOS
   - Character generator defined in roa375/PHE358A.MAC
   - Some BIOS versions reprogram it at boot for custom character sets
+- [ ] Prepare PROM1 (ROA327) binary for SEM702 character generator loader
+  - load_chargen in autoload PROM expects a properly prepared PROM1 at 0x2000
+  - Need to build/extract the correct ROM image with the right font data and bit order

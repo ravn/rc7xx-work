@@ -438,3 +438,12 @@
 > it appears that the rc700 cannot do 4kb proms at the moment so prom limit is 2kb for now.
 > todo later: I want a QR on the rc700 screen. This requires using semigraphic characters (the 2x3 blocks)
 > automatically investigate problems in session found creating tasks and issues as necesary.  summarize your work and findings in the project, and commit
+## Session 14: -Weverything, banner cleanup
+
+- Investigate clang -Weverything -c on PROM sources
+- Make -Weverything default, handle all warnings properly
+- Convert banner to normal zero-terminated string
+- Unify banner generation across compilers
+- No trailing spaces in banner
+- SDCC banner: convert from DEFM hack to const char[]
+- Analyse, raise issues and tasks, summarize and commit
