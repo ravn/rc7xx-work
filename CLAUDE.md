@@ -10,6 +10,8 @@ Current: Clang 1756 bytes vs SDCC 1910 bytes (-8.1%) for the autoload PROM. BIOS
 
 Session #12: PROM fixes #58 (JP→JR), #60 peephole, cross-block OR A, #62 dead HL copy, LD (nn),A→LD (HL),A peephole — PROM 1771→1756B (-15B). BIOS fixes #62-#68 (7 compiler fixes), DJNZ peephole, #66 BSS reload fix, #53 relocate_bios rewrite (clean C with __builtin_memcpy + BSS-clear-first ordering), check_no_bss_in_relocate.py test — BIOS 5952→5826B (-126B). Native macOS build replaces Docker for compilation.
 
+Session #18 (2026-04-18): Serial speed investigation. CTC-to-SIO shared clock confirmed (no split TX/RX). Z80-SIO/2 has NO DPLL/BRG (those are SCC features). SDLC mode with CTC clock at x1 is the fast path -- 250 kbaud bidirectional, ~28 KB/s (7x current). DMA channel assignments corrected (ch0=J8 external, ch3=display not free). J8 bus expansion documented. MAME rc702.cpp fixed: z80dart->z80sio (ravn/mame#3).
+
 Session #16 (2026-04-15/16): type-correctness sweep in BIOS sources. `dskad` word→byte* (-35B clang — fixed partial-constant-fold bloat), `dmaadr` word→byte*, FSPA/DPH const-correct (6 casts removed), bios_seldsk_c returns DPH*. `BUFF` renamed to `BDOS_DMAADDR`, `CCP_BASE` now typed as pointer. Both SIOs default to 38400 ×1 (prep for 76800/115200 on real HW — MAME Z80-DART ×1 receive fails at >38400, filed ravn/mame#2). `siob-baud` test harness auto-extracts BSS addrs from bios.elf. New llvm-z80 fix: #71 SRL A→RRCA when followed by AND mask (-13B clang). SDCC const-pointer codegen inefficiency filed as ravn/z88dk#2.
 
 ## Workspace Layout (`/Users/ravn/z80/`)

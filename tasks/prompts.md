@@ -447,3 +447,27 @@
 - No trailing spaces in banner
 - SDCC banner: convert from DEFM hack to const char[]
 - Analyse, raise issues and tasks, summarize and commit
+
+## Session 18: Serial speed limits, sync mode, J8 bus expansion (2026-04-18)
+
+- what now?
+- you found that the rc700 could _send_ serially at 250000 baud but only receive at 38400. Verify mame supports this split speed
+- please check. (CTC-to-SIO wiring on real RC702 hardware)
+- please add your findings to the project
+- what is the maximum clock the sio can be fed if i decide for a pcb modification?
+- why does the sio chip accept x1 if it is unreliable?
+- could we simulate a lock phase-locked to the incoming data?
+- fact: i am trying to avoid hardware modifications on the rc700
+- in the long run i may look into connecting to the j8 connector which expose the full z80 bus. consider what communication speeds that may provide. there is already a mem700 ram disk
+- i am not sure that the dma controller is wired up for this
+- please check. (RC702tech.pdf and RC702-RC703 technical manual for DMA/J8 wiring)
+- please save your findings in the project
+- note that rc703 is a later model referring to mic704 and mic705
+- please record whatever else you found in the project too
+- i would like to follow the "Most practical path: HDLC over NRZI with FT2232H MPSSE" to actually trying if it works
+- fact: i would like both the sio-a and the pio approach for best possible performance under cp/net for remote file sever usage
+- and please plan the nrzi
+- (discovered: Z80-SIO/2 has NO DPLL or BRG -- those are SCC features. Revised to SDLC with CTC external clock)
+- the mame programmer did not have access to the physical hardware... (filed ravn/mame#3: z80dart->z80sio)
+- i can buy a better adapter if the current one cannot do it
+- if there is a pin to the sio that is currently unassigned that could be used... (answer: no, SYNCA is output in SDLC mode)
