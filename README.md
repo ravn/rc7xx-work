@@ -18,3 +18,7 @@ This is my first adventure with AI-assisted programming, so it is learning while
 Claude can now fully remote control MAME similar to a physical RC700 including the reset button.   In-vitro bios update is simulated, and a sdcc bios is replaced wih a clang bios. 
 
 /ravn 2026-04-12
+
+RS232 transmission speeds experimentially verified not to run reliably higher than 38400.
+
+/ravn 2026-04-17
