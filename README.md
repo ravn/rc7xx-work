@@ -22,3 +22,7 @@ Claude can now fully remote control MAME similar to a physical RC700 including t
 RS232 transmission speeds experimentially verified not to run reliably higher than 38400.
 
 /ravn 2026-04-17
+
+SIO programming had gotten confused and messed up hardware handshake.  This is now fixed and CP/NET works in MAME against z80pack MP/M.
+
+/ravn 2026-04-20
