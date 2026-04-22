@@ -27,4 +27,4 @@ SIO programming had gotten confused and messed up hardware handshake.  This is n
 
 /ravn 2026-04-20
 
-2026-04-22: CP/NET client and server now work in MAME against z80pack MP/M-net over serial port A only at 38400 8N1.
+2026-04-22: CP/NET client and server now work in MAME against z80pack MP/M-net over serial port A only at 38400 8N1.  CP/NOS now fits in a single 2 KB EPROM
