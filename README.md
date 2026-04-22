@@ -26,3 +26,5 @@ RS232 transmission speeds experimentially verified not to run reliably higher th
 SIO programming had gotten confused and messed up hardware handshake.  This is now fixed and CP/NET works in MAME against z80pack MP/M.
 
 /ravn 2026-04-20
+
+2026-04-22: CP/NET client and server now work in MAME against z80pack MP/M-net over serial port A only at 38400 8N1.
