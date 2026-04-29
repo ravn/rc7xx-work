@@ -139,6 +139,11 @@ Tested and working in both compilers:
 
 ## Known Bugs in llvm-z80
 
-- `address_space(2)` crashes Legalizer (port I/O uses inline asm workaround)
 - `"hl"` inline asm constraint crashes IRTranslator
 - hasFP=false has runtime bug (parked)
+
+## Working LLVM-Z80 features (use directly; no inline-asm workaround needed)
+
+- `address_space(2)` for port I/O — fixed in `0ff2114c62a6` + `0d71a91b4e18`
+  (ravn/llvm-z80 #1, #44).  `*(volatile __attribute__((address_space(2)))
+  uint8_t *)0x10` lowers cleanly to `IN A,(0x10)` / `OUT (0x10),A`.
