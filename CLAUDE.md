@@ -81,16 +81,46 @@ The llvm-z80 backend uses **GlobalISel** (not SelectionDAG). Key files:
 
 The PROM build uses `--target=z80 -Os` with `+static-stack` (BSS locals) and `+shadow-regs` (EXX for ISRs), linked with `ld.lld` via a custom linker script.
 
-## Code Density Gap Analysis
+## Code Density Gap Analysis (BIOS, remeasured 2026-05-02)
 
-Top root causes (clang vs SDCC):
-1. **IX frame overhead** (~80B): PUSH IX + LD IX,addr + POP IX per function
-2. **BSS pointer spills** (~100B): struct field pointers stored/reloaded from BSS instead of direct access
-3. **8→16 bit promotion** (~50B): byte comparisons widened to 16-bit arithmetic
-4. **IY prefix overhead** (~35B): FD-prefixed instructions
-5. **Register pressure** (~80B): more conservative spilling than SDCC
+Clang BIOS = **5920 B**, SDCC BIOS = 6123 B (clang **−203 B** overall).
+Per-function profile of the largest clang BIOS functions shows where
+clang's bytes still cluster — not "clang vs SDCC overhead", but
+"where the remaining shrink budget hides":
 
-Worst functions: `fdc_read_data` (+95B), `check_sysfile` (+59B), `lookup_sectors` (+54B).
+| Cause                                | Impact                    | Status                                   |
+| ------------------------------------ | ------------------------- | ---------------------------------------- |
+| 1. BSS load/store traffic            | 30–48% of large functions | **dominant**; #20, #15, #100 open        |
+| 2. Excess reg-to-reg moves (regalloc) | 22–58 per large fn        | #94 / #98 / #89 / #95 cluster open       |
+| 3. Flag re-derivation (`or a`, `cp`) | 5–15 per large fn         | #77 open; #93, #86 closed                |
+| 4. IX frame overhead                 | ~0 B (`+static-stack`)    | **obsolete on BIOS**; #12, #40 small     |
+| 5. IY prefix overhead                | ~0 B (IY reserved)        | **obsolete**; #38 gates re-enabling      |
+| 6. 8→16 bit promotion                | residual / case-by-case   | mostly closed (#86, narrow-via-zext)     |
+
+Largest clang BIOS functions (excludes `_conv_tables` / boot data):
+
+| Function          | Bytes | BSS-access | Reg-reg | Notes                          |
+| ----------------- | ----: | ---------: | ------: | ------------------------------ |
+| `_specc`          |  676  | 208 (31%)  | 58      | display char dispatch          |
+| `_bios_hw_init`   |  341  |   —        |  —      | port-init sequence (data-like) |
+| `_rwoper`         |  263  | 105 (40%)  | 35      | floppy block/deblock           |
+| `_bg_clear_from`  |  262  |   —        |  —      | display fill                   |
+| `_sec_rw`         |  247  |   —        |  —      | sector r/w                     |
+| `_bios_seldsk_c`  |  199  |  66 (33%)  | 28      | disk-table lookup              |
+| `_bios_write_c`   |  170  |   —        |  —      | floppy write entry             |
+| `_isr_crt`        |  166  |  80 (48%)  |  6      | CRT ISR (highest BSS density)  |
+| `_xyadd`          |  149  |  64 (43%)  | 22      | coordinate calc                |
+| `_chktrk`         |  136  |   —        |  —      | multi-density track dispatch   |
+
+cpnos-rom hot functions (`_netboot_mpm` 224 B, `_relocate` 115 B,
+`_impl_conout` 87 B) show single-digit BSS-access bytes — they carry
+much less state than BIOS and are already close to optimum.
+
+Conclusion: **BSS spill traffic + regalloc churn** account for almost
+all remaining clang bloat in BIOS.  The historical IX/IY-overhead and
+8→16 promotion items in this section's prior version are no longer
+active gaps; #38 (IY un-reserve) and #12/#40 (IX as frame ptr) are
+parked side issues.
 
 ## Key Z80 Optimization Patterns (from SDCC)
 
