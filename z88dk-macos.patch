@@ -1,0 +1,55 @@
+diff --git a/Makefile b/Makefile
+index b408e9e6..a52b9130 100644
+--- a/Makefile
++++ b/Makefile
+@@ -51,7 +51,7 @@ BINS = bin/z88dk-appmake$(EXESUFFIX) bin/z88dk-copt$(EXESUFFIX) \
+ 	bin/z88dk-ucpp$(EXESUFFIX) bin/z88dk-sccz80$(EXESUFFIX) bin/z88dk-z80asm$(EXESUFFIX) \
+ 	bin/zcc$(EXESUFFIX) bin/z88dk-zpragma$(EXESUFFIX) bin/z88dk-zx7$(EXESUFFIX) \
+ 	bin/z88dk-z80nm$(EXESUFFIX) bin/z88dk-zobjcopy$(EXESUFFIX)  \
+-	bin/z88dk-ticks$(EXESUFFIX) bin/z88dk-z80svg$(EXESUFFIX) \
++	bin/z88dk-ticks$(EXESUFFIX) \
+ 	bin/z88dk-font2pv1000$(EXESUFFIX) bin/z88dk-basck$(EXESUFFIX) \
+ 	bin/z88dk-lib$(EXESUFFIX) bin/z88dk-zx0$(EXESUFFIX)
+ 
+diff --git a/src/appmake/Makefile b/src/appmake/Makefile
+index 980d92fa..1374550f 100644
+--- a/src/appmake/Makefile
++++ b/src/appmake/Makefile
+@@ -12,10 +12,13 @@ endif
+ 
+ CC			?= gcc
+ CFLAGS		+= -Wall -std=gnu11 -MMD -pedantic -I../common
+-LDFLAGS     += -lgmp
+ INSTALL 	?= install
+ 
+-SRCS 		:= $(wildcard *.c) ../common/dirname.c
++# Skip the TI-83+ target (ti8xk) — requires GMP which is not available
++# on macOS without brew/MacPorts and is not needed for RC700.  Local
++# patch; revert these two lines if you ever re-enable ti8xk.
++CFLAGS      += -DNO_GMP
++SRCS        := $(filter-out ti8xk.c,$(wildcard *.c)) ../common/dirname.c
+ 
+ OBJS_ALL	:= $(SRCS:.c=.o)
+ OBJS		:= $(OBJS_ALL:$(PROJ).o=)
+diff --git a/src/appmake/appmake.h b/src/appmake/appmake.h
+index e8c438a4..8bb7efd0 100644
+--- a/src/appmake/appmake.h
++++ b/src/appmake/appmake.h
+@@ -257,13 +257,14 @@ extern option_t  svi_options[];
+ extern int       tixx_exec(char *target);
+ extern option_t  tixx_options[];
+ 
+-#ifndef _MSC_VER
++#if !defined(_MSC_VER) && !defined(NO_GMP)
+ extern int       ti8xk_exec(char *target);
+ extern option_t  ti8xk_options[];
+ #else
+-// GMP can't be used in msbuild (see PR #2433)
++// GMP can't be used in msbuild (see PR #2433); also disabled when
++// NO_GMP is defined (e.g. macOS without brew/MacPorts).
+ static int ti8xk_exec(char *target){
+-  fprintf(stderr, "TI8xk disabled for msbuild!");
++  fprintf(stderr, "TI8xk disabled (no GMP available)!");
+   return 0;
+ }
+ #define ti8xk_options tixx_options
