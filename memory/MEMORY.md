@@ -122,6 +122,7 @@
 ## 8. Test / debug discipline
 
 - **[Verify matrix before theory](feedback_verify_matrix_before_theory.md) — HARD: contradictory test-cell pattern = stale state; `make clean` + re-verify anchors before drawing cross-axis conclusions**
+- **[Compilers agree means harness](feedback_compilers_agree_means_harness.md) — HARD: when clang + SDCC fail identically at byte level on shared C source, suspect MAME wiring / harness topology BEFORE auditing the binary**
 - **[No mental arithmetic in fixtures](feedback_no_mental_arithmetic_in_fixtures.md) — HARD: never hand-compute expected values for non-trivial arithmetic; use trivial math, a tool, or a parallel reference**
 - **[Auto-kill stale daemons](feedback_kill_stale_servers_on_test_target.md) — HARD: test targets that spawn long-running daemons should auto-cleanup leftover instances (BYE first, then SIGTERM)**
 - **[Extract rules from time-sinks](feedback_extract_rules_from_time_sinks.md) — HARD (meta): after every long debug session, proactively propose new memory-rule entries that would have caught the class of bug earlier; don't wait for the user to ask**
