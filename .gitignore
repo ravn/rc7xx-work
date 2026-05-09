@@ -1,2 +1,12 @@
 cmake-build-debug/
 .idea/
+
+# Claude Code session state (settings, plans, memory symlinks).  Per-user.
+.claude/
+
+# MAME auto-saved config (bitbanger paths, slot state).  Regenerated
+# every time MAME runs from this cwd.
+cfg/
+
+# Unrelated project that landed here as a download cwd.
+tinypi-2024-11-04/
