@@ -6,11 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to match or beat SDCC code density. Test against RC700 PROM and BIOS sources in rc700-gensmedet.
 
-## Current Sizes (2026-05-09 late)
+## Current Sizes (2026-05-10 late)
 
 - autoload PROM: clang **1756 B** vs SDCC 1910 B; clang `-g` variant 1861 B (#123)
 - BIOS: clang **5961 B** vs SDCC 6123 B (clang −162 B)
-- cpnos-rom resident: **clang 1716 B / SDCC 1874 B** (gap +158 B / +9%); clang payload 1712 B. SDCC resident shrunk 2756→1874 B (−882 B / −32%) over phases 49-51.
+- cpnos-rom resident (post-#75 close): **clang 2138 B / SDCC 2164 B** in 2K PROMs (no expansion). SNIOS body now plain C (17 functions in `snios_c.c`); asm reduced to 24 B JT + 2×5 B BC→HL bridges (down from ~470 B asm).
 - cpnos-rom 4-cell test matrix (compiler × transport): all PASS at HEAD
 - IX/IY: reserved (un-reserve gated on Phase 3 regalloc cost-model work, see #38)
 - Z80 lit suite: **90/90 (89 PASS + 1 XFAIL #99)**, CI green
@@ -27,23 +27,13 @@ Strategic frame: bring `llvm-z80/llvm-z80` (active fork-of-record, owner @zlfn) 
 
 Detailed session-by-session log lives in `rc700-gensmedet/tasks/timeline.md`. Per-session summaries in `llvm-z80/tasks/session*-summary.md` and `rc700-gensmedet/cpnos-rom/tasks/`. Most-recent sessions:
 
-- **#51D (2026-05-09 late)** — clang vs SDCC compiler-output comparison exposed clang silent miscompile. The #73 ifdef-collapse used `__builtin_memcpy((void *)0, ...)` for the zero-page LDIR; clang's UB-optimizer elided the entire enclosing if-block (incl. BIOS-JT memcpy + `enter_coldst()` call) — `_resident_handoff` shrank 58→18 B and clang FAILed polypascal stage 1. Fix `2db9aad`: inline asm via `ASM_VOLATILE` (volatile pointer doesn't help — `__builtin_memcpy` drops the qualifier). Filed #81 (portable-C alternative). Closed #73, #79, #64, #58, #59, #63, #62, #65, #80; reopened #71. New rule: `feedback_outlier_first_not_sweep` (≥1.5× / ≥50 B threshold).
-- **#51C (2026-05-09 evening)** — cpnos-rom build hygiene cluster: 8 closed (#73 inline-asm extraction, #79 dead-PUBLICs gate, #64/#58/#59/#63/#62 misc, #65 literal-address audit), #71 reopened with silent-boot regression. **HARD rule strengthened** (`feedback_no_commit_first_version`): any change to relocator / payload header / sections-anchored / chunk_*_src / build_prom_image.py REQUIRES `make cpnos-polypascal-test COMPILER=sdcc` BEFORE commit (recipe auto-restarts MP/M; "MP/M not running" is not an excuse).
-- **#51B (2026-05-09 cont.)** — SDCC resident shrink: #76 narrow port API to 8-bit (-60 B), #70 inline _memset (-30 B), #72 fix checksum overlap with zp_init_data via `RESIDENT_CHECKSUM` section + remove dead boot_probe (-174 B), #73 partial ifdef collapse (2 of N sites). SDCC resident 2050→1874 B; gap to clang +408→+158 B (closed 61%). Side-effect correctness fix: SDCC's `_insert_line` was a no-op stub for sessions — Ctrl-A scroll-down never worked. Filed #77.
-- **#51A (2026-05-09)** — SDCC resident shrink (structural+ifdef): retired NETBOOT_LEGACY / SERVER=proxy / netboot.c (closes #19), split cpnos_main.c → cpnos_cold.c (#68, -108 B), drop diagnostic cleanup. 2180→2050 B. Filed #72 (boot_probe removal warm-boot loop — bisected to file).
-- **#50 (2026-05-09)** — Move cold-init code (init.c, netboot_mpm.c, cfgtbl.c) to INIT_CODE (PROM-only, RAM-free): SDCC resident 2756→2180 B (-577 B / -21%); 11-line Makefile diff. **Lesson** (memory rule): compare TOTAL section sizes not per-function `.text` — `llvm-nm --print-size` hides jumptables in `.rodata`; matched-function codegen gap is 2%, not the 30-50% I had been claiming since session 45.
-- **#49 (2026-05-09)** — Closed #66: TRANSPORT=sio harness wiring (SIO-A direct to mpm-net2 :4002 socket; -piob dropped). 4-cell matrix all PASS, ~1 s parity SDCC↔clang. **Lesson** (memory rule): when both compilers fail identically end-to-end at byte level, suspect harness/topology before binary.
-- **#48b (2026-05-09)** — Retired dead Python netboot harness (−1731 lines).
-- **#48 (2026-05-09)** — cpnos-rom SDCC pio-irq reaches PASS. Found z88dk-zsdcc 4.5.0 constant-folding bug in `cfgtbl.c` (`(NET_DRV(..,0x00)>>8)&0xFF` → 0xFF, sign-extends 0x80); workaround in rc700-gensmedet@1641749, filed ravn/z88dk#4 + #67. **Lesson**: when compilers diverge on shared C source, dump runtime data structures the foreign code reads from each binary FIRST.
-- **#47 (2026-05-06/07)** — cpnos-rom data-driven relocator (header-prefixed payload). Replaced four-way `--defsym` coupling with linker-emitted `__payload_header`. Steps 1-6 + 8 done both compilers; step 7 (IVT) blocked SDCC-side on #29.
-- **#46 (2026-05-06)** — cpnos-rom SDCC port reaches NDOS handoff. Phase 2F link audit (`check_sdcc_layout.py`) gates symbols outside resident range.
-- **#45 (2026-05-05/06)** — cpnos-rom Phase 1 source-level dual-compile DONE; Phase 2A Makefile dispatch DONE.
-- **#44 (2026-05-05)** — Rolling-walk validated #74 (96dde0c) is sole boot-breaker in da18ede..HEAD.
-- **#43 (2026-05-04 evening)** — #74 cross-pair extension fully reverted (rcbios +32 B).
-- **#42 (2026-05-03)** — Phase 2 admin pass; #89 two paths ruled out; #120 combiner migration ruled out (peephole #26 stays — relies on target-specific physical-register invariant inaccessible to GISel combiners).
-- **#41 (2026-05-03)** — Closed #116 with post-RA peephole (-4 B rcbios).
+- **#57 (2026-05-10, #75 CLOSED)** — Plain-C SNDMSG/RCVMSG state machines landed. Final 6 phases of #75: 17 SNIOS functions in `snios_c.c`; asm reduced to 24 B JT + 2× 5 B BC→HL bridges. Mid-frame busy-wait deviation FIXED in C (timeout-bearing recv per DRI). +426 B clang / +306 B SDCC; fits in 2K PROMs after single-line `payload.ld` SCRATCH relocation (0xF500→0xEB00). 4-cell polypascal-test all PASS at parity. Filed #82 (ZX0 compression, parked) + #83 (IX-frame refactor, parked). Branch `phase-5-6-test-config` merged --no-ff (commit `fe609fc`).
+- **#56 (2026-05-10)** — `cpnos-rom/CPNET_WIRE_PROTOCOL.md` authored: authoritative wire-protocol spec cross-checked against z80pack mpm-net2 master `netwrkif-0.asm`, DRI reference, and current slave. Surfaced one slave deviation (mid-frame busy-wait) and clarified FNC=0xFF / 0xFE proxy-only handling. Recorded CP/NOS-is-diskless invariant after user clarification.
+- **#48-55 (2026-05-09 → 10)** — cpnos-rom SDCC port + shrink: bring-up complete (Phase 48 cfgtbl bug found), TRANSPORT=sio validated (#66), cold-init→PROM-only (Phase 50, −577 B), SDCC resident shrink 2756→1874 B over 51A-D (multiple ifdef collapses, structural fixes), clang silent miscompile from `__builtin_memcpy` through NULL pointer caught + fixed (#81). SNIOS asm→C migration phases 1-4 (15 functions ported byte-neutrally before #75 Phase 5+6 above).
+- **#47 (2026-05-06/07)** — cpnos-rom data-driven relocator (header-prefixed payload). Replaced four-way `--defsym` coupling with linker-emitted `__payload_header`.
+- **#42 (2026-05-03)** — llvm-z80 Phase 2 admin pass; #89 two paths ruled out; #120 combiner migration ruled out (peephole #26 stays).
 
-For older sessions (#12-#36), see `rc700-gensmedet/tasks/timeline.md`.
+For older sessions (#12-#46), see `rc700-gensmedet/tasks/timeline.md`.
 
 ## Workspace Layout (`/Users/ravn/z80/`)
 
