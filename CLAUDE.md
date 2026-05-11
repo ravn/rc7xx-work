@@ -10,7 +10,7 @@ Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to matc
 
 - autoload PROM: clang **1756 B** vs SDCC 1910 B; clang `-g` variant 1861 B (#123)
 - BIOS: clang **5961 B** vs SDCC 6123 B (clang −162 B)
-- cpnos-rom resident (post-#75 close): **clang 2138 B / SDCC 2164 B** in 2K PROMs (no expansion). SNIOS body now plain C (17 functions in `snios_c.c`); asm reduced to 24 B JT + 2×5 B BC→HL bridges (down from ~470 B asm).
+- cpnos-rom resident (post-#75 + session-58 z80_preserves_regs): **clang 1928 B / SDCC 2068 B** in 2K PROMs (no expansion). SNIOS body now plain C (17 functions in `snios_c.c`); asm reduced to 24 B JT + 2×5 B BC→HL bridges. Session 58 added clang `z80_preserves_regs` end-to-end (#131 caller + frontend + #133 layer 1 callee-side) saving 36 B clang resident on `xport_send_byte` callers.
 - cpnos-rom 4-cell test matrix (compiler × transport): all PASS at HEAD
 - IX/IY: reserved (un-reserve gated on Phase 3 regalloc cost-model work, see #38)
 - Z80 lit suite: **90/90 (89 PASS + 1 XFAIL #99)**, CI green
