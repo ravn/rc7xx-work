@@ -23,6 +23,10 @@
    14. Persisted-elsewhere pointer
 -->
 
+## 0. ABSOLUTE BANS — read before EVERY find/ls/grep/glob
+
+- **[NEVER traverse outside /Users/ravn/z80/](feedback_no_home_search.md) — ABSOLUTE. No `find /`, `find /Users`, `find ~`, `ls ~`, `mdfind`, `locate`. Re-violated 2026-05-09; one more strike = trust broken. CHECK PATH BEFORE EVERY find/ls/glob.**
+
 ## 1. Always-on (every response)
 
 - **[Communication Style](feedback_style.md) — Think out loud, concise, no apologies, record prompts**
@@ -83,6 +87,7 @@
 - [Root-cause over peephole](feedback_root_cause_over_peephole.md) — Favor upstream fixes (MIR DCE, regalloc cost model, GISel combiner) over post-RA peepholes
 - [Proper fixes — backend immature](feedback_proper_fixes_immature_backend.md) — Question prior design decisions; don't band-aid an immature backend, including reverting my own past code
 - [T-states Matter](feedback_tstates.md) — Evaluate both code size AND execution time for instruction sequences
+- [Don't fight SDCC iCode](feedback_dont_fight_sdcc_icode.md) — Don't preempt SDCC's iCode allocator with `static`-locals; SDCC keeps auto-locals in registers within a basic block, forcing static BSS pessimizes (3 B `ld a,(var)` vs 1 B `ld a,c`). For clang use `+static-stack` instead.
 - [Prefer C over inline asm](feedback_prefer_c_over_asm.md) — Don't replace small C constructs with __asm__ for ~6-10 B; file llvm-z80 codegen issues instead
 
 ## 6. Before any MAME / boot / test run
@@ -111,7 +116,7 @@
 
 ## 7. Before file/script ops
 
-- **[NEVER traverse home dir](feedback_no_home_search.md) — HARD: /Users/ravn/z80/ only; /Users/ravn/ and siblings strictly off-limits for any find/ls/glob**
+- **[NEVER traverse outside /Users/ravn/z80/](feedback_no_home_search.md) — see §0; ABSOLUTE BAN, re-violated 2026-05-09**
 - **[No stale dump files](feedback_no_stale_dump_files.md) — HARD: `rm -f /tmp/foo` BEFORE the producer command, every iteration; never read a /tmp/* artifact without confirming it's from this iteration**
 - **[No DOTALL backtracking on source](feedback_no_dotall_backtracking.md) — HARD: don't combine `re.DOTALL` with non-greedy `.*?` over multi-line source; use awk/grep or hand-rolled char-state machine; kill any scan exceeding ~10s**
 - [z80 tree has no untrusted hooks](feedback_z80_tree_no_untrusted_hooks.md) — `cd /Users/ravn/z80/… && git …` is safe; do not hedge on hook risk
@@ -121,6 +126,7 @@
 
 ## 8. Test / debug discipline
 
+- **[Outlier-first, not sweep](feedback_outlier_first_not_sweep.md) — HARD: when comparing two systems, find ≥1.5× / ≥50 B divergences and dig in; do NOT methodically touch every difference**
 - **[Verify matrix before theory](feedback_verify_matrix_before_theory.md) — HARD: contradictory test-cell pattern = stale state; `make clean` + re-verify anchors before drawing cross-axis conclusions**
 - **[Compilers agree means harness](feedback_compilers_agree_means_harness.md) — HARD: when clang + SDCC fail identically at byte level on shared C source, suspect MAME wiring / harness topology BEFORE auditing the binary**
 - **[Compare total section sizes](feedback_compare_total_section_sizes.md) — HARD: for two-compiler size comparisons, sum all loaded sections (.text+.rodata+.data); `llvm-nm` per-function .text hides jumptables and overstated SDCC's gap by 25× for 5 sessions**
@@ -138,6 +144,8 @@
 ## 9. Code & source style
 
 - **[Clarity in C code](feedback_clarity_in_c_code.md) — HARD: prefer readable call shapes over macro tricks; compiler-specific glue confined to hal.h/intrinsic.h, never #ifdef in business logic**
+- [Size over speed for cold paths](feedback_size_over_speed_for_cold_paths.md) — code that runs only a few times (cold-init, shutdown, error paths): bytes are permanent, T-states aren't; prefer compact loops over unrolled bodies
+- [Volatile blocks loop idiom](feedback_volatile_blocks_loop_idiom.md) — clang's `LoopIdiomRecognize` rejects volatile stores; default-add volatile on cold-init pointers blocks memcpy/memset/LDIR-overlap. Only volatile for ISR-shared state or hardware-changing memory.
 
 ## 10. Project facts — RC702 hardware
 

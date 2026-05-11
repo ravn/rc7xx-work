@@ -6,6 +6,8 @@ originSessionId: ea4ecd69-4e79-45f7-91f6-8a5e666d9c2f
 ---
 **HARD RULE: stop committing the first version of a structural fix the moment lit + size are clean.**
 
+**ALSO HARD: any change to relocator.c / payload_header.h / payload_header_data.s / sdcc/sections.asm anchored sections / chunk_a_src / chunk_b_src / build_prom_image.py invocations / linker section ordering REQUIRES `make cpnos-polypascal-test COMPILER=sdcc` (and the clang variant if affected) BEFORE commit.** Re-violated 2026-05-09 #62: I framed a relocator-layout change as "build-tooling" and skipped the runtime test on the false grounds that "MP/M isn't running" — but the recipe AUTO-STARTS MP/M itself (steps 2/4 of `cpnos-polypascal-test`), so that excuse never holds. Slave hung silently with the committed change. **"Build clean + layout audit clean + bytes byte-identical" is NOT enough for layout/relocator changes** — the only value oracle is the polypascal-test boot. Run it.
+
 Lit tests + matching rcbios/cpnos-rom byte counts are a *size oracle*.  They do not detect value miscompiles.  For any change that could change which instructions are emitted for a given IR (GISel combiners, ISel patterns, legalizer changes, BooleanContents, calling conventions), run the *value oracle* before committing:
 
   1. **PRIMARY**: `BUILD_DIR=../../build-macos PATH="/Users/ravn/z80/z88dk/src/ticks:$PATH" cargo run -- clang -opt Oz` from `llvm-z80/z80-utils/test-runner/` — exercises real value semantics via `expect: 0xFF` style assertions at the project's ship opt level.  As of 2026-05-04 baseline: 110 PASS, 0 FAIL, 1 FATAL (alloca.h env issue), 51 SKIP.
