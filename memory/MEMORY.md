@@ -68,6 +68,7 @@
 - [Check memory for builds](feedback_check_memory_for_builds.md) — Always check memory for correct build flags before building
 - [Build-tool binaries](reference_build_binaries.md) — cmake/ninja from CLion app bundle (no brew); native llc/clang in llvm-z80/build-macos/bin
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGTERM/SIGKILL truncates .ninja_log, next ninja prints "premature end of file" and rebuilds 1700+ steps. Wait builds out, or Ctrl-C ONCE; never run two ninjas in same build-macos/**
+- **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after any Z80 backend pass change, `ninja clang llc` BOTH; `ninja llc` alone leaves clang symlink pointing at a stale binary against the old .a archive, and downstream cpnos/rcbios/autoload builds look unchanged.  Caught session 60b — −2 B saving invisible until clang was relinked.**
 - [Docker for missing binaries](feedback_docker_binaries.md) — Use Docker images for missing CLI tools, don't suggest installing
 - [Build zmac if missing](feedback_build_zmac.md) — zmac builds from source in zmac subfolder, just `make`
 - [macOS timeout](reference_macos_timeout.md) — No GNU timeout on macOS; use Bash tool's timeout param or perl -e 'alarm; exec'
