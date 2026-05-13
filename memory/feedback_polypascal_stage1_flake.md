@@ -1,20 +1,26 @@
 ---
-name: cpnos-polypascal-test stage-1 flake = MP/M daemon state
-description: When cpnos-polypascal-test fails at "stage 1 (deadline 30s): wait for E> on SIO-B" with no E> appearing, the most common cause is leftover MP/M daemon state from a prior run that the Makefile's _kill-mpm didn't fully clean.  Force-kill and retry before suspecting codegen.
+name: cpnos-polypascal-test stage-1 AND stage-2 flake = MP/M daemon state
+description: When cpnos-polypascal-test times out at stage 1 (wait for E> on SIO-B) OR stage 2 (wait for initial PPAS '>>' prompt), the most common cause is leftover MP/M daemon state from a prior run.  Force-kill with longer sleep (5-8s) and retry before suspecting codegen.  Confirmed for stage 1 (#149) AND stage 2 (#152).
 type: feedback
+originSessionId: 90f5a17f-7f0a-47da-8820-66f3b9c19063
 ---
-
 **Rule:** When `make cpnos-polypascal-test` reports
-`FAIL: timeout waiting for E> boot prompt` at stage 1, before
-investigating codegen, do:
+`FAIL: timeout waiting for E> boot prompt` (stage 1) OR
+`FAIL: timeout waiting for PPAS >> prompt (initial)` (stage 2),
+before investigating codegen, do:
 
 ```bash
 make _kill-mpm
-sleep 2
+sleep 5-8    # 2s sometimes isn't enough; saw stage-2 timeouts at 3s
 make COMPILER=clang TRANSPORT=<...> cpnos-polypascal-test
 ```
 
 If the retry PASSES, the failure was MP/M state — not your change.
+
+Stage 2 has the same root cause as stage 1: MP/M is up enough
+that E> appears, but the network/file-system layer for the load
+command (`L PRIMES`) is in a partial-state — looks identical to
+a real CP/NOS↔MP/M regression but resolves on a clean restart.
 
 **Why:**
 - The test depends on z80pack mpm-net2 being freshly started and
@@ -42,11 +48,16 @@ If the retry PASSES, the failure was MP/M state — not your change.
   binary inspection (cmp against a known-good build).
 
 **Symptom this rule catches:**
-First observed: session 65 (2026-05-13), #149 ravn/llvm-z80
-i16 != -1 fold work.  Polypascal-test failed at stage 1 with
-multiple retries; I started bisecting the codegen change.
-After `make _kill-mpm; sleep 2; retry`, the test passed
-immediately — the codegen change was fine all along.
+- First observed stage 1: session 65 (2026-05-13), #149 i16 != -1
+  fold work.  After `make _kill-mpm; sleep 2; retry`, the test
+  passed immediately — the codegen change was fine all along.
+- Extended to stage 2: session 68 (2026-05-13), #152 SET/RES via
+  `LD A,(HL)`.  Polypascal failed twice in a row at different
+  stages (1 then 2).  `cmp -l` against baseline payload showed
+  0 byte differences — confirmed MP/M state, not codegen.  After
+  `make _kill-mpm; sleep 8; retry`, both pio-irq and sio cells
+  PASS.  This is why the longer sleep is now the default
+  recommendation.
 
 **Verification short-cut when in doubt:**
 - `nc -z 127.0.0.1 4002` while polypascal-test is mid-flight.

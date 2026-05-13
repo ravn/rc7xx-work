@@ -92,11 +92,12 @@
 - [T-states Matter](feedback_tstates.md) — Evaluate both code size AND execution time for instruction sequences
 - [Don't fight SDCC iCode](feedback_dont_fight_sdcc_icode.md) — Don't preempt SDCC's iCode allocator with `static`-locals; SDCC keeps auto-locals in registers within a basic block, forcing static BSS pessimizes (3 B `ld a,(var)` vs 1 B `ld a,c`). For clang use `+static-stack` instead.
 - [Prefer C over inline asm](feedback_prefer_c_over_asm.md) — Don't replace small C constructs with __asm__ for ~6-10 B; file llvm-z80 codegen issues instead
+- **[Z80 copies have spurious mayLoad/mayStore](feedback_z80_copy_spurious_mem_flags.md) — HARD: never use MI.mayLoad()/mayStore() to detect memory access in Z80 peepholes; LD_D_A etc. show both flags set despite being register-only. Use !MI.memoperands_empty() instead. Tracked in #154.**
 
 ## 6. Before any MAME / boot / test run
 
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: every cpnos-rom test must have its siob.raw banner timestamp checked against latest build's BUILD_INFO_STR before any diagnosis; same timestamp across rebuilds = stale ROM**
-- **[Polypascal stage-1 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — When cpnos-polypascal-test fails at "stage 1: wait for E> on SIO-B", first try `make _kill-mpm; sleep 2; retry`.  Stuck daemon state is the most common cause and looks identical to a real codegen regression.  Confirmed session 65 (#149 false alarm).**
+- **[Polypascal stage-1 OR stage-2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — When cpnos-polypascal-test times out at stage 1 (E>) OR stage 2 (initial PPAS '>>'), first try `make _kill-mpm; sleep 5-8; retry`.  Stuck daemon state is the most common cause for both stages and looks identical to a real codegen regression.  Confirmed session 65 (#149 false alarm) and session 68 (#152 — needed longer 5-8s sleep, 2s wasn't enough).**
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: always capture a MAME screenshot to verify init; PASS log lines aren't enough**
 - **[Black screen is fatal](feedback_black_screen_fatal.md) — HARD: black MAME screen halts all other investigation; root-cause boot path before anything else**
 - [Black screen → CRT ISR not firing](feedback_black_screen_crt_isr.md) — black RC702 display means `isr_crt` isn't running; suspect EI / IVT slot 2 / CTC ch2 in that order; SIO-B output still valid in this state
