@@ -96,6 +96,7 @@
 ## 6. Before any MAME / boot / test run
 
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: every cpnos-rom test must have its siob.raw banner timestamp checked against latest build's BUILD_INFO_STR before any diagnosis; same timestamp across rebuilds = stale ROM**
+- **[Polypascal stage-1 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — When cpnos-polypascal-test fails at "stage 1: wait for E> on SIO-B", first try `make _kill-mpm; sleep 2; retry`.  Stuck daemon state is the most common cause and looks identical to a real codegen regression.  Confirmed session 65 (#149 false alarm).**
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: always capture a MAME screenshot to verify init; PASS log lines aren't enough**
 - **[Black screen is fatal](feedback_black_screen_fatal.md) — HARD: black MAME screen halts all other investigation; root-cause boot path before anything else**
 - [Black screen → CRT ISR not firing](feedback_black_screen_crt_isr.md) — black RC702 display means `isr_crt` isn't running; suspect EI / IVT slot 2 / CTC ch2 in that order; SIO-B output still valid in this state
