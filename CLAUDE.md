@@ -6,14 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to match or beat SDCC code density. Test against RC700 PROM and BIOS sources in rc700-gensmedet.
 
-## Current Sizes (2026-05-10 late)
+## Current Sizes (2026-05-15, post-S3' INC16/DEC16 remat #115/#27)
 
-- autoload PROM: clang **1756 B** vs SDCC 1910 B; clang `-g` variant 1861 B (#123)
-- BIOS: clang **5961 B** vs SDCC 6123 B (clang −162 B)
-- cpnos-rom resident (post-#75 + session-58 z80_preserves_regs): **clang 1928 B / SDCC 2068 B** in 2K PROMs (no expansion). SNIOS body now plain C (17 functions in `snios_c.c`); asm reduced to 24 B JT + 2×5 B BC→HL bridges. Session 58 added clang `z80_preserves_regs` end-to-end (#131 caller + frontend + #133 layer 1 callee-side) saving 36 B clang resident on `xport_send_byte` callers.
+- autoload PROM (Makefile-default `-Oz -g`): clang **1859 B** vs SDCC 1910 B (clang −51 B).  Prior doc's "1756 B" referred to a non-default `-Oz` build (no `-g`); the production-default `-g` build was 1861 B at 2026-05-10 → 1859 B post-S3'.
+- BIOS: clang **5925 B** vs SDCC 6123 B (clang −198 B); −36 B vs pre-2026-05-15 doc, from intervening peephole/codegen commits, not S3' itself.
+- cpnos-rom resident (post-#75 + session-58 z80_preserves_regs, PIO transport): **clang 2003 B / SDCC 2068 B** (.payload non-padding) in 2K PROMs (no expansion); +75 B drift vs pre-2026-05-15 doc, from intervening commits, S3' byte-neutral here.  SNIOS body remains plain C (17 functions in `snios_c.c`); asm reduced to 24 B JT + 2×5 B BC→HL bridges.
+- AES-256 corpus (rc700-gensmedet/tasks/aes256-corpus): `09_Oz_prod_like` clang **2695 B** vs zsdcc 3604 B (clang ahead by 909 B); `01_baseline_Oz` clang 4111 B (post-S3' −94 B).  See `llvm-z80/tasks/session73b-s3prime-prod-impact-analysis.md`.
 - cpnos-rom 4-cell test matrix (compiler × transport): all PASS at HEAD
 - IX/IY: reserved (un-reserve gated on Phase 3 regalloc cost-model work, see #38)
-- Z80 lit suite: **90/90 (89 PASS + 1 XFAIL #99)**, CI green
+- Z80 lit suite: **104 PASS + 2 XFAIL (106 total)**, CI green
 
 ## Canonical Plan
 
@@ -27,6 +28,8 @@ Strategic frame: bring `llvm-z80/llvm-z80` (active fork-of-record, owner @zlfn) 
 
 Detailed session-by-session log lives in `rc700-gensmedet/tasks/timeline.md`. Per-session summaries in `llvm-z80/tasks/session*-summary.md` and `rc700-gensmedet/cpnos-rom/tasks/`. Most-recent sessions:
 
+- **#73b/c (2026-05-15)** — llvm-z80 **#115/#27 S3'** committed (`006ba9607dd1`): `INC16` / `DEC16` marked `isAsCheapAsAMove` + `isReMaterializable`.  AES corpus 8 of 13 configs improved (−25 to −118 B); production targets (autoload, cpnos, BIOS) byte-neutral.  Lit 104+2, test-runner 685/42/56/207, AES verifier all PASS.  Follow-up #166 (ADD_HL_rr / LD_HL_a16 remat) filed.  Build infrastructure: `tasks/tools/llvm-snap.sh` snapshot helper + sccache wired into cmake (2.9–6.5× faster iteration on backend-pass changes).  See `tasks/session73b-s3prime-prod-impact-analysis.md`.
+- **#73 (2026-05-15, #165 CLOSED)** — TruncInstCombine outside-user allowlist extended: icmp non-const + and-mask paths.  gf_log 153 → 28 B (−125 / 5.4×); AES corpus all 13 configs improved (−26 to −129 B); tstates 65M → 15M (4×).  See `tasks/session73-truncinstcombine-outside-user-extensions.md`.
 - **#57 (2026-05-10, #75 CLOSED)** — Plain-C SNDMSG/RCVMSG state machines landed. Final 6 phases of #75: 17 SNIOS functions in `snios_c.c`; asm reduced to 24 B JT + 2× 5 B BC→HL bridges. Mid-frame busy-wait deviation FIXED in C (timeout-bearing recv per DRI). +426 B clang / +306 B SDCC; fits in 2K PROMs after single-line `payload.ld` SCRATCH relocation (0xF500→0xEB00). 4-cell polypascal-test all PASS at parity. Filed #82 (ZX0 compression, parked) + #83 (IX-frame refactor, parked). Branch `phase-5-6-test-config` merged --no-ff (commit `fe609fc`).
 - **#56 (2026-05-10)** — `cpnos-rom/CPNET_WIRE_PROTOCOL.md` authored: authoritative wire-protocol spec cross-checked against z80pack mpm-net2 master `netwrkif-0.asm`, DRI reference, and current slave. Surfaced one slave deviation (mid-frame busy-wait) and clarified FNC=0xFF / 0xFE proxy-only handling. Recorded CP/NOS-is-diskless invariant after user clarification.
 - **#48-55 (2026-05-09 → 10)** — cpnos-rom SDCC port + shrink: bring-up complete (Phase 48 cfgtbl bug found), TRANSPORT=sio validated (#66), cold-init→PROM-only (Phase 50, −577 B), SDCC resident shrink 2756→1874 B over 51A-D (multiple ifdef collapses, structural fixes), clang silent miscompile from `__builtin_memcpy` through NULL pointer caught + fixed (#81). SNIOS asm→C migration phases 1-4 (15 functions ported byte-neutrally before #75 Phase 5+6 above).
