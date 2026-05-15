@@ -10,9 +10,9 @@ Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to matc
 
 - autoload PROM (Makefile-default `-Oz -g`): clang **1859 B** vs SDCC 1910 B (clang −51 B).  Prior doc's "1756 B" referred to a non-default `-Oz` build (no `-g`); the production-default `-g` build was 1861 B at 2026-05-10 → 1859 B post-S3'.
 - BIOS: clang **5925 B** vs SDCC 6123 B (clang −198 B); −36 B vs pre-2026-05-15 doc, from intervening peephole/codegen commits, not S3' itself.
-- cpnos-rom resident (post-#75 + session-58 z80_preserves_regs, PIO transport): **clang 2003 B / SDCC 2068 B** (.payload non-padding) in 2K PROMs (no expansion); +75 B drift vs pre-2026-05-15 doc, from intervening commits, S3' byte-neutral here.  SNIOS body remains plain C (17 functions in `snios_c.c`); asm reduced to 24 B JT + 2×5 B BC→HL bridges.
+- cpnos-in-c resident (post-#75 + session-58 z80_preserves_regs, PIO transport): **clang 2004 B / SDCC 2068 B** (.payload non-padding) in 2K PROMs (no expansion); S3' byte-neutral here.  SNIOS body remains plain C (17 functions in `snios_c.c`); asm reduced to 24 B JT + 2×5 B BC→HL bridges.  Session 73d (2026-05-15) split `cpnos-rom/` -> `cpnos-shared/` + `cpnos-in-c/` + `cpnos-in-asm/`.
 - AES-256 corpus (rc700-gensmedet/tasks/aes256-corpus): `09_Oz_prod_like` clang **2695 B** vs zsdcc 3604 B (clang ahead by 909 B); `01_baseline_Oz` clang 4111 B (post-S3' −94 B).  See `llvm-z80/tasks/session73b-s3prime-prod-impact-analysis.md`.
-- cpnos-rom 4-cell test matrix (compiler × transport): all PASS at HEAD
+- cpnos-in-c 4-cell test matrix (compiler × transport): all PASS at HEAD
 - IX/IY: reserved (un-reserve gated on Phase 3 regalloc cost-model work, see #38)
 - Z80 lit suite: **104 PASS + 2 XFAIL (106 total)**, CI green
 
