@@ -67,6 +67,7 @@
 - [Test both compilers](feedback_dual_compiler_test.md) — rcbios changes MUST build with BOTH z88dk and clang before commit; SDCC rejects `__asm__ volatile`
 - [Check memory for builds](feedback_check_memory_for_builds.md) — Always check memory for correct build flags before building
 - [Build-tool binaries](reference_build_binaries.md) — cmake/ninja from CLion app bundle (no brew); native llc/clang in llvm-z80/build-macos/bin
+- [Z80 tool paths + canonical invocations](reference_z80_tool_paths.md) — full paths for ninja/clang/llc/opt/z88dk-ticks/test-runner/sweep with BUILD_DIR + PATH overrides
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGTERM/SIGKILL truncates .ninja_log, next ninja prints "premature end of file" and rebuilds 1700+ steps. Wait builds out, or Ctrl-C ONCE; never run two ninjas in same build-macos/**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after any Z80 backend pass change, `ninja clang llc` BOTH; `ninja llc` alone leaves clang symlink pointing at a stale binary against the old .a archive, and downstream cpnos/rcbios/autoload builds look unchanged.  Caught session 60b — −2 B saving invisible until clang was relinked.**
 - [Docker for missing binaries](feedback_docker_binaries.md) — Use Docker images for missing CLI tools, don't suggest installing
@@ -93,6 +94,7 @@
 - [Don't fight SDCC iCode](feedback_dont_fight_sdcc_icode.md) — Don't preempt SDCC's iCode allocator with `static`-locals; SDCC keeps auto-locals in registers within a basic block, forcing static BSS pessimizes (3 B `ld a,(var)` vs 1 B `ld a,c`). For clang use `+static-stack` instead.
 - [Prefer C over inline asm](feedback_prefer_c_over_asm.md) — Don't replace small C constructs with __asm__ for ~6-10 B; file llvm-z80 codegen issues instead
 - **[Z80 copies have spurious mayLoad/mayStore](feedback_z80_copy_spurious_mem_flags.md) — HARD: never use MI.mayLoad()/mayStore() to detect memory access in Z80 peepholes; LD_D_A etc. show both flags set despite being register-only. Use !MI.memoperands_empty() instead. Tracked in #154.**
+- **[zeroext is ABI, not source-narrow](feedback_zeroext_is_abi_not_source.md) — HARD: `i16 zeroext` on Z80 is an ABI-extension signal, NOT proof that the source type was narrower than i16. `uint16_t` params carry zeroext same as post-K&R-promoted `uint8_t`. Verify narrow-ness via computeKnownBits before narrowing. Session 71 #162 trust-zeroext variant produced 318 miscompiles.**
 
 ## 6. Before any MAME / boot / test run
 
@@ -170,7 +172,8 @@
 - [Fast link is CP/NET-only](project_fast_link_cpnet_only.md) — fast host<->RC702 transport is for CP/NET + CP/NOS frames only
 - [cpnos-rom is clang-only](project_cpnos_clang_only.md) — clang-only is fine for now; do not preemptively SDCC-compat or chase IDE LSP false-positives on Z80 inline asm
 - [Z80 simple, host complex, hardware-compatible](project_z80_simple_host_complex.md) — slave-side Z80 small/fast; push protocol work to host; must run on physical RC702
-- [HiTech third compiler TODO](project_hitech_third_compiler.md) — Pending: add ravn/hitech as third compiler submodule alongside llvm-z80 and z88dk
+- [HiTech port parked — check note first](feedback_check_hitech_park_note.md) — read `rc700-gensmedet/tasks/hitech-port-parked.md` before proposing HiTech as third compiler. Supersedes [[project_hitech_third_compiler]]
+- **[AES corpus = parity oracle](project_aes256_corpus_goal.md) — `aes256-corpus/` drives clang→zsdcc parity AND collects SDCC bugs as upstream-bound queue. Two tracks, each files issues with test cases. Filed: ravn/llvm-z80#156 (+static-stack), ravn/z88dk#5 (--nogcse), ravn/z88dk#6 (sdcc_ix). Top remaining clang gaps: aes_mc_inv +549 B, aes_mixColumns +289 B, rj_sb_inv +126 B (5.2×), gf_log +121 B (4.78×). No fixes in the corpus dir; fixes land in llvm-z80/ or z88dk/, re-measured via `make sweep`.**
 
 ## 12. External-bug refs
 
