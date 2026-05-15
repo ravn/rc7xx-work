@@ -95,6 +95,7 @@
 - [Prefer C over inline asm](feedback_prefer_c_over_asm.md) — Don't replace small C constructs with __asm__ for ~6-10 B; file llvm-z80 codegen issues instead
 - **[Z80 copies have spurious mayLoad/mayStore](feedback_z80_copy_spurious_mem_flags.md) — HARD: never use MI.mayLoad()/mayStore() to detect memory access in Z80 peepholes; LD_D_A etc. show both flags set despite being register-only. Use !MI.memoperands_empty() instead. Tracked in #154.**
 - **[zeroext is ABI, not source-narrow](feedback_zeroext_is_abi_not_source.md) — HARD: `i16 zeroext` on Z80 is an ABI-extension signal, NOT proof that the source type was narrower than i16. `uint16_t` params carry zeroext same as post-K&R-promoted `uint8_t`. Verify narrow-ness via computeKnownBits before narrowing. Session 71 #162 trust-zeroext variant produced 318 miscompiles.**
+- **[TruncInstCombine: swap before probe](feedback_truncinstcombine_swap_before_probe.md) — HARD: when injecting a synthetic trunc root, modify IR users (call arg / and result) to point at the new value BEFORE `getBestTruncatedType` — otherwise the multi-use guard sees the original consumer as outside-graph and bails. Rollback path required for the failure branch. Caught session 72 implementing #162 path 2.**
 
 ## 6. Before any MAME / boot / test run
 
