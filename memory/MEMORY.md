@@ -45,6 +45,7 @@
 - **[Never create PRs](feedback_no_pull_requests.md) — HARD: never `gh pr create` unless user explicitly asks in current turn**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD: combiner/ISel/lowering changes need value oracle (test-runner + MAME boot) BEFORE commit**
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: before proposing/implementing any fix, search MEMORY.md, cite rules; commit message must include `Rules-checked:` line**
+- **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: before re-deriving an encoding/bit-layout/address-map from raw data, grep repo for existing `*_REFERENCE.md` / `*_CHARACTER_ROM.md`. Caught session 73j (ROA327 sextant bit encoding — 2 screenshot iters; doc already had it).**
 - [No Upstream Issues](feedback_no_upstream_issues.md) — Only file issues in ravn/* forks, never upstream
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — bug in dep (llvm-z80, z80pack, mame, …) → ravn/* fork issue with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — Add XFAIL lit test for every clang Z80 codegen bug found
