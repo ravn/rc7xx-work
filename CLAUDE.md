@@ -6,12 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to match or beat SDCC code density. Test against RC700 PROM and BIOS sources in rc700-gensmedet.
 
-## Current Sizes (2026-05-17, post-ZX0 autoload + cpnos-in-c PROM1-only line program)
+## Current Sizes (2026-05-17, post-session-73j: SEM702 + SW1 bits 0/1/2 + dual-transport cpnos)
 
-- autoload PROM (clang, Makefile-default `-Oz -g`, **ZX0-compressed**): **1509 B / 2048 B (539 B free)** — was 1859 B raw, now `.text` ZX0-compressed (1742 → 1330 B, saves 412 B; minus 68 B decoder = net 343 B saved).  Host-side `z88dk-dzx0` roundtrip verified byte-exact in the build.  SDCC variant unchanged at 1910 B raw.
-- BIOS: clang **5925 B** vs SDCC 6123 B (clang −198 B); −36 B vs pre-2026-05-15 doc.
+- autoload PROM (clang, ZX0-compressed): **1661 B / 2048 B (387 B free)** — was 1509 B pre-73j; +147 B for define_sextants() + 5 B for SW1 bit-1 gate.  SEM702 RAM-based chargen programmed unconditionally at boot.  Hard-capped at 2 KB (no A11 bridge on user's hardware -- memory rule `project_rc702_2kb_prom_hard_limit`).
+- BIOS: clang **5925 B** vs SDCC 6123 B (clang −198 B); SW1 bit-0 inversion fix landed (was bit=1 → JOINED; now bit=0 → JOINED matching MAME's "On" convention).
 - cpnos-in-c resident (clang, PIO transport): **clang 2004 B / SDCC 2068 B** raw .payload non-padding.
-- **cpnos-in-c PROM1-only line program (clang × PIO, new 2026-05-17)**: **1922 B / 2048 B (126 B free)** in a SINGLE 2 KB PROM1 socket alongside autoload-in-c in PROM0.  init.bin 627 → 545 B ZX0 (relinked at VMA 0xC000) + payload.bin 1858 → 1275 B ZX0, both decompressed at boot by a shared 68 B `dzx0_standard`.  PolyPascal value oracle PASS (PPAS PRIMES → 29989 → Q → E>).  Remaining 4-cell coverage: SDCC × {PIO, SIO} and clang × SIO not yet ported (clang × PIO verified end-to-end).  Build: `cd cpnos-in-c && make prom1-lineprog`.  Plan: `cpnos-in-c/tasks/zx0-prom1-only-plan-2026-05-17.md`.
+- **cpnos-in-c PROM1-only line program (clang × {PIO+SIO} dual, session 73j)**: **2018 B / 2048 B (30 B free)** in a SINGLE 2 KB PROM1 socket.  Both `transport_pio.o` and `transport_sio.o` linked; SW1 bit 2 (S03) selects at cold-init via a 3-byte JP-NN trampoline pair in `.resident` patched by `install_transport()`.  Default-PIO smoke-tested (banner "RC702 CP/NOS 55K PIO clang ..." at 0xF800 through trampoline).  SIO-mode runtime test deferred (needs SIO-A wiring + dual-mode lineprog cpnos-polypascal-test variant).  Build: `cd cpnos-in-c && make prom1-lineprog`.  Cost vs PIO-only: +69 B.
+- **PROM budget critical**: PROM1 at 30 B free (down from 99 B).  Any further cpnos growth must be paired with equal-or-larger shrink -- 2 KB cap is hard.
+- **MAME `rc702sem702` machine**: clone of `rc702` 8" with SEM702 RAM-backed chargen (2 KB RAM behind ports 0xD1/0xD2/0xD3, strict-latch model, ROA296 still serves alpha).  Use for SEM702-equipped-machine emulation; baseline `rc702` keeps ROA327.
+- **SW1 bit allocation** (all three firmware components honor consistently): bit 0 (S01) console mode (rcbios + cpnos); bit 1 (S02) PROM1 lineprog enable (autoload); bit 2 (S03) cpnos transport PIO/SIO (PROM1-only build).  Canonical doc: `rc700-gensmedet/docs/SW1_BIT_MAP.md`.
+- AES-256 corpus (rc700-gensmedet/tasks/aes256-corpus): `09_Oz_prod_like` clang **2695 B** vs zsdcc 3604 B (clang ahead by 909 B); `01_baseline_Oz` clang 4111 B (post-S3' −94 B).  See `llvm-z80/tasks/session73b-s3prime-prod-impact-analysis.md`.
+- cpnos-in-c 4-cell test matrix (compiler × transport): all PASS at HEAD (two-PROM builds)
+- IX/IY: reserved (un-reserve gated on Phase 3 regalloc cost-model work, see #38)
+- Z80 lit suite: **104 PASS + 2 XFAIL (106 total)**, CI green
+- **cpnos-in-asm: PARKED 2026-05-17** (superseded by cpnos-in-c PROM1-only)
+- **sem702-qr-test**: new subproject `rc700-gensmedet/sem702-qr-test/` -- CP/M .COM that paints two QR codes (1× + 2× scale) of `https://github.com/ravn` side-by-side via SEM702 sextants, snapshot-verified in MAME (`make run`).
 - **cpnos-in-asm: PARKED 2026-05-17** (see `rc700-gensmedet/cpnos-in-asm/PARKED.md`).  Superseded by cpnos-in-c PROM1-only.  Last functional state: 1566 / 2048 B PROM1, PolyPascal + CONOTEST PASS, 15 of 18 RC700 text-mode CONOUT codes (graphics-mode 0x14/0x15/0x16 missing on both variants).  Source tree preserved; new feature work goes into cpnos-in-c.
 - AES-256 corpus (rc700-gensmedet/tasks/aes256-corpus): `09_Oz_prod_like` clang **2695 B** vs zsdcc 3604 B (clang ahead by 909 B); `01_baseline_Oz` clang 4111 B (post-S3' −94 B).  See `llvm-z80/tasks/session73b-s3prime-prod-impact-analysis.md`.
 - cpnos-in-c 4-cell test matrix (compiler × transport): all PASS at HEAD
