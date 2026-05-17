@@ -170,6 +170,7 @@
 ## 10. Project facts — RC702 hardware
 
 - [No RC700 HW mods](user_no_hw_mods.md) — No PCB modifications; cables and external devices are OK
+- **[2 KB PROM hard limit](project_rc702_2kb_prom_hard_limit.md) — HARD: user's RC702 has no A11 bridge (later-model feature); PROM0 + PROM1 are capped at 2048 B each. Never propose "close A11" / "use 2732" as a contingency.**
 - [SIO-A fast TX, no fast RX](project_sioa_tx_only_fast.md) — ÷1 bit clock at 614 kbaud verified TX (framing layer uncertain); fast RX impossible (no DPLL, pins 15/17 NC); SIO-B likely same
 - [Two Picos available](project_pico_count.md) — user has 2 Pi Picos; one runs cbl923 keyboard rig, second earmarked for J3 CP/NET bridge
 
