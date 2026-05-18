@@ -69,6 +69,7 @@
 
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: before adding a build/compile/link flag, grep sibling subprojects for the same flag and mirror their wrapping**
 - **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel `ifeq COMPILER` Makefile recipes must emit the SAME artifact set; asymmetric outputs cause stale-ROM mismatch -> "BAD CHECKSUM"**
+- **[Build-var artifacts content-check, not mtime](feedback_build_var_artifacts_content_check.md) — HARD: generated files embedding a Make var (TRANSPORT/COMPILER/...) must regen via `$(shell)` grep of embedded marker, not mtime dep on a stamp. Bitten 2x session 73k. Diagnostic: `head -1 file`.**
 - [Test both compilers](feedback_dual_compiler_test.md) — rcbios changes MUST build with BOTH z88dk and clang before commit; SDCC rejects `__asm__ volatile`
 - [Check memory for builds](feedback_check_memory_for_builds.md) — Always check memory for correct build flags before building
 - [Build-tool binaries](reference_build_binaries.md) — cmake/ninja from CLion app bundle (no brew); native llc/clang in llvm-z80/build-macos/bin
@@ -98,6 +99,7 @@
 - [Proper fixes — backend immature](feedback_proper_fixes_immature_backend.md) — Question prior design decisions; don't band-aid an immature backend, including reverting my own past code
 - [T-states Matter](feedback_tstates.md) — Evaluate both code size AND execution time for instruction sequences
 - [Don't fight SDCC iCode](feedback_dont_fight_sdcc_icode.md) — Don't preempt SDCC's iCode allocator with `static`-locals; SDCC keeps auto-locals in registers within a basic block, forcing static BSS pessimizes (3 B `ld a,(var)` vs 1 B `ld a,c`). For clang use `+static-stack` instead.
+- **[SDCC block-scope extern broken](feedback_sdcc_block_scope_extern.md) — HARD: declare cross-TU function externs at FILE scope under SDCC z88dk; block-scope drops the GLOBAL emit, z80asm errors out.  Bug: ravn/z88dk#7.  Caught session 73j-end after several hours of debugging a "SDCC netboot stall" that was really stale .o files from before a block-scope extern got added.**
 - [Prefer C over inline asm](feedback_prefer_c_over_asm.md) — Don't replace small C constructs with __asm__ for ~6-10 B; file llvm-z80 codegen issues instead
 - **[Z80 copies have spurious mayLoad/mayStore](feedback_z80_copy_spurious_mem_flags.md) — HARD: never use MI.mayLoad()/mayStore() to detect memory access in Z80 peepholes; LD_D_A etc. show both flags set despite being register-only. Use !MI.memoperands_empty() instead. Tracked in #154.**
 - **[zeroext is ABI, not source-narrow](feedback_zeroext_is_abi_not_source.md) — HARD: `i16 zeroext` on Z80 is an ABI-extension signal, NOT proof that the source type was narrower than i16. `uint16_t` params carry zeroext same as post-K&R-promoted `uint8_t`. Verify narrow-ness via computeKnownBits before narrowing. Session 71 #162 trust-zeroext variant produced 318 miscompiles.**
@@ -153,6 +155,7 @@
 - **[A/B before blaming test-runner](feedback_ab_before_blaming_test_runner.md) — HARD: when z80-utils test-runner shows FAILs after a llvm-z80 patch, stash + rebuild llc + rerun to A/B against baseline BEFORE diagnosing. Test_90/91 edge_*_O1 are known pre-existing noise (#136)**
 - **[Value oracle covers all TRANSPORT cells](feedback_value_oracle_all_transport_cells.md) — HARD: for cpnos-rom changes affecting shared SNIOS source / xport_* decls / compat.h, runtime-test every linking TRANSPORT cell, not just one. Session 58 latent SIO correctness gap shipped because only PIO was runtime-tested**
 - **[Extract rules from time-sinks](feedback_extract_rules_from_time_sinks.md) — HARD (meta): after every long debug session, proactively propose new memory-rule entries that would have caught the class of bug earlier; don't wait for the user to ask**
+- **[Verify PASS condition before trusting green](feedback_verify_pass_condition.md) — HARD: when a test prints PASS, cross-check elapsed time vs plausibility + scan post-test artefact for setup-step evidence + look for working-reference example. False-positive bitten 2026-05-18 (polypascal-PIO "PASS"ed in 4.55s by short-circuit; CP/NET never ran). Workaround without explanation = red flag.**
 - [User guesses are not constraints](feedback_user_guesses_not_constraints.md) — when user says "my guess is X", treat as starting suggestion; widen candidate list; probe-first not hypothesis-first
 - ["Intermittent" is a hypothesis](feedback_intermittent_is_hypothesis.md) — When inheriting "race / intermittent" framing, falsify it via data-content checks before pursuing timing causes
 - [Integration Tests Expensive](feedback_integration_tests.md) — Only run full test suite before merge/PR
