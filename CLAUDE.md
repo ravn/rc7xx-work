@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **⚠ EXPERIMENTAL BRANCH: `experiment-cpnos-prom-4k`**
+>
+> This branch temporarily raises the cpnos PROM1-only line-program cap
+> from 2048 to **4096 B** (via `CPNOS_PROM1_CAP` in
+> `cpnos-in-c/Makefile`).  Goal: land cpnos-affecting compiler fixes
+> (e.g. ravn/llvm-z80#168) that may temporarily grow code, then
+> shrink back below 2048 before merging to main.
+>
+> **DO NOT MERGE THIS BRANCH TO `main` WITH THE 4096 DEFAULT.**  The
+> 2 KB hard cap (`project_rc702_2kb_prom_hard_limit`) is real
+> hardware -- user's RC702 has no A11 bridge, PROM1 is physically
+> 2 KB.  Anything larger is MAME-only and won't run on the target.
+>
+> Branch checklist before merge:
+> 1. Revert `CPNOS_PROM1_CAP` default to `2048` in
+>    `rc700-gensmedet/cpnos-in-c/Makefile`.
+> 2. Confirm `make prom1-lineprog COMPILER=clang` reports
+>    `PROM1 line program: <= 2048` with NO `WARN` line.
+> 3. `cpnos-polypascal-test` PASS in MAME with PROMCFG=1 (2 KB sockets).
+> 4. Remove this banner from CLAUDE.md.
+
 ## Project Goal
 
 Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to match or beat SDCC code density. Test against RC700 PROM and BIOS sources in rc700-gensmedet.
