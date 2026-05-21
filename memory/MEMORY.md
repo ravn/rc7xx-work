@@ -109,6 +109,7 @@
 
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: check siob.raw banner timestamp vs latest BUILD_INFO_STR before any diagnosis; same timestamp across rebuilds = stale ROM.**
 - **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — On polypascal-test timeout at stage 1 (E>) or stage 2 (`>>`), first try `make _kill-mpm; sleep 5-8; retry`. Stuck daemon mimics codegen regression.**
+- **[Session-start: kill daemons BEFORE first test](feedback_session_start_kill_daemons.md) — HARD: at session start (no shared memory of prior session state), proactively `make -C cpnos-in-c _kill-mpm; sleep 8` BEFORE first MAME/polypascal/CP-NET run. Also between COMPILER switches. Generalises [[feedback-polypascal-stage1-flake]] from reactive retry to proactive cleanup.**
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: always capture a MAME screenshot to verify init; PASS log lines aren't enough**
 - **[Black screen is fatal](feedback_black_screen_fatal.md) — HARD: black MAME screen halts all other investigation; root-cause boot path before anything else**
 - [Black screen → CRT ISR not firing](feedback_black_screen_crt_isr.md) — black RC702 display means `isr_crt` isn't running; suspect EI / IVT slot 2 / CTC ch2 in that order; SIO-B output still valid in this state

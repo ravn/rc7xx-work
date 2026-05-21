@@ -10,3 +10,7 @@ cfg/
 
 # Unrelated project that landed here as a download cwd.
 tinypi-2024-11-04/
+
+# Ad-hoc MAME screenshots saved into the workspace root by various
+# capture scripts during debugging sessions.  Per-session, not for tree.
+snap/
