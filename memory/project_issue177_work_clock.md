@@ -8,30 +8,37 @@ metadata:
 **Active multi-session work clock: ravn/llvm-z80#177 Z80 TargetTransformInfo.**
 
 - **Started**: 2026-05-21 (session 73p Phase 2).
-- **Aggressive completion target**: 2026-06-18 (~4 weeks).
-- **Conservative completion target**: 2026-07-02 (~6 weeks).
+- **Phase A complete**: 2026-05-21 (~30 min, retired Phase E, revised plan).
+- **Aggressive completion target**: 2026-06-04 (~2 weeks, was 2026-06-18).
+- **Conservative completion target**: 2026-06-18 (~4 weeks, was 2026-07-02).
 - **Branch**: `session-73p-phase2-issue177` in `ravn/llvm-z80`.
 - **Plan doc**: `llvm-z80/tasks/issue177-implementation-plan.md`.
+- **Phase A findings**: `llvm-z80/tasks/issue177-phase-a-investigation.md`.
 
-## What's in scope
+## What's in scope (revised post-Phase-A)
 
-Six phases of work landing the missing Z80-specific TTI hooks:
+Four phases of work landing the missing Z80-specific TTI hooks:
 
-- Phase A — investigation (4-6 h)
-- Phase B — Tier 1 hooks: getInstructionCost, getMemoryOpCost,
-  getCFInstrCost (1-2 wk)
-- Phase C — Tier 2 hooks (3-5 d)
-- Phase D — Tier 3 no-vectorization cluster (1-2 d)
-- Phase E — per-function optsize/minsize gating + #128 revert (1 wk)
-- Phase F — Tier 4 exploratory (1 wk)
+- ~~Phase A~~ — investigation **DONE** (2026-05-21)
+- Phase B — Tier 1 hooks: **getInstructionCost** (first),
+  getUnrollingPreferences, isProfitableToHoist (1-2 wk)
+- Phase C — Tier 2 hooks: getArithmeticInstrCost, getCmpSelInstrCost,
+  getCastInstrCost, isLegalAddImmediate (3-5 d)
+- Phase D — Tier 3 + 4 cleanup: enableMemCmpExpansion=false,
+  hasBranchDivergence=false, no-vectorization cluster (1-2 d)
+- ~~Phase E~~ — **RETIRED** (MachineLICM/CSE don't use TTI; can't
+  TTI-gate them per-function)
+- ~~Phase F~~ — merged into Phase B
 
 ## Critical relationships
 
 - **#128 is currently closed via global `disablePass(MachineLICMID +
-  MachineCSE)` workaround.**  Phase E may revert that disablePass()
-  call once TTI cost hooks provide proper per-function gating.
-  When picking up the project at any point, DO NOT delete #128's
-  workaround until Phase E validates the replacement.
+  MachineCSE)` workaround.**  ~~Phase E may revert~~ — **Phase A
+  found MachineLICM/CSE don't use TTI; can't TTI-gate them.
+  Phase E retired.  #128's workaround stays indefinitely** unless
+  separately addressed via upstream-LLVM modifications to those
+  passes (out of scope for #177).  DO NOT delete the #128
+  workaround as part of #177 work.
 - **#27, #115, #95 (closed), #38, #100** all benefit from TTI cost
   hooks.  See the plan doc's "Connection to other open issues"
   section.
