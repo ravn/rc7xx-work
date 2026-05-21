@@ -21,7 +21,7 @@ Production delta from Phase 2: cpnos PROM1 **2030 → 2028 B (−2 B; 20 B free 
 
 
 - autoload PROM (clang, ZX0-compressed): **1667 B / 2048 B (381 B free)** — unchanged through 73m.  Banner: `RC700 ROA375 CL <date> <hash>/<user>`.  Hard-capped at 2 KB (no A11 bridge on user's hardware -- memory rule `project_rc702_2kb_prom_hard_limit`).
-- BIOS: clang **5925 B** vs SDCC **6091 B** (clang −166 B); SW1 bit-0 inversion fix landed (was bit=1 → JOINED; now bit=0 → JOINED matching MAME's "On" convention).
+- BIOS: clang **5922 B** vs SDCC **6091 B** (clang −169 B; post-#173 peephole, -3 B vs pre-#173 5925 B); SW1 bit-0 inversion fix landed (was bit=1 → JOINED; now bit=0 → JOINED matching MAME's "On" convention).
 - cpnos-in-c resident (clang, PIO transport): **clang 2004 B / SDCC 2120 B** raw .payload non-padding (SDCC was 2196 B pre-session-73k; -76 B from the `__sfr __at` port-IO rewrite, commit `754b901`, closes ravn/z88dk#9).
 - **cpnos-in-c PROM1-only line program (session 73m snapshot)**: BOTH clang and SDCC build, boot, pass `cpnos-polypascal-test`.
     * **clang × {PIO+SIO} dual:** **2028 B / 2048 B (20 B free)** at HEAD post-session-73p Phase 2 (TTI hooks + #173 peephole; -2 B vs 2030 B post-#168 baseline).  Production target.  polypascal-test PASS **51.11 s** (verified post #173 ship).
