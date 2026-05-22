@@ -60,7 +60,13 @@ Master: `llvm-z80/tasks/roadmap-to-maturity.md` (session 36).
 Current overlay: `llvm-z80/tasks/plan-2026-05-03-structural.md` (session 42).
 Strategic frame: bring `llvm-z80/llvm-z80` (active fork-of-record, owner @zlfn) to maturity collaboratively; eventual official LLVM upstream is long-term aspiration. Workspace mode → engagement mode (gated on substantial body of work).
 
-**Phase status (session 42):** Phase 1 Foundation **DONE**; Phase 2 Correctness sweep **DONE** (#28, #36, #63, #81 fixed; #38 reclassified to Phase 3); Phase 3 Cluster A regalloc 3 of 5 closed (#94, #98, #99); #89 + #27 remain as multi-session investigations expected to subsume #38. Engagement-mode gate is **one cluster away**.
+**Phase status (session 42 baseline, refreshed 2026-05-22):** Phase 1 Foundation **DONE**; Phase 2 Correctness sweep **DONE** (#28, #36, #63, #81 fixed; #38 reclassified to Phase 3 then **closed 2026-05-04**); Phase 3 Cluster A regalloc 4 of 5 closed (#94, #98, #99, #89 closed 2026-05-04); **#27 is the last Cluster A item open**. Engagement-mode gate is **one cluster away** (or "fundamentally addressed" by loose reading).
+
+**Active backlog (2026-05-22, unpark):** `llvm-z80/tasks/unpark-2026-05-22.md` reverses the session-73p Phase 3 "deferred" framing.  Tier A (upstream gates): **#180** peephole audit, **#181** DAGISel/GISel audit.  Tier B (BIOS/cpnos parity): **#27** per-pair 16-bit copy cost (last Cluster A item; pairs with **#110/#115/#100**).  Tier C (mechanism-blocked): **#178** remat, **#172** ISel XOR.  Tier D: **#184** smarter i16 TTI cost.  Each item's first action is a 30-min instrumented drill per `feedback_dig_deeper_before_parking`.
+
+**Coherence map (2026-05-22):** `llvm-z80/tasks/upstream-coherence-map-2026-05-22.md` classifies every open issue and known shortcoming (65 open issues + 24 not-filed findings + CLAUDE.md known-deferred items) into 11 upstream-relevance tiers.  Single source of truth for "what gets upstreamed where."  Tier I = 9 generic LLVM improvements (U-LLVM, no Z80-target dependency); Tier II = 9 correctness bugs that must close before related codegen ships; Tiers III-VI = Z80-backend completion work; Tiers IX-XI = explicitly not-for-upstream.
+
+**Execution plan (2026-05-22):** `llvm-z80/tasks/execution-plan-2026-05-22.md` sequences the work into 4 parallel tracks (A: U-LLVM upstreaming, B: Tier II correctness + Cluster A residual, C: #180/#181 cleanup gates, D: 73p codegen win packaging).  Track D gates on B + C.  Opening session does three 30-min drills in parallel: A1 (#182 SCEV crash), B1 (NarrowIV trio), C1 (#180 single peephole audit).  Plan revisits after 3 sessions.
 
 ## Session History
 
