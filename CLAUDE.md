@@ -16,9 +16,13 @@ Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to matc
 
 (b) `session-73p-issue173`: Z80LateOpt peephole for bare-store + 4-instr A-preserving reload → PUSH/POP rr.  Two-phase stack tracking handles nested matched-reload inside across-CALL push/pop brackets.
 
-(c) `session-73p-issue184`: peephole #148 fall-through MBB safety check.  Root-caused #184 to a too-loose safety check that mis-fired when Succ->liveins() was stale post-regalloc.  Fix unblocks i16=2 in static-stack mode, also yields -1 B production byte from catching previously-conservative cases.  **Second root cause filed as #185** (i16=2 still miscompiles at -Os/-O2).
+(c) `session-73p-issue184`: peephole #148 fall-through MBB safety check.  Root-caused #184 to a too-loose safety check that mis-fired when Succ->liveins() was stale post-regalloc.
 
-Production delta from Phase 2: cpnos PROM1 **2030 → 2027 B (−3 B; 21 B free under 2 KB cap)**.  AES `09_Oz_prod_like` **2574 → 2562 B (−12 B, ts −0.11%)**.  AES corpus 13/13 PASS, lit 107+3, wider oracle byte-identical, cpnos polypascal-test PASS at 51.11 s.
+(d) `session-73p-issue185-fix-v2`: DJNZ peephole B-clobber safety check.  Peephole `DEC A; LD B, A; JR NZ → DJNZ` silently miscompiled when the body clobbered B (e.g. `ld c, l; ld b, h` for parallel BC pointer arithmetic).  Fix refuses the rewrite when B is defined elsewhere in the MBB.
+
+With #184 and #185 both fixed, i16=2 TTI cost is now SAFE to ship (decision is a tuning tradeoff, not correctness).
+
+Production delta from Phase 2: cpnos PROM1 **2030 → 2028 B (−2 B; 20 B free under 2 KB cap)**.  AES `09_Oz_prod_like` **2574 → 2562 B (−12 B, ts −0.11%)**.  AES corpus 13/13 PASS, lit 108+3, wider oracle byte-identical, cpnos polypascal-test PASS at 51 s.
 
 
 
@@ -26,7 +30,7 @@ Production delta from Phase 2: cpnos PROM1 **2030 → 2027 B (−3 B; 21 B free 
 - BIOS: clang **5922 B** vs SDCC **6091 B** (clang −169 B; post-#173 peephole, -3 B vs pre-#173 5925 B); SW1 bit-0 inversion fix landed (was bit=1 → JOINED; now bit=0 → JOINED matching MAME's "On" convention).
 - cpnos-in-c resident (clang, PIO transport): **clang 2004 B / SDCC 2120 B** raw .payload non-padding (SDCC was 2196 B pre-session-73k; -76 B from the `__sfr __at` port-IO rewrite, commit `754b901`, closes ravn/z88dk#9).
 - **cpnos-in-c PROM1-only line program (session 73m snapshot)**: BOTH clang and SDCC build, boot, pass `cpnos-polypascal-test`.
-    * **clang × {PIO+SIO} dual:** **2027 B / 2048 B (21 B free)** at HEAD post-session-73p Phase 2 (TTI hooks + #173 peephole + #184 fix; -3 B vs 2030 B post-#168 baseline).  Production target.  polypascal-test PASS **51.11 s** (verified post #184 fix ship).
+    * **clang × {PIO+SIO} dual:** **2028 B / 2048 B (20 B free)** at HEAD post-session-73p Phase 2 (TTI hooks + #173 peephole + #184+#185 fixes; -2 B vs 2030 B post-#168 baseline).  Production target.  polypascal-test PASS **51 s** (verified post #185 fix ship).
     * **SDCC × {PIO+SIO} dual:** **2151 B** / 4 KB padded (was 2207 B pre-session-73l-fix; -56 B / -2.5% from the K&R REGPARM-preserve patch applied to the local z88dk's zsdcc — shrinkage is from z88dk runtime library K&R functions, not cpnos source which is ANSI).  Needs PROMCFG=2 (2732 4 KB) in MAME.  polypascal-test PASS **49.09 s** (was 49.67 s).
     Build: `cd cpnos-in-c && make prom1-lineprog COMPILER={clang,sdcc}`.  Both paths share init.c / resident.c source; compiler-specific cold-init via bootstrap.s (clang asm) vs bootstrap.asm (SDCC asm).  Includes: pre-fill identity outcon + sentinel arm consolidated into `cpnos_cold_entry()` (portable C); locale tables (US-ASCII outcon from CONFI.COM + Danish inconv) installed from cpnos.img 384 B prefix at handoff.
 - **rcbios CP/NET SNIOS dual SIO+PIO (session 73k)**: `cpnet/snios.asm` gains a PIO transport mirroring cpnos's `transport_pio.c`.  Self-modifying 3-byte JP-trampoline dispatch in NTWKIN reads SW1 bit 2 once and patches SENDBY/RECVBY/RECVBT in place.  PIO impl: direct Mode 1 input + IRQ-driven 256 B SPSC ring at IVT slot 17.  SNIOS code 673 → 1149 B; SPR file 1024 → 1664 B (12 sectors).  Both rcbios BIOS variants verified end-to-end via `cpnet/polypascal_pio_test.sh` — clang **10.50 s**, SDCC **10.71 s** (CPNETLDR → LOGIN → NETWORK H:=A: → H: → PPAS load from master via CP/NET PIO → PRIMES through 29989 → Q → H>).
