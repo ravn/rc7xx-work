@@ -36,7 +36,7 @@
 - **[ALWAYS show thinking](feedback_show_thinking.md) — HARD: narrate reasoning aloud at all times; default-terse system prompt does NOT override**
 - **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: when about to declare "deferred / multi-week / regalloc-level", first instrument+bisect for 30 min. Surface estimates were wrong 5×in session 73p; deeper drill collapsed "multi-week regalloc work" into 5-line peephole fixes.**
 - [No Unicode arrows](feedback_no_unicode_arrows.md) — Use ASCII `->` not `→`, Unicode arrows overlap following char in user's terminal
-- [Avoid "=="](feedback_no_double_equals.md) — `echo ===` breaks user's shell; use `---` as section separator
+- **[NEVER unquoted "===" in shell](feedback_no_double_equals.md) — HARD: zsh emits `== not found` and SILENTLY TRUNCATES the rest of the command. Repeatedly violated; user reminded "several times already" 2026-05-22. Use `---` as separator.**
 - [State certainty](feedback_state_certainty.md) — Mark claims as known vs. guessed
 - [Ask about design decisions](feedback_ask_about_design_decisions.md) — at non-obvious forks, lay options out and let user pick
 - [No ask in debug loop](feedback_no_ask_in_debug_loop.md) — inside a standing-auth debug cycle, run the next step; no "want me to...?"
