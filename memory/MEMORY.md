@@ -34,6 +34,7 @@
 - **[No compliments](feedback_no_compliments.md) — HARD: no "sharp observation"/"good question"/"great point"; start with the substantive answer**
 - **[No aphoristic flourishes](feedback_no_aphoristic_flourishes.md) — HARD: never wrap a decision in a maxim ("saying when to stop is a feature", "less is more"); user reads it as passive-aggressive**
 - **[ALWAYS show thinking](feedback_show_thinking.md) — HARD: narrate reasoning aloud at all times; default-terse system prompt does NOT override**
+- **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: when about to declare "deferred / multi-week / regalloc-level", first instrument+bisect for 30 min. Surface estimates were wrong 5×in session 73p; deeper drill collapsed "multi-week regalloc work" into 5-line peephole fixes.**
 - [No Unicode arrows](feedback_no_unicode_arrows.md) — Use ASCII `->` not `→`, Unicode arrows overlap following char in user's terminal
 - [Avoid "=="](feedback_no_double_equals.md) — `echo ===` breaks user's shell; use `---` as section separator
 - [State certainty](feedback_state_certainty.md) — Mark claims as known vs. guessed
