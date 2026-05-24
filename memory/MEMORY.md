@@ -120,6 +120,7 @@
 - [Full rebuild before MAME](feedback_mame_rebuild.md) — Always rm .o and rebuild fully before MAME boot test
 - [Fresh BIOS+PROM before MAME](feedback_mame_fresh_build.md) — Always rebuild both BIOS and PROM before MAME boot
 - [Run MAME at full speed](feedback_mame_full_speed.md) — Always include `-nothrottle` in unattended MAME tests
+- **[MAME windowed only](feedback_mame_windowed_only.md) — HARD: always pass `-window`; never fullscreen (user directive 2026-05-25)**
 - [MAME interactive timeout](feedback_mame_interactive_timeout.md) — Interactive MAME launches only need ~30s Bash timeout
 - [Lua no port reads](feedback_lua_no_port_reads.md) — MAME Lua must never read IO ports (double reads break devices); use install_read_tap instead
 - [Bench self-termination](feedback_bench_must_self_terminate.md) — bench Lua taps must call `manager.machine:exit()` on finish-signal
