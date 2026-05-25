@@ -97,6 +97,7 @@
 - **[Compiler is not trusted](feedback_compiler_not_trusted.md) — HARD: ravn/llvm-z80 is unfinished; on any suspected bug, inspect generated Z80 asm BEFORE blaming source/runtime/hardware**
 - [Late-opt audit](reference_late_opt_audit.md) — Pre-existing session-37 classification of all 46 Z80LateOptimization.cpp peepholes as Keep/Migrate/Delete
 - [Root-cause over peephole](feedback_root_cause_over_peephole.md) — Favor upstream fixes (MIR DCE, regalloc cost model, GISel combiner) over post-RA peepholes
+- **[Peephole safety guards](feedback_peephole_safety_guards.md) — HARD: late-opt peepholes that erase/move/convert need complete liveness + slot-aliasing (indirect/loop-carried/other-block/other-class) + iterator guards. Session 73s = 5 fixes of this one family (#14/#192/#193/#195×2).**
 - [Proper fixes — backend immature](feedback_proper_fixes_immature_backend.md) — Question prior design decisions; don't band-aid an immature backend, including reverting my own past code
 - [T-states Matter](feedback_tstates.md) — Evaluate both code size AND execution time for instruction sequences
 - [Don't fight SDCC iCode](feedback_dont_fight_sdcc_icode.md) — Don't preempt SDCC's iCode allocator with `static`-locals; SDCC keeps auto-locals in registers. For clang use `+static-stack`.
