@@ -484,3 +484,11 @@
 - you may also investigate the upstream documentation thoroughly as you go
 - i am primarily focussed on bringing things to z80 backend upstream, then upstream-upstream llvm (unless the bugs interfere with the z80 backend)
 - go ahead with all three (#189 drill: plan reprioritization + correctness run + commit writeup)
+- go (push + lit XFAIL + issue comment); go as long as you reasonably can (implement the #189 fix)
+- go (resume #189 implementation drill: step-1 subreg-class confirmation + pre-RA MIR mechanism)
+- can you explain why this is hard?
+- why is the fix simple if we cannot model the z80 correctly? (legality-vs-cost framing)
+- please document this thoroughly (-> drill doc: legality-vs-cost insight + empirical MIR mechanism + two ruled-out APIs)
+- write the pass (-> built Z80NarrowSubRegGR16; found redundant; real lever = getLargestLegalSuperClass re-widening, flag-gated; production byte-identical; crc_one fixed)
+- would it benefit to take a step back and do a deeper investigation? (-> yes; sweep showed ~20 files, whack-a-mole; reframed around the invariant)
+- run the taxonomy sweep (-> issue112-189-iy-leak-taxonomy: Class A undoc-emission ELIMINATED suite-wide, Class B miscompile fixed+verified i32/i64, Class C residual density only)
