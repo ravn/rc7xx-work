@@ -496,3 +496,7 @@
 - keep going as far as reasonably can (-> closed verification gap: test_173 i128 0x4761, test_174 float 0x0007, all opt levels default config; Class C correctness verified across i32/i64/i128/float)
 - b (-> pushed both repos; commented result on ravn/llvm-z80#189)
 - start the create-time-chokepoint session (-> REFUTED in 30-min drill: Class C is all whole-pair IY-as-extra-register, not byte-decompose leak; size win i128 -120 vs loss fixed-point +21 = genuine #38 cost-model tradeoff; chokepoint would harm wins. No code change; finding documented in taxonomy doc.)
+- can you explain in laymans terms what we are pursuing (-> desk/filing-cabinet/awkward-drawer analogy)
+- to do later: reinvestigate if EXX extra bank could be useful (-> backlog note in tasks/todo.md, links #7 + #114)
+- commit then what? (-> committed EXX note; laid out next options; user picked option 2 = smaller upstream thread)
+- 2 (-> #180 peephole audit: completed C1 migration. Found XOR0xFF->CPL peephole still live for i16 ==/!=-1 cmp fallback; migrated that to ISel CPL emit; retired the peephole. Byte-identical lit, fail/fatal unchanged.)
