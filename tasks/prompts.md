@@ -471,3 +471,16 @@
 - the mame programmer did not have access to the physical hardware... (filed ravn/mame#3: z80dart->z80sio)
 - i can buy a better adapter if the current one cannot do it
 - if there is a pin to the sio that is currently unassigned that could be used... (answer: no, SYNCA is output in SDLC mode)
+
+## 2026-05-25 (AGENTS migration + #189 regalloc drill)
+- what should I have told you for you to decide to take the step back yourself? (-> added feedback_zoom_out_on_recurring_pattern memory rule)
+- I have AGENT.md I copy project to project -- add the memories to it or another copyable file? (using Claude, Copilot, others)
+- migrate AGENT.md into AGENTS.md; behavioral + house-style preamble
+- if AGENTS.md is stale, move it away and create the new one
+- I want AGENTS.md identical in all projects (except new rules); "this workspace" stuff in a separate file -> PROJECT.md
+- commit all three and merge session-73t; push all three; delete the merged session-73t branches; prune merged branches in the other repos
+- given the new set of rules, what should you do now? (x2 -> branch-hygiene convention + lessons.md propagated-file-verification rule)
+- the goal is still to fix the remaining parts of the z80 backend properly by getting to the core problems, derive descriptions of what needed fixing, with test cases, and submit upstream for discussion
+- you may also investigate the upstream documentation thoroughly as you go
+- i am primarily focussed on bringing things to z80 backend upstream, then upstream-upstream llvm (unless the bugs interfere with the z80 backend)
+- go ahead with all three (#189 drill: plan reprioritization + correctness run + commit writeup)
