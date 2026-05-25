@@ -500,3 +500,6 @@
 - to do later: reinvestigate if EXX extra bank could be useful (-> backlog note in tasks/todo.md, links #7 + #114)
 - commit then what? (-> committed EXX note; laid out next options; user picked option 2 = smaller upstream thread)
 - 2 (-> #180 peephole audit: completed C1 migration. Found XOR0xFF->CPL peephole still live for i16 ==/!=-1 cmp fallback; migrated that to ISel CPL emit; retired the peephole. Byte-identical lit, fail/fatal unchanged.)
+- go (-> pushed #180/#181 commits; commented #180 progress; closed #181)
+- keep going as far as reasonably can (-> #180 triage: 73s C2 already verified all candidates LIVE (not dead-removable); non-gated migration fruit exhausted (#6 done; #8 post-RA-dependent; #10 thin); rest gated on #177/#178/#179. Reported, recommended stop or fresh #177/#38 session.)
+- #177 (-> scoped into a plan: tasks/issue177-tti-scoping-2026-05-26.md. Key findings: TTI mostly built+wired; it's IR-level so does NOT unlock #180 MIR/regalloc peepholes (#180 claim corrected); LICM/CSE flags redundant (global disablePass); -disable-lsr contested, re-measure; #184 i16 cost stays held.)
