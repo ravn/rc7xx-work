@@ -1,5 +1,27 @@
 # Z80 Code Density Optimization Todo
 
+## Backlog (reinvestigate later)
+
+- [ ] **Reinvestigate whether the EXX shadow register bank could be useful** (2026-05-26).
+  EXX swaps BC/DE/HL with a second hidden copy (the shadow bank) in 1 byte. Prior
+  work parked it: the shadow bank is a *context switch*, not addressable extra
+  registers (EXX swaps all three pairs at once, so you can't hold a live value in
+  one pair and reach the shadow of another) — see ravn/llvm-z80 **#7** and the
+  modelled candidate in `llvm-z80/tasks/exx-candidate-analysis.md` (**#114**, the
+  `_specc` shape: a u16 outer counter spilled across an inner no-CALL loop) +
+  lit fixture `llvm/test/CodeGen/Z80/issue-114-exx-bracket-candidate.ll`.
+  Why revisit now: the IX/IY un-reserve work (#189/#27/#112, session-73ab) made the
+  "extra register pair vs memory spill" economics concrete (a register that costs a
+  few bytes to reach can still beat a 3-byte BSS spill). The same lens applies to an
+  **EXX bracket** — `EXX; <inner region where BC/DE/HL are dead-then-restored>; EXX`
+  — which would give the inner region 3 fresh pairs for free *if* the bracket
+  boundaries can be proven safe (all of BC/DE/HL dead across the swap, no CALL, no
+  interrupt-shared state). Open questions to settle: (a) can the compiler identify
+  such brackets reliably (the `_specc` outer-counter-across-inner-loop shape is the
+  prototype)? (b) does it beat the current BSS-spill on size/speed? (c) interaction
+  with `+shadow-regs` (currently only wired for ISR save/restore, "not yet functional
+  for spill reduction"). Start from a measured drill on the #114 fixture, not theory.
+
 ## Status: IX/IY reverted to reserved — CLANG BEATS SDCC
 
 SDCC: 1910B | Clang: 1767B | Clang is 143B smaller (-7.5%)
