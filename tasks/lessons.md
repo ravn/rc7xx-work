@@ -104,3 +104,7 @@ Conditional port selection (`if (flag) port_out(A); else port_out(B)`) causes th
 ## 2026-03-27: Docker build needs clang as host compiler
 
 After merging upstream LLVM, the build fails with gcc because newer LLVM uses clang-specific warning flags. Pass `-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++` to cmake, or ensure the Docker image uses clang as default cc/c++.
+
+## 2026-05-25: Verify a propagated file's per-repo assumptions BEFORE committing
+
+The AGENTS.md migration shipped two defects of the same class, both from committing a file propagated identically across repos without checking its assumptions held in each target: (1) llvm-z80 `.gitignore` silently excluded AGENTS.md, so the first commit captured only the AGENT.md deletion (a half-done migration); (2) the AGENTS.md pointer asserted "PROJECT.md in this repo", which dangled in the two subprojects that have no PROJECT.md (caught by the user, not by me). Both would have been caught by a 30-second pre-commit pass. Rule: when committing a change to a file kept identical across repos, verify per repo — (a) byte-identical (`cmp`), (b) it is actually tracked (`git ls-files --error-unmatch`, i.e. not gitignored), (c) every cross-file reference/claim it makes resolves in that repo. "Verify before done" applies to docs that make claims, not just to code. Generalizes the self-improvement-loop + zoom-out habits from AGENTS.md.
