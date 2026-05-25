@@ -35,6 +35,7 @@
 - **[No aphoristic flourishes](feedback_no_aphoristic_flourishes.md) — HARD: never wrap a decision in a maxim ("saying when to stop is a feature", "less is more"); user reads it as passive-aggressive**
 - **[ALWAYS show thinking](feedback_show_thinking.md) — HARD: narrate reasoning aloud at all times; default-terse system prompt does NOT override**
 - **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: when about to declare "deferred / multi-week / regalloc-level", first instrument+bisect for 30 min. Surface estimates were wrong 5×in session 73p; deeper drill collapsed "multi-week regalloc work" into 5-line peephole fixes.**
+- **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: "dig UP" complement to dig-deeper. When I narrate "same family/recurring/Nth time" or fix 2-3 of one class, STOP and find the systemic cause before the next fix. Don't wait to be told to step back (session 73s: 5 same-family bugs, never escalated until asked).**
 - [No Unicode arrows](feedback_no_unicode_arrows.md) — Use ASCII `->` not `→`, Unicode arrows overlap following char in user's terminal
 - **[NEVER unquoted "===" in shell](feedback_no_double_equals.md) — HARD: zsh emits `== not found` and SILENTLY TRUNCATES the rest of the command. Repeatedly violated; user reminded "several times already" 2026-05-22. Use `---` as separator.**
 - [State certainty](feedback_state_certainty.md) — Mark claims as known vs. guessed
