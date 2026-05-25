@@ -39,7 +39,7 @@ CP/M BIOS, CP/NOS) booted in MAME.
 ## Workflow conventions
 
 - **Merges use `--no-ff`.** Don't push without an explicit request. Branch off the
-  default branch before committing.
+  default branch before committing, and **delete the branch once it's merged.**
 - Record prompts in `tasks/prompts.md`; append meaningful changes to
   `rc700-gensmedet/tasks/timeline.md` (tag Easy/Medium/Hard/Painful); plans in
   `tasks/todo.md`; lessons in `tasks/lessons.md`. **All persistent notes live in the
