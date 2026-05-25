@@ -492,3 +492,5 @@
 - write the pass (-> built Z80NarrowSubRegGR16; found redundant; real lever = getLargestLegalSuperClass re-widening, flag-gated; production byte-identical; crc_one fixed)
 - would it benefit to take a step back and do a deeper investigation? (-> yes; sweep showed ~20 files, whack-a-mole; reframed around the invariant)
 - run the taxonomy sweep (-> issue112-189-iy-leak-taxonomy: Class A undoc-emission ELIMINATED suite-wide, Class B miscompile fixed+verified i32/i64, Class C residual density only)
+- land the two fixes (-> committed+merged session-73ab: getLargest gate + Z80NarrowNoIndex pass; llvm-z80 6070083, workspace 9ff0b8b; no push)
+- keep going as far as reasonably can (-> closed verification gap: test_173 i128 0x4761, test_174 float 0x0007, all opt levels default config; Class C correctness verified across i32/i64/i128/float)
