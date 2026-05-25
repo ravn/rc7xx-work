@@ -494,3 +494,5 @@
 - run the taxonomy sweep (-> issue112-189-iy-leak-taxonomy: Class A undoc-emission ELIMINATED suite-wide, Class B miscompile fixed+verified i32/i64, Class C residual density only)
 - land the two fixes (-> committed+merged session-73ab: getLargest gate + Z80NarrowNoIndex pass; llvm-z80 6070083, workspace 9ff0b8b; no push)
 - keep going as far as reasonably can (-> closed verification gap: test_173 i128 0x4761, test_174 float 0x0007, all opt levels default config; Class C correctness verified across i32/i64/i128/float)
+- b (-> pushed both repos; commented result on ravn/llvm-z80#189)
+- start the create-time-chokepoint session (-> REFUTED in 30-min drill: Class C is all whole-pair IY-as-extra-register, not byte-decompose leak; size win i128 -120 vs loss fixed-point +21 = genuine #38 cost-model tradeoff; chokepoint would harm wins. No code change; finding documented in taxonomy doc.)
