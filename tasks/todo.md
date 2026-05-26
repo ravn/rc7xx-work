@@ -16,10 +16,12 @@
   Oracle green (lit 118+5, test-runner default byte-identical, cpnos boot PASS).
   Caveat: test_54_O0_ss FAIL->FATAL under +static-stack (pre-existing #192-class O0,
   non-production). Merged + closed.
-- [ ] **Remaining -verify gates (#197) before flipping the CI lane to blocking:**
-  #194 (undefined-physreg/liveins, 126), #200 (SPILL_GR16 too-few-operands, 28), and a
-  NEW untriaged class "Multiple virtual register defs in SSA form" (2, exposed once
-  illegal-vreg cleared). Triage the SSA-defs class; then #194 + #200.
+- [ ] **Remaining -verify gates (#197) -- 2 of 4 cleared (2026-05-26):**
+  DONE: illegal-vreg (#201 chokepoint), multiple-vreg-defs (tied INC16 fresh-dst --
+  also fixed test_38_sort_search O1 miscompile). REMAINING: #194 (undefined-physreg
+  liveins, ~74 -- delicate, multi-block recompute; blanket rejected +2B) and #200
+  (SPILL_GR16 array/offset operand count, ~22 -- cosmetic, frame-lowering). Clear both
+  -> flip the test-runner `-verify` flag to a blocking CI lane.
 - [ ] **#200 — SPILL_GR16 array/offset operand-count cleanup** (cosmetic): model the
   2-operand resolved form to match the 3-operand declaration, or split the pseudo.
 - [ ] **#197 — flip the test-runner `-verify` flag (landed) to a blocking CI gate**
