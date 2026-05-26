@@ -10,10 +10,16 @@
   Byte-neutrality plausible (the +2 B was aes_ar_cpy, not gf_log) — measure before
   committing. Verify: gf_log -verify clean, cpnos size unchanged, cpnos boot, lit,
   test-runner A/B.
-- [ ] **#112/#189 — create-time GR16NoIR chokepoint** (ISel/RegBankSelect emit
-  GR16NoIR for constrained pseudos directly, clearing the "Illegal virtual register"
-  verifier class). **DECISION NEEDED:** carries a Class-C density tradeoff
-  (previously refuted on density grounds). Owner/user call before implementing.
+- [ ] **#201 — create-time GR16NoIR chokepoint** (clears the "Illegal virtual register"
+  verifier class). APPROVED by user 2026-05-26 (pursue + measure density). Approach
+  PROVEN on the XOR_CMP subset (emit32/emit64/i16 EQ-NE constrains GR16->GR16NoIR
+  cleared test_99/15's XOR_CMP illegal-vreg); reverted pending the complete change.
+  Remaining: convert the operand-constrains feeding the other 5 GR16NoIR pseudos
+  (CMP16_FLAGS @1482/4477/4602, CMP16_SBC_FLAGS @1646/1845, CMP16_ULT, LSHR16 @3908,
+  ASHR16 @4038) from GR16RegClass to GR16NoIRRegClass — precisely (don't narrow vregs
+  an IX/IY-capable op needs). Then measure density (expect default-config-neutral;
+  tradeoff under -z80-unreserve-iy) + full verify-sweep/oracle. Mapped sites in #201.
+  Focused session, not marathon-tail work.
 - [ ] **#200 — SPILL_GR16 array/offset operand-count cleanup** (cosmetic): model the
   2-operand resolved form to match the 3-operand declaration, or split the pseudo.
 - [ ] **#197 — flip the test-runner `-verify` flag (landed) to a blocking CI gate**
