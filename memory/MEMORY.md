@@ -158,6 +158,7 @@
 - **[Recognize ROM-shadow byte patterns](feedback_recognize_rom_shadow_patterns.md) — HARD: structured "wrong" bytes from buffer/port reads → `xxd build/prom*.bin | head` first. If bytes match ROM, the bug is memory-map / mirror, not transport.**
 - **[No taps inside polled-RX hot path](feedback_no_taps_in_polled_rx.md) — HARD: per-byte blocking debug TX inside polled-RX overruns the Z80 SIO 3-deep FIFO and drops bytes silently. Use per-frame markers or buffered ring trace.**
 - **[A/B before blaming test-runner](feedback_ab_before_blaming_test_runner.md) — HARD: when test-runner FAILs after a llvm-z80 patch, stash + rebuild + rerun to A/B baseline first. test_90/91 edge_*_O1 are known noise (#136).**
+- **[Baseline before implementing](feedback_baseline_before_implementing.md) — HARD: capture control measurement (fail-set/sizes/ts) on UNMODIFIED system BEFORE changing code; reconstructing "before" after the fact is slow + error-prone (session-ix miss).**
 - **[Value oracle covers all TRANSPORT cells](feedback_value_oracle_all_transport_cells.md) — HARD: for SNIOS/xport_*/compat.h changes, runtime-test every linking TRANSPORT cell (session 58 shipped a latent SIO correctness gap).**
 - **[Extract rules from time-sinks](feedback_extract_rules_from_time_sinks.md) — HARD (meta): after long debug sessions, proactively propose new memory-rule entries that would have caught the bug class earlier.**
 - **[Verify PASS condition before trusting green](feedback_verify_pass_condition.md) — HARD: when a test prints PASS, cross-check elapsed time vs plausibility + scan artefact for setup-step evidence. Workaround without explanation = red flag.**
@@ -216,3 +217,4 @@ Project-specific info is in the repo, NOT here:
 - cpmtools usage — `rc700-gensmedet/rcbios-in-c/README.md` and `SYSGEN_INSTALL.md`
 - z88dk Docker rebuild — `rc700-gensmedet/docs/z88dk_docker_rebuild.md`
 - PROM 2KB limit — `rc700-gensmedet/RC702_HARDWARE_TECHNICAL_REFERENCE.md`
+- [IX caller-saved after #12](project_ix_caller_saved_after_12.md) — IX as allocatable reg is a regression in callee-saved ABI; only caller-saved IX wins (needs #12 FP-elimination). Revisit then.
