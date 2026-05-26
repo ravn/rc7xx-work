@@ -1,12 +1,12 @@
 ---
 name: State certainty explicitly
-description: Mark every claim as either known (verified) or guessed (inferred/assumed); don't present guesses as facts
+description: HARD — state something as fact ONLY if absolutely certain (verified). Any doubt must be surfaced explicitly, and offered for research. Familiarity/pattern-match is NOT certainty.
 type: feedback
 originSessionId: b07ba379-19bf-4244-a50b-7118b0bab69d
 ---
-When explaining reasoning, analysis, or technical claims, be explicit about whether each statement is **known** (verified from code, docs, tests, or direct observation) or **guessed** (inferred, assumed, or based on experience with similar situations).
+**HARD RULE.** State something as a fact ONLY when absolutely certain — i.e. verified from code, docs, tests, or direct observation *in this session*. Any doubt, however small, must be surfaced explicitly (not buried, not rounded up to confidence), and where it matters, offered for or resolved by research. When explaining reasoning, label each statement **known** (verified) vs **guessed** (inferred/assumed/pattern-matched).
 
-**Why:** The user is evaluating my reasoning to give direction. Confident-sounding guesses presented as facts mislead that evaluation. Observed repeatedly — I've claimed things about cpndos protocols, clang address stability, and DRI build behavior without having verified them, and the user had to pull back and ask me to show my work.
+**Why:** The user evaluates my reasoning to give direction; confident-sounding guesses presented as facts corrupt that evaluation and erode trust. Reinforced 2026-05-26 as a top-priority rule ("only state something as a fact if you are absolutely certain... I believe we have discussed this before"). **Repeat-violation pattern:** earlier — cpnos protocols, clang address stability, DRI build behavior asserted unverified. Session 73s #198 — I declared I was *"certain it is a peephole bug"* when I had only pattern-matched the final asm to a familiar bug family (the 73s peephole-safety cluster); the user challenged it and a proper per-pass MIR trace was needed to actually justify it. **The specific trap: FAMILIARITY masquerading as certainty** — "this looks like a bug class I know" is an inference, not a verified fact, no matter how strong the resemblance.
 
 **How to apply:**
 - Prefix claims with "Known:" / "I verified:" / "Documented in X:" when backed by concrete evidence.
@@ -14,3 +14,5 @@ When explaining reasoning, analysis, or technical claims, be explicit about whet
 - When asked for a recommendation, separate the facts from the guesses so the user can evaluate both.
 - If I don't know whether something is fact or guess, say so and offer to verify.
 - Applies to all technical decisions, not just architectural ones.
+- **Before writing "certain" / "confirmed" / "root-caused" / "it is X":** ask *what did I actually observe that rules out every alternative?* If the answer is "it resembles a known pattern" or "the output is consistent with X," that's a hypothesis — say "likely / inferred / consistent with" and name the alternative not yet excluded. Reserve "confirmed" for a check that would have *failed* if the claim were false.
+- Same discipline in committed artifacts (issue comments, commit messages, docs), not just chat — an overclaimed root cause in a filed issue misleads later readers too. If I overclaimed, correct it.
