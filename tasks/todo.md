@@ -10,16 +10,16 @@
   Byte-neutrality plausible (the +2 B was aes_ar_cpy, not gf_log) — measure before
   committing. Verify: gf_log -verify clean, cpnos size unchanged, cpnos boot, lit,
   test-runner A/B.
-- [ ] **#201 — create-time GR16NoIR chokepoint** (clears the "Illegal virtual register"
-  verifier class). APPROVED by user 2026-05-26 (pursue + measure density). Approach
-  PROVEN on the XOR_CMP subset (emit32/emit64/i16 EQ-NE constrains GR16->GR16NoIR
-  cleared test_99/15's XOR_CMP illegal-vreg); reverted pending the complete change.
-  Remaining: convert the operand-constrains feeding the other 5 GR16NoIR pseudos
-  (CMP16_FLAGS @1482/4477/4602, CMP16_SBC_FLAGS @1646/1845, CMP16_ULT, LSHR16 @3908,
-  ASHR16 @4038) from GR16RegClass to GR16NoIRRegClass — precisely (don't narrow vregs
-  an IX/IY-capable op needs). Then measure density (expect default-config-neutral;
-  tradeoff under -z80-unreserve-iy) + full verify-sweep/oracle. Mapped sites in #201.
-  Focused session, not marathon-tail work.
+- [x] **#201 — create-time GR16NoIR chokepoint — DONE 2026-05-26.** Constrained all 8
+  GR16NoIR pseudos' operands to GR16NoIR at ISel; "Illegal virtual register" verifier
+  class -> 0. Density default-config-favorable (cpnos 2036->2033, autoload 0, BIOS +1).
+  Oracle green (lit 118+5, test-runner default byte-identical, cpnos boot PASS).
+  Caveat: test_54_O0_ss FAIL->FATAL under +static-stack (pre-existing #192-class O0,
+  non-production). Merged + closed.
+- [ ] **Remaining -verify gates (#197) before flipping the CI lane to blocking:**
+  #194 (undefined-physreg/liveins, 126), #200 (SPILL_GR16 too-few-operands, 28), and a
+  NEW untriaged class "Multiple virtual register defs in SSA form" (2, exposed once
+  illegal-vreg cleared). Triage the SSA-defs class; then #194 + #200.
 - [ ] **#200 — SPILL_GR16 array/offset operand-count cleanup** (cosmetic): model the
   2-operand resolved form to match the 3-operand declaration, or split the pseudo.
 - [ ] **#197 — flip the test-runner `-verify` flag (landed) to a blocking CI gate**
