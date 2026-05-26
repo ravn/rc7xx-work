@@ -35,6 +35,38 @@ $NINJA -C build-macos clang llc opt        # both clang+llc per feedback_ninja_c
 
 After backend changes ALWAYS rebuild clang+llc together (the clang symlink would otherwise reference stale libLLVM if you `ninja llc` alone).
 
+**Build size (for progress estimation, 2026-05-26):** a from-scratch `ninja clang llc`
+is **~2897 ninja edges / ~2992 object files** (full Release build of clang+lld+llc).
+So `[N/2897]` in ninja output tells you how far along.  Incremental relink after a
+single backend `.cpp` change is ~2 min; from-scratch is much longer (the long tail is
+LINKING the big static libs + executables, during which the .o count plateaus near the
+top — don't mistake a stalled .o count for a hung build, check `pgrep ninja`).  sccache
+(`/Users/ravn/.cargo/bin/sccache`) is wired in and gives heavy cache hits on the compile
+phase.
+
+### Assertions build (for miscompile hunting — debug-only / stats / stricter verifier)
+
+The default `build-macos` is Release, `LLVM_ENABLE_ASSERTIONS=OFF` — so `-mllvm -debug`,
+`-mllvm -debug-only=<pass>`, `-mllvm -stats` are all silent no-ops there.  For bug-hunting
+use a parallel asserts build (`build-macos-asserts/`, first created 2026-05-26):
+
+```
+CM=/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake
+NINJA=/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja
+cd /Users/ravn/z80/llvm-z80
+$CM -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build-macos-asserts \
+  -DCMAKE_MAKE_PROGRAM=$NINJA -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_ENABLE_DUMP=ON \
+  -DCMAKE_C_COMPILER_LAUNCHER=/Users/ravn/.cargo/bin/sccache \
+  -DCMAKE_CXX_COMPILER_LAUNCHER=/Users/ravn/.cargo/bin/sccache
+$NINJA -C build-macos-asserts clang llc
+```
+
+Release `build-macos/` stays the production/size-measurement compiler (matches shipping).
+Asserts build is for `-debug-only=<DEBUG_TYPE>`, `-stats`, and assert-fires-at-the-pass
+during miscompile hunts.  These flags need `-mllvm`-prefix from clang (e.g.
+`-mllvm -debug-only=machine-cse`).
+
 ### Run a single lit test
 
 ```

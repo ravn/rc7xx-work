@@ -38,7 +38,7 @@
 - **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: "dig UP" complement to dig-deeper. When I narrate "same family/recurring/Nth time" or fix 2-3 of one class, STOP and find the systemic cause before the next fix. Don't wait to be told to step back (session 73s: 5 same-family bugs, never escalated until asked).**
 - [No Unicode arrows](feedback_no_unicode_arrows.md) — Use ASCII `->` not `→`, Unicode arrows overlap following char in user's terminal
 - **[NEVER unquoted "===" in shell](feedback_no_double_equals.md) — HARD: zsh emits `== not found` and SILENTLY TRUNCATES the rest of the command. Repeatedly violated; user reminded "several times already" 2026-05-22. Use `---` as separator.**
-- [State certainty](feedback_state_certainty.md) — Mark claims as known vs. guessed
+- **[State certainty](feedback_state_certainty.md) — HARD: state as fact ONLY if verified this session; surface ALL doubt + offer research; familiarity/pattern-match ≠ certainty; correct overclaims in issues/commits too (re-reinforced 2026-05-26, #198)**
 - [Ask about design decisions](feedback_ask_about_design_decisions.md) — at non-obvious forks, lay options out and let user pick
 - [No ask in debug loop](feedback_no_ask_in_debug_loop.md) — inside a standing-auth debug cycle, run the next step; no "want me to...?"
 

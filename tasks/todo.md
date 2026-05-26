@@ -1,5 +1,26 @@
 # Z80 Code Density Optimization Todo
 
+## Open after session 73s (#198 + verifier triage, 2026-05-26)
+
+- [ ] **#194 — surgical live-in fix for the cross-block #60 `LD A,r` removal.**
+  Z80LateOptimization.cpp ~3874 removes a redundant cross-block `LD A,r` but leaves
+  the using block's live-ins stale (gf_log `ADD_A_A` reads undefined `$a`). Benign at
+  runtime. Blanket `fullyRecomputeLiveIns` is REJECTED (+2 B cpnos via aes_ar_cpy
+  block-placement). Open path: path-limited recompute (def block .. reload block).
+  Byte-neutrality plausible (the +2 B was aes_ar_cpy, not gf_log) — measure before
+  committing. Verify: gf_log -verify clean, cpnos size unchanged, cpnos boot, lit,
+  test-runner A/B.
+- [ ] **#112/#189 — create-time GR16NoIR chokepoint** (ISel/RegBankSelect emit
+  GR16NoIR for constrained pseudos directly, clearing the "Illegal virtual register"
+  verifier class). **DECISION NEEDED:** carries a Class-C density tradeoff
+  (previously refuted on density grounds). Owner/user call before implementing.
+- [ ] **#200 — SPILL_GR16 array/offset operand-count cleanup** (cosmetic): model the
+  2-operand resolved form to match the 3-operand declaration, or split the pseudo.
+- [ ] **#197 — flip the test-runner `-verify` flag (landed) to a blocking CI gate**
+  once #112/#189 + #194 + #200 clear (backend verify-clean at -O2).
+- [ ] **#38 — IX/IY MIR cost model** (per-value shuttle-vs-spill). The big code-density
+  lever; un-reserve IX/IY by default. Independent of the above; fresh focused session.
+
 ## Backlog (reinvestigate later)
 
 - [ ] **Reinvestigate whether the EXX shadow register bank could be useful** (2026-05-26).
@@ -21,6 +42,33 @@
   prototype)? (b) does it beat the current BSS-spill on size/speed? (c) interaction
   with `+shadow-regs` (currently only wired for ISR save/restore, "not yet functional
   for spill reduction"). Start from a measured drill on the #114 fixture, not theory.
+
+  **REINVESTIGATED 2026-05-26 (measured drill on the #114 fixture, current llc):**
+  Verdict — legitimate candidate, NOT fundamentally dead, but modest payoff and gated
+  on a zero-sum tradeoff. Findings:
+  - The fixture's spill shape still reproduces; the locked-in lit test passes.
+  - **The EXX bracket sidesteps the original killer** (#7 finding "shadow not
+    addressable / no encoding"): the bracketed inner region uses the MAIN bank
+    registers normally (fully encodable); the shadow just invisibly holds the parked
+    value across the region. So the encoding blocker does NOT apply to the bracket.
+  - **Payoff is Tier-1 only (~6 B + 2 B BSS per qualifying loop).** Measured the inner
+    loop: it already uses A+BC+DE+HL and BSS-spills `dp` every iteration because it
+    wants a *4th* pair. EXX swaps all 3 pairs wholesale — it cannot hand the inner loop
+    a 4th, so it does NOT eliminate the per-inner-iteration spill (my initial hope; the
+    measurement refuted it). The only win is replacing the per-*outer*-iteration
+    `ld (nn),bc … ld bc,(nn)` (8 B) with `EXX … EXX` (2 B).
+  - **Hard blocker: shadow single-owner conflict with `+shadow-regs` ISR save/restore.**
+    Calling conv `Z80_Interrupt_EXX_CSR` already makes ISRs save the interrupted context
+    via EXX into the shadow bank. An ISR firing mid-bracket swaps the parked value into
+    the main bank and clobbers it -> corruption on bracket-exit. The two uses are
+    MUTUALLY EXCLUSIVE; only one owner of the shadow bank per build. All production
+    firmware (autoload, BIOS, cpnos) has ISRs, so adopting EXX brackets means GIVING UP
+    the 2 B ISR save (a real, shipped win) in exchange.
+  - **Recommendation: keep parked.** Pursue only if a measured count shows many
+    qualifying loops in a byte-critical target (cpnos PROM1) AND that target can cede
+    the shadow bank from its ISRs. Lower priority than **#38** (IX/IY MIR cost model),
+    which addresses the dominant BSS-spill bloat far more generally and without the
+    single-owner tradeoff. The #114 fixture + this verdict stay as the durable record.
 
 ## Status: IX/IY reverted to reserved — CLANG BEATS SDCC
 

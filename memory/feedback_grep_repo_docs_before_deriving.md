@@ -32,3 +32,12 @@ Generalizes [[feedback-grep-memmap-before-bss]] from memory layouts to
 encoding/bit-format facts.  Cross-listed with
 [[feedback-consult-rules-before-acting]] (that one covers MEMORY.md;
 this one covers repo docs).
+
+**Also applies before FILING a GitHub issue (added 2026-05-26):** search
+existing issues first — `gh issue list --search "<symptom keywords>" --state all`
+— AND grep the source for an issue reference on the same symptom
+(`grep -rn '#[0-9]' <relevant file>` near the code). Session 73s: I filed #199
+for the gf_log "undefined $a after Z80LateOptimization" liveins bug without
+searching, duplicating the pre-existing #194 — whose number was even written in
+a `// NOTE (ravn/llvm-z80#194)` comment right next to the offending peephole.
+30 s of search before `gh issue create` avoids duplicate-issue cleanup.
