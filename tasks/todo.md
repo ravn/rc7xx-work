@@ -27,6 +27,30 @@
 - [ ] **#38 — IX/IY MIR cost model** (per-value shuttle-vs-spill). The big code-density
   lever; un-reserve IX/IY by default. Independent of the above; fresh focused session.
 
+## IY un-reserve ("#38" lever) — MEASURED 2026-05-26, size-win / small-speed-cost
+
+- [ ] **Un-reserve IY gated on size-opt (-Os/-Oz), keep reserved for speed (-O2/-O3).**
+  Post-#201 the byte-decompose leaks are plugged (popcount32 leak-free; cpnos 0 undoc
+  ops, boots PASS). Measured: pure SIZE WIN across all production (+static-stack):
+  BIOS -23 B (_specc -11, _bios_reader_body -7, _bg_clear_from -5), autoload -11 raw
+  (_main_relocated), cpnos -10 raw/-7 comp (_scroll_lines -10), AES -145 B bin.
+  SPEED COST small: AES tstates +0.11% (IY-held value access = push iy/pop hl ~25T vs
+  BSS reload ~16T). So: gate the IY markReserved on size-opt (hasMinSize/optsize),
+  NOT a global flip. Bytes are what's needed for the 2 KB PROM cap; the speed cost
+  means it's a size-flag-only optimization (user direction 2026-05-26).
+  Before landing: boot-verify autoload+BIOS under the flag (cpnos done), broad
+  test-runner -static-stack A/B, AES 13-config. The non-static-stack config still
+  miscompiles under -z80-unreserve-iy (drill's "other face") -> gate also implies
+  +static-stack (production), or fix that face first.
+- [ ] **Do the same IX un-reserve analysis as IY (TO DO LATER, user 2026-05-26).**
+  IX is the frame pointer when not +static-stack; under +static-stack it can be freed
+  (hasFP=false had a parked runtime bug, #12). Measure size/speed of un-reserving IX
+  the same way (per-function byte deltas + AES tstate), same size-vs-speed gating.
+- [ ] **Look at the O0+static-stack hang later (user 2026-05-26).** test_54_unsigned_
+  compare_O0_ss went FAIL->FATAL (timeout) under #201 + +static-stack -- a pre-existing
+  #192-class O0 failure changing manifestation (wrong-value -> hang). Non-production
+  (O0); production opt levels unaffected. Understand why it now hangs.
+
 ## Backlog (reinvestigate later)
 
 - [ ] **Reinvestigate whether the EXX shadow register bank could be useful** (2026-05-26).
