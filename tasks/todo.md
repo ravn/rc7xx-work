@@ -29,19 +29,25 @@
 
 ## IY un-reserve ("#38" lever) — MEASURED 2026-05-26, size-win / small-speed-cost
 
-- [ ] **Un-reserve IY gated on size-opt (-Os/-Oz), keep reserved for speed (-O2/-O3).**
-  Post-#201 the byte-decompose leaks are plugged (popcount32 leak-free; cpnos 0 undoc
-  ops, boots PASS). Measured: pure SIZE WIN across all production (+static-stack):
-  BIOS -23 B (_specc -11, _bios_reader_body -7, _bg_clear_from -5), autoload -11 raw
-  (_main_relocated), cpnos -10 raw/-7 comp (_scroll_lines -10), AES -145 B bin.
-  SPEED COST small: AES tstates +0.11% (IY-held value access = push iy/pop hl ~25T vs
-  BSS reload ~16T). So: gate the IY markReserved on size-opt (hasMinSize/optsize),
-  NOT a global flip. Bytes are what's needed for the 2 KB PROM cap; the speed cost
-  means it's a size-flag-only optimization (user direction 2026-05-26).
-  Before landing: boot-verify autoload+BIOS under the flag (cpnos done), broad
-  test-runner -static-stack A/B, AES 13-config. The non-static-stack config still
-  miscompiles under -z80-unreserve-iy (drill's "other face") -> gate also implies
-  +static-stack (production), or fix that face first.
+- [ ] **Un-reserve IY gated on size-opt -- IMPLEMENTED + VERIFIED, but BLOCKED by a
+  residual miscompile (2026-05-26).** Built a shared `z80IsIYAllocatable(MF)` =
+  `Z80UnreserveIY || (hasOptSize && staticStack)`, threaded through getReservedRegs,
+  getLargestLegalSuperClass, and Z80NarrowNoIndex. Gate works precisely: aes256
+  -O2+ss = 0 IY operands (speed path untouched), -Oz+ss = 74; default (non-ss) suite
+  byte-identical; production banks the win at -Oz with NO flag (cpnos 2025, autoload
+  1478 comp, BIOS 5897 -- ~35 B). lit 118+5.
+  **BLOCKER:** test-runner -static-stack caught a NEW miscompile -- test_58_fixed_point
+  **Os_ss/Oz_ss** return 0x0037 vs 0x003F. test_58 uses NO IY itself, so it is a
+  side-effect of the GR16NoIR-discipline machinery (Z80NarrowNoIndex / the
+  getLargestLegalSuperClass no-widen) being activated at Os/Oz -- machinery that was
+  only ever exercised under the off-by-default flag and has a latent bug (likely
+  Z80NarrowNoIndex over-narrowing a vreg, or the no-widen reducing coalescing into a
+  bad spill; matches the drill's "applied bluntly -> net-harmful" warning, and the
+  "any vreg feeding COPY %x.sub_lo/.sub_hi" residual). REVERTED per no-commit-on-
+  miscompile; production clang restored (test_58 Os/Oz pass again).
+  **Next:** diagnose the test_58 Os/Oz miscompile under z80IsIYAllocatable (which vreg
+  Z80NarrowNoIndex/the no-widen mishandles), fix, then re-run the gate + full oracle.
+  Mechanism + ~35 B win are proven; only this residual correctness bug blocks the flip.
 - [ ] **Do the same IX un-reserve analysis as IY (TO DO LATER, user 2026-05-26).**
   IX is the frame pointer when not +static-stack; under +static-stack it can be freed
   (hasFP=false had a parked runtime bug, #12). Measure size/speed of un-reserving IX
