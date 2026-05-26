@@ -29,8 +29,17 @@
 
 ## IY un-reserve ("#38" lever) — MEASURED 2026-05-26, size-win / small-speed-cost
 
-- [ ] **Un-reserve IY gated on size-opt -- IMPLEMENTED + VERIFIED, but BLOCKED by a
-  residual miscompile (2026-05-26).** Built a shared `z80IsIYAllocatable(MF)` =
+- [x] **Un-reserve IY gated on size-opt -- DONE + LANDED (2026-05-26).** Shipped:
+  (1) BSS-spill->PUSH/POP SP-write guard (Z80LateOptimization) -- fixes the blocker
+  AND a pre-existing latent miscompile (test_58_O0_ss +static-stack, #192-class),
+  with an MIR regression test; (2) z80IsIYAllocatable(MF) = flag || (hasOptSize &&
+  staticStack), threaded through getReservedRegs/getLargestLegalSuperClass/
+  Z80NarrowNoIndex. Result: ~33 B production win at -Oz (cpnos 2033->2027, autoload
+  1483->1478, BIOS 5920->5897), 0 undoc IY ops, gate precise (-O2 0 IY / -Oz 65),
+  lit 119+5, test-runner default byte-identical + static-stack improved, cpnos boot
+  PASS, autoload boots to A>. Speed reserved for -O2/-O3 (+0.11% IY-access cost).
+  FLAG-gated history below kept for reference.
+- [ ] **(superseded -- now DONE above) earlier blocked attempt:** Built a shared `z80IsIYAllocatable(MF)` =
   `Z80UnreserveIY || (hasOptSize && staticStack)`, threaded through getReservedRegs,
   getLargestLegalSuperClass, and Z80NarrowNoIndex. Gate works precisely: aes256
   -O2+ss = 0 IY operands (speed path untouched), -Oz+ss = 74; default (non-ss) suite
@@ -52,7 +61,15 @@
   IX is the frame pointer when not +static-stack; under +static-stack it can be freed
   (hasFP=false had a parked runtime bug, #12). Measure size/speed of un-reserving IX
   the same way (per-function byte deltas + AES tstate), same size-vs-speed gating.
-- [ ] **Look at the O0+static-stack hang later (user 2026-05-26).** test_54_unsigned_
+- [ ] **autoload `make mame` clang banner check is stale (found 2026-05-26).**
+  EXPECT_BANNER for clang = "RC700 CL" (Makefile line 124) but the actual clang
+  banner is "RC700 ROA375 CL", so the substring match always FAILs even though the
+  autoload boots correctly to CP/M A>. Fix EXPECT to "RC700 ROA375 CL" (or match on
+  "CL"). Codegen-independent; surfaced verifying the IY size-gate.
+- [ ] **Look at the O0+static-stack hang later (user 2026-05-26).** NOTE: the
+  test_54 hang context changed -- #201's chokepoint caused it; the IY size-gate
+  keeps O0 reserved so it does not trigger there. Re-check whether it still occurs.
+- [ ] **(orig) Look at the O0+static-stack hang later (user 2026-05-26).** test_54_unsigned_
   compare_O0_ss went FAIL->FATAL (timeout) under #201 + +static-stack -- a pre-existing
   #192-class O0 failure changing manifestation (wrong-value -> hang). Non-production
   (O0); production opt levels unaffected. Understand why it now hangs.
