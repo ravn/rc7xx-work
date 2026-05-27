@@ -531,3 +531,4 @@
 - all, keep going as long as you can (-> Cluster 3 #200: SPILL_GR16/RELOAD_GR16 offset-operand-count verifier fix; codegen-neutral, oracles green, cpnos payload byte-identical 2028 B)
 - go (-> continued Cluster 3 verifier sweep; #194 + #209 PUSH AF/EX DE,HL fixed+committed, cpnos -6 B; characterized remaining PUSH_HL liveness-reconciliation class + wrapped)
 - all, keep going as long as you can (#2 -> drilled the PUSH_HL verifier class: SP-relative frame-spill HL-borrow, over-conservative save reads undef HL; STOP per discipline (frame expansion = highest miscompile risk, exact site unconfirmed). Verified BIOS clang 5897 B unchanged (no regression). Documented next-session drill.)
+- all, keep going as long as you can (#3 -> pinpointed PUSH_HL: SP-relative spill HL-borrow, isRegLiveAt cascading over-report; filed #210 (non-production: default config only, runtime-correct). STOP per discipline (frame-expansion miscompile risk). All targets verified.)
