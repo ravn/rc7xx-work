@@ -1,5 +1,36 @@
 # Z80 Code Density Optimization Todo
 
+## After session 73s cont. (differential oracles + #136/#202/#204, 2026-05-27)
+
+DONE this session (all committed + pushed):
+- [x] **#202 CLOSED** — cross-block BSS-spill->PUSH/POP dropped a loop-carried store-back;
+  unified the loop-carried guard across all 4 spill peepholes.
+- [x] **#204 CLOSED** — address-taken slot's store wrongly converted to PUSH (found by the
+  native oracle); unified the address-taken guard across all 4 peepholes.
+- [x] **#136 CLOSED** — "38 mystery O1 fixtures" root-caused (5-line repro, opt-bisect ->
+  Z80LoopIdiomFill overlapping memcpy mis-inlined by InstCombine at -O1) and fixed with a
+  one-line `volatile`. Production byte-identical; regression test_176.
+- [x] **Two differential oracles built** (`test-runner -diff-opt`, `-native-oracle`) — now
+  at a CLEAN baseline (0 DIFFOPT/0 NATIVE) in default + static-stack configs. SKIP-IF gained
+  `+feature` support; test_36 skipped under +static-stack.
+- [x] rc700#100 CLOSED (autoload banner check). IX un-reserve investigated + reverted; #12
+  write-up filed.
+
+OPEN / next:
+- [ ] **#203 — unify the remaining spill-peephole guards** (orphan-access, cross-block
+  UsedElsewhere [has #155 dominator relaxation], SP-write, stack-depth). The 2 *drifted*
+  guards (loop-carried, address-taken) are unified; these are structurally embedded in each
+  peephole's scan loop -> behavior-sensitive, not yet drifted into a bug. Lower priority.
+- [ ] **#205 — non-UB representation for the LDIR-fill** (Z80LoopIdiomFill currently emits a
+  volatile *overlapping* memcpy = UB-in-IR, un-exploited). K=1 -> memset (but a naive switch
+  regressed -Oz across test_90/91 -- investigate first); K>1 -> target intrinsic / memset.pattern.
+- [ ] **CI differential gate — PARKED** (user: not now). Design in
+  `llvm-z80/tasks/ci-test-runner-differential-gate-PARKED.md`. Run locally meanwhile.
+- [ ] **Triage the ~56 test-runner FATALs** (gates a clean exit-code CI gate): 50 = "no
+  register value in emulator output" (huge test_90/91 fixtures at O0 -- emulator can't
+  extract a result; harness/limit issue), 6 = test_48_dynamic_alloca missing `alloca.h`
+  (test-setup; alloca under +static-stack is dubious anyway). Test-infra, not codegen.
+
 ## Open after session 73s (#198 + verifier triage, 2026-05-26)
 
 - [ ] **#194 — surgical live-in fix for the cross-block #60 `LD A,r` removal.**
