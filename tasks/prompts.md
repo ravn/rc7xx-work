@@ -528,3 +528,5 @@
 - where are we? (-> session status)
 - all, keep going as long as you can (-> verify-clean cluster: triaged all 3 classes; fixed multiple-vreg-defs via tied-INC16 fresh-dst (+ test_38 miscompile); checkpointed before delicate #194)
 - analyse, raise issues and tasks, summarize and commit (-> filed rc700#100; session summary + timeline + prompts; committing)
+- all, keep going as long as you can (-> Cluster 3 #200: SPILL_GR16/RELOAD_GR16 offset-operand-count verifier fix; codegen-neutral, oracles green, cpnos payload byte-identical 2028 B)
+- go (-> continued Cluster 3 verifier sweep; #194 + #209 PUSH AF/EX DE,HL fixed+committed, cpnos -6 B; characterized remaining PUSH_HL liveness-reconciliation class + wrapped)
