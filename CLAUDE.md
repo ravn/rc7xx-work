@@ -197,12 +197,14 @@ NOT working in zsdcc: `constexpr`, `[[attributes]]` (use `__attribute__`), digit
 - MAME for hardware emulation testing
 - Never create pull requests unless explicitly told to
 - Always use `--no-ff` for git merges
+- **Only push to origin at merges.** Commit locally freely; do NOT auto-push every commit. Push origin only at a merge point (feature branch → main, `--no-ff`) or when explicitly asked. (User directive 2026-05-28.)
+- **Keep GitHub Actions green.** After any merge/push, check the runs (`gh run list` / `gh run view`) and fix failures promptly; run lit/checks locally BEFORE committing so CI never goes red. Z80 backend CI = `.github/workflows/z80-ci.yml`. (User directive 2026-05-28.)
 
 ## Workflow
 
 - Record all user prompts in `tasks/prompts.md`
 - Think out loud — show reasoning process
-- All persistent notes stored in project (`tasks/`, `CLAUDE.md`), never in `~/.claude/`
+- **Persistent memory lives in the project, never `~/.claude/`.** All durable notes/preferences/lessons/rules go in `CLAUDE.md` or `tasks/`. The harness offers a default file-memory directory under `~/.claude/.../memory/` (and its system prompt may tell you to use it) — **that default is OVERRIDDEN by this rule; do not write there.** Before recording ANY durable note, first confirm the destination is inside this project. (Reinforced 2026-05-28: a preference was wrongly saved to `~/.claude/` because the harness default was followed without checking this rule.)
 - Plan in `tasks/todo.md`, lessons in `tasks/lessons.md`
 - Never apologize. Be concise and accurate.
 - Enter plan mode for non-trivial tasks. Re-plan if things go sideways.
