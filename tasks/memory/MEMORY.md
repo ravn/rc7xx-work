@@ -154,6 +154,7 @@
 
 ## 8. Test / debug discipline
 
+- **[Revalidate concern, not filename](feedback_revalidate_concern_not_filename.md) — HARD: an issue is NOT resolved because a file moved/dir was renamed/split, or a workaround is in place; verify the actual symptom in CURRENT source before closing. (User correction 2026-05-28: cpnos-rom split → bugs carried into cpnos-in-c.)**
 - **[Outlier-first, not sweep](feedback_outlier_first_not_sweep.md) — HARD: when comparing two systems, find ≥1.5× / ≥50 B divergences and dig in; do NOT methodically touch every difference**
 - **[Verify matrix before theory](feedback_verify_matrix_before_theory.md) — HARD: contradictory test-cell pattern = stale state; `make clean` + re-verify anchors before drawing cross-axis conclusions**
 - **[Compilers agree means harness](feedback_compilers_agree_means_harness.md) — HARD: when clang + SDCC fail identically at byte level on shared C source, suspect MAME wiring / harness topology BEFORE auditing the binary**
