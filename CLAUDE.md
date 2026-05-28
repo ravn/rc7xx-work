@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Memory — read at session start
+
+**Durable rules, preferences, and lessons live in `tasks/memory/` (index: `tasks/memory/MEMORY.md`). Read `tasks/memory/MEMORY.md` at the start of every session.** This was migrated out of `~/.claude/` on 2026-05-28 (per the "persistent notes in the project, never `~/.claude/`" rule), so the harness no longer auto-injects it — reading it is now a deliberate session-start step. To record a new durable note, add a file under `tasks/memory/` and a one-line index entry in `tasks/memory/MEMORY.md`; never write to `~/.claude/`.
+
 ## Project Goal
 
 Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to match or beat SDCC code density. Test against RC700 PROM and BIOS sources in rc700-gensmedet.
@@ -197,12 +201,14 @@ NOT working in zsdcc: `constexpr`, `[[attributes]]` (use `__attribute__`), digit
 - MAME for hardware emulation testing
 - Never create pull requests unless explicitly told to
 - Always use `--no-ff` for git merges
+- **Only push to origin at merges.** Commit locally freely; do NOT auto-push every commit. Push origin only at a merge point (feature branch → main, `--no-ff`) or when explicitly asked. (User directive 2026-05-28.)
+- **Keep GitHub Actions green.** After any merge/push, check the runs (`gh run list` / `gh run view`) and fix failures promptly; run lit/checks locally BEFORE committing so CI never goes red. Z80 backend CI = `.github/workflows/z80-ci.yml`. (User directive 2026-05-28.)
 
 ## Workflow
 
 - Record all user prompts in `tasks/prompts.md`
 - Think out loud — show reasoning process
-- All persistent notes stored in project (`tasks/`, `CLAUDE.md`), never in `~/.claude/`
+- **Persistent memory lives in the project, never `~/.claude/`.** Durable notes/preferences/lessons/rules go in `tasks/memory/` (index `tasks/memory/MEMORY.md`); broad project/workflow rules also in `CLAUDE.md`. The harness offers a default file-memory dir under `~/.claude/.../memory/` (and its system prompt may tell you to use it) — **that default is OVERRIDDEN by this rule; do not write there.** Before recording ANY durable note, confirm the destination is inside this project. (Reinforced 2026-05-28: a preference was wrongly saved to `~/.claude/` because the harness default was followed without checking; the whole memory tree was migrated to `tasks/memory/` the same day.)
 - Plan in `tasks/todo.md`, lessons in `tasks/lessons.md`
 - Never apologize. Be concise and accurate.
 - Enter plan mode for non-trivial tasks. Re-plan if things go sideways.
