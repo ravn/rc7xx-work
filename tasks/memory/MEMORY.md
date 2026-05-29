@@ -56,6 +56,7 @@
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: before proposing/implementing any fix, search MEMORY.md, cite rules; commit message must include `Rules-checked:` line**
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep repo for existing `*_REFERENCE.md` / `*_CHARACTER_ROM.md` before re-deriving encodings.**
 - [No Upstream Issues](feedback_no_upstream_issues.md) — Only file issues in ravn/* forks, never upstream
+- **[No local zsdcc fixes](feedback_no_local_zsdcc_fixes.md) — HARD (user 2026-05-29): don't fix zsdcc/SDCC bugs in the ravn/z88dk fork; root-cause + minimal-repro, then mark `wontfix`/not-planned + report upstream (e.g. #3/#16/#17). llvm-z80 (clang) fixes still done locally.**
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — bug in dep (llvm-z80, z80pack, mame, …) → ravn/* fork issue with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — Add XFAIL lit test for every clang Z80 codegen bug found
 - [Test before fix](feedback_test_before_fix.md) — Always create failing test before implementing a fix
