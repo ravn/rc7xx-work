@@ -30,7 +30,7 @@ Production delta from Phase 2: cpnos PROM1 **2030 → 2028 B (−2 B; 20 B free 
 
 
 
-- autoload PROM (clang, ZX0-compressed): **1667 B / 2048 B (381 B free)** — unchanged through 73m.  Banner: `RC700 ROA375 CL <date> <hash>/<user>`.  Hard-capped at 2 KB (no A11 bridge on user's hardware -- memory rule `project_rc702_2kb_prom_hard_limit`).
+- autoload PROM (clang, ZX0-compressed): **1652 B / 2048 B (396 B free)** — measured 2026-05-31 (byte-identical across the #176/#212 work: auto-static-stack is a no-op since autoload already forces +static-stack +shadow-regs, and no autoload site hits the #212 HL-live peephole guard).  Banner: `RC700 ROA375 CL <date> <hash>/<user>`.  Hard-capped at 2 KB (no A11 bridge on user's hardware -- memory rule `project_rc702_2kb_prom_hard_limit`).
 - BIOS: clang **5897 B** vs SDCC **6091 B** (clang −194 B; -25 B vs 5922 B after the session-73s #42 adoption — intrinsic_di/ei/halt via the compiler-shipped `<intrinsic.h>` builtins let the optimizer treat DI/EI as precise side-effects vs the opaque `__asm__ volatile` barrier); SW1 bit-0 inversion fix landed (was bit=1 → JOINED; now bit=0 → JOINED matching MAME's "On" convention).  MAME boot verified (signon + A> + disk ERR=0 across 77 tracks).
 - **Compiler intrinsics/attributes (session-73s, ravn/llvm-z80 #42 + #4 CLOSED):** clang now SHIPS `<intrinsic.h>` (clang/lib/Headers, in the resource dir) so the SAME rcbios source compiles under clang AND SDCC with no `-I` and no `#ifdef` (clang resolves to its copy, SDCC to z88dk's; identical `intrinsic_*` API).  Privileged-instruction builtins `__builtin_z80_di/ei/halt/nop/im2/set_i` (+ intrinsics `llvm.z80.im2`/`set.i`).  `__attribute__((z80_critical))` (clang analog of SDCC `__critical`) drives the pre-existing Z80FrameLowering DI/EI; rcbios `__critical` now real (was a silent no-op).  #133 callee-side `z80_preserves_regs` save/restore confirmed implemented+tested (closed on substance; advisory warning deferred).
 - cpnos-in-c resident (clang, PIO transport): **clang 2004 B / SDCC 2120 B** raw .payload non-padding (SDCC was 2196 B pre-session-73k; -76 B from the `__sfr __at` port-IO rewrite, commit `754b901`, closes ravn/z88dk#9).
@@ -218,11 +218,25 @@ NOT working in zsdcc: `constexpr`, `[[attributes]]` (use `__attribute__`), digit
 - Verify changes work (tests, MAME boot) before marking done.
 - **Whenever you modify the compiler, always add a lit test showing it works.**
   Add to existing relevant test file or create a new one in `llvm/test/CodeGen/Z80/`.
+  The lit test is the **CI-gated** proof (the `build-and-lit` job runs lit; the
+  `runtime-tests` job runs the test-runner) — pin the generated instruction sequence
+  with FileCheck even when the bug is most naturally a runtime one. If correctness is
+  only observable at runtime (e.g. a buffer over-run), ALSO add a test-runner runtime
+  fixture (`z80-utils/test-runner/testcases/clang/*.c`, `/* expect 0xNNNN */`, glob
+  -discovered) — it complements, never replaces, the lit test.
 
 ## Known Bugs in llvm-z80
 
-- `"hl"` inline asm constraint crashes IRTranslator
 - hasFP=false has runtime bug (parked)
+
+FIXED:
+- `"hl"` (and `bc`/`de`/`af`/`ix`/`iy`/`sp`) bare inline-asm pair constraints used
+  to crash IRTranslator ("unable to translate instruction: call"): LLVM's
+  IR-level InlineAsm parser splits a bare multi-letter constraint into
+  single-register *alternatives* (`hl`→h|l, 8-bit), which can't hold a 16-bit
+  operand.  `Z80TargetInfo::convertConstraint` now rewrites a bare pair name to
+  the braced form (`hl`→`{hl}`); bare and braced pair constraints both work.
+  (clang/test/CodeGen/z80-inline-asm-pair-constraint.c)
 
 ## Working LLVM-Z80 features (use directly; no inline-asm workaround needed)
 
