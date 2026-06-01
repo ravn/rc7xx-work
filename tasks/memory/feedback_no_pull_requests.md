@@ -8,6 +8,15 @@ Never create pull requests. Not in upstream repos, not in ravn/* fork repos, not
 
 **Why:** User has stated this as an unconditional rule multiple times across sessions — most recently as "never ever create pull requests" when I was only planning to file GitHub issues and run `gh --version`. Even approaching PR-adjacent territory triggers an interrupt. The user wants to decide when and how changes get proposed upstream, not the assistant.
 
+**Engagement-mode exception (session 77, 2026-06-01 — user-confirmed):** the user DOES
+direct specific PRs to the z80 fork-of-record `llvm-z80/llvm-z80` for curated upstream
+work. The shape they want: **ONE tests-only PR** (XFAIL bug-demonstration tests, branched
+off `upstream/main` so the diff is tests-only — PR #17) and infrastructure PRs (the
+test-runner+CI port — PR #27); explicitly **NEVER a PR per bug** ("I do not want you to
+create pull requests for each issue"). Bug *fixes* are still NOT PR'd — they're described
+in issues as proposals. This exception is ONLY for user-directed submissions; the default
+below still holds for everything unsolicited.
+
 **How to apply:**
 - `gh pr create` is forbidden unless the user's current-turn message literally asks for a PR on this specific change.
 - `git push` to any branch whose name hints at PR intent (e.g. `feature/...`, `fix/...`) requires explicit per-turn authorization even if the user has granted general push access earlier.

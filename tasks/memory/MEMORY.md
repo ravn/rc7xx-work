@@ -52,12 +52,12 @@
 
 ## 2. Before any commit / PR / issue
 
-- **[Never create PRs](feedback_no_pull_requests.md) — HARD: never `gh pr create` unless user explicitly asks in current turn**
+- **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: never `gh pr create` unless user explicitly asks in current turn. Engagement-mode (session 77): user DOES direct a tests-only PR + infra PR to llvm-z80/llvm-z80; NEVER a PR per bug, never a fix PR.**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD: combiner/ISel/lowering changes need value oracle (test-runner + MAME boot) BEFORE commit**
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: before proposing/implementing any fix, search MEMORY.md, cite rules; commit message must include `Rules-checked:` line**
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep repo for existing `*_REFERENCE.md` / `*_CHARACTER_ROM.md` before re-deriving encodings.**
-- [No Upstream Issues](feedback_no_upstream_issues.md) — Only file issues in ravn/* forks, never upstream
-- [Upstream routing — two targets](feedback_upstream_routing_two_targets.md) — generic LLVM fixes go to official llvm/llvm-project ONLY (flow to @zlfn via sync); Target/Z80 changes go to @zlfn ONLY; don't double-PR
+- [No UNSOLICITED Upstream Issues](feedback_no_upstream_issues.md) — default: file in ravn/* forks. Engagement-mode (session 77, user-confirmed): when user directs a curated submission, file issues at llvm-z80/llvm-z80 (one per underlying bug, draft→approve→file, linked failing test); still never official llvm/llvm-project
+- [Upstream target — "z80 upstream only"](feedback_upstream_routing_two_targets.md) — session 77: curated submission goes to llvm-z80/llvm-z80 (@zlfn); do NOT run a parallel llvm/llvm-project campaign; reference (don't dup) bugs already open upstream; audit completeness via generic-code diff vs upstream/main
 - **[No local zsdcc fixes](feedback_no_local_zsdcc_fixes.md) — HARD (user 2026-05-29): don't fix zsdcc/SDCC bugs in the ravn/z88dk fork; root-cause + minimal-repro, then mark `wontfix`/not-planned + report upstream (e.g. #3/#16/#17). llvm-z80 (clang) fixes still done locally.**
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — bug in dep (llvm-z80, z80pack, mame, …) → ravn/* fork issue with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — Add XFAIL lit test for every clang Z80 codegen bug found

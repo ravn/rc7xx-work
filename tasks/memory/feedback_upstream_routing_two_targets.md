@@ -1,15 +1,29 @@
 ---
 name: feedback_upstream_routing_two_targets
-description: How to route fixes between the two upstreams — official LLVM vs @zlfn's z80 fork
+description: Upstream submission target — "z80 upstream only" = llvm-z80/llvm-z80 (@zlfn); do NOT run a parallel llvm/llvm-project campaign
 metadata:
   type: feedback
 ---
 
-There are two upstreams and fixes route by **where the fix physically lives**, not by destination choice:
+**Session-77 directive (2026-06-01, user-confirmed) — supersedes the earlier two-target
+routing:** "**This is z80 upstream only.**" The curated upstream submission target is the
+z80 fork-of-record **`llvm-z80/llvm-z80`** (@zlfn) — the `upstream` git remote, parent of
+`ravn/llvm-z80`. Do **not** open a separate campaign at official `llvm/llvm-project`, even
+for generic-LLVM bugs.
 
-- **Generic LLVM fixes** (`llvm/lib/...` outside `Target/Z80/`) go to **official `llvm/llvm-project` ONLY.**
-- **Z80-backend changes** (`llvm/lib/Target/Z80/`) go to **@zlfn `llvm-z80/llvm-z80` ONLY** (can't reach official until the Z80 target is upstreamed).
+How it works in practice (session 77): generic-LLVM bugs found via the Z80 backend are
+filed as **issues at `llvm-z80/llvm-z80`** (with a failing test case + proposed fix), plus
+one tests-only PR carrying the demonstrations. The bug *fixes* live in `ravn/llvm-z80`;
+@zlfn's periodic `upstream/main` syncs still flow accepted generic fixes downward over
+time, so keep each local generic commit in upstream-ready shape. If a generic bug is
+**already** open at official LLVM (e.g. LiveVariables = `llvm/llvm-project#156428`),
+**reference it, don't duplicate.**
 
-**Why:** @zlfn's fork does periodic upstream syncs (`Merge remote-tracking branch 'upstream/main'`), so an accepted generic fix flows down to @zlfn (and to our `ravn/llvm-z80`) automatically over time. Do NOT separately PR a generic fix to @zlfn — the duplicate would conflict with the canonical version when the sync arrives.
-
-**How to apply:** (1) Keep each local generic commit in exact upstream-ready shape so the future sync merges/drops it cleanly instead of conflicting. (2) Track "pending upstream" local commits (in #186) so they can be dropped/rebased once the sync brings the canonical version. See [[project_z80_upstream_goal]]. Counts as of 2026-05-30: 8 official-bound generic items (5 PR-ready, 3 report-only), ~25 backend-only items to @zlfn.
+**Completeness-audit method (reusable):** to find which generic-LLVM bugs are
+upstream-candidates, diff the **generic code** (everything under `llvm/lib`/`clang/lib`
+*outside* `Target/Z80` and the Z80-clang files) between `ravn/main` and `upstream/main` —
+that is the ground truth, not the issue tracker. Each such change is either a fixed bug
+(file/reference it) or a workaround for an unfixed one (file it as "real bug, no fix
+found"). Session-77 audit found exactly 5 generic transform/codegen files changed +
+InstCombineCalls (the missed one). See [[project_z80_upstream_goal]],
+[[feedback_no_upstream_issues]], [[feedback_no_pull_requests]].
