@@ -7,6 +7,12 @@ metadata:
   originSessionId: b20efbb1-10f2-452a-bfa2-432a9ba5a6a3
 ---
 
+**Provenance:** the AES-256 source came from Peter Dassow's Z80 C-compiler
+comparison page http://www.z80.eu/c-compiler.html (download
+http://z80.eu/downloads/aes256.zip) — byte-oriented AES-256 by Ilya O. Levin
+(literatecode.com), CP/M tweaks by Peter Dassow.  Full provenance in the
+corpus `README.md`.
+
 The `rc700-gensmedet/tasks/aes256-corpus/` directory has two
 parallel strategic goals (see `GOAL.md` in that directory):
 
