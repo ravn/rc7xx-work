@@ -5,28 +5,10 @@
   CLAUDE.md directs reading it at session start.  Add new durable notes as a
   file here + a one-line index entry below.  Never write to ~/.claude/.
 
-  DRAFT — proposed new structure for MEMORY.md.
-
-  Same entries as MEMORY.md, re-grouped by *the moment the rule fires*.
-  HARD rules are bolded. Some entries appear under more than one
+  Entries are grouped by *the moment the rule fires* (sections below).
+  HARD rules are bolded.  Some entries appear under more than one
   heading — duplication is intentional: cost is one extra index line,
   benefit is "I see the rule when the trigger fires".
-
-  Sections:
-    1. Always-on (every response)
-    2. Before any commit / PR / issue
-    3. Before any memory-layout / linker / address change
-    4. Before any build / compile / link flag change
-    5. Before any llvm-z80 compiler-codegen change
-    6. Before any MAME / boot / test run
-    7. Before file/script ops (home dir, /tmp, scans)
-    8. Test / debug discipline
-    9. Code & source style
-   10. Project facts — RC702 hardware
-   11. Project facts — cpnos / cpnet / DRI
-   12. External-bug refs
-   13. Reference / one-offs
-   14. Persisted-elsewhere pointer
 -->
 
 ## 0. ABSOLUTE BANS — read before EVERY find/ls/grep/glob
@@ -40,10 +22,10 @@
 - **[No compliments](feedback_no_compliments.md) — HARD: no "sharp observation"/"good question"/"great point"; start with the substantive answer**
 - **[No aphoristic flourishes](feedback_no_aphoristic_flourishes.md) — HARD: never wrap a decision in a maxim ("saying when to stop is a feature", "less is more"); user reads it as passive-aggressive**
 - **[ALWAYS show thinking](feedback_show_thinking.md) — HARD: narrate reasoning aloud at all times; default-terse system prompt does NOT override**
-- **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: when about to declare "deferred / multi-week / regalloc-level", first instrument+bisect for 30 min. Surface estimates were wrong 5×in session 73p; deeper drill collapsed "multi-week regalloc work" into 5-line peephole fixes.**
-- **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: "dig UP" complement to dig-deeper. When I narrate "same family/recurring/Nth time" or fix 2-3 of one class, STOP and find the systemic cause before the next fix. Don't wait to be told to step back (session 73s: 5 same-family bugs, never escalated until asked).**
-- **[Audit the oracle, not just the fix](feedback_audit_oracle_not_just_fix.md) — HARD: a bug found by luck is a bug in your oracle. When a bug is found by accident / sat in a noise-floor bucket / is the Nth of a class, design the detector that would have caught it on purpose (session 73s: cross-opt-level differential oracle, only after being asked).**
-- **[Verify process state by full enumeration](feedback_verify_process_state_full_enumeration.md) — HARD: never claim "nothing running / clean / idle" from a `ps | grep` matching only what you EXPECTED; enumerate fully (bare `ps -ax`, by RSS/elapsed/build-dir path) + reconcile against the harness shell/task count. A failed `ulimit` wrapper doesn't kill the wrapped `llc`; after a runaway-class bug assume an orphan (session 76: 4.5 GB / 3h38m `llc` missed by a grep omitting `llc`, found only when user flagged "1 shell").**
+- **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: before declaring "deferred / multi-week / regalloc-level", instrument+bisect 30 min first. Session 73p: surface estimates wrong 5×; the drill collapsed "multi-week regalloc work" into 5-line peephole fixes.**
+- **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: the "dig UP" complement. On "same family / Nth time" or after fixing 2-3 of one class, STOP and find the systemic cause before the next fix — don't wait to be told (session 73s: 5 same-family bugs, never escalated until asked).**
+- **[Audit the oracle, not just the fix](feedback_audit_oracle_not_just_fix.md) — HARD: a bug found by luck is a bug in your oracle. Found by accident / in a noise bucket / Nth of a class → build the detector that would have caught it on purpose (session 73s).**
+- **[Verify process state by full enumeration](feedback_verify_process_state_full_enumeration.md) — HARD: never claim "nothing running / clean" from a `ps | grep` matching only what you EXPECTED. Enumerate fully (bare `ps -ax`, by RSS/elapsed/build-dir) + reconcile against the harness shell/task count; after a runaway-class bug assume an orphan (session 76: 4.5 GB / 3h38m `llc` missed by a grep omitting `llc`).**
 - [No Unicode arrows](feedback_no_unicode_arrows.md) — Use ASCII `->` not `→`, Unicode arrows overlap following char in user's terminal
 - **[NEVER unquoted "===" in shell](feedback_no_double_equals.md) — HARD: zsh emits `== not found` and SILENTLY TRUNCATES the rest of the command. Repeatedly violated; user reminded "several times already" 2026-05-22. Use `---` as separator.**
 - **[State certainty](feedback_state_certainty.md) — HARD: state as fact ONLY if verified this session; surface ALL doubt + offer research; familiarity/pattern-match ≠ certainty; correct overclaims in issues/commits too (re-reinforced 2026-05-26, #198)**
@@ -52,13 +34,13 @@
 
 ## 2. Before any commit / PR / issue
 
-- **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: never `gh pr create` unless user explicitly asks in current turn. Engagement-mode (session 77): user DOES direct a tests-only PR + infra PR to llvm-z80/llvm-z80; NEVER a PR per bug, never a fix PR.**
+- **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: never `gh pr create` unless the user asks this turn. Engagement-mode (session 77): user may direct a tests-only + infra PR to llvm-z80/llvm-z80; NEVER a per-bug or fix PR.**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD: combiner/ISel/lowering changes need value oracle (test-runner + MAME boot) BEFORE commit**
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: before proposing/implementing any fix, search MEMORY.md, cite rules; commit message must include `Rules-checked:` line**
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep repo for existing `*_REFERENCE.md` / `*_CHARACTER_ROM.md` before re-deriving encodings.**
-- [No UNSOLICITED Upstream Issues](feedback_no_upstream_issues.md) — default: file in ravn/* forks. Engagement-mode (session 77, user-confirmed): when user directs a curated submission, file issues at llvm-z80/llvm-z80 (one per underlying bug, draft→approve→file, linked failing test); still never official llvm/llvm-project
-- [Upstream target — "z80 upstream only"](feedback_upstream_routing_two_targets.md) — session 77: curated submission goes to llvm-z80/llvm-z80 (@zlfn); do NOT run a parallel llvm/llvm-project campaign; reference (don't dup) bugs already open upstream; audit completeness via generic-code diff vs upstream/main
-- **[No local zsdcc fixes](feedback_no_local_zsdcc_fixes.md) — HARD (user 2026-05-29): don't fix zsdcc/SDCC bugs in the ravn/z88dk fork; root-cause + minimal-repro, then mark `wontfix`/not-planned + report upstream (e.g. #3/#16/#17). llvm-z80 (clang) fixes still done locally.**
+- [No UNSOLICITED Upstream Issues](feedback_no_upstream_issues.md) — default: file in ravn/* forks. When the user directs a curated submission (session 77), file at llvm-z80/llvm-z80 — one per underlying bug, draft→approve→file, linked failing test; never official llvm/llvm-project
+- [Upstream target — "z80 upstream only"](feedback_upstream_routing_two_targets.md) — curated submission goes to llvm-z80/llvm-z80 (@zlfn) only; no parallel llvm/llvm-project campaign; reference (don't dup) bugs already open upstream; audit completeness via generic-code diff vs upstream/main
+- **[No local zsdcc fixes](feedback_no_local_zsdcc_fixes.md) — HARD (user 2026-05-29): don't fix zsdcc/SDCC bugs in ravn/z88dk; root-cause + minimal-repro, mark `wontfix`, report upstream (e.g. #3/#16/#17). llvm-z80 (clang) fixes still done locally.**
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — bug in dep (llvm-z80, z80pack, mame, …) → ravn/* fork issue with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — Add XFAIL lit test for every clang Z80 codegen bug found
 - [Test before fix](feedback_test_before_fix.md) — Always create failing test before implementing a fix
@@ -117,12 +99,13 @@
 - **[Z80 copies have spurious mayLoad/mayStore](feedback_z80_copy_spurious_mem_flags.md) — HARD: don't use MI.mayLoad()/mayStore() in Z80 peepholes; use !MI.memoperands_empty() (LD_D_A flag-noise, #154).**
 - **[zeroext is ABI, not source-narrow](feedback_zeroext_is_abi_not_source.md) — HARD: `i16 zeroext` is an ABI signal, NOT proof source was narrower. Use computeKnownBits before narrowing. Session 71 #162: 318 miscompiles.**
 - **[TruncInstCombine: swap before probe](feedback_truncinstcombine_swap_before_probe.md) — HARD: modify IR users BEFORE `getBestTruncatedType`; the multi-use guard bails otherwise. Need rollback on failure branch.**
+- [IX caller-saved after #12](project_ix_caller_saved_after_12.md) — IX as an allocatable reg is a regression in the callee-saved ABI; only caller-saved IX wins (needs #12 FP-elimination). Revisit then.
 
 ## 6. Before any MAME / boot / test run
 
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: check siob.raw banner timestamp vs latest BUILD_INFO_STR before any diagnosis; same timestamp across rebuilds = stale ROM.**
 - **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — On polypascal-test timeout at stage 1 (E>) or stage 2 (`>>`), first try `make _kill-mpm; sleep 5-8; retry`. Stuck daemon mimics codegen regression.**
-- **[Session-start: kill daemons BEFORE first test](feedback_session_start_kill_daemons.md) — HARD: at session start (no shared memory of prior session state), proactively `make -C cpnos-in-c _kill-mpm; sleep 8` BEFORE first MAME/polypascal/CP-NET run. Also between COMPILER switches. Generalises [[feedback-polypascal-stage1-flake]] from reactive retry to proactive cleanup.**
+- **[Session-start: kill daemons BEFORE first test](feedback_session_start_kill_daemons.md) — HARD: at session start (no memory of prior daemon state), proactively `make -C cpnos-in-c _kill-mpm; sleep 8` BEFORE the first MAME/polypascal/CP-NET run, and between COMPILER switches. Proactive form of [[feedback-polypascal-stage1-flake]].**
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: always capture a MAME screenshot to verify init; PASS log lines aren't enough**
 - **[Black screen is fatal](feedback_black_screen_fatal.md) — HARD: black MAME screen halts all other investigation; root-cause boot path before anything else**
 - [Black screen → CRT ISR not firing](feedback_black_screen_crt_isr.md) — black RC702 display means `isr_crt` isn't running; suspect EI / IVT slot 2 / CTC ch2 in that order; SIO-B output still valid in this state
@@ -186,6 +169,7 @@
 - **[Clarity in C code](feedback_clarity_in_c_code.md) — HARD: prefer readable call shapes over macro tricks; compiler-specific glue confined to hal.h/intrinsic.h, never #ifdef in business logic**
 - [Size over speed for cold paths](feedback_size_over_speed_for_cold_paths.md) — code that runs only a few times (cold-init, shutdown, error paths): bytes are permanent, T-states aren't; prefer compact loops over unrolled bodies
 - [Volatile blocks loop idiom](feedback_volatile_blocks_loop_idiom.md) — clang's `LoopIdiomRecognize` rejects volatile stores; default-add volatile on cold-init pointers blocks memcpy/memset/LDIR-overlap. Only volatile for ISR-shared state or hardware-changing memory.
+- [No self-correction in published docs](feedback_no_self_correction_in_published_docs.md) — drop "wait / actually / let me re-read" asides from committed docs/specs; narrate self-checks in chat, publish only the final version (CPNET_WIRE_PROTOCOL.md leak, 2026-05-10)
 
 ## 10. Project facts — RC702 hardware
 
@@ -198,14 +182,10 @@
 
 - [DRI NDOS — no upstream](project_dri_ndos_frozen.md) — cpnet-z80 DRI sources have no live upstream; we own them and can edit freely
 - [CP/NOS no local floppy](project_cpnos_no_local_floppy.md) — CP/NOS payload stays diskless; do not propose drive B: as physical floppy on the slave
-- [cpnos PROM only](project_cpnos_only_prom.md) — Autoload PROM phase is over; only test with cpnos PROM
-- [CP/NOS → PROM 1 via compiler](project_cpnos_prom1_compiler_goal.md) — Post-functional goal: fix llvm-z80 codegen until CP/NOS fits in PROM 1 (2 KB)
 - [Fast link is CP/NET-only](project_fast_link_cpnet_only.md) — fast host<->RC702 transport is for CP/NET + CP/NOS frames only
-- [cpnos-rom is clang-only](project_cpnos_clang_only.md) — clang-only is fine for now; do not preemptively SDCC-compat or chase IDE LSP false-positives on Z80 inline asm
 - [Z80 simple, host complex, hardware-compatible](project_z80_simple_host_complex.md) — slave-side Z80 small/fast; push protocol work to host; must run on physical RC702
-- [HiTech port parked — check note first](feedback_check_hitech_park_note.md) — read `rc700-gensmedet/tasks/hitech-port-parked.md` before proposing HiTech as third compiler. Supersedes [[project_hitech_third_compiler]]
-- **[AES corpus = parity oracle](project_aes256_corpus_goal.md) — `aes256-corpus/` drives clang→zsdcc parity AND collects SDCC bugs as upstream-bound queue. Two tracks, each files issues with test cases. Filed: ravn/llvm-z80#156 (+static-stack), ravn/z88dk#5 (--nogcse), ravn/z88dk#6 (sdcc_ix). **Post-session-73p Phase 1:** clang DOMINATES SDCC on AES `09_Oz_prod_like` (−23% bin, −11% ts). All 13 configs faster than SDCC. New gaps to track via `tasks/all-modes-competitive-plan.md`.**
-- **[#177 Z80 TTI partial ship](project_issue177_work_clock.md) — Phase B2 (2026-05-22) bisected the bundle after the B1 miscompile, isolated to one line: `getArithmeticInstrCost(i16)=2`. Filed as **ravn/llvm-z80#184** with reproducer + asm diff. Sibling clean cases shipped on `541b687bbecc` (merge to main): `prefersVectorizedAddressing=false`, `Mul -> TCC_Expensive`, `getCastInstrCost` (trunc/zext free, sext=2). Production delta: cpnos PROM1 2030 -> **2029 B (-1 B)**. Lesson: BISECT on first failure, don't park. Phase C/D deferred, Phase E retired. CRITICAL: #128 `disablePass()` workaround stays indefinitely.
+- [HiTech port parked — check note first](feedback_check_hitech_park_note.md) — read `rc700-gensmedet/tasks/hitech-port-parked.md` before proposing HiTech as third compiler
+- **[AES corpus = parity oracle](project_aes256_corpus_goal.md) — `aes256-corpus/` drives clang→zsdcc parity AND queues SDCC bugs for upstream (two tracks, each files issues with test cases: ravn/llvm-z80#156, ravn/z88dk#5/#6). Post-73p Phase 1: clang DOMINATES SDCC on `09_Oz_prod_like` (−23% bin, −11% ts), all 13 configs faster. New gaps tracked in `tasks/all-modes-competitive-plan.md`.**
 
 ## 12. External-bug refs
 
@@ -216,16 +196,6 @@
 
 - [User Profile](user_profile.md) — Experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - [HiTech zc Docker image](reference_hitech_zc_docker.md) — `ghcr.io/ravn/hitech` provides the `zc` (HiTech C) Z80 compiler — Docker, no local install
-- [No .claude memory for project info](feedback_no_claude_memory.md) — All project notes go in repo (tasks/, CLAUDE.md, docs/), never .claude/memory
+- [Memory in tasks/memory/, never ~/.claude/](feedback_no_claude_memory.md) — durable memory canonical in `tasks/memory/`, read manually at session start; never write to `~/.claude/`
 
-## 14. Persisted-elsewhere pointer
-
-Project-specific info is in the repo, NOT here:
-- Project goal / architecture — `CLAUDE.md` (project root and per-subdir)
-- TODOs, deferred items, parked ideas, session notes — `rc700-gensmedet/rcbios-in-c/tasks/`
-- Datasheet transcriptions, CP/M naming, tool workflow refs — `rc700-gensmedet/rcbios-in-c/docs/` and `rc700-gensmedet/docs/`
-- MAME build and emulation — `rc700-gensmedet/docs/MAME_RC702.md`
-- cpmtools usage — `rc700-gensmedet/rcbios-in-c/README.md` and `SYSGEN_INSTALL.md`
-- z88dk Docker rebuild — `rc700-gensmedet/docs/z88dk_docker_rebuild.md`
-- PROM 2KB limit — `rc700-gensmedet/RC702_HARDWARE_TECHNICAL_REFERENCE.md`
-- [IX caller-saved after #12](project_ix_caller_saved_after_12.md) — IX as allocatable reg is a regression in callee-saved ABI; only caller-saved IX wins (needs #12 FP-elimination). Revisit then.
+<!-- For project info that lives in the repo (not memory) — goal, TODOs, docs, MAME, PROM specs — see the "What's NOT in memory" map in README.md. -->
