@@ -40,6 +40,7 @@
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep repo for existing `*_REFERENCE.md` / `*_CHARACTER_ROM.md` before re-deriving encodings.**
 - [No UNSOLICITED Upstream Issues](feedback_no_upstream_issues.md) — default: file in ravn/* forks. When the user directs a curated submission (session 77), file at llvm-z80/llvm-z80 — one per underlying bug, draft→approve→file, linked failing test; never official llvm/llvm-project
 - [Upstream target — "z80 upstream only"](feedback_upstream_routing_two_targets.md) — curated submission goes to llvm-z80/llvm-z80 (@zlfn) only; no parallel llvm/llvm-project campaign; reference (don't dup) bugs already open upstream; audit completeness via generic-code diff vs upstream/main
+- **[MAME upstream routing](feedback_mame_upstream_routing.md) — HARD (user 2026-06-02): NEVER file in any MAME repo without explicit per-issue permission. Shared devices (FDC/PIO) → mamedev/mame; rc702 driver → ravn/mame fork. rc702 isn't upstream — repro device bugs on an upstream machine + latest MAME, run it in MAME, verify datasheet vs primary source, don't bundle with the driver.**
 - **[No local zsdcc fixes](feedback_no_local_zsdcc_fixes.md) — HARD (user 2026-05-29): don't fix zsdcc/SDCC bugs in ravn/z88dk; root-cause + minimal-repro, mark `wontfix`, report upstream (e.g. #3/#16/#17). llvm-z80 (clang) fixes still done locally.**
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — bug in dep (llvm-z80, z80pack, mame, …) → ravn/* fork issue with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — Add XFAIL lit test for every clang Z80 codegen bug found
@@ -106,7 +107,7 @@
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: check siob.raw banner timestamp vs latest BUILD_INFO_STR before any diagnosis; same timestamp across rebuilds = stale ROM.**
 - **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — On polypascal-test timeout at stage 1 (E>) or stage 2 (`>>`), first try `make _kill-mpm; sleep 5-8; retry`. Stuck daemon mimics codegen regression.**
 - **[Session-start: kill daemons BEFORE first test](feedback_session_start_kill_daemons.md) — HARD: at session start (no memory of prior daemon state), proactively `make -C cpnos-in-c _kill-mpm; sleep 8` BEFORE the first MAME/polypascal/CP-NET run, and between COMPILER switches. Proactive form of [[feedback-polypascal-stage1-flake]].**
-- **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: always capture a MAME screenshot to verify init; PASS log lines aren't enough**
+- **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: always capture a MAME screenshot to verify boot; PASS log lines AND memory dumps at the display base are NOT enough (the dump may be stale / wrong base / not what the CRTC paints — burned a session 2026-06-03).**
 - **[Black screen is fatal](feedback_black_screen_fatal.md) — HARD: black MAME screen halts all other investigation; root-cause boot path before anything else**
 - [Black screen → CRT ISR not firing](feedback_black_screen_crt_isr.md) — black RC702 display means `isr_crt` isn't running; suspect EI / IVT slot 2 / CTC ch2 in that order; SIO-B output still valid in this state
 - [MAME Banner Check](feedback_mame_banner.md) — Verify boot banner compiler (CL=clang, ROA375=SDCC), fail if wrong
@@ -118,6 +119,8 @@
 - **[MAME windowed only](feedback_mame_windowed_only.md) — HARD: always pass `-window`; never fullscreen (user directive 2026-05-25)**
 - [MAME interactive timeout](feedback_mame_interactive_timeout.md) — Interactive MAME launches only need ~30s Bash timeout
 - [Lua no port reads](feedback_lua_no_port_reads.md) — MAME Lua must never read IO ports (double reads break devices); use install_read_tap instead
+- **[Lua errors are fatal — fix them first](feedback_lua_errors_fatal.md) — HARD: any `[LUA ERROR]` in a MAME run invalidates the harness's reported result. Triage: `grep -c 'LUA ERROR' <log>` → fix lua → re-run → THEN interpret. Burned a session (2026-06-03) ignoring 20 errors/run, mis-filed ravn/llvm-z80#215.**
+- **[Display address from DMA, never hardcode](feedback_display_addr_from_dma.md) — HARD: read the RC702 display base from the Am9517A DMA ch2 address reg (write-taps on 0xF4 low/high + 0xFC clear), never hardcode 0x7A00/0xF800; bases differ per PROM (autoload 0x7A00, roa375 0x7800). Hardcoding misread the screen 2026-06-02.**
 - [Bench self-termination](feedback_bench_must_self_terminate.md) — bench Lua taps must call `manager.machine:exit()` on finish-signal
 - [No permission for MAME/MP/M launch](feedback_mame_mpm_no_permission.md) — standing authorization to spawn/kill MAME and z80pack mpm-net2 during RC702 work
 - [Pre-launch change summary](feedback_show_changes_before_launch.md) — Before every MAME run, list edits/build/PROM/daemons + the hypothesis the run tests
@@ -180,6 +183,7 @@
 
 ## 11. Project facts — cpnos / cpnet / DRI
 
+- **[Long-term goal: finish rcbios + autoload-in-c + CP/NET + cpnos](project_finishing_firmware_components.md) — user directive 2026-06-03: bring the four firmware components to a finished state. The compiler track serves them; bias toward work that measurably advances one of the four.**
 - [DRI NDOS — no upstream](project_dri_ndos_frozen.md) — cpnet-z80 DRI sources have no live upstream; we own them and can edit freely
 - [CP/NOS no local floppy](project_cpnos_no_local_floppy.md) — CP/NOS payload stays diskless; do not propose drive B: as physical floppy on the slave
 - [Fast link is CP/NET-only](project_fast_link_cpnet_only.md) — fast host<->RC702 transport is for CP/NET + CP/NOS frames only

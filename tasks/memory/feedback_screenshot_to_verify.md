@@ -6,10 +6,21 @@ originSessionId: 5295f669-4bd6-4de0-8588-d661b7498d99
 ---
 When verifying that cpnos-rom (or any RC702 guest) has booted in MAME,
 **always take a screenshot.**  Do not infer display/init state from
-log files, BSS counters, or test-script PASS messages.  A test script
-can return PASS while the display is black; the display is the
-authoritative signal that init_hardware completed and CRT IRQs are
-firing.
+log files, BSS counters, test-script PASS messages, **OR memory dumps
+at a presumed display address**.  A test script can return PASS while
+the display is black; the screenshot is the authoritative signal that
+init_hardware completed and the CRTC is painting.
+
+**Memory dumps at the display address are NOT a substitute for a
+screenshot.** What's in RAM at the guessed display base can be:
+  - Stale (autoload's framebuffer still holds its banner after the BIOS
+    takes over at a different base — burned a session 2026-06-03 around
+    this; the lua-harness lesson is in [[feedback_lua_errors_fatal]]);
+  - At the wrong base entirely (different PROM / different boot phase /
+    CP/M moved it);
+  - Not what the i8275 CRTC is actually fetching (the chip's row table
+    and DMA-ch2 program determine what paints, not RAM contents alone).
+The PNG snapshot is what the user sees and what we are testing for.
 
 **Why:** Restated by the user 2026-04-26 after I declared
 "cpnos-netboot PASS" and proceeded to the next step without checking

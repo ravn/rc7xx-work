@@ -10,6 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to match or beat SDCC code density. Test against RC700 PROM and BIOS sources in rc700-gensmedet.
 
+**Long-term direction (user 2026-06-03):** the four RC702 firmware components — **rcbios, autoload-in-c, CP/NET, cpnos** — are the production deliverables that this compiler work serves. The goal is to bring all four to a **finished** state (no known bugs, clear docs, oracle coverage, sustainable headroom). All four currently *work*; "finished" is the next bar. Bias compiler/feature priorities toward items that measurably advance one of these four. See `tasks/memory/project_finishing_firmware_components.md`.
+
 ## Current Sizes (2026-05-22, post-session-73p Phase 2: #177 partial ship + #184 filed)
 
 **Phase 1 milestone:** AES corpus `09_Oz_prod_like` flipped from clang +23 % slower / −20 % smaller to **clang −11 % faster / −23 % smaller** vs SDCC.  All 13 AES configs now faster than SDCC (4.8–11 %); 4 of 13 also smaller.  Three codegen fixes landed: `#179 P1` (DEC+OR→SUB+JR_C reorder), `#179 P2` (ADD_A_A carry forwarding), and `#128` (LICM/CSE disable).  See `llvm-z80/tasks/session73p-phase1-summary.md`.
