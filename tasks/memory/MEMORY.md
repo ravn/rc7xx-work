@@ -185,6 +185,7 @@
 
 - **[Long-term goal: finish rcbios + autoload-in-c + CP/NET + cpnos](project_finishing_firmware_components.md) — user directive 2026-06-03: bring the four firmware components to a finished state. The compiler track serves them; bias toward work that measurably advances one of the four.**
 - **[cpnos PARKED 2026-06-04 — awaiting physical parallel cable](project_cpnos_parked_awaiting_parallel_cable.md) — surface this before acting on any cpnos source / PIO transport / polypascal-test task. Unpark on user signal cable arrived.**
+- **[SEM702 chip-photo request](project_sem702_request_chip_photo.md) — next time the physical RC702 is open, ASK the user to photograph the SEM702 piggyback boards (large on ic82, small under ic68) so we can ID the actual TTL/SRAM chips. Drop the reminder once the photo arrives.**
 - [DRI NDOS — no upstream](project_dri_ndos_frozen.md) — cpnet-z80 DRI sources have no live upstream; we own them and can edit freely
 - [CP/NOS no local floppy](project_cpnos_no_local_floppy.md) — CP/NOS payload stays diskless; do not propose drive B: as physical floppy on the slave
 - [Fast link is CP/NET-only](project_fast_link_cpnet_only.md) — fast host<->RC702 transport is for CP/NET + CP/NOS frames only
