@@ -67,6 +67,12 @@ Reload your shell and confirm:
 echo $ANTHROPIC_API_KEY | head -c 10  # should print sk-ant-...
 ```
 
+> **macOS note (user 2026-06-06):** if Safari is your default browser,
+> the `claude login` OAuth callback won't complete (Safari blocks the
+> localhost redirect).  Setting `ANTHROPIC_API_KEY` as above bypasses
+> the OAuth flow entirely.  See
+> `tasks/memory/reference_claude_login_safari_workaround.md`.
+
 ## 4. Start a project-aware session
 
 ```sh

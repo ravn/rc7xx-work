@@ -204,6 +204,7 @@
 ## 13. Reference / one-offs
 
 - [User Profile](user_profile.md) — Experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
+- [Safari breaks claude login callback](reference_claude_login_safari_workaround.md) — on Mac with Safari as default, claude CLI's OAuth login hangs (callback never lands). Bypass via ANTHROPIC_API_KEY env var, or set Chrome/Firefox as default for the login dance.
 - [HiTech zc Docker image](reference_hitech_zc_docker.md) — `ghcr.io/ravn/hitech` provides the `zc` (HiTech C) Z80 compiler — Docker, no local install
 - [Memory in tasks/memory/, never ~/.claude/](feedback_no_claude_memory.md) — durable memory canonical in `tasks/memory/`, read manually at session start; never write to `~/.claude/`
 
