@@ -551,3 +551,4 @@
 - save state and prepare for shutdown (-> tasks/upstream-5bug/ created: STATUS.md + repros + draft-bug2/5.md; handoff addendum 3; committed+pushed)
 - clean up CLAUDE.md (-> dedup Current Sizes bullets, refresh stale numbers to 2026-05-31 state, compress session history to 1-3 lines each per user choice, per-host workspace paths)
 - I have run out of tokens... help being more efficient in this project (-> token-efficiency overhaul: MEMORY.md index compressed 32->22 KB, rc700 CLAUDE.md staleness fixes, new rule feedback_token_efficiency.md [filtered output/background runs/handoff+fresh-session], feedback_show_thinking.md tiered)
+- i want the scroll wheel to scroll the window, not the prompts / inside screen in terminal.app / 1 fixed it (-> Terminal.app profile: uncheck "Scroll alternate screen"; noted terminal env in user_profile.md)
