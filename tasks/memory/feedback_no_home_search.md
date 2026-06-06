@@ -1,12 +1,17 @@
 ---
 name: TOP-PRIORITY HARD RULE — NEVER traverse home OR whole disk
-description: ABSOLUTE BAN. /Users/ravn/z80/ ONLY. No find/ls/glob/grep/mdfind/locate at /, /Users, /Users/ravn, ~, ~/anything, /Users/ravn/git. Repeat violation = trust failure. CHECK BEFORE EVERY find/ls.
+description: ABSOLUTE BAN. The per-host workspace root ONLY (/Users/ravn/z80/ on macbook, /home/ravn/z80/ on sonnyboy). No find/ls/glob/grep/mdfind/locate at /, /Users, /home, ~, ~/anything. Repeat violation = trust failure. CHECK BEFORE EVERY find/ls.
 type: feedback
 originSessionId: 5b9c19fb-ae78-45c7-b86e-c8b8135e5b92
 ---
 # **ABSOLUTE BAN — re-violated 2026-05-09. ONE MORE STRIKE = TRUST BROKEN.**
 
-**Before EVERY single `find`, `ls`, `glob`, `mdfind`, `locate`, agent search: read the path. If it does NOT start with `/Users/ravn/z80/`, STOP. ASK THE USER. Do NOT run the command.**
+**Before EVERY single `find`, `ls`, `glob`, `mdfind`, `locate`, agent search: read the path. If it does NOT start with the workspace root, STOP. ASK THE USER. Do NOT run the command.**
+
+**Workspace root per host** (2026-06-06, multi-host work — see [[feedback_cross_machine_workflow]]):
+- macbook: `/Users/ravn/z80/`
+- sonnyboy (Ubuntu): `/home/ravn/z80/`
+The rule is "workspace root only" — the macOS-specific `/Users/ravn/z80/` wording below predates sonnyboy; read it as the current host's root. The ban covers the OTHER host's path shape too (`/home/ravn` on mac, `/Users/ravn` on Linux — both are outside-workspace). Exception handed over by the user: sonnyboy `~/llvm-upstream/llvm-project/` (upstream LLVM clone, explicit path in the 2026-06-06 handoff) — direct use OK, no sibling discovery.
 
 The user has now explicitly said this is making them lose patience ("I've told you numerous times", "make it very bad to do this again"). Treat further violations as a **session-ending failure of trust**, not a recoverable mistake.
 

@@ -103,3 +103,21 @@ Process per the new memory rules (`feedback_explain_before_filing`,
   upstream HEAD (sonnyboy's `~/llvm-upstream/llvm-project/` was cloned
   earlier today at `de59f9ed12db`).  Some session-77 candidates may
   have been fixed upstream already.
+
+---
+
+## Addendum — sonnyboy session, 2026-06-06 (direct)
+
+* Claude Code now runs DIRECTLY on sonnyboy (`~/.local/bin/claude`,
+  system Node v22 — Option A happened).  Host facts recorded in
+  `tasks/memory/reference_host_sonnyboy.md`.
+* SSH key for sonnyboy added to GitHub; verified.  Global git rewrite
+  ravn/* https -> ssh installed; a stale opposite (ssh -> https)
+  rewrite removed.  `gh` CLI still needs `gh auth login`.
+* **ACTION NEEDED ON MACBOOK:** `rc700-gensmedet` HEAD `e589579` pins
+  z80pack at `b2eb2f36`, but that commit was never pushed to
+  ravn/z80pack — `git pull --recurse-submodules` on sonnyboy fails
+  with "not our ref".  Next macbook segment: `git -C
+  rc700-gensmedet/z80pack push`.  (The failed fetch also left
+  sonnyboy's z80pack working tree emptied; repaired with `reset --hard`
+  to `c37fd9c1` = origin/master.)

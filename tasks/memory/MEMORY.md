@@ -13,7 +13,7 @@
 
 ## 0. ABSOLUTE BANS — read before EVERY find/ls/grep/glob
 
-- **[NEVER traverse outside /Users/ravn/z80/](feedback_no_home_search.md) — ABSOLUTE. No `find /`, `find /Users`, `find ~`, `ls ~`, `mdfind`, `locate`. Re-violated 2026-05-09; one more strike = trust broken. CHECK PATH BEFORE EVERY find/ls/glob.**
+- **[NEVER traverse outside the workspace root](feedback_no_home_search.md) — ABSOLUTE. Root is per-host: `/Users/ravn/z80/` (macbook), `/home/ravn/z80/` (sonnyboy). No `find /`, `find /Users`, `find /home`, `find ~`, `ls ~`, `mdfind`, `locate`. Re-violated 2026-05-09; one more strike = trust broken. CHECK PATH BEFORE EVERY find/ls/glob.**
 
 ## 1. Always-on (every response)
 
@@ -136,7 +136,7 @@
 
 ## 7. Before file/script ops
 
-- **[NEVER traverse outside /Users/ravn/z80/](feedback_no_home_search.md) — see §0; ABSOLUTE BAN, re-violated 2026-05-09**
+- **[NEVER traverse outside the workspace root](feedback_no_home_search.md) — see §0; ABSOLUTE BAN, re-violated 2026-05-09; root is per-host (`/Users/ravn/z80` mac, `/home/ravn/z80` sonnyboy)**
 - **[No stale dump files](feedback_no_stale_dump_files.md) — HARD: `rm -f /tmp/foo` BEFORE the producer command, every iteration; never read a /tmp/* artifact without confirming it's from this iteration**
 - **[No DOTALL backtracking on source](feedback_no_dotall_backtracking.md) — HARD: don't combine `re.DOTALL` with non-greedy `.*?` over multi-line source; use awk/grep or hand-rolled char-state machine; kill any scan exceeding ~10s**
 - [z80 tree has no untrusted hooks](feedback_z80_tree_no_untrusted_hooks.md) — `cd /Users/ravn/z80/… && git …` is safe; do not hedge on hook risk
@@ -204,6 +204,7 @@
 ## 13. Reference / one-offs
 
 - [User Profile](user_profile.md) — Experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
+- [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, workspace `/home/ravn/z80`, headless, Claude Code local since 2026-06-06, GitHub SSH key added, upstream LLVM at `~/llvm-upstream/llvm-project`
 - [Safari breaks claude login callback](reference_claude_login_safari_workaround.md) — on Mac with Safari as default, claude CLI's OAuth login hangs (callback never lands). Bypass via ANTHROPIC_API_KEY env var, or set Chrome/Firefox as default for the login dance.
 - [HiTech zc Docker image](reference_hitech_zc_docker.md) — `ghcr.io/ravn/hitech` provides the `zc` (HiTech C) Z80 compiler — Docker, no local install
 - [Memory in tasks/memory/, never ~/.claude/](feedback_no_claude_memory.md) — durable memory canonical in `tasks/memory/`, read manually at session start; never write to `~/.claude/`
