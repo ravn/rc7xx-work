@@ -35,16 +35,24 @@ the failure: a filing reached a maintainer that the user couldn't defend.
 
 1. **State the routing decision first.** "This goes to <repo> because
    <one-sentence reason>." Wait for confirmation that the routing is right.
-2. **Then state the root cause in plain English** — not implementation
+2. **Check for known bugs in the target tracker FIRST** (user directive
+   2026-06-06): before drafting any upstream issue, search the target
+   issue tracker for the same symptom -- exact error text, source-file
+   coordinates, related opcodes/passes.  If a matching issue exists,
+   reference it (link / comment) instead of filing a new one.  Verify the
+   referenced bug is the same root cause, not just a similar surface --
+   "looks like" doesn't count.  This applies to llvm/llvm-project,
+   llvm-z80/llvm-z80, ravn/* forks, and anywhere else upstream.
+3. **Then state the root cause in plain English** — not implementation
    detail, but: what observable misbehavior, in which generic code path,
    under which trigger. Three to five sentences max. Mark AI-derived
    reasoning as such; don't present it as authoritative.
-3. **Then state the proposed fix** (or "no fix proposed; just a regression
+4. **Then state the proposed fix** (or "no fix proposed; just a regression
    test guard"). Acknowledge if the fix is AI-generated and may not be the
    best approach.
-4. **Wait for explicit "go ahead, file it"** for THIS filing. Not a blanket
+5. **Wait for explicit "go ahead, file it"** for THIS filing. Not a blanket
    "yes file the queue."
-5. **After filing**, paste the issue/PR URL back and confirm the body
+6. **After filing**, paste the issue/PR URL back and confirm the body
    matches what was approved.
 
 **Scope of "upstream" for this rule.** Anything posted to a repository
