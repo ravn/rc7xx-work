@@ -21,8 +21,8 @@ reached remotely from the macbook).
   account 2026-06-06 — pushes work from here.  Global git rewrite
   `url.git@github.com:ravn/.insteadOf https://github.com/ravn/` makes
   all ravn/* remotes use SSH (a pre-existing opposite ssh->https
-  rewrite was removed the same day).  `gh` CLI NOT logged in — git
-  operations work, but `gh issue`/`gh run` need `gh auth login` first.
+  rewrite was removed the same day).  `gh` CLI logged in as ravn
+  (PAT, git protocol ssh) since 2026-06-06.
 * macOS-only memory entries don't apply here (e.g.
   [[reference_macos_timeout]] — GNU timeout exists on sonnyboy;
   CLion-bundle tool paths in [[reference_build_binaries]] are
