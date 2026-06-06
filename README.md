@@ -1,3 +1,21 @@
+## Getting started
+
+On a stock Ubuntu host, one command installs every build dependency
+plus Claude CLI (idempotent, opt-out flags available):
+
+```sh
+bash scripts/setup-ubuntu.sh
+```
+
+Then follow [BOOTSTRAP.md](BOOTSTRAP.md) to clone the workspace
+recursively, set your `ANTHROPIC_API_KEY`, and run `claude`.
+
+For macOS hosts and per-machine detail, see [BOOTSTRAP.md](BOOTSTRAP.md).
+For project structure and the working agreement with Claude, see
+[PROJECT.md](PROJECT.md), [AGENTS.md](AGENTS.md), and [CLAUDE.md](CLAUDE.md).
+
+---
+
 This project is for experimenting with the llvm-z80 backend to see if AI (notably Claude Code) can bring it into a usable state for my pet project of upgrading firmware and BIOS for the RC700 machine to modern tooling.  
 
 Focus is on teaching llvm-z80 that the Z80 has different properties than modern CPUs and use that knowledge to allow for non-intuitive optimizations.
