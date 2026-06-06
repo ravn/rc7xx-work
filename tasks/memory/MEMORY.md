@@ -119,6 +119,7 @@
 - [Fresh BIOS+PROM before MAME](feedback_mame_fresh_build.md) — Always rebuild both BIOS and PROM before MAME boot
 - [Run MAME at full speed](feedback_mame_full_speed.md) — Always include `-nothrottle` in unattended MAME tests
 - **[MAME windowed only](feedback_mame_windowed_only.md) — HARD: always pass `-window`; never fullscreen (user directive 2026-05-25)**
+- **[Headless host = no MAME window](feedback_host_no_graphics.md) — HARD (2026-06-06): on sonnyboy (and any other headless host) MAME can't open a window. Use `SDL_VIDEODRIVER=dummy` (or xvfb-run) -- snapshots + AVI still work via internal MAME buffers.**
 - [MAME interactive timeout](feedback_mame_interactive_timeout.md) — Interactive MAME launches only need ~30s Bash timeout
 - [Lua no port reads](feedback_lua_no_port_reads.md) — MAME Lua must never read IO ports (double reads break devices); use install_read_tap instead
 - **[Lua errors are fatal — fix them first](feedback_lua_errors_fatal.md) — HARD: any `[LUA ERROR]` in a MAME run invalidates the harness's reported result. Triage: `grep -c 'LUA ERROR' <log>` → fix lua → re-run → THEN interpret. Burned a session (2026-06-03) ignoring 20 errors/run, mis-filed ravn/llvm-z80#215.**
