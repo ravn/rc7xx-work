@@ -549,3 +549,4 @@
 - continue (-> cmake configure verified clean; BUG5 draft still awaiting per-filing go-ahead; proceeding to BUG2 presentation)
 - 2 [continue 5-bug queue] (-> duplicate searches llvm/llvm-project for bugs 2-5: none found; BUG5 presented (draft + provenance #73/#87, cpnos init.c:435 login_pwd memcpy); BUG2 presented (draft from session-77 writeup); both AWAITING go-ahead)
 - save state and prepare for shutdown (-> tasks/upstream-5bug/ created: STATUS.md + repros + draft-bug2/5.md; handoff addendum 3; committed+pushed)
+- clean up CLAUDE.md (-> dedup Current Sizes bullets, refresh stale numbers to 2026-05-31 state, compress session history to 1-3 lines each per user choice, per-host workspace paths)
