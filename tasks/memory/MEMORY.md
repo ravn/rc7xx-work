@@ -35,7 +35,8 @@
 ## 2. Before any commit / PR / issue
 
 - **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: never `gh pr create` unless the user asks this turn. Engagement-mode (session 77): user may direct a tests-only + infra PR to llvm-z80/llvm-z80; NEVER a per-bug or fix PR.**
-- **[Explain before filing](feedback_explain_before_filing.md) — HARD (2026-06-05, post-PR-#17 rejection): no upstream issue/PR/commit/close-comment goes out until root cause is explained in plain English in chat AND user says "go ahead, file it" for THIS specific filing. No batch approvals. Applies to ravn/* forks too.**
+- **[Explain before filing](feedback_explain_before_filing.md) — HARD (2026-06-05, post-PR-#17 rejection): no upstream issue/PR/commit/close-comment goes out until root cause is explained in plain English in chat AND user says "go ahead, file it" for THIS specific filing. No batch approvals. Applies to ravn/* forks too. Step 2 (2026-06-06): check the target tracker for known-bug duplicates FIRST.**
+- **[Cross-machine workflow](feedback_cross_machine_workflow.md) — HARD (2026-06-06): user works across multiple hosts (macbook + sonnyboy + future). State that isn't in git is lost on switch. Commit-push at end of every working segment; pull-with-submodules at start; use `tasks/handoff/YYYY-MM-DD-slug.md` for live in-progress narrative.**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD: combiner/ISel/lowering changes need value oracle (test-runner + MAME boot) BEFORE commit**
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: before proposing/implementing any fix, search MEMORY.md, cite rules; commit message must include `Rules-checked:` line**
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep repo for existing `*_REFERENCE.md` / `*_CHARACTER_ROM.md` before re-deriving encodings.**
