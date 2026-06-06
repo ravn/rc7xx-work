@@ -547,3 +547,5 @@
 - where did this manifest? (-> bug5 provenance: cpnos PROM shrink, PASSWORD copy into CP/NET frame (#73) -> distilled #87 -> root-caused to InstCombine SimplifyAnyMemTransfer fold, local guard 475a65378517)
 - please open the copy routine in clion / clion allows remote development (-> opened InstCombineCalls.cpp:172; learned sonnyboy runs CLion RemoteDev backend, user views via Gateway; /ide connected; fixed stale cpnos-rom ref in workspace CMakeLists)
 - continue (-> cmake configure verified clean; BUG5 draft still awaiting per-filing go-ahead; proceeding to BUG2 presentation)
+- 2 [continue 5-bug queue] (-> duplicate searches llvm/llvm-project for bugs 2-5: none found; BUG5 presented (draft + provenance #73/#87, cpnos init.c:435 login_pwd memcpy); BUG2 presented (draft from session-77 writeup); both AWAITING go-ahead)
+- save state and prepare for shutdown (-> tasks/upstream-5bug/ created: STATUS.md + repros + draft-bug2/5.md; handoff addendum 3; committed+pushed)

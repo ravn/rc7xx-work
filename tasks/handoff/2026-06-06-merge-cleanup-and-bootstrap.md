@@ -143,3 +143,26 @@ Process per the new memory rules (`feedback_explain_before_filing`,
   (user apt-install pending) — relaunch with NO_USE_QTDEBUG=1.
   z88dk/docker: works in fresh shells; this Claude session needs restart
   to pick up the docker group.
+
+## Addendum 3 — shutdown save (sonnyboy, 2026-06-06 evening)
+
+**Where we are:** 5-bug queue live in `tasks/upstream-5bug/` (STATUS.md =
+single source of truth; repros + the two pending draft bodies saved there).
+ravn/llvm-z80#217 filed (bug-1 regression).  BUG2 + BUG5 drafts presented,
+**awaiting per-filing go-ahead** — user was last looking at the production
+BUG5 site (cpnos-in-c `src/init.c:435`, the login_pwd memcpy) in CLion.
+
+**Next action (either host):** get user verdict on draft-bug5.md /
+draft-bug2.md (file / edit / user files); then write drafts for bugs 3+4
+per STATUS.md notes.  Independently: #217 fix is queued work
+(formDedicatedExitBlocks in Z80LoopIdiomFill + revert generic divergence
++ clang-shaped lit test) — production rebuilds at -O1/-Oz can abort until
+fixed (asserts build).
+
+**Sonnyboy environment state:** llvm-z80 + upstream LLVM built; test-runner
+(z80-test-runner), z88dk-ticks, zmac built.  MAME build still blocked on
+`sudo apt install libsdl2-ttf-dev` (then: NO_USE_QTDEBUG=1 OSD=sdl
+SOURCES=rc702.cpp REGENIE=1).  z88dk needs docker = fresh session.  CLion
+RemoteDev backend works (user views via Gateway); workspace CMakeLists
+index fixed.  gh authenticated (repo scope).  **macbook still owes a
+`git -C rc700-gensmedet/z80pack push`** (b2eb2f36 'not our ref').
