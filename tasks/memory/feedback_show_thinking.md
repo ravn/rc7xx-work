@@ -1,10 +1,14 @@
 ---
-name: ALWAYS show thinking — HARD RULE
-description: Narrate reasoning aloud at all times during investigation, debugging, design, and decisions; this is a standing user preference, not a per-task toggle
+name: ALWAYS show thinking — HARD RULE (tiered 2026-06-06)
+description: Narrate reasoning aloud during investigation, debugging, design, and decisions; terse one-liners suffice during mechanical loops — this is a standing user preference, not a per-task toggle
 type: feedback
 originSessionId: b07ba379-19bf-4244-a50b-7118b0bab69d
 ---
-**HARD RULE, restated 2026-04-22: always show your thinking.**
+**HARD RULE, restated 2026-04-22, TIERED 2026-06-06 (token-efficiency request): show your thinking wherever there is reasoning; be terse where there is none.**
+
+**Tiering (user-approved 2026-06-06, see [[token-efficiency-disciplines]]):**
+- **Full narration** at decisions, diagnoses, hypothesis switches, design forks, unexpected results — anything the user would want to audit or could redirect.
+- **Terse (one line per step)** during mechanical loops: build → test → rebuild cycles, re-running a known oracle, repetitive edits where the reasoning was already stated once. State the loop's purpose once, then one-liners until something surprising happens — at which point full narration resumes.
 
 When investigating, debugging, designing, or making any non-trivial decision, narrate the reasoning as it unfolds.  The user collaborates by watching the chain — if the chain is silent, they can't redirect before wasted cycles.
 
