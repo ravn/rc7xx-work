@@ -121,3 +121,25 @@ Process per the new memory rules (`feedback_explain_before_filing`,
   rc700-gensmedet/z80pack push`.  (The failed fetch also left
   sonnyboy's z80pack working tree emptied; repaired with `reset --hard`
   to `c37fd9c1` = origin/master.)
+
+## Addendum 2 — 5-bug verification status (sonnyboy, 2026-06-06)
+
+* Bug 1 (deleteDeadLoop): NOT an upstream bug — caller-contract violation
+  by Z80LoopIdiomFill; ALSO a live regression at HEAD (asserts on the
+  7-line #182 repro at -O1/-Oz, assert builds).  Filed **ravn/llvm-z80#217**
+  (user-approved).  Dropped from the upstream queue.
+* Bugs 2/4/5 (TruncInstCombine Argument-leaf; outside-user allowlist;
+  memcpy->illegal-int fold): all REPRODUCE on upstream HEAD de59f9ed
+  (repro files in /tmp/claude-1000/5bug/ on sonnyboy — regenerate via
+  gh api from PR-17 commit c7afabb6d87f / d91faea23b76 if lost).
+* Bug 3 (SimplifyCFG foldTwoEntryPHINode): still present but REFRAME —
+  upstream now gates on getPredictableBranchThreshold ONLY when branch
+  weights exist; no-PGO path unguarded.  Demonstrable generically via
+  -predictable-branch-threshold cl::opt (no Z80 needed).
+* Next: per-bug duplicate search on llvm/llvm-project tracker, then
+  one-at-a-time user approval per feedback_explain_before_filing.
+* Builds on sonnyboy: test-runner ✓ (binary z80-test-runner), ticks ✓,
+  zmac ✓ (needs -std=gnu17 on GCC 15).  MAME blocked on libsdl2-ttf-dev
+  (user apt-install pending) — relaunch with NO_USE_QTDEBUG=1.
+  z88dk/docker: works in fresh shells; this Claude session needs restart
+  to pick up the docker group.
