@@ -48,8 +48,12 @@ add_library(z80_backend_index OBJECT EXCLUDE_FROM_ALL
     ${LLVM_Z80_ROOT}/clang/lib/Basic/Targets/Z80.cpp
     ${LLVM_Z80_ROOT}/clang/lib/Basic/Targets/Z80.h
         tinypi-2024-11-04/tinypi.c
-        rc700-gensmedet/cpnos-rom/cfgtbl.c
 )
+
+# cpnos-in-c sources (index-only; real builds via its Makefile).
+# Replaces the parked cpnos-rom entry (removed 2026-05-17, split to cpnos-in-c).
+file(GLOB CPNOS_IN_C_SRC rc700-gensmedet/cpnos-in-c/src/*.c rc700-gensmedet/cpnos-in-c/src/*.h)
+add_custom_target(cpnos_in_c_files SOURCES ${CPNOS_IN_C_SRC})
 
 # TableGen files shown in project tree but not compiled
 add_custom_target(z80_tablegen_files SOURCES ${Z80_BACKEND_TD})

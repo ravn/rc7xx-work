@@ -13,6 +13,15 @@ reached remotely from the macbook).
   — see the per-host table in [[feedback_no_home_search]]).
 * **Headless** — no graphics for MAME windows; see
   [[feedback_host_no_graphics]] (SDL offscreen/dummy, snapshots OK).
+* **CLion via JetBrains Remote Development** (2026-06-06): sonnyboy runs
+  the headless CLion backend (`~/.cache/JetBrains/RemoteDev/dist/...`),
+  user views from the macbook via Gateway.  `clion` CLI launcher is at
+  `/snap/bin/clion`.  The Claude Code IDE plugin is installed in that
+  backend (`/ide` connects).  So: full IDE available, but still NO
+  display for MAME windows — the two facts coexist.
+* Workspace top-level `CMakeLists.txt` is CLion-index-only (real builds
+  are Makefiles/ninja) — keep its source lists current when subprojects
+  move (cpnos-rom reference went stale 2026-05-17 -> fixed 2026-06-06).
 * Claude Code: `~/.local/bin/claude` on system Node v22 (the
   "Option A" install path from the 2026-06-06 handoff).
 * Upstream LLVM clone (user-handed path): `~/llvm-upstream/llvm-project/`
