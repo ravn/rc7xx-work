@@ -1,5 +1,26 @@
 # Z80 Code Density Optimization Todo
 
+## Current (2026-06-07, post drafts 3+4)
+
+Active queue, in priority order:
+
+- [ ] **Upstream 5-bug filings** — drafts 2/3/4/5 complete in `tasks/upstream-5bug/`,
+  repros verified on llvm-project `de59f9ed`; each AWAITING per-filing user go-ahead
+  (`feedback_explain_before_filing`). Bug 1 rerouted to ravn/llvm-z80#217.
+- [ ] **ravn/llvm-z80#217** — Z80LoopIdiomFill violates `hasDedicatedExits()` caller
+  contract; regression at HEAD. Fix plan (in issue): `formDedicatedExitBlocks` in the
+  pass + revert the generic LoopUtils divergence + clang-shaped lit test.
+- [ ] **Upstream packaging track** (after filings): #180 peephole-audit reviewability
+  (~3-5 genuine stand-ins), #186 U-LLVM queue. Per session #74: only high-value
+  compiler work remaining.
+- [x] **PR #17 retraction cleanup COMPLETE** (verified 2026-06-07): fork issues
+  #18-#25 closed/withdrawn, #176 closed, #26 + PR #27 remain (correctly scoped).
+- PARKED: cpnos work awaits physical parallel cable (`project_cpnos_parked_awaiting_parallel_cable`).
+
+Stale-item corrections to the sections below: #205 CLOSED (session 76, pattern-fill
+intrinsic), #194 CLOSED (session 73s-cont2). #203 forward-scan restructure and the
+~56 FATALs triage remain open, low priority.
+
 ## After session 73s cont. (differential oracles + #136/#202/#204, 2026-05-27)
 
 DONE this session (all committed + pushed):
