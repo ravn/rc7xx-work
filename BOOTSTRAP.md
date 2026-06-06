@@ -26,19 +26,32 @@ If you forget `--recurse-submodules`, recover with:
 git submodule update --init --recursive
 ```
 
-## 2. Install Claude Code
+## 2. Install Claude Code + every build dependency (Ubuntu)
 
-Use whichever path you prefer.  No sudo required if you go via nvm.
+For Ubuntu hosts, the one-shot is `scripts/setup-ubuntu.sh` in this
+workspace (or grab a copy first, then clone after).  It installs:
+
+* All apt packages needed for llvm-z80, z88dk, rc700-gensmedet, MAME
+  (cmake, ninja, clang, lld, ccache, flex, bison, m4, SDL2 dev libs,
+  Qt6 dev for MAME, …)
+* Rust stable via `rustup` (test-runner)
+* Node.js + npm + `@anthropic-ai/claude-code` (in a user-prefix, no
+  global sudo on every `npm -g`)
+* `gh`, `docker.io`, the docker group, and the HTTPS-to-SSH git
+  rewrite so submodules clone without an SSH key
 
 ```sh
-# Install nvm + Node 22 LTS (no sudo, ~30s)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-. ~/.nvm/nvm.sh
-nvm install --lts
-
-# Install Claude Code
-npm install -g @anthropic-ai/claude-code
+bash scripts/setup-ubuntu.sh                  # default
+bash scripts/setup-ubuntu.sh --no-mame        # skip MAME (~600 MB lighter)
+bash scripts/setup-ubuntu.sh --no-docker      # skip Docker setup
+bash scripts/setup-ubuntu.sh --no-claude      # only system deps, no CLI
 ```
+
+Re-runnable; verifies each tool at the end.
+
+For macOS, install cmake/ninja from your CLion bundle (per
+`reference_build_binaries`), then `npm install -g @anthropic-ai/claude-code`.
+No brew — see memory.
 
 ## 3. Set the API key (you do this; we don't commit it)
 
@@ -79,19 +92,18 @@ In other words: every rule and fact the prior session relied on is in the clone.
 Memory rule `feedback_no_home_search` forbids any `find /Users` or `find ~`
 traversal — the workspace lives at `~/z80` only.
 
-For Linux x86_64 (e.g. sonnyboy-class):
-
-```sh
-sudo apt install -y cmake ninja-build clang lld ccache python3-dev
-```
+For Ubuntu hosts, `scripts/setup-ubuntu.sh` (step 2 above) does everything
+needed for llvm-z80, z88dk, MAME, the test-runner, and Claude CLI in one
+shot.
 
 For macOS:
 
 * cmake + ninja come from the CLion bundle (`reference_build_binaries`).
 * No brew — see memory.
 
-For the `runtime-tests` job locally (test-runner against z88dk-ticks): install
-Rust via `rustup` and build z88dk-ticks from `~/z80/z88dk` per the CI recipe in
+For the `runtime-tests` job locally (test-runner against z88dk-ticks):
+`setup-ubuntu.sh` installs `rustup` + the dev deps for `z88dk-ticks`.
+Build the emulator from `~/z80/z88dk` per the CI recipe in
 `llvm-z80/.github/workflows/z80-ci.yml`.
 
 ## 6. Optional: continuity handoff
