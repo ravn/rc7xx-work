@@ -564,3 +564,4 @@
 - stage 4 (-> ravn/llvm-z80#219 staged: two-voice scaffold w/ summary placeholder, L274-L288 permalink, both repro fns, corrected case-(a) attribution for gf_log)
 - add the c source for the intermediate code in the issue [bug 4] (-> bound_check/mask_escape C verified via clang -O1 i386 -> exact repro shape; added to #219 with width-down note + cast-count caveat)
 - we need z88dk-ticks present, available in z88dk (-> symlinked z88dk/src/ticks/z88dk-ticks into ~/.local/bin; test-runner now FATAL-free; host memory updated)
+- i need a very thorough test case for this / FACT: all upstream bugs need very thorough test cases (-> lit matrix trunc-narrow-icmp-graph-side-soundness.ll [11 neg + 3 pos + control, fails pre-fix] + runtime test_222 matrix [84+14 subcases, 25 diverge at O2+]; rule saved as feedback_thorough_tests_for_upstream_bugs)

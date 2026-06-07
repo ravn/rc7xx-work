@@ -37,6 +37,7 @@
 
 - **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no `gh pr create` unless asked this turn; never per-bug/fix PRs upstream**
 - **[Explain before filing](feedback_explain_before_filing.md) — HARD: root cause explained in chat + explicit per-filing "go ahead" before ANY upstream post; check target tracker for duplicates FIRST**
+- **[Thorough tests for upstream bugs](feedback_thorough_tests_for_upstream_bugs.md) — HARD: upstream submissions need matrix-grade test cases (lit + runtime, negatives + positives + controls, self-checking expecteds), not just a minimal repro**
 - **[Cross-machine workflow](feedback_cross_machine_workflow.md) — HARD: commit-push at end of every working segment; pull-with-submodules at start; live narrative in `tasks/handoff/`**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD: combiner/ISel/lowering changes need value oracle (test-runner + MAME) before commit**
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: search MEMORY.md before any fix; commit message includes `Rules-checked:`**
