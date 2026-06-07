@@ -558,3 +558,4 @@
 - you forgot the c source (-> verified K&R rotl produces the exact repro IR at -O1; added C + ANSI-prototype zext contrast to #218; draft-bug2.md synced)
 - i was looking for the original K&R source showing the problem (-> rj_sb_inv from Levin byte-oriented AES-256 added to #218 with attribution; measurement corrected: 147 B K&R vs 16 B ANSI ~9x, post-fix 31 B; prior 4.7x was pre-vs-post-fix mislabel)
 - the github editor did not pick up your edits, please apply (-> review points 1-5 applied to #218: repro IR+command in main body, de-hedged root cause + construction-vs-analysis + ANSI-zext contrast inline, rj_sb_inv restored with corrected 147/16/31 numbers, stale 4.7x appendix dropped, cpp fences)
+- still rather wordy, prefer my summary clearly mine + deeper explanation clearly yours (-> #218 restructured two-voice: user summary verbatim, attributed Claude deep-dive with repro/contrast/rj_sb_inv/corrected numbers; no duplication of stale 4.7x)
