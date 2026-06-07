@@ -78,6 +78,7 @@
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log → 1700+ step rebuild; Ctrl-C ONCE**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
 - [Docker for missing binaries](feedback_docker_binaries.md) — don't suggest installing
+- **[Docker shim batch](feedback_docker_shim_batch.md) — HARD: build Makefiles batch multi-step Docker calls into ONE `docker run sh -c "..."`; ~150-500 ms container startup tax dominates otherwise**
 - [Build zmac if missing](feedback_build_zmac.md) — `make` in zmac subfolder
 - **[zmac local labels are global](feedback_zmac_local_label_scope.md) — HARD: dotted locals collide across subroutines; prefix with initials**
 - [macOS timeout](reference_macos_timeout.md) — no GNU timeout; use Bash timeout param or perl alarm
@@ -211,6 +212,7 @@
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, `/home/ravn/z80`, headless, gh authed, upstream LLVM at `~/llvm-upstream/llvm-project`
 - [Safari breaks claude login callback](reference_claude_login_safari_workaround.md) — use ANTHROPIC_API_KEY or non-Safari default browser
 - [HiTech zc Docker image](reference_hitech_zc_docker.md) — `ghcr.io/ravn/hitech` provides `zc`
+- [simavr master required for .mmcu console](reference_simavr_master_required.md) — distro 1.6 is too old; build master in Docker
 - [Memory in tasks/memory/, never ~/.claude/](feedback_no_claude_memory.md) — canonical here, read manually at session start
 
 <!-- For project info that lives in the repo (not memory) — goal, TODOs, docs, MAME, PROM specs — see the "What's NOT in memory" map in README.md. -->
