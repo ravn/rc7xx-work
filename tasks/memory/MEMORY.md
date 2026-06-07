@@ -98,6 +98,7 @@
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test per bug
 - [Verify codegen not just size](feedback_verify_codegen.md) — read disassembly per compiler; same size ≠ same behavior
 - **[Compiler is not trusted](feedback_compiler_not_trusted.md) — HARD: inspect generated asm BEFORE blaming source/runtime/hardware**
+- **[Verdict AFTER real pass output](feedback_verdict_after_real_pass_output.md) — HARD: show the IR/asm the named pass actually produces + contamination + remaining doubt BEFORE stating any verdict; synthetic worst-case ≠ evidence**
 - [Late-opt audit](reference_late_opt_audit.md) — session-37 Keep/Migrate/Delete classification of all 46 peepholes
 - [Root-cause over peephole](feedback_root_cause_over_peephole.md) — favor upstream fixes over post-RA peepholes
 - **[Peephole safety guards](feedback_peephole_safety_guards.md) — HARD: erase/move/convert peepholes need complete liveness + slot-aliasing + iterator guards**
