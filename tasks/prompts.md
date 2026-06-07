@@ -562,3 +562,4 @@
 - put it as an issue on the actual source location (-> FILED llvm/llvm-project#202112 with L95-L105 permalink embed; staging #218 closed w/ cross-ref; STATUS row 2 -> filed)
 - please keep an eye on the filed bugs (-> remote routine llvm-upstream-bug-watch created, daily 06:00 UTC, reads STATUS.md FILED entries + #217, reports at claude.ai/code/routines; STATUS.md notes the watcher + wording contract)
 - stage 4 (-> ravn/llvm-z80#219 staged: two-voice scaffold w/ summary placeholder, L274-L288 permalink, both repro fns, corrected case-(a) attribution for gf_log)
+- add the c source for the intermediate code in the issue [bug 4] (-> bound_check/mask_escape C verified via clang -O1 i386 -> exact repro shape; added to #219 with width-down note + cast-count caveat)
