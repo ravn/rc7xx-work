@@ -37,6 +37,7 @@
 
 - **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no `gh pr create` unless asked this turn; never per-bug/fix PRs upstream**
 - **[Explain before filing](feedback_explain_before_filing.md) — HARD: root cause explained in chat + explicit per-filing "go ahead" before ANY upstream post; check target tracker for duplicates FIRST**
+- **[File bugs, not fixes](feedback_file_bugs_not_fixes.md) — HARD: upstream filings are BUGS (repro, current vs expected, root cause, evidence, NO fix); maintainer decides how to fix; user must understand each well enough to defend**
 - **[Thorough tests for upstream bugs](feedback_thorough_tests_for_upstream_bugs.md) — HARD: upstream submissions need matrix-grade test cases (lit + runtime, negatives + positives + controls, self-checking expecteds), not just a minimal repro**
 - **[Cross-machine workflow](feedback_cross_machine_workflow.md) — HARD: commit-push at end of every working segment; pull-with-submodules at start; live narrative in `tasks/handoff/`**
 - **[ravn/llvm-z80 Actions OFF](feedback_ravn_llvm_z80_ci_disabled.md) — HARD: never expect CI on ravn/llvm-z80; local oracle is the merge gate; don't re-enable without user direction**

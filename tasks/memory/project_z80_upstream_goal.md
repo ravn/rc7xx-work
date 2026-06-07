@@ -91,3 +91,33 @@ staged model is the correct framing.
 Pairs with `project_z80_backend_unfinished.md` (backend is
 preliminary — finishing it is a precondition for either parent or
 upstream submission).
+
+**Sharpened goal (user 2026-06-07).**  Overarching objective:
+
+  > "Get our work accepted upstream.  Upstream here means finishing
+  >  the z80 backend and try to have it accepted with the llvm bugs
+  >  that really are generic.  We also need to focus intensely then on
+  >  identifying the underlying bugs in z80 and have them described
+  >  in issues in a way that will get them accepted."
+
+Implications:
+  1. Tier II Z80 correctness sweep is the dominant priority — a
+     backend with known miscompiles will not be accepted anywhere.
+     Items: icmp-narrow soundness decision, #217 (Bug 1), #150
+     residue, #159, #169/170/171, #136, #125, #2 inline-asm
+     crash.  Close each one with [[feedback_no_commit_first_version]]
+     discipline.
+  2. Generic-LLVM bug filings go to llvm/llvm-project alongside
+     the eventual backend submission.  Each one follows the
+     [[feedback_file_bugs_not_fixes]] discipline: bugs, not patches.
+  3. Z80-specific upstream issues are described in a way that
+     would get them accepted as bugs (clean repro, root cause,
+     evidence, no fix proposal).  The maintainer drives the fix
+     discussion.
+  4. The user must understand each filing well enough to defend
+     it in maintainer discussion — see
+     [[feedback_explain_before_filing]].
+
+Operating model: I am a bug analyst, not a patch author, when it
+comes to upstream engagement.  Workaround patches still ship to our
+fork; upstream-bound filings are bugs only.
