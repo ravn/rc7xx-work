@@ -4,6 +4,11 @@ Reference build: upstream llvm-project at `de59f9ed` (~/llvm-upstream on
 sonnyboy, built).  Process: feedback_explain_before_filing — one bug at a
 time, explicit per-filing user go-ahead; report-only (no fix patches).
 
+Watcher: remote routine `llvm-upstream-bug-watch` (trig_012Thn7hHeabxS59DsQPzkRS,
+daily 06:00 UTC) reads THIS file for FILED issue numbers + always ravn/llvm-z80#217;
+reports at claude.ai/code/routines. Keep "FILED ... llvm/llvm-project#NNNNN" wording
+machine-findable when updating rows.
+
 | # | Bug | Status |
 |---|-----|--------|
 | 1 | deleteDeadLoop SSA malform | DROPPED from upstream queue — caller-contract violation by Z80LoopIdiomFill + live HEAD regression. Filed **ravn/llvm-z80#217** (open; fix = formDedicatedExitBlocks in pass + revert generic LoopUtils divergence + clang-shaped lit test). |

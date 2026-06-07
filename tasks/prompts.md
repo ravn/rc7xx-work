@@ -560,3 +560,4 @@
 - the github editor did not pick up your edits, please apply (-> review points 1-5 applied to #218: repro IR+command in main body, de-hedged root cause + construction-vs-analysis + ANSI-zext contrast inline, rj_sb_inv restored with corrected 147/16/31 numbers, stale 4.7x appendix dropped, cpp fences)
 - still rather wordy, prefer my summary clearly mine + deeper explanation clearly yours (-> #218 restructured two-voice: user summary verbatim, attributed Claude deep-dive with repro/contrast/rj_sb_inv/corrected numbers; no duplication of stale 4.7x)
 - put it as an issue on the actual source location (-> FILED llvm/llvm-project#202112 with L95-L105 permalink embed; staging #218 closed w/ cross-ref; STATUS row 2 -> filed)
+- please keep an eye on the filed bugs (-> remote routine llvm-upstream-bug-watch created, daily 06:00 UTC, reads STATUS.md FILED entries + #217, reports at claude.ai/code/routines; STATUS.md notes the watcher + wording contract)
