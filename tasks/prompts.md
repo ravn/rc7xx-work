@@ -571,3 +571,4 @@
 - are there other 8-bit targets than avr? (-> in-tree: AVR only; MSP430 nearest 16-bit; 6502/Z80/SM83 out-of-tree)
 - can upstream be compiled with multiple targets? avr build please / use upstream tree not fork (-> ~/llvm-upstream rebuilt X86;AArch64;AVR;MSP430)
 - triage all possibly-upstream bugs against the avr build (-> tasks/upstream-5bug/avr-triage-2026-06-07.md: bug2 STRENGTHENED [K&R rotl 20 vs ANSI 3 instr, 6.7x on in-tree AVR]; bug3 WEAKENED->fork-only [no in-tree threshold override, select=branch on AVR]; bug4 HOLD [micro-shapes equalize + contaminated numbers]; bug5 consistency-argument-only [AVR swallows i64])
+- update 2 with your avr findings, keep it brief (-> comment posted on llvm/llvm-project#202112: AVR 20-vs-3 instr at all opt levels, asm snippets)
