@@ -1,10 +1,6 @@
-(For llvm/llvm-project. Staged for iteration as ravn/llvm-z80#218 — this file mirrors the issue body; strip the staging banner when filing upstream.)
+(FILED as llvm/llvm-project#202112 on 2026-06-07; staging copy ravn/llvm-z80#218 closed. This file is the as-filed record.)
 
 Title: [AggressiveInstCombine] TruncInstCombine cannot narrow any expression that reaches a function Argument
-
-> **Staging copy** — iteration draft for an llvm/llvm-project filing. This fork already carries the fix (#158, commit a5d49e9); the bug is live upstream (verified on de59f9ed). Once the text is right, this moves to llvm/llvm-project.
-
----
 
 I am currently working on replacing firmware and "bios" on an old Z80 machine with modern versions in C23 on a yet unsubmitted z80 backend.  On the Z80 16-bit ints are much more expensive than 8-bit, and code space in my use case is at a premium.  I have therefore spent quite some time looking for suboptimal code generation spacewise with the help of Claude Code, which has uncovered a few corner cases.
 
@@ -18,20 +14,11 @@ uint8_t rotl(x) uint8_t x;          /* default argument promotion -> int */
 { return (x << 1) | (x >> 7); }
 ```
 
-Claude suggests that this is because TruncInstCombine::buildTruncExpressionGraph() does not consider Arguments to be acceptable Instructions for this, so the narrowing is then not even considered.
+Claude suggests that this is because TruncInstCombine::buildTruncExpressionGraph() does not consider Arguments to be acceptable Instructions for this, so the narrowing is then not even considered:
 
-```cpp
-    if (isa<Constant>(Curr)) {
-      Worklist.pop_back();
-      continue;
-    }
+https://github.com/llvm/llvm-project/blob/de59f9ed12db9d47ad41ad44d54ec604ef8841cb/llvm/lib/Transforms/AggressiveInstCombine/TruncInstCombine.cpp#L95-L105
 
-    auto *I = dyn_cast<Instruction>(Curr);
-    if (!I)
-      return false;
-```
-
-The code snippet includes how constants are processed.  The suggestion is that Arguments are treated similarly in something looking like:
+The snippet shows how constants are processed.  The suggestion is that Arguments are treated similarly in something looking like:
 
 ```cpp
     auto *I = dyn_cast<Instruction>(Curr);
