@@ -2,7 +2,10 @@ cmake-build-debug/
 .idea/
 
 # Claude Code session state (settings, plans, memory symlinks).  Per-user.
-.claude/
+# Exception: project-level skills are shared across hosts and versioned.
+.claude/*
+!.claude/skills/
+!.claude/skills/**
 
 # MAME auto-saved config (bitbanger paths, slot state).  Regenerated
 # every time MAME runs from this cwd.
