@@ -556,3 +556,4 @@
 - analyse, raise issues and tasks, summarize and commit (-> verified fork cleanup complete via gh [#18-25+#176 closed]; todo.md refreshed [stale #205/#194 corrected, current queue at top]; handoff 2026-06-07-upstream-5bug-drafts-ready.md; no new filings — drafts 2-5 remain per-filing verdict-gated)
 - iterate bug-2 understanding (walker structure, ||-merge question, Constant-vs-Argument leaf asymmetry, two-number width model, three kinds of "no") / file on my own repo to iterate (-> ravn/llvm-z80#218 staged with upstream permalink; move upstream on user signal)
 - you forgot the c source (-> verified K&R rotl produces the exact repro IR at -O1; added C + ANSI-prototype zext contrast to #218; draft-bug2.md synced)
+- i was looking for the original K&R source showing the problem (-> rj_sb_inv from Levin byte-oriented AES-256 added to #218 with attribution; measurement corrected: 147 B K&R vs 16 B ANSI ~9x, post-fix 31 B; prior 4.7x was pre-vs-post-fix mislabel)
