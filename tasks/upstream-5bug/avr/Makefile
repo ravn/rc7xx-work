@@ -28,9 +28,10 @@ AVR_CFLAGS := --target=avr -mmcu=$(MCU) -Os \
         bug4-test bug4-codegen \
         bug5-test bug5-codegen \
         bug164-codegen \
-        bug182-test
+        bug182-test \
+        sound-gate-220-test sound-gate-220-codegen
 
-all: bug2-test bug4-test bug5-test bug182-test
+all: bug2-test bug4-test bug5-test bug182-test sound-gate-220-test
 
 # ----- Bug 2: K&R vs ANSI rotl -----
 bug2.o: bug2_argument_leaf.c
@@ -82,3 +83,14 @@ bug128-codegen: bug128_licm_cse.ll
 # ----- #179 MachineScheduler reload-after-test (codegen only) -----
 bug179-codegen: bug179_test_then_dec.ll
 	@echo "=== AVR ==="; $(LLC) -O2 -mtriple=avr -mcpu=$(MCU) $< -o - | sed -n '/^test_then_dec_pattern:/,/.size.*test_then_dec_pattern/p'
+
+# ----- icmp-narrow sound-gate cross-target soundness witness -----
+# AggressiveInstCombine is target-independent middle-end, so the same
+# narrowing decision applies under AVR.  PASS here = sound on both
+# 8-bit targets.
+sound_gate_220.o: sound_gate_220_soundness.c
+	$(CLANG) $(AVR_CFLAGS) -c $< -o $@
+sound-gate-220-test: sound_gate_220.o
+	@$(DOCKER_RUN) 'avr-gcc -mmcu=$(MCU) sound_gate_220.o -o sound_gate_220.elf && avr-size sound_gate_220.elf && echo "--- simavr ---" && timeout 5 simavr sound_gate_220.elf'
+sound-gate-220-codegen: sound_gate_220_soundness.c
+	@$(CLANG) $(AVR_CFLAGS) -S $< -o - | sed -n '/^pick_var:/,/.size.*pick_var/p; /^pick_const:/,/.size.*pick_const/p'
