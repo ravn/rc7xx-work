@@ -79,7 +79,7 @@
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
 - [Docker for missing binaries](feedback_docker_binaries.md) — don't suggest installing
 - **[Docker shim batch](feedback_docker_shim_batch.md) — HARD: build Makefiles batch multi-step Docker calls into ONE `docker run sh -c "..."`; ~150-500 ms container startup tax dominates otherwise**
-- [Docker invocation budget](feedback_docker_invocation_budget.md) — track per-workflow Docker call count; flag when any routine pipeline exceeds ~100
+- [Docker invocation budget — macOS](feedback_docker_invocation_budget.md) — macOS only; track per-workflow Docker call count; flag when any routine pipeline exceeds ~100
 - [Build zmac if missing](feedback_build_zmac.md) — `make` in zmac subfolder
 - **[zmac local labels are global](feedback_zmac_local_label_scope.md) — HARD: dotted locals collide across subroutines; prefix with initials**
 - [macOS timeout](reference_macos_timeout.md) — no GNU timeout; use Bash timeout param or perl alarm

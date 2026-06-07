@@ -1,9 +1,11 @@
 ---
 name: docker-invocation-budget
-description: Track Docker shim invocation count per recurring workflow; alert the user when any one routinely exceeds ~100 calls — that's ~30 s of pure container startup tax and warrants a long-lived-container or batching refactor
+description: macOS only — track Docker shim invocation count per recurring workflow; alert the user when any one routinely exceeds ~100 calls (~30 s of pure container startup tax) and warrants a long-lived-container or batching refactor
 type: feedback
 ---
-**User directive 2026-06-07: stay with Docker for AVR simavr (and SDCC tools) for now; keep track of invocation counts and report when "too much".**
+**Scope: macOS only.**  Sonnyboy (Linux) has the SDCC/AVR tools natively — `apt install sdcc binutils-avr avr-libc gcc-avr` provides them on PATH, no Docker shim, no tax.  This rule applies to the macbook only.
+
+**User directive 2026-06-07 (reaffirmed): stay with Docker on macOS for AVR simavr (and SDCC tools) for now; keep track of invocation counts and report when "too much".**
 
 **Why:** Docker startup is ~150–500 ms per `docker run` on macOS arm64.  Per-call this is invisible; in aggregate it's the dominant wall-clock cost for many recurring workflows.  The user wants to defer the native-build / patch effort (libelf install or simavr `--console-register` patch) until it's actually warranted by measured pain.
 
