@@ -26,6 +26,9 @@ reached remotely from the macbook).
   "Option A" install path from the 2026-06-06 handoff).
 * Upstream LLVM clone (user-handed path): `~/llvm-upstream/llvm-project/`
   — for reproducing generic-LLVM bugs on upstream HEAD.
+* `z88dk-ticks`: built at `/home/ravn/z80/z88dk/src/ticks/z88dk-ticks`,
+  symlinked into `~/.local/bin/` (2026-06-07) so the test-runner finds it
+  on PATH without overrides.  Rebuild: `make -C z88dk/src/ticks`.
 * GitHub: this machine's SSH public key added to the user's GitHub
   account 2026-06-06 — pushes work from here.  Global git rewrite
   `url.git@github.com:ravn/.insteadOf https://github.com/ravn/` makes
