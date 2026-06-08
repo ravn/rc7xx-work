@@ -46,6 +46,8 @@ Strategic frame: bring `llvm-z80/llvm-z80` (active fork-of-record, owner @zlfn) 
 
 **Execution plan (2026-05-22):** `llvm-z80/tasks/execution-plan-2026-05-22.md` — 4 parallel tracks (A: U-LLVM upstreaming, B: correctness, C: #180/#181 cleanup gates, D: codegen-win packaging).  Backlog tiers: `llvm-z80/tasks/unpark-2026-05-22.md`.  U-LLVM submission queue: #186.
 
+**Known suboptimal codegen (living index, 2026-06-08):** `llvm-z80/tasks/known-suboptimal-codegen.md` — cross-session index of unresolved codegen patterns, classified by middle-end (M1–M4) vs backend (B1–B10), with status / impact / why-not-fixed / revisit triggers per entry.  When a new "should be better" pattern surfaces, add an entry; when fixed, move it out to the session writeup that closed it.
+
 ## Session History
 
 Detailed session-by-session log lives in `rc700-gensmedet/tasks/timeline.md`. Per-session summaries in `llvm-z80/tasks/session*-summary.md` and `rc700-gensmedet/cpnos-rom/tasks/`. Most-recent sessions (condensed; follow the cited summary file for detail):
