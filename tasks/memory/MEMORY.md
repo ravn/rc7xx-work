@@ -169,6 +169,7 @@
 - **[Baseline before implementing](feedback_baseline_before_implementing.md) — HARD: capture control measurement on UNMODIFIED system first**
 - **[Value oracle covers all TRANSPORT cells](feedback_value_oracle_all_transport_cells.md) — HARD: SNIOS/xport/compat.h changes runtime-test every linking cell**
 - **[Extract rules from time-sinks](feedback_extract_rules_from_time_sinks.md) — HARD (meta): after long debug sessions, propose new memory rules proactively**
+- **[Multi-pass marker interactions](feedback_multi_pass_marker_interactions.md) — HARD: when an optimization "should fire" but doesn't, `-print-after-all` and check if the trigger marker existed earlier and was stripped mid-pipeline**
 - **[Verify PASS condition before trusting green](feedback_verify_pass_condition.md) — HARD: cross-check elapsed time + artefact evidence; unexplained workaround = red flag**
 - [User guesses are not constraints](feedback_user_guesses_not_constraints.md) — treat as starting suggestion; probe-first
 - ["Intermittent" is a hypothesis](feedback_intermittent_is_hypothesis.md) — falsify via data-content checks before chasing timing
@@ -203,6 +204,7 @@
 - [Z80 simple, host complex, hardware-compatible](project_z80_simple_host_complex.md) — push protocol work to host; must run on physical RC702
 - [HiTech port parked](feedback_check_hitech_park_note.md) — read `tasks/hitech-port-parked.md` before proposing HiTech
 - **[AES corpus = parity oracle](project_aes256_corpus_goal.md) — drives clang↔zsdcc parity + upstream bug queue; clang now dominates; gaps in `tasks/all-modes-competitive-plan.md`**
+- **[AES K&R speed gap accepted](project_aes_kr_speed_gap_accepted.md) — clang +51% slower than SDCC on AES K&R `09_Oz_prod_like` post-sound-gate; structural CVP-strips-marker chain; off the critical path for the four finishing-firmware components**
 
 ## 12. External-bug refs
 
