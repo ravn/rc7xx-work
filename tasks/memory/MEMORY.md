@@ -17,6 +17,8 @@
 
 ## 1. Always-on (every response)
 
+- **[Check memory BEFORE coding](feedback_check_memory_before_coding.md) — HARD: at task start (not just session start) scan MEMORY.md for applicable sections, READ the linked files, NAME the rules that apply in your first response, THEN start coding. Session-start read is necessary but not sufficient.**
+- **[Revalidate historical compiler claims](feedback_revalidate_historical_compiler_claims.md) — HARD: before acting on any historical compiler-perf claim (size/speed/miscompile/"pass X pessimizes"), re-run the original measurement on a clean rebuild. Stale-rebuild incidents + backend movement both invalidate old numbers; current measurement wins.**
 - **[Token-efficiency disciplines](feedback_token_efficiency.md) — HARD: (1) never raw logs into context — file + grep/tail summary, failing slice only; (2) long builds/runs in background; (3) handoff file + suggest fresh session at work-item boundaries.**
 - **[Communication Style](feedback_style.md) — think out loud, concise, no apologies, record prompts**
 - **[NEVER apologize](feedback_no_apology.md) — HARD: no "sorry"/self-criticism; report state + next action**
@@ -178,6 +180,7 @@
 - [Verify DELAY_T](feedback_delay_tstates_test.md) — DELAY_T must match actual inner-loop T-states
 - [Poll don't sleep](feedback_poll_dont_sleep.md) — poll completion markers, no long fixed sleeps
 - [Canonical targets > enumeration](feedback_canonical_targets_over_enumeration.md) — `ninja check-<x>` over enumerating tools
+- **[ticks canonical exit = ED FE trap](reference_ticks_canonical_exit_trap.md) — HARD: ED FE syscall (A=CMD_EXIT, L=exit code) not HALT; `-output` bypassed; grep existing project harnesses before deriving termination from scratch**
 
 ## 9. Code & source style
 
