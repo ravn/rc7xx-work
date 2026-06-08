@@ -1,6 +1,6 @@
 ---
 name: feedback-revalidate-historical-compiler-claims
-description: HARD rule — before acting on any historical claim about compiler performance (size, speed, miscompile, "this pass pessimizes"), re-validate on a CURRENT clean rebuild.  The llvm-z80 build chain has had stale-rebuild incidents where source/flag changes didn't fully propagate; a measurement from 4 weeks ago may have been on a partially-rebuilt clang.  And separately, backend improvements may have changed the cost equation since the original measurement was taken.
+description: HARD rule — before acting on any historical claim about compiler performance (size, speed, miscompile, "this pass pessimizes"), re-validate on a CURRENT clean rebuild.  AND — equally important — re-validate EVERY ROUND of measurement you take that informs a decision, not just the initial historical one.  Heuristics and replacement code can introduce their own measurement noise; cascading revalidation catches this.
 metadata:
   type: feedback
 ---
@@ -65,6 +65,41 @@ they differ, the current measurement wins.**
      `disablePass`), get the user's verdict before landing — the
      full clean rebuild + matching numbers establishes
      trustworthiness; the human still owns the production decision.
+
+  6. **CASCADING REVALIDATION** — after re-validating the historical
+     claim and writing replacement code (heuristic, fix, refactor)
+     to act on the corrected understanding, that NEW code's
+     measurements need the same scrutiny.  Specifically: ANY
+     measurement that depends on YOUR new code is suspect until
+     re-validated against a version that doesn't have the new code.
+     A heuristic's correctness can't be inferred from its own
+     output — the only honest test is "does removing my heuristic
+     give the same result the heuristic claims to produce, or
+     different?"  If different, the heuristic is doing more (or
+     less) than its stated logic.
+
+**Cascading-revalidation incident** (2026-06-08, same session as the
+initial revalidation above): after retiring the `disablePass`
+workaround, I added a `Z80InstrInfo::shouldHoist` heuristic claiming
+to "limit autoload's LICM regression to +18 B / recover cpnos's -7 B
+win".  Three commits later, a "did I really rebuild" sanity check
+revealed the heuristic had a presence-cost side effect — at
+threshold=99 (effectively unbounded, should be a no-op) it produced
+the SAME +25 B autoload growth as threshold=0 (effectively always-
+refuse).  So the heuristic was changing codegen even when its stated
+logic should not have.  Reverting the heuristic entirely produced
+the SIMPLER result: autoload +25 B / cpnos -15 B / AES -118 B at -O2,
+all matching the original "no heuristic" measurement.  The
+intermediate heuristic-on numbers (-18 B autoload / -7 B cpnos) were
+ARTIFACTS, not real engineering wins.
+
+The mistake: I trusted the heuristic's own measurements to validate
+the heuristic.  Should have run a CONTROL CELL where the heuristic
+code was present but functionally a no-op (e.g. `if (true) return
+default;`) — if THAT control gave the same numbers as the no-override
+state, the heuristic's "win" cells would have been provably
+artifacts.  Apply this control pattern any time the new code is
+acting as a measurement instrument on the system it's modifying.
 
 This rule is cross-listed in §1 (always-on for any task that touches a
 historical claim) and §8 (test/debug discipline).

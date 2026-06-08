@@ -18,7 +18,7 @@
 ## 1. Always-on (every response)
 
 - **[Check memory BEFORE coding](feedback_check_memory_before_coding.md) — HARD: at task start (not just session start) scan MEMORY.md for applicable sections, READ the linked files, NAME the rules that apply in your first response, THEN start coding. Session-start read is necessary but not sufficient.**
-- **[Revalidate historical compiler claims](feedback_revalidate_historical_compiler_claims.md) — HARD: before acting on any historical compiler-perf claim (size/speed/miscompile/"pass X pessimizes"), re-run the original measurement on a clean rebuild. Stale-rebuild incidents + backend movement both invalidate old numbers; current measurement wins.**
+- **[Revalidate historical compiler claims](feedback_revalidate_historical_compiler_claims.md) — HARD: before acting on any historical compiler-perf claim (size/speed/miscompile/"pass X pessimizes"), re-run the original measurement on a clean rebuild. Stale-rebuild + backend movement invalidate old numbers; current measurement wins. CASCADING: any replacement code (heuristic/fix) you write needs the same scrutiny — use a no-op control cell, not the heuristic's own output, to validate it.**
 - **[Token-efficiency disciplines](feedback_token_efficiency.md) — HARD: (1) never raw logs into context — file + grep/tail summary, failing slice only; (2) long builds/runs in background; (3) handoff file + suggest fresh session at work-item boundaries.**
 - **[Communication Style](feedback_style.md) — think out loud, concise, no apologies, record prompts**
 - **[NEVER apologize](feedback_no_apology.md) — HARD: no "sorry"/self-criticism; report state + next action**
