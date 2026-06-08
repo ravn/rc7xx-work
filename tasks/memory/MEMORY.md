@@ -114,6 +114,7 @@
 - **[zeroext is ABI, not source-narrow](feedback_zeroext_is_abi_not_source.md) — HARD: use computeKnownBits before narrowing**
 - **[TruncInstCombine: swap before probe](feedback_truncinstcombine_swap_before_probe.md) — HARD: modify IR users BEFORE `getBestTruncatedType`; rollback on failure branch**
 - [IX caller-saved after #12](project_ix_caller_saved_after_12.md) — IX allocatable only pays caller-saved; revisit after #12
+- [pi CSE / branch-fold miscompile PARKED](project_pi_cse_branchfold_parked.md) — Branch Folder unsound hoist (exposed by MachineCSE); production unaffected; don't re-investigate, don't flip `-z80-enable-cse` default ON until upstream fix
 
 ## 6. Before any MAME / boot / test run
 
