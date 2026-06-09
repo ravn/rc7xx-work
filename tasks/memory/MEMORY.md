@@ -40,6 +40,9 @@
 
 - **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no `gh pr create` unless asked this turn; never per-bug/fix PRs upstream**
 - **[Explain before filing](feedback_explain_before_filing.md) — HARD: root cause explained in chat + explicit per-filing "go ahead" before ANY upstream post; check target tracker for duplicates FIRST**
+- **[Self-caused bug? reflect on instructions](feedback_self_caused_bug_reflect_on_instructions.md) — HARD: when filing/finding a bug that traces to AI-authored code (check git trailers for `Co-Authored-By: Claude*`), pause and identify the instruction (test-coverage rule OR code-convention) that would have prevented it. Offer to save as memory BEFORE fixing.**
+- **[Peephole adjacency uses next_nodbg](feedback_peephole_next_nodbg.md) — HARD: any peephole walking adjacent MIs uses `MachineBasicBlock::next_nodbg()` / `skipDebugInstructionsForward()`, NEVER raw `std::next` (DBG_VALUE pseudos break adjacency match under `-g`)**
+- **[Peephole lit tests must exercise -g](feedback_peephole_test_with_g.md) — HARD: every peephole lit test has TWO RUN lines (-O2 and -O2 -g) with identical FileCheck pattern; catches `-g`-defeats-peephole class silently**
 - **[File bugs, not fixes](feedback_file_bugs_not_fixes.md) — HARD: upstream filings are BUGS (repro, current vs expected, root cause, evidence, NO fix); maintainer decides how to fix; user must understand each well enough to defend**
 - **[Thorough tests for upstream bugs](feedback_thorough_tests_for_upstream_bugs.md) — HARD: upstream submissions need matrix-grade test cases (lit + runtime, negatives + positives + controls, self-checking expecteds), not just a minimal repro**
 - **[Cross-machine workflow](feedback_cross_machine_workflow.md) — HARD: commit-push at end of every working segment; pull-with-submodules at start; live narrative in `tasks/handoff/`**
