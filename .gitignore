@@ -1,11 +1,14 @@
 cmake-build-debug/
 .idea/
 
-# Claude Code session state (settings, plans, memory symlinks).  Per-user.
-# Exception: project-level skills are shared across hosts and versioned.
+# Claude Code session state (plans, memory symlinks, per-machine
+# settings.local.json).  Per-user.
+# Exceptions: project-level skills + the shared settings.json (which
+# wires up project-wide hooks like tasks/hooks/block-icloud-walk.py).
 .claude/*
 !.claude/skills/
 !.claude/skills/**
+!.claude/settings.json
 
 # MAME auto-saved config (bitbanger paths, slot state).  Regenerated
 # every time MAME runs from this cwd.
