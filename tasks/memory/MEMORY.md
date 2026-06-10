@@ -228,5 +228,7 @@
 - [HiTech zc Docker image](reference_hitech_zc_docker.md) — `ghcr.io/ravn/hitech` provides `zc`
 - [simavr master required for .mmcu console](reference_simavr_master_required.md) — distro 1.6 is too old; build master in Docker
 - [Memory in tasks/memory/, never ~/.claude/](feedback_no_claude_memory.md) — canonical here, read manually at session start
+- **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: stop editing, add an undeniable marker, prove new bytes are running before edit #3**
+- [MP/M II bakes RSPs into MPM.SYS at GENSYS time](reference_mpm_sys_baked_via_gensys.md) — `.RSP` edits inert until GENSYS regens `MPM.SYS` + re-installs on drive A:
 
 <!-- For project info that lives in the repo (not memory) — goal, TODOs, docs, MAME, PROM specs — see the "What's NOT in memory" map in README.md. -->
