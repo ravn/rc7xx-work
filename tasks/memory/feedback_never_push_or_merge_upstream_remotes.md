@@ -19,9 +19,11 @@ repo the user doesn't own, not a personal fork. Two rules:
    top of upstream-HEAD instead.
 
 Concrete examples (2026-06-11):
-- `cpnet-z80` → `https://github.com/durgadas311/cpnet-z80.git` —
-  upstream. **Do not push, do not merge.** Carry local commits flat
-  on top of upstream `master`.
+- `cpnet-z80` → origin `git@github.com:ravn/cpnet-z80.git` (fork)
+  + upstream `https://github.com/durgadas311/cpnet-z80.git`. Fork
+  created 2026-06-11 mid-session, remotes renamed accordingly.
+  **OK to push/merge to origin (ravn fork); never push/merge to
+  upstream.**
 - `z80pack` → `https://github.com/ravn/z80pack` — user-owned fork,
   **OK to push, OK to merge.**
 - `rc700-gensmedet` → `git@github.com:ravn/rc700-gensmedet.git` —
