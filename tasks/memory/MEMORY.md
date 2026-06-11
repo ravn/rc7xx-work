@@ -233,5 +233,6 @@
 - [MP/M II bakes RSPs into MPM.SYS at GENSYS time](reference_mpm_sys_baked_via_gensys.md) — `.RSP` edits inert until GENSYS regens `MPM.SYS` + re-installs on drive A:
 - **[Never push/merge upstream remotes](feedback_never_push_or_merge_upstream_remotes.md) — HARD: cpnet-z80 origin is `durgadas311/*` (upstream); keep local commits FLAT, no `--no-ff` merges, no push. Only `ravn/*` repos get pushed/merged.**
 - **[CP/NET 1.2 only](feedback_cpnet_12_only.md) — HARD: assume CP/NET 1.2 semantics; BDOS-105 is NOT forwardable under 1.2; ndos3.asm:504 (`db 0 ; 105 - can't support here, use SEND NW MESG`) is correct; time-from-master goes via BDOS-66/67 + FN-105 vendor extension (see `cpnet/todget/todget.c`).**
+- **[rcbios jump table is ABI](feedback_rcbios_jump_table_is_abi.md) — HARD: BIOS jump table at 0xDA00 (incl. vendor extensions like 0xDA56 CLOCK) is frozen ABI for compiled CP/M programs on system disks. No delete, reposition, or stub of existing entries — even when a "better" wire path exists. New paths are ADDITIVE; legacy stays callable. New entries OK at end of table.**
 
 <!-- For project info that lives in the repo (not memory) — goal, TODOs, docs, MAME, PROM specs — see the "What's NOT in memory" map in README.md. -->
