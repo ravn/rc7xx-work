@@ -27,6 +27,7 @@
 - **[No aphoristic flourishes](feedback_no_aphoristic_flourishes.md) — HARD: never wrap a decision in a maxim**
 - **[Show thinking — TIERED](feedback_show_thinking.md) — HARD: full narration at decisions/diagnoses/forks/surprises; one-liners during mechanical loops (tiered 2026-06-06)**
 - **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: before declaring "deferred/multi-week", instrument + bisect 30 min first**
+- **[Minimal repro BEFORE source dive](feedback_minimal_repro_before_source_dive.md) — HARD: for "why does X fail under tool Y" questions, do a 30-second minimal repro (failing form + variants that the assumed root cause says shouldn't fail) BEFORE reading the implementation source. Don't post "suggested fix" lines in filed issues without proving them via repro.**
 - **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: after 2-3 fixes of one class, STOP and find the systemic cause unprompted**
 - **[Audit the oracle, not just the fix](feedback_audit_oracle_not_just_fix.md) — HARD: bug found by luck → build the detector that would have caught it on purpose**
 - **[Verify process state by full enumeration](feedback_verify_process_state_full_enumeration.md) — HARD: never claim "clean" from a `ps | grep` of expected names; enumerate fully + reconcile**
