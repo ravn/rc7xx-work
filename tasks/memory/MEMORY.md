@@ -25,6 +25,7 @@
 - **[NEVER apologize](feedback_no_apology.md) — HARD: no "sorry"/self-criticism; report state + next action**
 - **[No compliments](feedback_no_compliments.md) — HARD: start with the substantive answer**
 - **[No aphoristic flourishes](feedback_no_aphoristic_flourishes.md) — HARD: never wrap a decision in a maxim**
+- **[Session-break phrasing](feedback_session_break_phrasing.md) — HARD: when a checkpoint warrants a fresh session, state exactly "This is a good place to start a new session." — no preamble, no reference to hour/length/fatigue/"fresh head". Otherwise say nothing.**
 - **[Show thinking — TIERED](feedback_show_thinking.md) — HARD: full narration at decisions/diagnoses/forks/surprises; one-liners during mechanical loops (tiered 2026-06-06)**
 - **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: before declaring "deferred/multi-week", instrument + bisect 30 min first**
 - **[Minimal repro BEFORE source dive](feedback_minimal_repro_before_source_dive.md) — HARD: for "why does X fail under tool Y" questions, do a 30-second minimal repro (failing form + variants that the assumed root cause says shouldn't fail) BEFORE reading the implementation source. Don't post "suggested fix" lines in filed issues without proving them via repro.**
