@@ -126,6 +126,7 @@
 
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: banner timestamp vs BUILD_INFO_STR before any diagnosis**
 - **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — first try `make _kill-mpm; sleep 5-8; retry`**
+- **[mpm-net2 weirdness — first fix is stop+rebuild+restart](feedback_mpm_server_first_fix.md) — HARD: ANY unexpected mp/m server behavior → stop, rebuild, restart, retry BEFORE theorizing. If still bad: ASK the user.**
 - **[Session-start: kill daemons BEFORE first test](feedback_session_start_kill_daemons.md) — HARD: `make -C cpnos-in-c _kill-mpm; sleep 8` before first run + between COMPILER switches**
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: capture a MAME screenshot to verify boot; PASS lines + memory dumps are NOT enough**
 - **[Black screen is fatal](feedback_black_screen_fatal.md) — HARD: halts all other investigation**
@@ -136,6 +137,7 @@
 - [Full rebuild before MAME](feedback_mame_rebuild.md) — rm .o + full rebuild first
 - [Fresh BIOS+PROM before MAME](feedback_mame_fresh_build.md) — rebuild both
 - [Run MAME at full speed](feedback_mame_full_speed.md) — `-nothrottle` in unattended tests
+- **[Disable MAME audio in ALL tests](feedback_disable_audio_in_tests.md) — HARD: pass `-sound none`.  Motor sounds annoy user; CoreAudio causes SIGPIPE (exit 141) under sustained background-test load.**
 - **[MAME windowed only](feedback_mame_windowed_only.md) — HARD: always `-window`, never fullscreen**
 - **[Headless host = no MAME window](feedback_host_no_graphics.md) — HARD: on sonnyboy use `SDL_VIDEODRIVER=dummy` (or xvfb-run); snapshots/AVI still work**
 - [MAME interactive timeout](feedback_mame_interactive_timeout.md) — ~30s Bash timeout suffices
