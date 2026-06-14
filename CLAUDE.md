@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⛔ TOP-PRIORITY HARD RULE — never search outside the workspace
+
+**Before EVERY `find`, `ls`, `glob`, `grep`, `mdfind`, `locate`, or agent search: read the path.  If it does NOT start with `/Users/ravn/z80/` (macbook) or `/home/ravn/z80/` (sonnyboy), STOP.  Ask the user.  Do NOT run the command.**
+
+This includes "parallel just in case" broad searches when a direct path lookup is also running — the broad search walks iCloud-synced directories and forces iCloud to download every offloaded file, costing real bandwidth and disk regardless of whether anyone reads the result.  Four documented incidents (2026-04-21, 2026-05-09, 2026-06-10, 2026-06-14) — see `tasks/memory/feedback_no_home_search.md` for full history.  Further violations are a session-ending failure of trust, not a recoverable mistake.
+
+If a workspace-internal lookup returns nothing, the answer is **ask the user where the file lives**, never "search wider."
+
 ## Memory — read at session start
 
 **Durable rules, preferences, and lessons live in `tasks/memory/` (index: `tasks/memory/MEMORY.md`). Read `tasks/memory/MEMORY.md` at the start of every session.** This was migrated out of `~/.claude/` on 2026-05-28 (per the "persistent notes in the project, never `~/.claude/`" rule), so the harness no longer auto-injects it — reading it is now a deliberate session-start step. To record a new durable note, add a file under `tasks/memory/` and a one-line index entry in `tasks/memory/MEMORY.md`; never write to `~/.claude/`.
