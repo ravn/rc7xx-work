@@ -73,6 +73,7 @@
 - **[Cross-stage --defsym atomic](feedback_relink_dependencies_atomically.md) — HARD: C decl + linker script + Makefile awk + defsym in same commit; mind underscore count**
 - [cpnos.com address coupling brittle](project_cpnos_address_coupling_brittle.md) — never replicate hand-typed cross-image addresses
 - [rcbios + cpnos code sharing (future)](project_cpnos_rcbios_code_sharing.md) — VRTC ISR / DMA / 8275 / PIO+SIO duplicated across both; factor after INIR work settles (#22)
+- **[Ring-shrink + INIR coupling](feedback_ring_shrink_inir_coupled.md) — HARD: cpnos PIO-B `pio_rx_buf` 256→16 B sizing ASSUMES INIR drains data bytes direct to msg+5; without INIR a 41-byte data block overflows 16 B and slave deadlocks at netboot. Don't ship the shrink without INIR; don't bisect by forcing INIR off without restoring the ring.**
 - **[Verify HW register is load-bearing](feedback_verify_hw_register_load_bearing.md) — HARD: when modifying init-time hw reg writes OR the ISR/code consuming them, verify the bit is actually load-bearing (consumer behaves differently without it); vestigial config accumulates and masks bugs**
 - **[Bundle layout migrations proactively](feedback_bundle_layout_migrations_proactively.md) — HARD: when deferring a layout move with "we don't need it yet", check region headroom; if <200 B, the next workstream will need it — bundle now**
 - [Sentinel preconditions](feedback_sentinel_preconditions.md) — re-derive "real data ≠ sentinel" at every use site

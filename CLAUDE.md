@@ -33,6 +33,7 @@ Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to matc
 - **sem702-qr-test**: subproject `rc700-gensmedet/sem702-qr-test/` — CP/M .COM painting two QR codes via SEM702 sextants, snapshot-verified in MAME (`make run`).
 - **Two-PROM build PARKED 2026-05-17** (user: "it is only the autoload+cpnos scenario that interests").  Sole production topology: autoload-in-c (ROA375) in PROM 0 + cpnos-in-c PROM1-only line program in PROM 1.  See `cpnos-in-c/tasks/TWO_PROM_PARKED.md`.
 - **cpnos-in-asm PARKED 2026-05-17** (see `rc700-gensmedet/cpnos-in-asm/PARKED.md`); superseded by cpnos-in-c PROM1-only.  Source tree preserved; new feature work goes into cpnos-in-c.
+- **cpnos PIO → INIR (#115 Steps 2+4) PARKED 2026-06-14** until user has physical RC702 + Pi/Pico bridge hardware ready (per memory rule `feedback_ring_shrink_inir_coupled` — ring-shrink and INIR are coupled, and INIR can't be MAME-verified due to cpnet_bridge timing).  Steps 0+1 STAY in main: autoinit-DMA isr_crt strip (9592c2d) + `pio_b_recv_block_body` scaffold (50cc0bf).  See `rc700-gensmedet/cpnos-in-c/tasks/PIO_INIR_PARKED.md` for the unparking trigger and what's not committed.
 
 ## Canonical Plan
 
