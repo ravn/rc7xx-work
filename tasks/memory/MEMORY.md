@@ -72,6 +72,7 @@
 - **[No literal memory addresses](feedback_no_literal_addresses.md) — HARD: linker-derived or `.sym`-extracted only; literals OK for ports/vectors/magic**
 - **[Cross-stage --defsym atomic](feedback_relink_dependencies_atomically.md) — HARD: C decl + linker script + Makefile awk + defsym in same commit; mind underscore count**
 - [cpnos.com address coupling brittle](project_cpnos_address_coupling_brittle.md) — never replicate hand-typed cross-image addresses
+- [rcbios + cpnos code sharing (future)](project_cpnos_rcbios_code_sharing.md) — VRTC ISR / DMA / 8275 / PIO+SIO duplicated across both; factor after INIR work settles (#22)
 - [Sentinel preconditions](feedback_sentinel_preconditions.md) — re-derive "real data ≠ sentinel" at every use site
 
 ## 4. Before any build / compile / link flag change
