@@ -30,4 +30,4 @@ The user has now explicitly said this is making them lose patience ("I've told y
 - Instead of searching for external tools/configs: ask the user where they live, or invoke the tool with `--help` / `man` / env var inspection (`echo $PATH`) to get info without walking the filesystem.
 - Spawned agents must inherit this rule — forbid home-dir traversal in the prompt.
 
-**Paths the user has explicitly handed over (past):** `/Users/ravn/git/z80pack` (now superseded — submodule at `z80pack/` in the repo); `/Users/ravn/Downloads/mpm-net-1.2.tgz` and unpacked dir; `/Users/ravn/git/mame/src/mame/regnecentralen/`. Others require fresh permission.
+**Paths the user has explicitly handed over (past):** `/Users/ravn/git/z80pack` (now superseded — submodule at `z80pack/` in the repo); `/Users/ravn/Downloads/mpm-net-1.2.tgz` and unpacked dir; `/Users/ravn/git/mame/src/mame/regnecentralen/`; `/Users/ravn/git/rc702-bios` (handed over 2026-06-14 as the source for the original reverse-engineered assembly BIOS — CDEF.MAC, INIT.MAC, CONOUT.MAC, C.MAC, STATL.MAC, CLOCK.MAC, KEYINT.MAC etc. — referenced from `rcbios-in-c/tasks/26-line-status.md`). Others require fresh permission.
