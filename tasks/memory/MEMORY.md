@@ -73,6 +73,8 @@
 - **[Cross-stage --defsym atomic](feedback_relink_dependencies_atomically.md) — HARD: C decl + linker script + Makefile awk + defsym in same commit; mind underscore count**
 - [cpnos.com address coupling brittle](project_cpnos_address_coupling_brittle.md) — never replicate hand-typed cross-image addresses
 - [rcbios + cpnos code sharing (future)](project_cpnos_rcbios_code_sharing.md) — VRTC ISR / DMA / 8275 / PIO+SIO duplicated across both; factor after INIR work settles (#22)
+- **[Verify HW register is load-bearing](feedback_verify_hw_register_load_bearing.md) — HARD: when modifying init-time hw reg writes OR the ISR/code consuming them, verify the bit is actually load-bearing (consumer behaves differently without it); vestigial config accumulates and masks bugs**
+- **[Bundle layout migrations proactively](feedback_bundle_layout_migrations_proactively.md) — HARD: when deferring a layout move with "we don't need it yet", check region headroom; if <200 B, the next workstream will need it — bundle now**
 - [Sentinel preconditions](feedback_sentinel_preconditions.md) — re-derive "real data ≠ sentinel" at every use site
 
 ## 4. Before any build / compile / link flag change
@@ -130,6 +132,7 @@
 - **[mpm-net2 weirdness — first fix is stop+rebuild+restart](feedback_mpm_server_first_fix.md) — HARD: ANY unexpected mp/m server behavior → stop, rebuild, restart, retry BEFORE theorizing. If still bad: ASK the user.**
 - **[Session-start: kill daemons BEFORE first test](feedback_session_start_kill_daemons.md) — HARD: `make -C cpnos-in-c _kill-mpm; sleep 8` before first run + between COMPILER switches**
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: capture a MAME screenshot to verify boot; PASS lines + memory dumps are NOT enough**
+- **[Visual capture for display path changes](feedback_visual_capture_for_display.md) — HARD: CRT ISR / DMA refresh / 8275 / display BSS changes need multi-frame video verification; textual PASS doesn't catch garble**
 - **[Black screen is fatal](feedback_black_screen_fatal.md) — HARD: halts all other investigation**
 - [Black screen → CRT ISR not firing](feedback_black_screen_crt_isr.md) — suspect EI / IVT slot 2 / CTC ch2 in that order
 - [MAME Banner Check](feedback_mame_banner.md) — verify compiler (CL=clang, ROA375=SDCC)
