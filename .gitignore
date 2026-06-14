@@ -20,3 +20,11 @@ tinypi-2024-11-04/
 # Ad-hoc MAME screenshots saved into the workspace root by various
 # capture scripts during debugging sessions.  Per-session, not for tree.
 snap/
+
+# Third-party AVR simulator clone used by tasks/upstream-5bug/avr/Makefile
+# as a cross-target oracle.  Cloned ad-hoc; not part of our tree.
+simavr/
+
+# AVR Makefile build artifacts (cleaned by `make clean` in that dir).
+tasks/upstream-5bug/avr/*.elf
+tasks/upstream-5bug/avr/*.o
