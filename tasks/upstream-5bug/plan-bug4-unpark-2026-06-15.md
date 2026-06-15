@@ -71,32 +71,66 @@ earlier "TTI hook" proposal look attractive but actually wrong.  Bug 4
 and the CVP-strip issue need to be tracked separately or one will
 contaminate the other's measurements.
 
-## The plan: four phases, ~3-4 h of focused work
+## The plan: four phases, ~4-5 h of focused work (was ~3-4 h before
+adding the simavr cycle oracle to Phase 1)
 
-### Phase 1 — AVR gf_log-scale oracle (~1-2 h)
+### Phase 1 — AVR gf_log-scale oracle (~2-2.5 h)
 
 **Goal:** answer the question "does the bug 4 fix help AVR at the
-gf_log scale, not just on the micro-shapes?"
+gf_log scale, not just on the micro-shapes?" — measure both **size**
+(primary) and **execution cycles** (secondary, hardening the upstream
+RFC against "but the cycle count didn't shrink" review challenges).
 
 **Method:**
 1. Locate the gf_log K&R helper source (`tasks/aes256-corpus/` or
    `compiler-comparison-corpus/`).  The 2026-06-08 investigation
    prepared a `/tmp/gflog_kr.c` repro; that or an equivalent.
 2. Build under `clang --target=avr -mmcu=atmega328p -Os` against
-   current llvm-z80 main.  Note size + check the IR (`-emit-llvm -S`)
-   to confirm the icmp-narrow path fires.
-3. Revert `c4f52eb17a76` + `fa1606f34c6b` locally (don't push), rebuild
-   AVR clang, rebuild gflog_kr; note size.
-4. Restore the commits.
-5. Document the delta in `avr-triage-2026-06-07.md` (or append a
-   2026-06-15 update).
+   current llvm-z80 main.
+   - Note `avr-size` output (`.text` bytes of the helper function).
+   - Check the IR (`-emit-llvm -S`) to confirm the icmp-narrow path
+     fires (look for narrowed icmp + zext rewrite).
+   - Disassemble (`avr-objdump -d`) to confirm the codegen shows
+     narrower ops in the hot loop.
+3. **Cycle-count fixture (simavr).**  The repro becomes a self-
+   instrumenting AVR program:
+   - main() loops the gf_log helper N times (N chosen so the run is
+     ~1-2 simavr-seconds: enough samples to amortise per-call
+     overhead).
+   - Output two bytes to a probe port at start + end of the hot loop,
+     letting simavr's existing `avr_cycle_count` accessor capture
+     before/after deltas.
+   - Add it to `tasks/upstream-5bug/avr/Makefile` as a new target
+     `gf_log-cycles` following the existing `bug2-test` / `bug4-test`
+     docker-shim pattern (HARD rule `feedback_docker_shim_batch`:
+     link + simavr in one `sh -c` invocation).
+4. **Baseline:** revert `c4f52eb17a76` + `fa1606f34c6b` locally on a
+   throwaway branch `bug4-avr-baseline` (don't push), rebuild AVR
+   clang, rebuild gflog_kr.
+   - Note `avr-size`, IR shape (confirm icmp-narrow path is gone),
+     cycle count from the simavr fixture.
+5. Restore main (`git checkout main`); rebuild clang.
+6. Document the deltas in
+   `tasks/upstream-5bug/avr-triage-2026-06-07.md` as a "2026-06-15
+   gf_log-scale addendum" section.  Record: size delta (bytes), cycle
+   delta (count + percent), IR shape change (with/without).
+7. Optional belt-and-braces: spot-check the cycle fixture's
+   correctness by also running it under z88dk-ticks on Z80 (same
+   source, same loop count), to confirm the Z80 path delivers the
+   long-claimed 5.4× speed win at scale.  If Z80's cycle delta
+   matches the 4× claim in the RFC, the AVR oracle's methodology is
+   validated by mirror-symmetry.
 
 **Expected outcomes:**
-- AVR shows a comparable gf_log-scale delta → upstream story is strong;
-  proceed to Phase 2.
-- AVR doesn't show a gf_log-scale delta → bug 4 stays fork-internal at
-  `ravn/llvm-z80#219`; close task #4 with that verdict; the production
-  fix already shipped on Z80.
+- AVR shows a comparable gf_log-scale delta in **both size and
+  cycles** → upstream story is strong; proceed to Phase 2.
+- AVR shows a size delta but no/marginal cycle delta → upstream story
+  is still credible (size-only on flash-constrained 8-bit targets is a
+  defensible RFC framing), but reviewers may push back; consider
+  filing with explicit "size primary, cycles secondary" framing.
+- AVR shows no gf_log-scale delta on either axis → bug 4 stays fork-
+  internal at `ravn/llvm-z80#219`; close task #4 with that verdict;
+  the production fix already shipped on Z80.
 
 ### Phase 2 — clean Z80 measurement of bug 4's isolated delta (~1 h)
 
@@ -175,6 +209,18 @@ user go-ahead before posting anywhere.
    only by default (`clang/cmake/caches/Z80.cmake`).  May need a
    separate build with AVR enabled (one-time cmake config); the
    AVR backend is upstream-LLVM standard, so this should work.
+4. **simavr cycle-fixture overhead.**  simavr ramps up the AVR core
+   for each `simavr` invocation; per-call overhead is ~a few thousand
+   cycles before main() reaches the gf_log loop.  Choose the loop
+   count N so the hot-loop cycle budget dwarfs the startup overhead
+   by at least 50× (≈ 100k+ hot-loop cycles).  The probe-port
+   bracketing in the fixture isolates the hot loop's cycles from the
+   startup, so this is belt-and-braces.
+5. **simavr cycle precision.**  AVR cycles are deterministic (no
+   pipeline, no cache), so simavr's cycle count is exact to within ±1
+   for cleanly-bracketed loops.  No statistical sampling needed.
+   simavr reports cycles via `avr->cycle` accessible from the C
+   instrumentation in the test harness.
 4. **The Phase 2 measurement may show small bug-4 delta on rcbios /
    cpnos.**  The big visible wins (5905 → 5462 B over six weeks) are
    accumulated multi-pass; bug 4's individual contribution may be a few
