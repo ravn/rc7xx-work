@@ -98,3 +98,36 @@ uint8_t gf_log_v5(uint8_t x)
     } while (++i > 0);
     return i;
 }
+
+/* V6 — K&R DEFINITION syntax kept, but with a separate ANSI prototype
+ * declaration in scope.  Hypothesis: the prototype overrides default-
+ * int-promotion at the call site (parameter arrives as i8 in IR), but
+ * the body still uses K&R's `uint8_t x;` parameter-declaration syntax.
+ * Tests whether ANSI's effect can be obtained without abandoning K&R. */
+uint8_t gf_log_v6(uint8_t);   /* prototype */
+uint8_t gf_log_v6(x)            /* K&R definition */
+uint8_t x;
+{
+    uint8_t atb = 1, i = 0, z;
+    do {
+        if (atb == x) break;
+        z = atb; atb <<= 1; if (z & 0x80) atb ^= 0x1b; atb ^= z;
+    } while (++i > 0);
+    return i;
+}
+
+/* V7 — V6 PLUS the sign-bit form for the bit-test.  Combines the v4
+ * fix with v6's "keep K&R definition" approach.  Hypothesis: prototype
+ * + sign-bit form together fully unblock the narrowing while keeping
+ * the K&R definition syntax. */
+uint8_t gf_log_v7(uint8_t);
+uint8_t gf_log_v7(x)
+uint8_t x;
+{
+    uint8_t atb = 1, i = 0, z;
+    do {
+        if (atb == x) break;
+        z = atb; atb <<= 1; if ((int8_t)z < 0) atb ^= 0x1b; atb ^= z;
+    } while (++i > 0);
+    return i;
+}

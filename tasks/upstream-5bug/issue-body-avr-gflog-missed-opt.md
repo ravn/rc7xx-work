@@ -164,6 +164,8 @@ the gf_log body, same loop, different surface forms:
 | v3 | K&R + local `uint8_t` copy (`uint8_t xb = x; if (atb == xb)`) | 70 B (no change) |
 | v4 | ANSI + sign-bit form (`if ((int8_t)z < 0)` instead of `if (z & 0x80)`) | **48 B (fully unblocks)** |
 | v5 | ANSI + branchless materialize of the bit-test mask | 66 B (partial) |
+| v6 | prototype declaration + K&R definition body | 62 B (same as v1) |
+| v7 | prototype + K&R body + sign-bit form | **48 B (same as v4)** |
 
 Findings:
 
@@ -176,10 +178,17 @@ Findings:
   as i8 in the IR), but the `z & 0x80` bit-test still produces an
   outside-graph `and i16 %z, 128` shape that blocks the narrowing of
   the phi-rooted graph.
-- **Two source-level changes together (v4) unblock the narrowing.**
-  ANSI prototype + rewriting the bit-test as `(int8_t)z < 0` (which
-  lowers to `icmp slt i8 %z, 0` — no `and` operation in the IR)
-  produces the optimal 48-byte codegen on stock LLVM.
+- **The K&R-vs-ANSI distinction is at the *prototype*, not the
+  definition body.**  A separate prototype declaration in scope
+  before a K&R-style definition (v6) gives byte-identical IR to a
+  full ANSI conversion (v1).  Programmers who want to preserve the
+  K&R definition syntax can add the prototype without rewriting the
+  function body.
+- **Two source-level changes together unblock the narrowing.**
+  ANSI prototype (or prototype-before-K&R-body) + rewriting the
+  bit-test as `(int8_t)z < 0` (which lowers to `icmp slt i8 %z, 0` —
+  no `and` operation in the IR) produces the optimal 48-byte codegen
+  on stock LLVM (variants v4 and v7).
 
 In other words, the issue is concrete enough that "just rephrase the
 C" is not a 30-second answer.  A C programmer would have to anticipate
