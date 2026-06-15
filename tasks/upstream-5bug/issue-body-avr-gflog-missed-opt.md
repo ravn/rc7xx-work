@@ -150,6 +150,48 @@ Delta: **−229,521 cycles (−27.8 %)**.
 
 This is conservative-correct, but on 8-bit-native backends — where the source-level pattern is `uint8_t` arithmetic in a loop, int-promoted to `i16` through C's integer-promotion rules — the typical loop-exit comparison `icmp <pred> %wide, %other` blocks the narrowing for the entire graph despite both operands being trivially narrow.
 
+## Source-level workarounds attempted
+
+We tested whether straightforward source rewrites unblock the
+narrowing on stock LLVM (no compiler patches).  Six variants of
+the gf_log body, same loop, different surface forms:
+
+| Variant | Change vs original | Size on stock LLVM |
+|---|---|---|
+| v0 | original K&R declaration | **70 B** (the bug) |
+| v1 | ANSI prototype only (`uint8_t gf_log(uint8_t x)`) | 62 B (partial) |
+| v2 | K&R + cast in icmp (`if (atb == (uint8_t)x)`) | 70 B (no change) |
+| v3 | K&R + local `uint8_t` copy (`uint8_t xb = x; if (atb == xb)`) | 70 B (no change) |
+| v4 | ANSI + sign-bit form (`if ((int8_t)z < 0)` instead of `if (z & 0x80)`) | **48 B (fully unblocks)** |
+| v5 | ANSI + branchless materialize of the bit-test mask | 66 B (partial) |
+
+Findings:
+
+- **The two "obvious" workarounds — casting `(uint8_t)x` in the icmp
+  and copying `x` to a local — achieve nothing.**  InstCombine doesn't
+  fold the cast or local before TruncInstCombine sees the IR, so the
+  i16 phi reaches the pass byte-identically to v0.
+- **ANSI prototype alone (v1) is partial.**  It unblocks the loop-exit
+  icmp side (the `atb == x` comparison narrows because `%0` arrives
+  as i8 in the IR), but the `z & 0x80` bit-test still produces an
+  outside-graph `and i16 %z, 128` shape that blocks the narrowing of
+  the phi-rooted graph.
+- **Two source-level changes together (v4) unblock the narrowing.**
+  ANSI prototype + rewriting the bit-test as `(int8_t)z < 0` (which
+  lowers to `icmp slt i8 %z, 0` — no `and` operation in the IR)
+  produces the optimal 48-byte codegen on stock LLVM.
+
+In other words, the issue is concrete enough that "just rephrase the
+C" is not a 30-second answer.  A C programmer would have to anticipate
+two specific IR shapes — the outside-graph icmp from int-promotion AND
+the outside-graph and-mask from the bit-test — and rewrite both.  The
+two unobvious source changes that work are independent of each other;
+one is a function signature change and the other is a bit-test idiom
+change, and most embedded-C programmers would reach for the cast or
+local copy first.
+
+(Variant source available alongside the reducer if useful for review.)
+
 ## Direction (not a patch)
 
 Admit the outside-graph user when **both** of the following hold:
