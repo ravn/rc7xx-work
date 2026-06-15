@@ -25,7 +25,7 @@ Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to matc
 **Headline:** clang beats SDCC on ALL production targets (autoload, cpnos, BIOS) and dominates the AES corpus. Cheap codegen + regalloc levers are exhausted (session #74 production-density drill: dominant residual waste is ISA-fundamental); the remaining high-value compiler work is upstream-submission packaging.
 
 - autoload PROM (clang, ZX0-compressed): **1673 B / 2048 B (375 B free)** — measured 2026-06-08 with `-z80-enable-cse=false` default (was 1652 B; +21 B from CSE disable after pi miscompile found, see B15).  Banner: `RC700 ROA375 CL <date> <hash>/<user>`.  Hard-capped at 2 KB (no A11 bridge on user's hardware — memory rule `project_rc702_2kb_prom_hard_limit`).
-- BIOS: clang **5890 B** vs SDCC **6091 B** (measured 2026-06-10; clang default now `-flto` per #89, −15 B from prior 5905 B baseline).  MAME boot verified (mame-test 77-track sweep ERR=0 on the LTO build, 2026-06-10).
+- BIOS: clang **5462 B** vs SDCC **6091 B** (re-measured 2026-06-15; clang **−629 B**, ~10.3% smaller than SDCC).  Prior recorded baseline 5890 B at 2026-06-10; current size reflects accumulated llvm-z80 backend gains since that measurement.  MAME boot last verified 2026-06-10 (mame-test 77-track sweep ERR=0); re-verify after next code change.
 - **cpnos-in-c PROM1-only line program** (production target): clang × {PIO+SIO} dual — compressed **2030 B / 2048 B (18 B free)** measured 2026-06-08 (+7 B from CSE disable); polypascal-test PASS on BOTH transports (pio-irq AND sio; the harness now sets the SW1 S03 DIP from `$TRANSPORT`).  SDCC: **2151 B** / 4 KB padded, MAME-only (needs PROMCFG=2, 2732 4 KB); polypascal-test PASS.  Build: `cd cpnos-in-c && make prom1-lineprog COMPILER={clang,sdcc}`.  Shared init.c / resident.c; compiler-specific cold-init via bootstrap.s (clang) vs bootstrap.asm (SDCC).
 - cpnos-in-c resident (clang, PIO transport): **clang 2004 B / SDCC 2120 B** raw .payload non-padding.
 - AES-256 corpus (rc700-gensmedet/tasks/aes256-corpus): `09_Oz_prod_like` clang **−22 % size, +51 % slower** vs zsdcc (2581 B / 18.21 M tstates vs SDCC 3323 B / 12.08 M, llvm-z80 main `21ef058` 2026-06-08).  Size win intact; speed regression is from the sound icmp-narrow gate revealing a deeper structural issue (CVP strips `AggressiveInstCombine` Phase 2's narrowness marker on Z80) — see `[[project_aes_kr_speed_gap_accepted]]` and `llvm-z80/tasks/session-2026-06-08-clang-vs-sdcc-speed-investigation.md`.  All 13 configs PASS verifier.  Off the critical path for the four finishing-firmware components; revisit triggers in the memory note.
@@ -147,7 +147,7 @@ The PROM build uses `--target=z80 -Os` with `+static-stack` (BSS locals) and `+s
 
 ## Code Density Gap Analysis (BIOS; per-function profile from 2026-05-02, headline refreshed 2026-05-30)
 
-Clang BIOS = **5897 B**, SDCC BIOS = 6091 B (clang **−194 B** overall).
+Clang BIOS = **5462 B** (2026-06-15), SDCC BIOS = 6091 B (clang **−629 B** overall, ~10.3% smaller).
 Session #74's instrumented drill concluded the remaining clang-side waste is **ISA-fundamental** (8-bit memory is A-only → BSS-via-A + A-shuttle moves are irreducible without #172-class machinery, all approaches so far net negative); cpnos is near-optimal.  The 2026-05-02 profile below is kept for the per-function shape:
 
 | Cause                                | Impact                    | Status                                   |
