@@ -186,7 +186,12 @@ A parallel direction admits outside-graph `(and X, Const)` users where `Const` f
 
 ## What to check before posting (internal-use, not part of the issue body)
 
-- [ ] Build the repro with stock LLVM tip-of-tree clang, confirm the 70-byte / 825K-cycle baseline (we've only verified against our out-of-tree fork's reverted-to-baseline state).
+- [x] **Verify bug is not fixed upstream** (2026-06-15):
+  - Source code on `llvm/llvm-project/main` (`llvm/lib/Transforms/AggressiveInstCombine/TruncInstCombine.cpp`) still has the all-or-nothing bail: `if (!IsExtInst) return nullptr;` at the outside-user iteration in `getBestTruncatedType`.  Unchanged.
+  - No open PRs touch `TruncInstCombine.cpp` at all.
+  - Only open TruncInstCombine-related issue is `#202112` — our own previously-filed bug 2 (argument-leaf narrowing), which targets a different code path.
+  - Last functional commit to the file was 2025-10-09 (`profcheck` profile-metadata propagation); the bail logic has been untouched for ~8 months.
+- [ ] Build the repro with stock LLVM tip-of-tree clang to confirm the 70-byte / 825K-cycle baseline reproduces end-to-end (we've verified against our out-of-tree fork's reverted-to-baseline state, and source-checked upstream to confirm the relevant code is identical; an empirical end-to-end run is belt-and-braces).
 - [ ] Confirm the AVR pass pipeline matches what stock LLVM runs at `-Os` for `--target=avr -mmcu=atmega328p`.
 - [ ] Confirm an `llvm/llvm-project` issue under `missed-optimization + backend:AVR + llvm:transforms` is the right venue (vs Discourse RFC).
 - [ ] Decide whether to include the runtime cycle witness in the issue body, link it, or leave it out (it strengthens the report but adds setup cost for the reviewer).
