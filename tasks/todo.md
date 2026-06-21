@@ -17,7 +17,7 @@ Active queue, in priority order:
 - [ ] **Inverse analysis: Z80 machinery that would be better modelled (2026-06-21 continuation)**
   - [x] **#232 CLOSED WONT-FIX (2026-06-21)** Empirical A/B showed LSR is locally good (raw −1 B autoload / +2 B cpnos) but ZX0 compresses the LSR'd output worse (+13 B both). Outside TTI's expressive power — same class as #184. Writeup: `llvm-z80/tasks/issue232-lsr-sledgehammer-investigation-2026-06-21.md`.
   - [ ] **#234** (NEW from #232 investigation) Remove stale `-mllvm -disable-lsr` from rcbios Makefile — verified byte-identical no-op (5462 B both, instruction-level identical disassembly).  Tiny chore.
-  - [ ] **#115 EXAMINED 2026-06-21** — IY is already allocatable in production (`-Oz + static-stack` triggers `z80IsIYAllocatable`).  Empirical scan: ~21 B recoverable from IY→HL extractions (autoload 2 + rcbios 5; cpnos clean).  Design sketch (HLReg/DEReg per BCReg precedent) ready in `llvm-z80/tasks/issue115-iy-unreserve-investigation-2026-06-21.md`.  Not a cost-model question.  ~1-2 sessions to implement when picked up.
+  - [ ] **#115 PARKED 2026-06-21** — user pivot to "3-pair set right for LDIR/DJNZ" first.  Examination complete: ~21 B recoverable (autoload 6 + rcbios 15), design sketch ready (HLReg/DEReg per BCReg precedent), full pickup runbook in `llvm-z80/tasks/issue115-iy-unreserve-investigation-2026-06-21.md`.  Implementation gated on the 3-pair-set pivot resolving.
   - [ ] **#233** Cleanup: fix mis-labelled "Vectorizer-only hooks" comment at `Z80TargetTransformInfo.cpp:38-44`.  Tiny chore; carry findings from #227-#230 into the comment.
 
 - [ ] **Upstream 5-bug filings** — drafts 2/3/4/5 complete in `tasks/upstream-5bug/`,
