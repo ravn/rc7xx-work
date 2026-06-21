@@ -1,0 +1,85 @@
+; ============================================
+; Z80 Assembly Test File
+; Syntax Highlighting Demo
+; ============================================
+
+        ORG $8000       ; ORG directive - should be purple/predefined
+
+; --------------------------------------------
+; Main program
+; --------------------------------------------
+start:              ; Label - should be identifier color
+        LD  A, $55     ; LD = opcode (keyword), A = register (constant), $55 = hex number
+        LD  B, A       ; B = register, A = register
+        LD  HL, buffer ; HL = register pair, buffer = label reference
+
+        ; Arithmetic operations
+        ADD A, B       ; ADD = opcode, A,B = registers
+        ADC A, (HL)    ; ADC = opcode, (HL) = memory access
+        INC BC         ; INC = opcode, BC = register pair
+        DEC DE         ; DEC = opcode, DE = register pair
+
+        ; Control flow
+        JP  start      ; JP = opcode, start = label
+        JR  NC, skip   ; JR = opcode, NC = condition, skip = label
+        CALL subroutine ; CALL = opcode, subroutine = label
+        RET            ; RET = opcode
+
+skip:   NOP            ; NOP = opcode
+
+        ; Bit operations
+        BIT 0, A       ; BIT = opcode, 0 = immediate, A = register
+        SET 5, B       ; SET = opcode
+        RES 3, (HL)    ; RES = opcode
+
+        ; Stack operations
+        PUSH AF        ; PUSH = opcode, AF = register pair
+        POP  BC        ; POP = opcode, BC = register pair
+
+        ; Input/Output
+        IN  A, (0xFE)  ; IN = opcode, 0xFE = hex port number
+        OUT (0xFF), A  ; OUT = opcode
+
+        ; Block operations
+        LDIR           ; LDIR = opcode
+        CPIR           ; CPIR = opcode
+
+        ; CPU control
+        EI             ; EI = opcode
+        DI             ; DI = opcode
+        HALT           ; HALT = opcode
+
+        ; Data definitions
+        DEFB $00, $01, $02  ; DEFB = directive, hex numbers
+        DEFW table     ; DEFW = directive, table = label
+        DEFM "Hello"   ; DEFM = directive, string
+
+        ; Reserve space
+        DEFS 256       ; DEFS = directive, decimal number
+
+        ; Include another file
+        INCLUDE "defs.asm"  ; INCLUDE = directive, string
+
+        END start      ; END = directive, start = label
+
+; --------------------------------------------
+; Data section
+; --------------------------------------------
+table:  DEFB $10, $20, $30  ; table label
+        DEFB "Z80", 0
+
+buffer: DEFS 1024     ; buffer label
+
+; ============================================
+; Subroutines
+; ============================================
+
+subroutine:
+        PUSH AF        ; Save registers
+        PUSH HL
+        ; ... subroutine code
+        POP  HL
+        POP  AF
+        RET
+
+        END

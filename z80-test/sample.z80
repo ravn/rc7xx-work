@@ -1,0 +1,115 @@
+; ============================================================
+; Z80 Assembly Sample — exercises every token type in the lexer
+; ============================================================
+
+        ORG     0x8000          ; hex (0x prefix)
+
+; ---- Constants -----------------------------------------------
+SCREEN  EQU     0x4000          ; hex
+ATTR    EQU     22528           ; decimal
+BORDER  EQU     0b00000111      ; binary (0b prefix)
+ROWS    EQU     24
+
+; ---- Entry point ---------------------------------------------
+main:
+        LD      A, 0x02         ; opcode, register, hex literal
+        OUT     (0xFE), A       ; border colour
+
+        LD      HL, SCREEN      ; 16-bit register pair, label ref
+        LD      BC, 6144        ; decimal
+        LD      DE, HL
+
+.clear:
+        LD      (HL), 0x00
+        INC     HL
+        DEC     BC
+        LD      A, B
+        OR      C
+        JR      NZ, .clear      ; local label
+
+; ---- Attribute fill ------------------------------------------
+        LD      HL, ATTR
+        LD      BC, 768
+        LD      A, 0x38         ; white ink on black
+.attrs:
+        LD      (HL), A
+        INC     HL
+        DJNZ    .attrs
+
+; ---- Print a message -----------------------------------------
+        LD      HL, msg
+        CALL    print
+
+; ---- Halt ----------------------------------------------------
+        EI
+        HALT
+
+; ---- Subroutine: print null-terminated string at HL ----------
+print:
+        PUSH    AF
+        PUSH    BC
+        PUSH    DE
+        PUSH    HL
+.loop:
+        LD      A, (HL)
+        CP      0x00
+        JR      Z, .done
+        LD      C, A
+        CALL    putchar
+        INC     HL
+        JR      .loop
+.done:
+        POP     HL
+        POP     DE
+        POP     BC
+        POP     AF
+        RET
+
+; ---- Subroutine: output character in C -----------------------
+putchar:
+        IN      A, (0xFD)       ; read status
+        BIT     0, A
+        JR      Z, putchar
+        LD      A, C
+        OUT     (0xFD), A
+        RET
+
+; ---- Bit manipulation demo -----------------------------------
+flags:
+        LD      A, 0b10110001
+        AND     0b00001111      ; mask low nibble
+        OR      0b01000000
+        XOR     0xFF
+        RLC     A
+        SLA     A
+        SRL     B
+        RLD
+
+; ---- Stack demo ----------------------------------------------
+stack_demo:
+        PUSH    IX
+        PUSH    IY
+        PUSH    AF
+        POP     AF
+        POP     IY
+        POP     IX
+        RET
+
+; ---- Block operations ----------------------------------------
+block:
+        LD      HL, src
+        LD      DE, dst
+        LD      BC, 64
+        LDIR
+        CPIR
+        RET
+
+; ---- Data ----------------------------------------------------
+msg:    DEFM    "Hello, Z80!", 0x00
+
+src:    DEFB    0x01, 0x02, 0x03, 0x04
+        DEFW    0xDEAD, 0xBEEF
+
+dst:    DEFS    64
+
+        END     main
