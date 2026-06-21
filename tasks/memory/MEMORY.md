@@ -59,6 +59,7 @@
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test for every clang Z80 codegen bug
 - [Test before fix](feedback_test_before_fix.md) — failing test before implementing
+- [Plan thoroughly first](feedback_plan_thoroughly_first.md) — explicit step-by-step plan + confirm before any non-trivial work
 - [Project timeline log](feedback_timeline_record_keeping.md) — append to rc700-gensmedet/tasks/timeline.md per meaningful change
 
 ## 3. Before any memory-layout / linker / address change

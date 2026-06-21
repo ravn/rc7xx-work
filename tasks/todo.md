@@ -15,8 +15,9 @@ Active queue, in priority order:
   Conclusion: cost-model fixes correct as model statements but downstream Z80-specific machinery already produces the right shapes.
 
 - [ ] **Inverse analysis: Z80 machinery that would be better modelled (2026-06-21 continuation)**
-  - [ ] **#232** Investigate retiring `-disable-lsr` production sledgehammer via finer cost-model signal.  Strong candidate.  First step: `opt -debug-only=loop-reduce` on a production hot spot to see what LSR is actually scoring.  Risk: same #184 wall.
-  - [ ] **#115** IY reservation default-on — added cross-ref comment with the inverse-analysis classification.  Plausible candidate.  Empirical gating required.
+  - [x] **#232 CLOSED WONT-FIX (2026-06-21)** Empirical A/B showed LSR is locally good (raw −1 B autoload / +2 B cpnos) but ZX0 compresses the LSR'd output worse (+13 B both). Outside TTI's expressive power — same class as #184. Writeup: `llvm-z80/tasks/issue232-lsr-sledgehammer-investigation-2026-06-21.md`.
+  - [ ] **#234** (NEW from #232 investigation) Remove stale `-mllvm -disable-lsr` from rcbios Makefile — verified byte-identical no-op (5462 B both, instruction-level identical disassembly).  Tiny chore.
+  - [ ] **#115** IY reservation default-on — remains the ONLY plausible cost-model retire-candidate after #232 falsification.  Cross-ref comment added with the inverse-analysis classification + 2026-06-21 sweep caveat.
   - [ ] **#233** Cleanup: fix mis-labelled "Vectorizer-only hooks" comment at `Z80TargetTransformInfo.cpp:38-44`.  Tiny chore; carry findings from #227-#230 into the comment.
 
 - [ ] **Upstream 5-bug filings** — drafts 2/3/4/5 complete in `tasks/upstream-5bug/`,
