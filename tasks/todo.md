@@ -1,8 +1,25 @@
 # Z80 Code Density Optimization Todo
 
-## Current (2026-06-07, post drafts 3+4)
+## Current (2026-06-21, Z80 TTI modelling investigation)
 
 Active queue, in priority order:
+
+- [ ] **Z80 TTI modelling holes** — 2026-06-21 investigation
+  (`llvm-z80/tasks/session-2026-06-21-z80-tti-modelling-investigation.md`)
+  identified four scalar-pass cost hooks not implemented and one
+  follow-on regalloc-aware narrowing predicate.  Trackers:
+  - [ ] **#227** Hole 1: `getCmpSelInstrCost` (highest signal-to-risk —
+    closes bug 3 properly, retires #168 SimplifyCFG cost gate)
+  - [ ] **#228** Hole 2: `getCallInstrCost`
+  - [ ] **#229** Hole 3: `getIntImmCost` family
+  - [ ] **#230** Hole 4: `isLegalICmpImmediate` on Z80TargetLowering
+  - [ ] **#231** Hole 5: `Z80NarrowIV` call-crossing predicate (the
+    route that the WONT-FIX #184 closing comment pointed to; this
+    investigation re-validated #184's verdict against all four cost
+    holes and confirmed no alternate route exists)
+  All four cost changes ride the existing `-z80-experimental-tti-costs`
+  flag; A/B on production triplet + AES corpus + compiler-comparison-
+  corpus before defaulting on (per #177 rhythm).
 
 - [ ] **Upstream 5-bug filings** — drafts 2/3/4/5 complete in `tasks/upstream-5bug/`,
   repros verified on llvm-project `de59f9ed`; each AWAITING per-filing user go-ahead
@@ -16,6 +33,13 @@ Active queue, in priority order:
 - [x] **PR #17 retraction cleanup COMPLETE** (verified 2026-06-07): fork issues
   #18-#25 closed/withdrawn, #176 closed, #26 + PR #27 remain (correctly scoped).
 - PARKED: cpnos work awaits physical parallel cable (`project_cpnos_parked_awaiting_parallel_cable`).
+- [x] **Investigate GDB-over-physical-RC702** (2026-06-17 → 2026-06-17 — first-pass done,
+  see `tasks/gdb-z80/findings.md`).  Built z80-elf-gdb 17.2 in Docker; verified it reads
+  our clang DWARF5 ELF (resolves `_bios_hw_init`, `_specc`, `_isr_crt` to addresses + 12
+  source files).  MAME-gdbstub wire is already proven via `gdb_trace.py` (raw RSP) and
+  `z88dk-gdb` (in our z88dk:2.4 Docker image).  Physical-hardware path: **Pi/Pico bus
+  bridge** (recommended) — same hardware unblocks the parked INIR work.  Pre-existing
+  scaffolding: `rcbios-in-c/run_mame.sh -g`, `gdb_trace.py`, `gdb_bgstar.py`.
 
 Stale-item corrections to the sections below: #205 CLOSED (session 76, pattern-fill
 intrinsic), #194 CLOSED (session 73s-cont2). #203 forward-scan restructure and the
