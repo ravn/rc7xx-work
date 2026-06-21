@@ -4,22 +4,20 @@
 
 Active queue, in priority order:
 
-- [ ] **Z80 TTI modelling holes** — 2026-06-21 investigation
-  (`llvm-z80/tasks/session-2026-06-21-z80-tti-modelling-investigation.md`)
-  identified four scalar-pass cost hooks not implemented and one
-  follow-on regalloc-aware narrowing predicate.  Trackers:
-  - [ ] **#227** Hole 1: `getCmpSelInstrCost` (highest signal-to-risk —
-    closes bug 3 properly, retires #168 SimplifyCFG cost gate)
-  - [ ] **#228** Hole 2: `getCallInstrCost`
-  - [ ] **#229** Hole 3: `getIntImmCost` family
-  - [ ] **#230** Hole 4: `isLegalICmpImmediate` on Z80TargetLowering
-  - [ ] **#231** Hole 5: `Z80NarrowIV` call-crossing predicate (the
-    route that the WONT-FIX #184 closing comment pointed to; this
-    investigation re-validated #184's verdict against all four cost
-    holes and confirmed no alternate route exists)
-  All four cost changes ride the existing `-z80-experimental-tti-costs`
-  flag; A/B on production triplet + AES corpus + compiler-comparison-
-  corpus before defaulting on (per #177 rhythm).
+- [x] **Z80 TTI modelling holes 2026-06-21 — sweep CLOSED**
+  (`llvm-z80/tasks/session-2026-06-21-z80-tti-modelling-investigation.md`).
+  All five empirically tested:
+  - [x] **#227** `getCmpSelInstrCost` — VERIFIED INERT (lit suite + synthetic + predictable-branch all byte-identical).  Held open at fork.
+  - [x] **#228** `getCallInstrCost` — VERIFIED INERT (lit suite + call-heavy synthetic).  Held open at fork.
+  - [x] **#229** `getIntImmCost` family — VERIFIED INERT (ConstantHoisting fires, regalloc dematerializes via `isReMaterializable`).  Held open at fork.
+  - [x] **#230** `isLegalICmpImmediate` — VERIFIED INERT (LSR consumer is decline-only; GISel doesn't reach SDAG consumers).  Held open at fork.
+  - [x] **#231** `Z80NarrowIV` predicate — pass doesn't exist; cpnos pain hypothetical.  Speculative-future at fork.
+  Conclusion: cost-model fixes correct as model statements but downstream Z80-specific machinery already produces the right shapes.
+
+- [ ] **Inverse analysis: Z80 machinery that would be better modelled (2026-06-21 continuation)**
+  - [ ] **#232** Investigate retiring `-disable-lsr` production sledgehammer via finer cost-model signal.  Strong candidate.  First step: `opt -debug-only=loop-reduce` on a production hot spot to see what LSR is actually scoring.  Risk: same #184 wall.
+  - [ ] **#115** IY reservation default-on — added cross-ref comment with the inverse-analysis classification.  Plausible candidate.  Empirical gating required.
+  - [ ] **#233** Cleanup: fix mis-labelled "Vectorizer-only hooks" comment at `Z80TargetTransformInfo.cpp:38-44`.  Tiny chore; carry findings from #227-#230 into the comment.
 
 - [ ] **Upstream 5-bug filings** — drafts 2/3/4/5 complete in `tasks/upstream-5bug/`,
   repros verified on llvm-project `de59f9ed`; each AWAITING per-filing user go-ahead
