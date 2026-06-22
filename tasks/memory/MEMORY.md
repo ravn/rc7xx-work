@@ -60,6 +60,8 @@
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test for every clang Z80 codegen bug
 - [Test before fix](feedback_test_before_fix.md) — failing test before implementing
 - [Plan thoroughly first](feedback_plan_thoroughly_first.md) — explicit step-by-step plan + confirm before any non-trivial work
+- [Production-hard, AES/upstream-soft](feedback_production_hard_aes_soft.md) — production triplet is the load-bearing workload; AES + upstream-correctness are additional signal
+- [BSD awk only on macOS](feedback_bsd_awk_only_on_macos.md) — avoid strtonum/gensub/asort; use Python for hex parsing
 - [Project timeline log](feedback_timeline_record_keeping.md) — append to rc700-gensmedet/tasks/timeline.md per meaningful change
 
 ## 3. Before any memory-layout / linker / address change
@@ -126,6 +128,7 @@
 - [IX caller-saved after #12](project_ix_caller_saved_after_12.md) — IX allocatable only pays caller-saved; revisit after #12
 - [pi CSE / branch-fold miscompile PARKED](project_pi_cse_branchfold_parked.md) — Branch Folder unsound hoist (exposed by MachineCSE); production unaffected; don't re-investigate, don't flip `-z80-enable-cse` default ON until upstream fix
 - [Fork-local pass naming = upstream candidacy honesty](feedback_fork_local_pass_naming.md) — `Z80*` prefix is locative not semantic; if a pass's body is target-agnostic, name with the operation (`*Recognize`/`*Combine`) AND record the upstream debt in `upstream-coherence-map`. `Z80LoopIdiomFill`→`Z80PatternFillRecognize` (2026-06-09) is the pinned example.
+- [#212-class HL borrow-save audit pattern](project_212_class_borrow_save_pattern.md) — `if (HLLive) PUSH_HL` without IMPLICIT_DEF for dead half trips verifier when fastregalloc places undef; 5+ latent sites in Z80InstrInfo.cpp filed as #239; reflex check whenever auditing pseudo-expanders that borrow HL/IX/IY
 
 ## 6. Before any MAME / boot / test run
 
