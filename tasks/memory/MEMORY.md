@@ -22,6 +22,7 @@
 - **[No-op control measurement](feedback_no_op_control_measurement.md) — HARD: for any new heuristic / cost-model hook / pass override, run THREE cells (baseline / no-op control / feature-ON) and check that no-op-control matches baseline byte-identically. If not, the new code has a presence-cost side effect; investigate before trusting feature-ON measurements.**
 - **[Token-efficiency disciplines](feedback_token_efficiency.md) — HARD: (1) never raw logs into context — file + grep/tail summary, failing slice only; (2) long builds/runs in background; (3) handoff file + suggest fresh session at work-item boundaries.**
 - **[Communication Style](feedback_style.md) — think out loud, concise, no apologies, record prompts**
+- [Suggest model switch when warranted](feedback_suggest_model_switch.md) — flag Opus vs Sonnet fit before starting a task; one sentence suffices
 - **[NEVER apologize](feedback_no_apology.md) — HARD: no "sorry"/self-criticism; report state + next action**
 - **[No compliments](feedback_no_compliments.md) — HARD: start with the substantive answer**
 - **[No aphoristic flourishes](feedback_no_aphoristic_flourishes.md) — HARD: never wrap a decision in a maxim**

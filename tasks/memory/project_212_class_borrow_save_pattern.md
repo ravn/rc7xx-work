@@ -35,7 +35,7 @@ For GR8 SPILL/RELOAD where one half is the source/destination, the source half i
 
 **Known sites** (filed 2026-06-22):
 - `Z80RegisterInfo.cpp`: SP-relative GR8 spill/reload (FIXED #210), large-offset GR8 spill/reload (FIXED #212 + symmetry follow-up), SPILL_GR16 isKill case (#236 latent), ADD_HL_FI/SUB_HL_FI large-offset (#237 latent), adjCallStackUpClobbersReg sync invariant (#238 supporting).
-- `Z80InstrInfo.cpp`: ZEXT/SEXT_GR8_GR16 IX/IY paths, SPILL/RELOAD_GR16 IX/IY paths, SEXT16 IX/IY path, `copyPhysReg` SP→BC|DE — all latent, filed as #239.
+- `Z80InstrInfo.cpp`: ZEXT/SEXT_GR8_GR16 IX/IY paths, SPILL/RELOAD_GR16 IX/IY paths, SEXT16 IX/IY path, `copyPhysReg` SP→BC|DE + GR8↔IXH/IXL/IYH/IYL — **ALL FIXED 2026-06-23** (#239 fully closed; 9 lit tests, 164 PASS+6 XFAIL).
 
 **Why latent matters less than it sounds**: production targets (`-Oz`/`-Os`/`-O2` +static-stack) never reach these arrangements — verified by `verify-production.sh` staying clean. The failures only surface at `-O0` where fastregalloc places undef physregs in patterns that the optimizer would have eliminated. So these are correctness-for-O0 + future-proofing, not production-shipping bugs.
 
