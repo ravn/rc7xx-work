@@ -596,3 +596,8 @@ After laying out three paths forward in chat (hand-rolled asm / INI+CKS-fold / r
 > save all your findings and go back to the working configuration. I still want the autoload dma
 
 (-> Wire-level byte trace via cpnet_bridge logerror to /tmp/cpnos_dir_bridge.log showed slave received correct bytes through EOT of 41-byte response, then silent. Confirmed mpm-side inspection not needed (slave-side hang). Then ran cpnos-polypascal-test-trace target which produces /tmp/z80_trace.txt with full instruction trace; debugger inspection pinpointed PC=0xF301 dead-loop at _resident_handoff (netboot returned 0), 17 isr_pio_par fires with 2 going to drop path (12 % ring overflow). Root cause: ring-shrink (256->16) and INIR are coupled -- INIR drains data direct to msg, bypasses ring; without INIR data flows through ring and 41-byte bursts overflow 16 B. In MAME no working configuration exists for the bundle. PARKED Steps 2+4 + layout migration; shipped only Steps 0+1 (autoinit DMA strip 9592c2d + Step 1 scaffold 50cc0bf). Working tree reset to HEAD; polypascal-test PASS 53.61 s confirms autoload DMA + Step 0/1 baseline green. Session writeup committed as d724796.)
+
+---
+2026-06-23 (session restart after crash)
+> machine crashed. where were we?
+> continue
