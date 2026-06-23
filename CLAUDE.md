@@ -49,6 +49,8 @@ Master: `llvm-z80/tasks/roadmap-to-maturity.md` (session 36).
 Current overlay: `llvm-z80/tasks/plan-2026-05-03-structural.md` (session 42).
 Strategic frame: bring `llvm-z80/llvm-z80` (active fork-of-record, owner @zlfn) to maturity collaboratively; eventual official LLVM upstream is long-term aspiration. Workspace mode → engagement mode (gated on substantial body of work).
 
+**Upstream filing queue (4 items staged for llvm/llvm-project):** `llvm-z80/tasks/upstream-filing-queue.md` — #224 (LiveVariables implicit-def, ready), #226 (TTI RFC, ready), #219 (TruncInstCombine, needs user intro), #225 (deleteDeadLoop, needs framing). All require per-filing go-ahead per `feedback_explain_before_filing`.
+
 **Phase status (refreshed 2026-06-06):** Phase 1 Foundation DONE; Phase 2 Correctness sweep DONE; Phase 3 Cluster A regalloc **complete** (#94/#98/#99/#89 closed 2026-05-04; #27 shipped session #74 as opt-in `-z80-idx-addr`).  Correctness gate **CLEARED** (session #77 verdict): every Tier II miscompile/crash closed; no open miscompiles remain.  Remaining pre-upstream work is **packaging, not fixing** — but note the session #77 PR-#17 retraction below: all upstream filings now require per-filing explanation + explicit go-ahead (`feedback_explain_before_filing`), and generic-LLVM bugs route to llvm/llvm-project, never the fork (`feedback_upstream_routing_two_targets`).
 
 **Coherence map (2026-05-22):** `llvm-z80/tasks/upstream-coherence-map-2026-05-22.md` classifies every open issue + known shortcoming into 11 upstream-relevance tiers; single source of truth for "what gets upstreamed where."
