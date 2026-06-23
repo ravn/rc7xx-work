@@ -601,3 +601,9 @@ After laying out three paths forward in chat (hand-rolled asm / INI+CKS-fold / r
 2026-06-23 (session restart after crash)
 > machine crashed. where were we?
 > continue
+
+---
+2026-06-23 (continued)
+> 236+237
+> continue
+> continue. stopping not relevant anymore
