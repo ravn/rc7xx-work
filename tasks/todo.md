@@ -1,6 +1,29 @@
 # Z80 Code Density Optimization Todo
 
-## Current (2026-06-21, Z80 TTI modelling investigation)
+## Current (2026-06-24, dcc-corpus three-compiler oracle)
+
+- [x] **CP/M three-compiler oracle built** — `llvm-z80/z80-utils/compiler-zoo/cpm_zoo.py`
+  compares dcc / clang / clangp / zsdcc over the dcc test corpus (raw codegen
+  size + T-states + consensus verdict). clang CP/M runtime in `llvm-z80/z80-utils/cpm/`
+  (crt0 + minimal libc + argc/argv tail parsing). Refs #35.
+- [x] **clangp `+static-stack` recursion-gated** — `is_recursive()` (IR call-graph
+  cycle check) drops static-stack on recursive tests; implements memory rule
+  `feedback_static_stack_nonrecursive_only`. nqueens DIFF→AGREE.
+- [x] **clangp `-disable-lsr` dropped** — confirmed stale (#232/#234); was the sole
+  cause of clangp regressing vs clang (tqsort −38% speed). clangp now ties-or-beats
+  clang everywhere.
+- [ ] **B17 — root-cause the multi-byte `sbc a,a` carry-materialization** (the
+  1.5–2.4× int-arith raw gap vs zsdcc; triangle 14 / fact 10 / e 2 `sbc a,a`,
+  zsdcc 0). Minimal i32 `a+b`/`a==0` repro → `-print-after-all` to pin the
+  emitting pass → AVR cross-check → decide GISel-legalization fix vs late-opt
+  peephole vs upstream. See `known-suboptimal-codegen.md` B17. **No issue filed
+  until repro pins the pass** (`feedback_file_bugs_not_fixes`).
+- [ ] **IndVarSimplify SCEV closed-form → multiply libcall** (triangle n·(n+1)/2
+  emits `mulsi3`/`muldi3`). Generic (AVR confirmed), NOT the size driver here, so
+  low priority. Candidate for llvm/llvm-project — needs minimal repro + explicit
+  go-ahead (`feedback_explain_before_filing`) before any upstream post.
+
+## Earlier (2026-06-21, Z80 TTI modelling investigation)
 
 Active queue, in priority order:
 
