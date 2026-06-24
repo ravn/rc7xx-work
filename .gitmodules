@@ -19,3 +19,6 @@
 	path = cpnet-z80
 	url = git@github.com:ravn/cpnet-z80.git
 	branch = master
+[submodule "dcc"]
+	path = dcc
+	url = https://github.com/davidly/dcc.git

@@ -84,6 +84,7 @@
 
 ## 4. Before any build / compile / link flag change
 
+- **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD: `+static-stack` is non-reentrant and SILENTLY miscompiles recursion (no error, wrong answer). Never enable globally; establish non-recursion first. Evidence: nqueens wrong + 404K vs 53M ts under `clangp`.**
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
 - **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel `ifeq COMPILER` recipes must emit the SAME artifact set**
 - **[Build-var artifacts content-check, not mtime](feedback_build_var_artifacts_content_check.md) — HARD: files embedding TRANSPORT/COMPILER regen via content grep**
@@ -111,6 +112,7 @@
 - **CRITICAL framing — [Z80 backend unfinished](project_z80_backend_unfinished.md): goal is to FINISH the backend correctly, not optimize a finished one**
 - **CRITICAL framing — [Z80 staged collaboration model](project_z80_upstream_goal.md): near-term llvm-z80/llvm-z80; long-term llvm/llvm-project; collaborate with owner**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD (cross-listed §2): value oracle required**
+- **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD (cross-listed §4): non-reentrant, silently miscompiles recursion**
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test per bug
 - [Verify codegen not just size](feedback_verify_codegen.md) — read disassembly per compiler; same size ≠ same behavior
 - **[Compiler is not trusted](feedback_compiler_not_trusted.md) — HARD: inspect generated asm BEFORE blaming source/runtime/hardware**
