@@ -12,12 +12,16 @@
 - [x] **clangp `-disable-lsr` dropped** — confirmed stale (#232/#234); was the sole
   cause of clangp regressing vs clang (tqsort −38% speed). clangp now ties-or-beats
   clang everywhere.
-- [ ] **B17 — root-cause the multi-byte `sbc a,a` carry-materialization** (the
-  1.5–2.4× int-arith raw gap vs zsdcc; triangle 14 / fact 10 / e 2 `sbc a,a`,
-  zsdcc 0). Minimal i32 `a+b`/`a==0` repro → `-print-after-all` to pin the
-  emitting pass → AVR cross-check → decide GISel-legalization fix vs late-opt
-  peephole vs upstream. See `known-suboptimal-codegen.md` B17. **No issue filed
-  until repro pins the pass** (`feedback_file_bugs_not_fixes`).
+- [x] **B17 — FIXED 2026-06-24** multi-byte `sbc a,a` carry-materialization.
+  Root-caused (ISel models inter-limb carry as GR8; pseudo expansion round-trips
+  via `sbc a,a;and 1` / `rrca`; AVR keeps it in CF -> Z80-backend gap, not a
+  generic bug). New post-RA `Z80FuseCarryChain` pass threads carry in the flag
+  for add/sub chains with a dead terminal carry. add32 −5 instr, i64 add −11;
+  production byte-identical; lit 173+6, runtime 872 PASS, new lit + `test_224`.
+  Writeup `llvm-z80/tasks/b17-fuse-carry-chain-2026-06-24.md`. NOT committed yet.
+  Follow-up candidates (not done): fuse chains whose terminal carry IS observed
+  (needs an `ADC_HL_rr_CI` flag-in/capture-out pseudo); the i32 `==0`/`<`
+  comparison-boolean `sbc a,a` is a SEPARATE shape, still open.
 - [ ] **IndVarSimplify SCEV closed-form → multiply libcall** (triangle n·(n+1)/2
   emits `mulsi3`/`muldi3`). Generic (AVR confirmed), NOT the size driver here, so
   low priority. Candidate for llvm/llvm-project — needs minimal repro + explicit

@@ -1,5 +1,14 @@
 # Prompts
 
+## 2026-06-24 (B17 carry-chain fix)
+
+> do b17
+> when was this decision made?
+> can you fix it?
+> remember thorough testcases
+> note i want the thorough test suite part of the future tests to run
+> remember killing ninja causes full rebuilds, don't do that unless absolutely necessary
+
 ## 2026-04-06 (session 12)
 
 > #60
