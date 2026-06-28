@@ -156,6 +156,7 @@
 - **[Headless host = no MAME window](feedback_host_no_graphics.md) — HARD: on sonnyboy use `SDL_VIDEODRIVER=dummy` (or xvfb-run); snapshots/AVI still work**
 - [MAME interactive timeout](feedback_mame_interactive_timeout.md) — ~30s Bash timeout suffices
 - [Lua no port reads](feedback_lua_no_port_reads.md) — use install_read_tap; double reads break devices
+- [Lua retain tap handles](feedback_lua_retain_tap_handles.md) — store install_*_tap return in a long-lived table or GC frees it -> segfault in lua_topointer
 - **[Lua errors are fatal](feedback_lua_errors_fatal.md) — HARD: any `[LUA ERROR]` invalidates the run; fix lua, re-run, THEN interpret**
 - **[Display address from DMA, never hardcode](feedback_display_addr_from_dma.md) — HARD: read base from Am9517A DMA ch2 (autoload 0x7A00, roa375 0x7800)**
 - [Bench self-termination](feedback_bench_must_self_terminate.md) — taps call `manager.machine:exit()` on finish
@@ -251,5 +252,7 @@
 - **[Never push/merge upstream remotes](feedback_never_push_or_merge_upstream_remotes.md) — HARD: cpnet-z80 origin is `durgadas311/*` (upstream); keep local commits FLAT, no `--no-ff` merges, no push. Only `ravn/*` repos get pushed/merged.**
 - **[CP/NET 1.2 only](feedback_cpnet_12_only.md) — HARD: assume CP/NET 1.2 semantics; BDOS-105 is NOT forwardable under 1.2; ndos3.asm:504 (`db 0 ; 105 - can't support here, use SEND NW MESG`) is correct; time-from-master goes via BDOS-66/67 + FN-105 vendor extension (see `cpnet/todget/todget.c`).**
 - **[rcbios jump table is ABI](feedback_rcbios_jump_table_is_abi.md) — HARD: BIOS jump table at 0xDA00 (incl. vendor extensions like 0xDA56 CLOCK) is frozen ABI for compiled CP/M programs on system disks. No delete, reposition, or stub of existing entries — even when a "better" wire path exists. New paths are ADDITIVE; legacy stays callable. New entries OK at end of table.**
+
+- **[rcbios: never enable -flto (breaks boot-code placement)](feedback_rcbios_no_lto_boot_placement.md) — HARD: `-flto` merges C objects so `rc700_bios.ld` per-file matchers (`*boot_entry.o`, `*bios_hw_init.o`) fail; relocate_bios/verify/hw_init land high at 0xDA00 and `_coldboot` calls empty RAM → no `A>`. Fix = drop `-flto` (~15 B). Toggling a compile flag needs `rm *.o`, not just a relink.**
 
 <!-- For project info that lives in the repo (not memory) — goal, TODOs, docs, MAME, PROM specs — see the "What's NOT in memory" map in README.md. -->
