@@ -59,6 +59,8 @@
 - **[No local zsdcc fixes](feedback_no_local_zsdcc_fixes.md) — HARD: root-cause + repro + `wontfix` + report upstream; clang fixes still local**
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test for every clang Z80 codegen bug
+- [Attribution line on filed issues](feedback_issue_attribution_line.md) — append `--- / _Filed by GitHub Copilot on behalf of @ravn._` to every issue body
+- [Comment on issue when fix committed](feedback_issue_comment_on_fix.md) — AUTO (no prompt): after fix commit, post comment with hash + what changed + verification + remaining notes
 - [Test before fix](feedback_test_before_fix.md) — failing test before implementing
 - [Plan thoroughly first](feedback_plan_thoroughly_first.md) — explicit step-by-step plan + confirm before any non-trivial work
 - [Production-hard, AES/upstream-soft](feedback_production_hard_aes_soft.md) — production triplet is the load-bearing workload; AES + upstream-correctness are additional signal
@@ -136,7 +138,7 @@
 ## 6. Before any MAME / boot / test run
 
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: banner timestamp vs BUILD_INFO_STR before any diagnosis**
-- **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — first try `make _kill-mpm; sleep 5-8; retry`**
+- **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — first try `make _kill-mpm; sleep 5-8; retry`. ★ BOTH PIO+SIO failing identically (transport-agnostic), or after you ran standalone `mpm`/`nc`-probed :4002 = master state YOU contaminated; kill your own stragglers (ps/lsof :4002), NOT codegen.**
 - **[mpm-net2 weirdness — first fix is stop+rebuild+restart](feedback_mpm_server_first_fix.md) — HARD: ANY unexpected mp/m server behavior → stop, rebuild, restart, retry BEFORE theorizing. If still bad: ASK the user.**
 - **[Session-start: kill daemons BEFORE first test](feedback_session_start_kill_daemons.md) — HARD: `make -C cpnos-in-c _kill-mpm; sleep 8` before first run + between COMPILER switches**
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: capture a MAME screenshot to verify boot; PASS lines + memory dumps are NOT enough**
