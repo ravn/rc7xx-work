@@ -41,12 +41,6 @@ the whole brief.
 
 ## Communication
 
-- **Flag model fit before starting a task.** If you are on a smaller/faster model
-  (e.g. Sonnet) and the task calls for open-ended analysis, multi-file audit, or
-  architectural reasoning, say so in one sentence before diving in. If you are on a
-  larger model (e.g. Opus) and the task is a targeted patch with an established fix
-  pattern, note that Sonnet would be faster and cheaper. One sentence is enough; don't
-  overdo it.
 - **Think out loud.** Narrate the reasoning, not just the conclusion. Concise, not
   terse-to-the-point-of-opaque.
 - **No apologies, no self-flagellation.** Don't say "sorry" or "my bad." Report the
@@ -112,7 +106,26 @@ the whole brief.
 
 ## Verification & commit discipline
 
-- **Test before fix.** Write the failing test first, then make it pass.
+- **Test suite first — no fix code before a failing test exists.** This is
+  mandatory, not advisory. Before writing *any* fix code:
+  1. Write a test that exercises the exact failure mode.
+  2. Confirm it **fails** on the unmodified (buggy) code. A test that cannot
+     be observed to fail does not demonstrate the bug — it may be testing the
+     wrong thing, or the fix may already be present. Either way, stop until
+     you understand why.
+  3. Once the failing test is committed, write the fix and verify all tests
+     pass.
+  A "comprehensive" test suite for a compiler bug covers at minimum four
+  shapes: **(a)** the exact pattern from the bug report; **(b)** structural
+  variations (different instruction distances, register pairs, operand orders);
+  **(c)** positive controls that must still pass after the fix (guard against
+  regressing neighbouring behaviour); and **(d)** safety / boundary cases that
+  probe conditions the fix must handle without crashing (e.g. registers with
+  no prior def in the block that the fix must not accidentally extend live
+  ranges for). Write the CHECK lines to fail on buggy output: if the fix
+  merely adds an operand, the check for that operand's *absence* (e.g.
+  `CHECK-NEXT: instr, expected-op{{$}}` with `{{$}}` anchoring to end-of-line)
+  is as important as the check for its presence.
 - **Baseline before you change.** Capture the control measurement on the *unmodified*
   system — test-runner fail-set, binary sizes, timings — *before* you touch anything.
   A delta needs both endpoints; reconstructing the "before" after the fact (stash,
