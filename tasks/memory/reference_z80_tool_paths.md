@@ -35,6 +35,20 @@ $NINJA -C build-macos clang llc opt        # both clang+llc per feedback_ninja_c
 
 After backend changes ALWAYS rebuild clang+llc together (the clang symlink would otherwise reference stale libLLVM if you `ninja llc` alone).
 
+### SDCC runtime assembler/archiver — native, no Docker (since 2026-06-30)
+
+The z80 runtime build (`z80_rt.a`/`z80_rt.lib`) only needs `sdasz80` + `sdar`
+(plus native `llvm-ar`).  Native arm64 SDCC binaries live in
+`/Users/ravn/z80/z88dk/src/sdcc-build/bin/` (`sdasz80`, `sdar`, `sdld`,
+`makebin`, `sdcc`; V02.00).  The shims `~/.local/bin/{sdasz80,sdar}` were
+repointed from the `sdcc-tools` Docker image to those native binaries — runtime
+rebuilds now take ~10 s with no Docker.  Each shim keeps the old `docker run`
+line commented as a fallback.  (Docker `sdcc-tools` image is still buildable —
+`FROM ubuntu:24.04 + apt install sdcc binutils`, `--platform linux/amd64` — but
+no longer needed for runtime builds.)  cmake glob `file(GLOB RT_SOURCES
+*.asm)` in `llvm/lib/Target/Z80/CMakeLists.txt` auto-picks new runtime `.asm`
+files after a `cmake build-macos` reconfigure.
+
 **Build size (for progress estimation, 2026-05-26):** a from-scratch `ninja clang llc`
 is **~2897 ninja edges / ~2992 object files** (full Release build of clang+lld+llc).
 So `[N/2897]` in ninja output tells you how far along.  Incremental relink after a
