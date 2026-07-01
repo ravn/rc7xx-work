@@ -616,3 +616,21 @@ After laying out three paths forward in chat (hand-rolled asm / INI+CKS-fold / r
 > 236+237
 > continue
 > continue. stopping not relevant anymore
+
+---
+2026-06-25 (dcc corpus investigation)
+> for those tests where dcc is faster than clang investigate why?
+> for ">2B " execution probably hung. look at pc
+> investigate "The one actionable compiler gap (for llvm-z80): loop strength reduction — arrays indexed by a loop variable should be transformed to pointer-increment form. " thoroughly
+> fix "     tr: Illegal byte sequence"
+> 3 is because dcc does not support a specific conversion? investigate 1+2
+> what do you need me to answer?
+> document your findings fully
+
+> [autoload SEM702 font] jeg tænker det er fint den bliver en del af payload, bare pas på det ikke ramler mod barrierer
+> er define_sextants optimal maskinkode?
+> du burde kunne se kildetekst for maskinkoden
+> ser ud til hl er gemt i iy via stakken, kunne det ikke bare være blevet dér?
+> kunne hl ikke bare være gemt på stakken med push-pop uden at mellemlande i iy?
+> jatak, især at sp er ukrænkelig (det vil jeg gerne følge op på senere)
+> analyse, raise issues and tasks, summarize and commit.
