@@ -634,3 +634,18 @@ After laying out three paths forward in chat (hand-rolled asm / INI+CKS-fold / r
 > kunne hl ikke bare være gemt på stakken med push-pop uden at mellemlande i iy?
 > jatak, især at sp er ukrænkelig (det vil jeg gerne følge op på senere)
 > analyse, raise issues and tasks, summarize and commit.
+
+> [QR/font] hvis vi omkoder roa327 på denne måde hvordan komprimerer xz0 så?
+> det er kun roa327 (direkte erstatning). Jeg vil gerne have den fulde font - eftersom der kun er defineret 11 linjer (check) kan vi måske komprimere yderligere?
+> passer github.com/ravn/rc700 i qr?
+> bemærk det skal med i den komprimerede payload, det giver måske mere plads
+> nej, jeg vil gerne se om vi kan redde nogen bytes et sted så der er plads til v2
+> [URL valg] det faktiske (github.com/ravn/rc700-gensmedet) — men bemærk: vi kan ikke læse fra charprom i det rigtige system (SEM702 = direkte 1:1 ROA327-erstatning, selvforsynende)
+> hvorfor "12c: ld e,a / 12d: ld a,e"?
+> fiks byggeprocessen
+> ved test start uden diskette, så skulle qr koden blive vist med fejlbesked
+> der kan også være kode at hente andre steder i autoload
+> er denne "sw >>= 1" noget som clang eventuelt kunne have fundet selv?
+> noter i "LSR is harmful" at vi har en usecase på at det kan gavne
+> tilføj også ved siden af b21
+> please add a failing test for this scenario
