@@ -248,6 +248,7 @@
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, `/home/ravn/z80`, headless, gh authed, upstream LLVM at `~/llvm-upstream/llvm-project`
 - [Safari breaks claude login callback](reference_claude_login_safari_workaround.md) — use ANTHROPIC_API_KEY or non-Safari default browser
 - [HiTech zc Docker image](reference_hitech_zc_docker.md) — `ghcr.io/ravn/hitech` provides `zc`
+- [COMAL80 language manual](reference_comal80_manual.md) — RCSL 42-I-1758 @ Bits:30000018 (Dec 1981, OLDER than disk rev 1.07: no CHAIN/EXTERNAL); explains why .PRG apps won't load
 - [simavr master required for .mmcu console](reference_simavr_master_required.md) — distro 1.6 is too old; build master in Docker
 - [Memory in tasks/memory/, never ~/.claude/](feedback_no_claude_memory.md) — canonical here, read manually at session start
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: stop editing, add an undeniable marker, prove new bytes are running before edit #3**
