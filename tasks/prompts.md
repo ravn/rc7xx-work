@@ -649,3 +649,21 @@ After laying out three paths forward in chat (hand-rolled asm / INI+CKS-fold / r
 > noter i "LSR is harmful" at vi har en usecase på at det kan gavne
 > tilføj også ved siden af b21
 > please add a failing test for this scenario
+> [aspect] a  (fix layout to true aspect)
+> vis screenshot  (×2)
+> jeg vil gerne have qr koden nederst til højre
+> merge
+> videoaspektet er forkert - skærmshots ser widescreen ud, monitoren er 4:3
+> er opsætningen forkert med antal linjer pr tegn?
+> crt sender et 50 hz ntsc signal
+> bruger vi midpoint par lige nu?
+> ja (fix MAME layout to true RC752 230:165)
+> RC700 familie: rc701/702/703; RC701 andre porte + ingen semigrafik; PROM-navne
+> analyser pdf i linket (RC702 Testprogrammer RCSL 42-i-1495)
+> ja (udvid memory-note med RC701→RC702-forskelle + ref [8])
+> undersøg RC703_Div_BIOS_typer-disken (Bits:30003297) for ny viden
+> ja (bevar system-spor + README + memory-note)
+> undersøg BDS C 1.50-disken (Bits:30005324) for ny viden
+> rc702e kan dække flere varianter — se om binært identiske (→ identisk, samme kilde)
+> undersøg Bits:30003294 (RC703_8051ASM) — muligvis noget interessant (→ ny RC703 rel 1.1)
+> analyse, raise issues and tasks, summarize and commit.

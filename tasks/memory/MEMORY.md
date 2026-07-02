@@ -216,6 +216,7 @@
 
 ## 10. Project facts — RC702 hardware
 
+- **[RC700 family + PROM inventory](reference_rc700_family_proms.md) — RC701/702/703; RC701 has DIFFERENT ports + NO semigraphics (MAME emulation needs code changes); we target RC702/ROA375; RC701 PROM source likely lost**
 - [No RC700 HW mods](user_no_hw_mods.md) — no PCB modifications; cables/external devices OK
 - **[2 KB PROM hard limit](project_rc702_2kb_prom_hard_limit.md) — HARD: no A11 bridge; PROM0+PROM1 capped at 2048 B each; never propose "close A11"/"use 2732"**
 - [SIO-A fast TX, no fast RX](project_sioa_tx_only_fast.md) — 614 kbaud TX verified; fast RX impossible (no DPLL)
@@ -242,6 +243,7 @@
 
 ## 13. Reference / one-offs
 
+- **[RC703 TFj BIOS oracle](reference_rc703_tfj_bios_oracle.md) — datamuseum Bits:30003297 system tracks = a runnable assembled RC703 BIOS (`rel. TFj`); byte-level oracle for rcbios; system tracks preserved in rc703-div-bios-typer/**
 - [User Profile](user_profile.md) — experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, `/home/ravn/z80`, headless, gh authed, upstream LLVM at `~/llvm-upstream/llvm-project`
 - [Safari breaks claude login callback](reference_claude_login_safari_workaround.md) — use ANTHROPIC_API_KEY or non-Safari default browser
