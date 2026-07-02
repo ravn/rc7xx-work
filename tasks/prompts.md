@@ -667,3 +667,15 @@ After laying out three paths forward in chat (hand-rolled asm / INI+CKS-fold / r
 > rc702e kan dække flere varianter — se om binært identiske (→ identisk, samme kilde)
 > undersøg Bits:30003294 (RC703_8051ASM) — muligvis noget interessant (→ ny RC703 rel 1.1)
 > analyse, raise issues and tasks, summarize and commit.
+> merge
+> hvad er verify_seek?
+> commit
+> rekonstruér rc703-rel11
+> hvad har ændret sig før og efter 1.1
+> debug information kan være rester fra uinitialiseret link
+> kunne ram-residue stamme fra et af programmerne på disken?
+> dokumenter i projektet
+> undersøg Bits:30003296 for ny information
+> det er nok, tilføj grundig dokumentation
+> er der ny viden i den rob358.mac du fandt?
+> analyse, raise issues and tasks, summarize and commit.
