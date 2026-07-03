@@ -64,3 +64,19 @@ Note: this manual is the **production TEST** manual (test PROMs, run from a
 TCP702 MCS85/8080 technician panel) — it does NOT contain the RC701/RC702
 system/autoload PROM source (ROA195 / ROA375); only a small test-PROM excerpt
 (appendix H).
+
+## RC701 logical port numbers (from Bits:30000046, "Supplement til RC700 COMAL Brugermanual", RCSL 42-11599, printed page 14)
+
+Decimal in source; RC701 given in parens after RC702. Hex here.
+
+| Function | RC702 | RC701 | Chip |
+|----------|-------|-------|------|
+| Screen 8275 control/data | 0x00/0x01 | 0xC8/0xC9 | I8275 (Intel) |
+| Floppy µPD765 control/data | 0x04/0x05 | 0xE0/0xE1 | µPD765 (NEC) |
+| SIO data A/B, control A/B | 0x08-0x0B | 0x88-0x8B | Z80A-SIO2 (Zilog) |
+| PIO data kbd/par, control kbd/par | 0x10-0x13 | 0x84-0x87 | Z80A-PIO (Zilog) |
+| Beeper (audible on positive-number print) | 0x1C | (none) | — |
+
+Note: RC701's 8275 screen port 0xC8/0xC9 is the same range the VPB701 graphics
+card (µPD7220) later used on RC702 (see docs/RC702_VPB701_GRAPHICS.md). Fills
+catalogue TODO #1 (RC701 ports).
