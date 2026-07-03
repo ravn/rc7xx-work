@@ -139,6 +139,7 @@
 
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: banner timestamp vs BUILD_INFO_STR before any diagnosis**
 - **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — first try `make _kill-mpm; sleep 5-8; retry`. ★ BOTH PIO+SIO failing identically (transport-agnostic), or after you ran standalone `mpm`/`nc`-probed :4002 = master state YOU contaminated; kill your own stragglers (ps/lsof :4002), NOT codegen.**
+- **[cpnos PIO netboot: NO -autoboot_script](feedback_cpnos_pio_netboot_no_autoboot.md) — HARD: any autoboot (even empty) breaks the wall-clock-coupled PIO cpnet_bridge netboot (stalls at 1st LOGIN byte); drive cpnos via host-side SIO-B injector (`cpnos_polypascal_inject.py`), `-nothrottle`, `wait_mpm_ready.py` gate. Never restore local/mpm-net2-1.dsk from library (stale SERVER.RSP → gettod `ff`); rebuild MPM.SYS.**
 - **[mpm-net2 weirdness — first fix is stop+rebuild+restart](feedback_mpm_server_first_fix.md) — HARD: ANY unexpected mp/m server behavior → stop, rebuild, restart, retry BEFORE theorizing. If still bad: ASK the user.**
 - **[Session-start: kill daemons BEFORE first test](feedback_session_start_kill_daemons.md) — HARD: `make -C cpnos-in-c _kill-mpm; sleep 8` before first run + between COMPILER switches**
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: capture a MAME screenshot to verify boot; PASS lines + memory dumps are NOT enough**
