@@ -109,6 +109,8 @@
 - [Always regenerate timestamp](feedback_timestamp.md) — delete builddate.h before every BIOS/PROM build
 - [MAME OSD=sdl](feedback_mame_osd_sdl.md) — not sdl3; full command in docs/MAME_RC702.md
 
+- **[Verify CMake fixes with compile_commands](feedback_verify_cmake_fixes.md) — HARD: a CMake/.clangd include fix is not done until you `cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON` and confirm the failing file's actual -I flags; compiler-resolves-header is NOT proof. Prefer absolute `${CMAKE_CURRENT_SOURCE_DIR}` in CMakeLists over relative -I in .clangd (clangd resolves those from the source dir).**
+
 ## 5. Before any llvm-z80 compiler-codegen change
 
 - **CRITICAL framing — [Z80 backend unfinished](project_z80_backend_unfinished.md): goal is to FINISH the backend correctly, not optimize a finished one**
