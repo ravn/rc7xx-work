@@ -22,3 +22,6 @@
 [submodule "dcc"]
 	path = dcc
 	url = https://github.com/davidly/dcc.git
+[submodule "ntvcm"]
+	path = ntvcm
+	url = git@github.com:ravn/ntvcm.git
