@@ -25,3 +25,6 @@
 [submodule "ntvcm"]
 	path = ntvcm
 	url = git@github.com:ravn/ntvcm.git
+[submodule "cpm_compilers"]
+	path = cpm_compilers
+	url = git@github.com:ravn/cpm_compilers.git
