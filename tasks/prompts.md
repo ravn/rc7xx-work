@@ -679,3 +679,26 @@ After laying out three paths forward in chat (hand-rolled asm / INI+CKS-fold / r
 > det er nok, tilføj grundig dokumentation
 > er der ny viden i den rob358.mac du fandt?
 > analyse, raise issues and tasks, summarize and commit.
+> claude løb tør for tokens, kan du fortsætte?
+> dcc er opdateret upstream
+> opdater vores klon af dcc
+> genevaluer zsdcc+clang+dcc sammenligning
+> åben i browser
+> undersøg hvorfor dcc er hurtigere end clang
+> vi fandt ud af at autoboot eller lignende med lua sløvede for meget
+> you need to send a cpnet packet
+> is there a valid function codee ofr exactly this purpose?  A failing login would be fine
+> er du sikker på det er pio i begge ender?
+> er du sikker på det er pio i begge ender både mame og bridge?
+> ja
+> læg det til side som en kendt fejl for nu og tilføj al relevant informatino til projektet
+> check rcbios virker med clang
+> this worked earlier today :-/
+> has the fdc code altered in mame
+> trailing d is debug version
+> det virkede før vi begyndte at kigge på sdcc bygget af rcbios
+> rebuild everything including disk images and try again
+> hvad bruger autoload som bios?
+> det kan være en gammel mame med mine fdc rettelser der er blevet overskrevet
+> go back to an earlier build of rcbios from yerstersay and verify it
+> gem i projektet og forbered på genstart
