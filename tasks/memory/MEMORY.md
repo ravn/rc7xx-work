@@ -57,6 +57,7 @@
 - **[Upstream routing](feedback_upstream_routing_two_targets.md) — HARD: generic-LLVM bugs → llvm/llvm-project (or local XFAIL); llvm-z80/llvm-z80 ONLY for Z80-specific**
 - **[MAME upstream routing](feedback_mame_upstream_routing.md) — HARD: never file in any MAME repo without explicit per-issue permission; devices → mamedev, rc702 driver → ravn/mame**
 - **[No local zsdcc fixes](feedback_no_local_zsdcc_fixes.md) — HARD: root-cause + repro + `wontfix` + report upstream; clang fixes still local**
+- **[No upstream sdcccall 0/1 discrepancies](feedback_no_upstream_sdcccall_discrepancies.md) — HARD: sdcccall 0/1 ABI mismatches are known build-config issues (z88dk warning 296), NOT upstream-fileable; work around locally (SKIP_CELL or register-arg shims)**
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test for every clang Z80 codegen bug
 - [Attribution line on filed issues](feedback_issue_attribution_line.md) — append `--- / _Filed by GitHub Copilot on behalf of @ravn._` to every issue body
