@@ -723,3 +723,18 @@ nyt mål: clang skal kunne bygge fulde CP/M programmer med et runtimebibliotek i
 > open sweep in browser
 > write docs and commit
 > nu samle sammen og sørge for at alt er committet
+
+## Session 2026-07-06 (Opus): rcbios -flto boot-hang — root cause, fix, robustness
+- "der var et problem med at rcbios ikke bootede i mame. undersøg om stadig er tilfældet, indsamle info til opus"
+- "det kan være at det seneste optimeringsarbejde har fjernet vigtig kode uden vi har opdaget det"
+- "can we trigger if the sp is set to a region we do not want it to be in?"
+- "mit gæt er at der er kode der er blevet optimeret væk ... at vi skal hinte at en given metode er vigtig"
+- "fortsæt analysen" / "det har du vist fundet ud af før?"
+- "undersøg grundigt hvordan dette problem kan løses og lav en plan"
+- "jeg vil gerne have færrest mulige overraskelser hvis man slår compilerflag til. senere: kigge på om der kan spares mere hukommelse ved at udnytte lto bedre"
+- OUTCOME: root cause = -flto mis-placed .boot_data (confi/conv) + .bios_jt (CP/M jump
+  table) via failed per-file linker matchers -> relocate_bios copied garbage into CFG ->
+  bad CTC -> FDC hang. FIX: section attrs. ROBUSTNESS: link-time ASSERTs (fire on
+  regression), .cflags fingerprint (flag toggle forces rebuild, kills stale-.o false PASS).
+  Both compilers boot A>. clang 5906 B. -flto kept (user choice) + guarded.
+  PARKED: exploit LTO for more size savings.
