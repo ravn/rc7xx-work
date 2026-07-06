@@ -38,6 +38,7 @@
 - **[State certainty](feedback_state_certainty.md) — HARD: fact only if verified this session; surface ALL doubt; applies to issues/commits too**
 - [Ask about design decisions](feedback_ask_about_design_decisions.md) — at non-obvious forks, lay options out, user picks
 - [No ask in debug loop](feedback_no_ask_in_debug_loop.md) — inside standing-auth debug cycle, run the next step
+- **[Probe must not consume the resource](feedback_probe_must_not_consume_resource.md) — a health-check that grabs a single-use connection/lock/token corrupts what it verifies; if a probe passes but the guarded thing still fails identically, run the probe TWICE on a fresh resource — 2nd fail = destructive probe (cpnos #119: ping wedged single-connection MP/M master)**
 
 ## 2. Before any commit / PR / issue
 
