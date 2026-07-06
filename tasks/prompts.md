@@ -702,3 +702,24 @@ After laying out three paths forward in chat (hand-rolled asm / INI+CKS-fold / r
 > det kan være en gammel mame med mine fdc rettelser der er blevet overskrevet
 > go back to an earlier build of rcbios from yerstersay and verify it
 > gem i projektet og forbered på genstart
+
+## 2026-07-05
+
+nyt mål: clang skal kunne bygge fulde CP/M programmer med et runtimebibliotek i produktionskvalitet. Undersøg z88dk ez80clang-understøttelse med z88dk runtime og lav en plan.
+
+## 2026-07-06 (ez80clang code-quality oracle)
+
+> vis sweep
+> Vis sweep i browser
+> analyser, opsummer, lav issues og opgaver, commit
+> åben 120 i browser
+> hvem har skrevet rt_helpers.c?
+> jeg vil gerne have ez80clang tilføjet som et oracle før vi kigger på 120
+> hvorfor er 32-bit hjælperne ikke integret?
+> hvad KAN ez80clang faktisk nu hvor der kun er adl 24-bit
+> burde vi have bygget ez80clang specifikt for z88dk?
+> jeg ønsker kun ez80clang som sammenligningsorakel på kodekvalitet
+> slå de fejlende ez80clang kørsler fra og lav et issue på at fikse dem
+> open sweep in browser
+> write docs and commit
+> nu samle sammen og sørge for at alt er committet

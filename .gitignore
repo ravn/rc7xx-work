@@ -28,3 +28,7 @@ simavr/
 # AVR Makefile build artifacts (cleaned by `make clean` in that dir).
 tasks/upstream-5bug/avr/*.elf
 tasks/upstream-5bug/avr/*.o
+# Compiler-evaluation staging trees (prebuilt oracles, not vendored)
+cedev-eval/
+xyz-eval/
+xyz-fork/
