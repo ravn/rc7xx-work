@@ -247,6 +247,7 @@
 
 ## 13. Reference / one-offs
 
+- **[xcc issue-filing process](xcc-issue-filing-process.md) — retro-vault/xyz has issues DISABLED → file bugs as PR from ravn/xyz fork; repro goes in `x/tests/repro/` (their red-but-ignored convention, no xfail in cases/); root-cause via `xcc -S` (.ds vs .dw), GREEN oracle via docker gcc; libc/printf not auto-linked in the binary release. First bug: retro-vault/xyz#2**
 - **[RC703 TFj BIOS oracle](reference_rc703_tfj_bios_oracle.md) — datamuseum Bits:30003297 system tracks = a runnable assembled RC703 BIOS (`rel. TFj`); byte-level oracle for rcbios; system tracks preserved in rc703-div-bios-typer/**
 - [User Profile](user_profile.md) — experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, `/home/ravn/z80`, headless, gh authed, upstream LLVM at `~/llvm-upstream/llvm-project`
