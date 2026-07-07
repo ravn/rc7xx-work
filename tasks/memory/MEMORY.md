@@ -231,6 +231,7 @@
 
 - **[Long-term goal: finish rcbios + autoload-in-c + CP/NET + cpnos](project_finishing_firmware_components.md) — bias work toward measurably advancing one of the four**
 - **[cpnos PARKED — awaiting physical parallel cable](project_cpnos_parked_awaiting_parallel_cable.md) — surface before acting on cpnos/PIO/polypascal tasks; unpark on user signal**
+- **[rcbios CP/NET PIO PPAS stall = parked SEND→RECV mode-flip race](project_rcbios_cpnet_pio_race_parked.md) — surface before rcbios CP/NET PIO test work; NOT the 8-bit-clean bridge, pre-existing; fix is MAME z80pio mode-entry BRDY**
 - **[SEM702 chip-photo request](project_sem702_request_chip_photo.md) — when the RC702 is open, ask for photos of the piggyback boards (ic82 + under ic68)**
 - **[User's RC702 HAS SEM702, not ROA327](project_user_rc702_has_sem702.md) — define_sextants() is essential on the user's hardware (~79 ms, accepted); don't gate/remove it**
 - [DRI NDOS — no upstream](project_dri_ndos_frozen.md) — we own cpnet-z80 DRI sources, edit freely
