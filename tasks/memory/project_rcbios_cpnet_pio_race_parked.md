@@ -5,8 +5,9 @@ metadata:
   type: project
 ---
 
-**FIXED 2026-07-08** — ravn/mame commit `2eb88cea` (z80pio: fix
-`check_interrupts`). Filed upstream as mamedev/mame#15664.
+**FIXED 2026-07-08** — ravn/mame `2eb88cea` (z80pio) + rc700-gensmedet
+`8f64d9d` (snios RECVBY_PIO timeout). **polypascal-pio-test PASS 16s.**
+Upstream candidate: ravn/mame#13.
 
 **What was fixed:** `check_interrupts` used `ius = A.ius || B.ius` globally,
 letting PORT_B's own in-service bit block PORT_B's own next interrupt. After
