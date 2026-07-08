@@ -34,6 +34,11 @@ real win: login→H> dropped to ~2.9 s, clean; removed the 0xff sentinel).
 (reproduction, MAME z80pio line refs, 3 fix options — recommended fix is option 1:
 assert BRDY on Mode-1 entry + hold interrupt pending across IE-enable).
 
+**When hardware is available:** run `rc700-gensmedet/tasks/HW_VERIFY_cpnet_pio_ppas.md`
+(SW1 S03=On/PIO, bridge on PIO-B/J3, type `PPAS` at `H>`, expect `>>`). PASS ⇒
+close as MAME-only limitation, don't touch MAME's z80pio model. Same hardware
+unparks INIR.
+
 **Why parked:** production CP/NET runs on cpnos-in-c PIO (passes polypascal 6/6,
 doesn't stress the 222-record bulk transfer the same way); rcbios CP/NET PIO PPAS
 is secondary validation; the fix is larger MAME z80pio chip work. Related:
