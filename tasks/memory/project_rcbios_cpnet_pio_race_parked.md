@@ -10,13 +10,22 @@ reaches `H>` cleanly but **stalls partway through the `H:PPAS.COM` multi-record
 CP/NET transfer** (non-deterministic stall point → timing race). Root-caused and
 PARKED 2026-07-08.
 
-**Root cause:** SEND→RECV mode-flip race. After the slave sends a CP/NET ACK it
-flips PIO-B back to input via four `OUT (ctrl)` writes (`PIO_TO_INPUT` in
-`cpnet/snios.asm`); MAME `cpnet_bridge` `poll_tick` can strobe a byte in the
-window after mode-set but before interrupt-enable → interrupt lost, byte
-consumed-but-dropped → deadlock (MAME alive, emu clock frozen, cpmsim pegs a
-core). `z80pio::set_mode(MODE_INPUT)` asserts no BRDY edge, so the bridge is left
-polling blind. **Pre-existing** — reproduces on the old 0xff-sentinel bridge too.
+**Root cause (MEASURED 2026-07-08):** at the `write(06)` ACK-send / output→input
+mode flip, MAME z80pio leaves **PORT_B's own in-service bit `B.ius` stuck at 1**
+(the CPU accepted a B interrupt via `z80daisy_irq_ack` but no RETI ever cleared
+it). `check_interrupts` gates on `ius = A.ius || B.ius`, so every subsequent
+strobed byte sets `B.ip=1` but is suppressed → ISR never runs → ring never fills
+→ deadlock (MAME alive, emu clock frozen, cpmsim pegs a core).
+
+**Two-port theory (A+B interfering) is REFUTED by direct measurement:**
+`A(ie=1 ip=0 ius=0)` at every blocked event — PORT_A never has a pending/in-service
+interrupt during the test (keyboard comes over SIO-B, not PIO-A). It's PORT_B's
+own stuck ius, a single-channel MAME artifact around the send excursion.
+
+Firmware is correct: `ISR_PIO_RX` ends `EI`+`RETI`, `PIO_TO_INPUT` matches
+cpnos `transport_pio.c` (6/6). A real Z80 PIO clears IUS on RETI via the daisy
+IEO chain → **not expected to reproduce on real hardware**. Pre-existing —
+reproduces on the old 0xff-sentinel bridge too.
 
 **Not caused by** the 8-bit-clean bridge cleanup (ravn/mame `12ea19d0`, which is a
 real win: login→H> dropped to ~2.9 s, clean; removed the 0xff sentinel).
