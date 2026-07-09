@@ -268,4 +268,6 @@
 
 - **[rcbios: never enable -flto (breaks boot-code placement)](feedback_rcbios_no_lto_boot_placement.md) — HARD: `-flto` merges C objects so `rc700_bios.ld` per-file matchers (`*boot_entry.o`, `*bios_hw_init.o`) fail; relocate_bios/verify/hw_init land high at 0xDA00 and `_coldboot` calls empty RAM → no `A>`. Fix = drop `-flto` (~15 B). Toggling a compile flag needs `rm *.o`, not just a relink.**
 
+- **[Sieve-gap passes (sink + pin)](reference_sieve_gap_passes.md) — llvm-z80 has TWO opt-in default-OFF passes: `Z80SinkColdLoopIV` (`-z80-sink-cold-loop-iv`, M3, sieve −2.3% clean) + `Z80PinLoopPointer` (`-z80-pin-loop-pointer` + HLReg class, M5, net-regresses via scan-loop regalloc cascade). Don't re-implement. Trackers #256/#250/#251. Default-on RESERVED for user.**
+
 <!-- For project info that lives in the repo (not memory) — goal, TODOs, docs, MAME, PROM specs — see the "What's NOT in memory" map in README.md. -->

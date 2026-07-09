@@ -738,3 +738,20 @@ nyt mål: clang skal kunne bygge fulde CP/M programmer med et runtimebibliotek i
   regression), .cflags fingerprint (flag toggle forces rebuild, kills stale-.o false PASS).
   Both compilers boot A>. clang 5906 B. -flto kept (user choice) + guarded.
   PARKED: exploit LTO for more size savings.
+
+## Session 2026-07-09/10 — sieve gap: Z80SinkColdLoopIV + Z80PinLoopPointer (#256/#250/#251)
+- "hvor var vi?" / "mål igen, ntvcm kør fuld hastighed" / "byg fra kilde" / "begge" / "husk du har kildetekst til compileren"
+- "dokumenter det grundigt i projektet, samt på 250"
+- "opsummer i projektet, analyser og opret issues og noter efter behov, commit"
+- "aktiver memory systemet for alle repos" -> "memory kræver betaling ... det vil jeg ikke nu" (use tasks/memory/ instead; no store_memory)
+- "gem i projektet og gør klar til /clear"
+- OUTCOME: Authored two opt-in default-OFF backend passes. Z80SinkColdLoopIV
+  (-z80-sink-cold-loop-iv, M3): sinks cold-only LSR IVs back into the taken
+  branch -> sieve -2.3% clean, E/TTT/TM +/-0%, all correct; red-green lit test;
+  full Z80 suite 183 PASS + 5 XFAIL; production byte-identical. Z80PinLoopPointer
+  (-z80-pin-loop-pointer + HLReg class, M5): kill loop optimal in isolation but
+  net-regresses sieve +1.4M T-states (scan-loop regalloc cascade) -> stays
+  opt-in. Filed #256 (M3 cold-IV hoist), commented #250 (M5 pin data) + #251
+  (HLReg cross-ref). Default-on RESERVED for user. Writeup:
+  llvm-z80/tasks/session-2026-07-09-sink-cold-loop-iv.md. Memory:
+  tasks/memory/reference_sieve_gap_passes.md.
