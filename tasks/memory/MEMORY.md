@@ -139,6 +139,7 @@
 - [pi CSE / branch-fold miscompile PARKED](project_pi_cse_branchfold_parked.md) — Branch Folder unsound hoist (exposed by MachineCSE); production unaffected; don't re-investigate, don't flip `-z80-enable-cse` default ON until upstream fix
 - [Fork-local pass naming = upstream candidacy honesty](feedback_fork_local_pass_naming.md) — `Z80*` prefix is locative not semantic; if a pass's body is target-agnostic, name with the operation (`*Recognize`/`*Combine`) AND record the upstream debt in `upstream-coherence-map`. `Z80LoopIdiomFill`→`Z80PatternFillRecognize` (2026-06-09) is the pinned example.
 - [#212-class HL borrow-save audit pattern](project_212_class_borrow_save_pattern.md) — `if (HLLive) PUSH_HL` without IMPLICIT_DEF for dead half trips verifier when fastregalloc places undef; 5+ latent sites in Z80InstrInfo.cpp filed as #239; reflex check whenever auditing pseudo-expanders that borrow HL/IX/IY
+- **[z88dk classic calling conventions under clang](reference_z88dk_calling_conventions.md) — `__smallc`=sdcccall(0) WORKS; `__z88dk_callee` + `__z88dk_fastcall` are no-ops (fastcall only 16-bit-safe: z88dk L/HL/DEHL vs clang A/HL/HLDE). clang C ABI: args HL/DE, 16-bit RETURN in DE, no callee-saved GPRs. Helper name mismatch = backend emits libgcc names, `l/clang/` shipped SDCC names (whole div/mod/mul family dead-named). Native z88dk-CC support is FEASIBLE (proven `Z80_SDCCCall0`/`Z80_AllReg` pattern); plan in `llvm-z80/tasks/plan-2026-07-10-z88dk-calling-conventions.md`**
 
 ## 6. Before any MAME / boot / test run
 
