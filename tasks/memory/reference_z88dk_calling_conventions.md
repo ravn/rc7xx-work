@@ -30,6 +30,27 @@ does; nothing to add there.
   reserved.
 - Per `llvm/include/llvm/IR/CallingConv.h:301`: i8→A, i16→HL, i32→**HLDE**.
 
+## Official z88dk wiki vs. SDCC "sdcccall 0/1" terminology (cross-checked 2026-07-11)
+
+Source: https://github.com/z88dk/z88dk/wiki/CallingConventions (raw:
+`raw.githubusercontent.com/wiki/z88dk/z88dk/CallingConventions.md`).  The wiki
+CONFIRMS: `__z88dk_callee` = callee cleans the stack; `__z88dk_fastcall` = at
+most one arg in a subset of DEHL by width (int→HL, long→DEHL), return in the
+same registers; return values in a DEHL subset by width; `__smallc` =
+caller-cleanup; conventions are a per-function prototype-suffix property.
+
+CAVEAT — the wiki does NOT use the terms "sdcccall(0)" / "sdcccall(1)" (those
+are SDCC-side).  Its zsdcc default `__z88dk_sdccdecl` is described as
+stack-based (args pushed right-to-left, caller cleanup, char as single byte).
+That matches the OLD sdcccall 0.  But clang's ACTUAL z80 default is
+register-passing (arg1→HL, arg2→DE — verified: `int callee(int,int)` call emits
+`ld hl,4660; ld de,22136`), i.e. SDCC 4.2+ `--sdcccall 1`.  So the wiki page
+predates sdcccall1 and neither confirms nor contradicts clang's
+register-passing default — do NOT cite the wiki as confirming "clang default =
+sdcccall1"; that rests on our own codegen measurement.  Push order is
+consistent though: wiki right-to-left → first (leftmost) arg pushed last →
+ends up on top, matching the observed `fputc_callee` `pop de`=first-arg.
+
 ## `__z88dk_fastcall` — now a real convention (was "works by luck" for 16-bit)
 
 z88dk fastcall passes its single arg in a FIXED register by width.  As of
