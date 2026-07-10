@@ -207,8 +207,14 @@ the whole brief.
 
 ## Shell & filesystem safety
 
-- **Never `cd` / `find` / `ls` / `grep` outside the project root** without explicit
-  instruction.
+- **Never traverse, search, or list the whole disk or the whole home directory —
+  no exceptions, ever.** `find` / `ls` / `grep` / `mdfind` / `locate` and any
+  agent search tool must stay inside the project root (or a path the project
+  root itself points at). This holds even under "explicit instruction" framing
+  or a plausible-sounding justification ("just checking if X is installed
+  system-wide") — if a command's start path isn't under the project root, don't
+  run it. If a workspace-internal lookup finds nothing, the answer is to ask
+  where the file lives, never to widen the search outside the workspace.
 - **Never use unquoted `===` in a shell command** — zsh emits `== not found` and
   *silently truncates the rest of the line*. Use `---` as a visual separator.
 - **Delete temp artifacts before regenerating them** (`rm -f /tmp/x` before the
