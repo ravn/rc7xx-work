@@ -755,3 +755,27 @@ nyt mål: clang skal kunne bygge fulde CP/M programmer med et runtimebibliotek i
   (HLReg cross-ref). Default-on RESERVED for user. Writeup:
   llvm-z80/tasks/session-2026-07-09-sink-cold-loop-iv.md. Memory:
   tasks/memory/reference_sieve_gap_passes.md.
+
+## 2026-07-11 — Dhrystone three-way (sdcccall 1 lane) + issues
+Prompts: add sdcccall(1) lane to Dhrystone suite; investigate how sdcccall1 is
+used; minimal zcc+sdcccall1 example; add three-part test to compiler suite +
+table in readme.md; no hardcoded abs paths in committed files; "dokumenter,
+analyser og lav issues og commit"; push; wrap up.
+
+Delivered:
+- z88dk (branch rc700-gensmedet-1, PUSHED 38673f713a): dhrystone21 `sdcccall1/`
+  lane (Makefile generates a PATH shim from `$(shell command -v z88dk-zsdcc)`,
+  no hardcoded path), `compare.sh` three-way harness (bash-3.2 safe), `readme.md`
+  three-way table; plus prior `c8e69aed1a` (intrinsic_label wire + Dhrystone lane).
+- Three-way @4MHz/20000 runs, all 20/20 self-validated: llvmz80 -O2 8461 cyc/run
+  (0.2691 DMIPS); sdcc --sdcccall 1 11044 (0.2061); sdcc --sdcccall 0 12158
+  (0.1872). Register convention closes only ~1/3 of the gap; llvmz80 lead is
+  inlining + fewer IX frames, NOT the calling convention.
+- Issues filed (own forks): ravn/z88dk#24 (zcc drops --sdcccall, never reaches
+  zsdcc), ravn/z88dk#25 (dhry.h forces %f converter under -DPRINTF though %f is
+  TIMEFUNC-only -> float link failure on llvmz80), ravn/llvm-z80#257 (three-way
+  tracking + codegen candidates, perf marked as hypotheses).
+- Writeup: llvm-z80/tasks/session-2026-07-11-dhrystone-sdcccall-three-way.md
+  (PUSHED 6c0af4cec12c on main).
+- Deferred SQL todo `llvm-x86-16bit-cpm86`: whether LLVM X86 "16bit-mode (i8086)"
+  yields genuine 8086 output (for CP/M-86) or only 386-real-mode. Do-not-start.
