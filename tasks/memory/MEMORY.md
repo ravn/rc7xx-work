@@ -271,4 +271,6 @@
 
 - **[Sieve-gap passes (sink + pin)](reference_sieve_gap_passes.md) — llvm-z80 has TWO opt-in default-OFF passes: `Z80SinkColdLoopIV` (`-z80-sink-cold-loop-iv`, M3, sieve −2.3% clean) + `Z80PinLoopPointer` (`-z80-pin-loop-pointer` + HLReg class, M5, net-regresses via scan-loop regalloc cascade). Don't re-implement. Trackers #256/#250/#251. Default-on RESERVED for user.**
 
+- **[z88dk clang register ABI (ez80clang vs llvmz80)](reference_z88dk_clang_register_abi.md) — z88dk's `__CLANG` bridges were written for ez80-clang (eZ80, STACK args); ravn/llvm-z80 is z80 REGISTER ABI (HL/DE args, return in DE). The `defc ___X = X` string/mem bridges were wrong → hang; rewrote them in-place as `call asm_X; ex de,hl; ret` (z88dk commits bc1c0cd8, a452cd6c). Don't split `__CLANG`. strlen still unresolved; backend-HL-return would collapse bridges to pure aliases.**
+
 <!-- For project info that lives in the repo (not memory) — goal, TODOs, docs, MAME, PROM specs — see the "What's NOT in memory" map in README.md. -->

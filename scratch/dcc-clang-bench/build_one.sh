@@ -11,7 +11,7 @@ STUB_INC=$LLVM_Z80/compiler-rt/lib/builtins/z80/include
 STUB_SRC=$LLVM_Z80/compiler-rt/lib/builtins/z80
 LIB_DIR=$LLVM_Z80/build-macos/lib/z80
 CRT0=$LLVM_Z80/compiler-rt/lib/builtins/z80/cpm_crt0_sdcc.rel
-EXT=/tmp/dcc_clang_compare/extract_com_size.py
+EXT=/Users/ravn/z80/scratch/dcc-clang-bench/extract_com_size.py
 SRC=/Users/ravn/z80/dcc/tests
 NTVCM=/Users/ravn/z80/ntvcm/ntvcm
 
