@@ -98,7 +98,8 @@
 - [Build-tool binaries](reference_build_binaries.md) — cmake/ninja from CLion bundle (mac); native llc/clang in llvm-z80/build-macos/bin
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations, BUILD_DIR/PATH overrides
 - **[AVR density oracle](feedback_avr_density_oracle.md) — HARD: before blaming a generic pass or filing upstream, compile the repro for in-tree AVR; AVR-cheap + Z80-expensive = OUR backend gap (and AVR shows the mechanism)**
-- **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log → 1700+ step rebuild; Ctrl-C ONCE**
+- **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log → 1700+ step rebuild; Ctrl-C ONCE. Separate build DIRS OK concurrently. Log to scratch/ninja-*.log; no pgrep|kill probes.**
+- **[Read build-tool docs before improvising](feedback_read_tool_docs_before_improvising.md) — rm only .ninja_log NOT .ninja_deps (deps DB → full rebuild); `set -o pipefail` for tee'd ninja (else exit code is echo's, not ninja's).**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
 - [Docker for missing binaries](feedback_docker_binaries.md) — don't suggest installing
 - **[Docker shim batch](feedback_docker_shim_batch.md) — HARD: build Makefiles batch multi-step Docker calls into ONE `docker run sh -c "..."`; ~150-500 ms container startup tax dominates otherwise**
