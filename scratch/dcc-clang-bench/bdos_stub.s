@@ -14,17 +14,6 @@
 ; so it cannot signal the error itself.
 _start:
 bdos:
-	; debug: print "Bxx" where xx is the BDOS function number in hex
-	push	af
-	push	bc
-	ld	a,'B'
-	out	(0),a
-	ld	a,c
-	call	hexb
-	ld	a,' '
-	out	(0),a
-	pop	bc
-	pop	af
 	ld	a,c
 	or	a
 	jp	z,cexit        ; fn 0 = system reset

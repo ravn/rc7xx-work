@@ -9,14 +9,23 @@ name=$1; opt=$2; outdir=$3
 
 ZCC=/Users/ravn/z80/z88dk/bin/zcc
 export ZCCCFG=/Users/ravn/z80/z88dk/lib/config/
+export PATH="/Users/ravn/z80/z88dk/bin:$PATH"   # zcc shells out to z88dk-z80asm
 SRC=/Users/ravn/z80/dcc/tests
 NTVCM=/Users/ravn/z80/ntvcm/ntvcm
 
 mkdir -p "$outdir"
 out="$outdir/${name}_zcc"
 
+# tm exercises malloc/calloc up to allocs=66 with growing block sizes (~22 KB
+# live at peak), so the default 8 KB heap is exhausted -> calloc returns NULL.
+# Give it a large heap; other benchmarks use little or no heap.
+case "$name" in
+  tm)  heap=48000 ;;
+  *)   heap=8000 ;;
+esac
+
 "$ZCC" +cpm -compiler=llvmz80 -"$opt" \
-    -pragma-define:CLIB_MALLOC_HEAP_SIZE=8000 \
+    -pragma-define:CLIB_MALLOC_HEAP_SIZE=$heap \
     -o "$out" "$SRC/$name.c" 2>/dev/null
 
 size=$(wc -c < "$out")
