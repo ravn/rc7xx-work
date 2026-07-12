@@ -24,7 +24,9 @@ case "$name" in
   *)   heap=8000 ;;
 esac
 
-"$ZCC" +cpm -compiler=llvmz80 -"$opt" \
+# zcc llvmz80-bridge hardcoder -O2; brug -Cg<flag> for at clang ser det
+# sidst og dermed overskriver (clang bruger altid det sidste -O-flag).
+"$ZCC" +cpm -compiler=llvmz80 -Cg-"$opt" \
     -pragma-define:CLIB_MALLOC_HEAP_SIZE=$heap \
     -o "$out" "$SRC/$name.c" 2>/dev/null
 
