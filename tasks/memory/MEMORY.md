@@ -96,6 +96,7 @@
 - [Test both compilers](feedback_dual_compiler_test.md) — rcbios changes build with BOTH z88dk and clang before commit
 - [Check memory for builds](feedback_check_memory_for_builds.md) — check memory for correct build flags first
 - [Build-tool binaries](reference_build_binaries.md) — cmake/ninja from CLion bundle (mac); native llc/clang in llvm-z80/build-macos/bin
+- [macOS awk lacks strtonum](reference_macos_awk_no_strtonum.md) — default awk is BWK not gawk; no strtonum/gensub/hex-parse. Use python3/printf/`$((16#..))` for hex crunching.
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations, BUILD_DIR/PATH overrides
 - **[AVR density oracle](feedback_avr_density_oracle.md) — HARD: before blaming a generic pass or filing upstream, compile the repro for in-tree AVR; AVR-cheap + Z80-expensive = OUR backend gap (and AVR shows the mechanism)**
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log → 1700+ step rebuild; Ctrl-C ONCE. Separate build DIRS OK concurrently. Log to scratch/ninja-*.log; no pgrep|kill probes.**
