@@ -5,12 +5,42 @@
 
 ---
 
+## UPDATE 2026-07-14 (Opus 4.8): exit-loop + tm RESOLVED
+
+All four benchmarks now build with `zcc +cpm -compiler=llvmz80 -Cg-O2` and exit
+cleanly under the current `ticks_cpm.py` (cycle-accurate) AND `ntvcm` (full CP/M):
+
+| bench | ticks cycles | output               | notes            |
+|-------|--------------|----------------------|------------------|
+| sieve | 27,464,244   | `1899 primes.`       |                  |
+| e     | 30,455,092   | `2718...` `done`     |                  |
+| ttt   | 10,375,144   | `6493 moves` / `1 iterations` | prints ONCE at 200M budget -> no loop |
+| tm    | 272,275,536  | `success`            | heap=48000       |
+
+- The "ttt restarts in a loop" symptom does NOT reproduce with the finalized
+  stub.  Verified this session: identical binary runs to a clean single exit
+  under ntvcm (`ntvcm/ntvcm -p -m:80 TTT.COM` -> 10,236,157 cyc, one run), which
+  REFUTES the ABI/crt0-stack hypothesis below (a codegen/ABI defect could not
+  run clean under a real CP/M emulator).
+- Red/green control: removing BDOS 25 from the stub yields an EARLY FATAL exit
+  (182,598 cyc), not a loop -- so the missing stub fn was not the loop cause
+  either.  The original loop was most likely an artifact of the mid-session
+  DEBUG stub / invocation flags captured below; could not reproduce to
+  root-cause precisely.
+- tm's "no success output" is also resolved: with `CLIB_MALLOC_HEAP_SIZE=48000`
+  (build_zcc.sh already does this) it prints `success`.
+
+The "ttt restart issue" and "tm correctness issue" sections below are RETAINED
+for history but are no longer open.
+
+---
+
 ## One-line status
 
 Made zcc +cpm -compiler=llvmz80 build all four dcc benchmarks (sieve, e, ttt, tm).
 Fixed `ticks_cpm.py` BDOS stub to work with z88dk programs. sieve and e measure
 correctly. ttt restarts in a loop (root cause found but not fixed). tm output not
-verified.
+verified.  [2026-07-14: exit-loop + tm now RESOLVED -- see UPDATE above.]
 
 ---
 
