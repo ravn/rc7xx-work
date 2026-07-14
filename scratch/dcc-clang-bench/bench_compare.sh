@@ -28,7 +28,7 @@ printf "%-8s  %8s  %13s    %8s  %13s    %6s  %7s\n" \
 printf "%-8s  %8s  %13s    %8s  %13s    %6s  %7s\n" \
     "--------" "--------" "-------------" "--------" "-------------" "------" "-------"
 
-for name in sieve e ttt tm; do
+for name in sieve e ttt tm ackerman tak hanoi nqueens; do
     U=$(echo "$name" | tr a-z A-Z)
     DCC_COM="$DCC_DIR/${U}.COM"
 
