@@ -15,18 +15,30 @@ targets **our** compiler + z88dk pipeline.
 |-------|-------|-------|
 | **1** | single-precision **no-multiply** ops: `__addsf3` `__subsf3` `__fixsfsi` and all six compares (`__gtsf2` `__ltsf2` `__gesf2` `__lesf2` `__eqsf2` `__nesf2`) | **DONE — verified on host + on Z80 (ticks)** |
 | **2** | single-precision multiply/divide: `__mulsf3` `__divsf3` (shift-add `mul24` + restoring division — no `__mulsi3`/`__muldi3`/`__udiv*` needed, all of which z88dk lacks) | **DONE — host 2M/0 + Z80 (ticks)** |
-| 3 | double precision (`__adddf3` … `__fixdfsi` …) — vendor **Berkeley SoftFloat** (BSD), FAST_INT64 + `INLINE_LEVEL=1` | **BLOCKED** — core verified sound (host oracle + raw `f64_add` on Z80), closure links ~49 KB, but **ravn/z88dk#27** truncates 64-bit global initializers → `ft_dbl` reads garbage. See `bugs/quad_global_init_truncated.md`. |
+| 3 | double precision (`__adddf3` … `__fixdfsi` …) — vendor **Berkeley SoftFloat** (BSD), FAST_INT64 + `INLINE_LEVEL=1` | **DONE — `ft_dbl` green on Z80 (ticks): `s=10 m=21 d=-4 q10=2333 / df10=15 sf=1000000 fx=1000000 di=-42 / gt=0 lt=1 eq=1 ne=0`.** Required fixing three bugs (see below). Closure links ~49 KB. |
 | 4 | `printf("%f")` — the classic z88dk formatter reads **math48**, not IEEE. Wire **nanoprintf** (MIT) or an IEEE float→string. | TODO |
 
 Whetstone (double + libm sin/cos/exp/log) is the end-goal driver; it needs
 phases 3 + 4 plus `sinl/cosl/...`.
 
-> **Phase 3 blocker — [ravn/z88dk#27](https://github.com/ravn/z88dk/issues/27):**
-> 64-bit (`long long`/`double`) **global initializers** are silently truncated to
-> 32 bits by the `-compiler=llvmz80` copt bridge (`.quad` → a 4-byte `DEFQ`).
-> This is a z88dk-bridge bug, **not** the llvm-z80 backend (raw clang emits a
-> correct 8-byte `.quad`) and **not** SoftFloat (verified sound). Full write-up +
-> repro + workarounds: [`bugs/quad_global_init_truncated.md`](bugs/quad_global_init_truncated.md).
+> **Phase 3 — three bugs fixed to reach green (2026-07-15):**
+> 1. **[ravn/z88dk#27](https://github.com/ravn/z88dk/issues/27)** — 64-bit
+>    (`long long`/`double`) **global initializers** silently truncated to 32 bits
+>    by the `-compiler=llvmz80` copt bridge (`.quad` → a 4-byte `DEFQ`). Fixed by
+>    a pre-copt `splitquad.pl` pass (`z88dk/lib/llvmz80/`) that splits each
+>    `.quad` into two `.long` halves. Bridge bug, not the backend / not SoftFloat.
+>    Write-up: [`bugs/quad_global_init_truncated.md`](bugs/quad_global_init_truncated.md).
+> 2. **ravn/llvm-z80#268** — backend miscompile: a function returning
+>    double/aggregate via sret whose value comes from another sret-returning call
+>    copied the callee result to the wrong slot (`eliminateFrameIndex` added
+>    `CalleeSavedFrameSize` to incoming-arg / sret fixed objects, not just BSS
+>    locals → sret `[ix+4]` misread as `[ix+6]`; with low word 0x0000 the copy
+>    hit CP/M's warm-boot vector → hang). Repro: [`bugs/sret_dest_from_sret_call.c`](bugs/sret_dest_from_sret_call.c).
+> 3. **FCMP libcall return width** — GlobalISel's `createFCMPLibcall` hardcoded
+>    the soft-float compare libcalls (`__eqdf2` …) as returning **i32** and built
+>    the `G_ICMP`-with-#0 on i32; on 16-bit-int Z80 the high word was callee
+>    garbage, so `a == a` returned false. Fixed by routing through
+>    `getCmpLibcallReturnType()` (default i32; Z80 override → i16).
 
 ---
 

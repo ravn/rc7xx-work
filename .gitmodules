@@ -28,3 +28,6 @@
 [submodule "cpm_compilers"]
 	path = cpm_compilers
 	url = git@github.com:ravn/cpm_compilers.git
+[submodule "llvmz80-softfloat/vendor/berkeley-softfloat-3"]
+	path = llvmz80-softfloat/vendor/berkeley-softfloat-3
+	url = https://github.com/ucb-bar/berkeley-softfloat-3.git
