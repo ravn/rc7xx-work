@@ -15,11 +15,18 @@ targets **our** compiler + z88dk pipeline.
 |-------|-------|-------|
 | **1** | single-precision **no-multiply** ops: `__addsf3` `__subsf3` `__fixsfsi` and all six compares (`__gtsf2` `__ltsf2` `__gesf2` `__lesf2` `__eqsf2` `__nesf2`) | **DONE — verified on host + on Z80 (ticks)** |
 | **2** | single-precision multiply/divide: `__mulsf3` `__divsf3` (shift-add `mul24` + restoring division — no `__mulsi3`/`__muldi3`/`__udiv*` needed, all of which z88dk lacks) | **DONE — host 2M/0 + Z80 (ticks)** |
-| 3 | double precision (`__adddf3` … `__fixdfsi` …) — vendor **Berkeley SoftFloat** (BSD), pure-int (SOFTFLOAT_FAST_INT64 off) | TODO |
+| 3 | double precision (`__adddf3` … `__fixdfsi` …) — vendor **Berkeley SoftFloat** (BSD), FAST_INT64 + `INLINE_LEVEL=1` | **BLOCKED** — core verified sound (host oracle + raw `f64_add` on Z80), closure links ~49 KB, but **ravn/z88dk#27** truncates 64-bit global initializers → `ft_dbl` reads garbage. See `bugs/quad_global_init_truncated.md`. |
 | 4 | `printf("%f")` — the classic z88dk formatter reads **math48**, not IEEE. Wire **nanoprintf** (MIT) or an IEEE float→string. | TODO |
 
 Whetstone (double + libm sin/cos/exp/log) is the end-goal driver; it needs
 phases 3 + 4 plus `sinl/cosl/...`.
+
+> **Phase 3 blocker — [ravn/z88dk#27](https://github.com/ravn/z88dk/issues/27):**
+> 64-bit (`long long`/`double`) **global initializers** are silently truncated to
+> 32 bits by the `-compiler=llvmz80` copt bridge (`.quad` → a 4-byte `DEFQ`).
+> This is a z88dk-bridge bug, **not** the llvm-z80 backend (raw clang emits a
+> correct 8-byte `.quad`) and **not** SoftFloat (verified sound). Full write-up +
+> repro + workarounds: [`bugs/quad_global_init_truncated.md`](bugs/quad_global_init_truncated.md).
 
 ---
 
