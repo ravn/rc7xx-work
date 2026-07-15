@@ -14,7 +14,7 @@ targets **our** compiler + z88dk pipeline.
 | Phase | Scope | State |
 |-------|-------|-------|
 | **1** | single-precision **no-multiply** ops: `__addsf3` `__subsf3` `__fixsfsi` and all six compares (`__gtsf2` `__ltsf2` `__gesf2` `__lesf2` `__eqsf2` `__nesf2`) | **DONE — verified on host + on Z80 (ticks)** |
-| 2 | single-precision multiply/divide: `__mulsf3` `__divsf3` (needs a wide mantissa multiply; note `__mulsi3`/`__muldi3` are also missing from z88dk) | TODO |
+| **2** | single-precision multiply/divide: `__mulsf3` `__divsf3` (shift-add `mul24` + restoring division — no `__mulsi3`/`__muldi3`/`__udiv*` needed, all of which z88dk lacks) | **DONE — host 2M/0 + Z80 (ticks)** |
 | 3 | double precision (`__adddf3` … `__fixdfsi` …) — vendor **Berkeley SoftFloat** (BSD), pure-int (SOFTFLOAT_FAST_INT64 off) | TODO |
 | 4 | `printf("%f")` — the classic z88dk formatter reads **math48**, not IEEE. Wire **nanoprintf** (MIT) or an IEEE float→string. | TODO |
 
@@ -108,9 +108,13 @@ Environment the harness expects (macbook):
 - cycle-accurate runner: `z88dk-ticks` (on PATH via z88dk/bin) driven by
   `../scratch/dcc-clang-bench/ticks_cpm.py`
 
-### Next actions (Phase 2)
-1. Implement a 24×24→48 mantissa multiply from 16-bit multiplies (avoid
-   `__mulsi3`), then `__mulsf3` / `__divsf3`. Extend host self-test to cover them.
-2. Consider also supplying `__mulsi3`/`__muldi3` as general integer helpers
-   (separate concern; the whole compiler-rt integer runtime is missing).
-3. Then Phase 3 (vendor Berkeley SoftFloat for f64) and Phase 4 (nanoprintf %f).
+### Next actions (Phase 3)
+Phases 1 & 2 are DONE (single precision: add/sub/mul/div/fix/compares, host 2M/0
++ Z80 ticks). Remaining:
+1. Consider supplying `__mulsi3`/`__muldi3`/`__udivsi3` as general integer
+   helpers (separate concern; the whole compiler-rt integer runtime is missing —
+   the soft-float cores deliberately avoid them via shift-add).
+2. Phase 3: vendor **Berkeley SoftFloat** (BSD) for double precision
+   (`__adddf3` … `__fixdfsi` …), pure-int (SOFTFLOAT_FAST_INT64 off).
+3. Phase 4: `printf("%f")` via **nanoprintf** (MIT) or an IEEE float→string
+   (z88dk's classic formatter reads math48, not IEEE).

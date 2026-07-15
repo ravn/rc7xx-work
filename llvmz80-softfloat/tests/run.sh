@@ -36,7 +36,20 @@ echo "$GOT"
 EXPECT='s=5 d=1 e=105 f=94
 gt=1 lt=0 eq=1
 acc=35'
-if [ "$GOT" = "$EXPECT" ]; then echo "RESULT: PASS"; else
-    echo "RESULT: FAIL"; echo "--- expected ---"; echo "$EXPECT"; exit 1
+if [ "$GOT" = "$EXPECT" ]; then echo "RESULT: ft_add PASS"; else
+    echo "RESULT: ft_add FAIL"; echo "--- expected ---"; echo "$EXPECT"; exit 1
+fi
+
+echo
+echo "=== [3/3] Z80 mul/div link + run (ticks) ==="
+zcc +cpm -compiler=llvmz80 -Cg-O2 -o "$OUT/ft_mul" \
+    "$PROJ/tests/ft_mul.c" "$OUT/sf32.o"
+GOTM=$(python3 "$TICKS" "$OUT/ft_mul" | grep -v '^\[ticks\]')
+echo "$GOTM"
+
+EXPECTM='m=3 q2=25 sq=9 r=2
+qq=1 pacc=1024'
+if [ "$GOTM" = "$EXPECTM" ]; then echo "RESULT: ft_mul PASS"; else
+    echo "RESULT: ft_mul FAIL"; echo "--- expected ---"; echo "$EXPECTM"; exit 1
 fi
 rm -rf "$OUT"

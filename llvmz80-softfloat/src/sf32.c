@@ -71,18 +71,28 @@ static int32_t sf_fix(uint32_t a)
 __attribute__((noinline))
 static uint32_t sf_pack(uint32_t sign, int exp, uint32_t sum)
 {
+    /* sum: bit26 = implicit leading, bits26..3 = 24-bit significand,
+     * bits2..0 = guard/round/sticky.  exp = biased exponent (may be <= 0). */
+    if (exp <= 0) {
+        /* Denormalize BEFORE rounding: shift right by (1-exp), OR every bit
+         * shifted out into the sticky bit so round-to-nearest-even is exact
+         * at subnormal precision.  Truncating here (the old Phase-1 code) lost
+         * up to 1 ULP, which mul/div exposed (they underflow far more). */
+        int sh = 1 - exp;
+        if (sh > 27) return sign << 31;          /* too small -> signed zero */
+        uint32_t sticky = (sum & ((1UL << sh) - 1)) ? 1u : 0u;
+        sum = (sum >> sh) | sticky;
+        exp = 0;                                 /* subnormal exp field */
+    }
     uint32_t grs  = sum & 0x7u;
     uint32_t mant = sum >> 3;                     /* 24-bit, bit23 = implicit */
     if (grs > 4 || (grs == 4 && (mant & 1))) {
         mant++;
-        if (mant & 0x1000000u) { mant >>= 1; exp++; }   /* rounded up a bit */
+        if (exp == 0) {
+            if (mant & 0x800000u) exp = 1;        /* rounded up to smallest normal */
+        } else if (mant & 0x1000000u) { mant >>= 1; exp++; } /* carried a bit */
     }
     if (exp >= 0xff) return (sign << 31) | 0x7f800000u;  /* overflow -> inf */
-    if (exp <= 0) {                              /* subnormal / underflow */
-        int sh = 1 - exp;
-        if (sh >= 24) return sign << 31;         /* too small -> signed zero */
-        return (sign << 31) | ((mant >> sh) & 0x7fffffu);
-    }
     return (sign << 31) | ((uint32_t)exp << 23) | (mant & 0x7fffffu);
 }
 
@@ -144,9 +154,108 @@ static uint32_t sf_add(uint32_t a, uint32_t b)
     return sf_pack(sign, exp, sum);
 }
 
+/* ---- 24x24 -> 48-bit significand multiply ------------------------------ */
+/* Pure shift-add: llvm-z80/z88dk have NO 32/64-bit multiply helper
+ * (__mulsi3/__muldi3 are undefined at link — even a uint16->uint32 cast then
+ * `*` lowers to __mulsi3). 64-bit add/shift/compare DO link, so accumulate
+ * into a uint64_t. 24 iterations; product of two 24-bit values fits in 48. */
+__attribute__((noinline))
+static uint64_t mul24(uint32_t a, uint32_t b)
+{
+    uint64_t acc = 0, bb = b;
+    while (a) { if (a & 1u) acc += bb; bb <<= 1; a >>= 1; }
+    return acc;
+}
+
+/* ---- IEEE-754 single multiply, round-to-nearest-even ------------------- */
+/* Worked example: a=6.0f=0x40C00000 (ea=129, siga=0xC00000),
+ *                 b=0.5f=0x3F000000 (eb=126, sigb=0x800000).
+ * exp=129+126-127=128; p=mul24=0x600000000000 (bit46 set, [1,2) case) ->
+ * shift=20, sum=p>>20=0x600000 with implicit bit at 26; mant=sum>>3=0xC0000,
+ * field exp=128 -> 0x40400000 = 3.0f.  Matches 6*0.5. */
+static uint32_t sf_mul(uint32_t a, uint32_t b)
+{
+    uint32_t sa = a >> 31, sb = b >> 31, sign = sa ^ sb;
+    uint32_t ea = (a >> 23) & 0xff, eb = (b >> 23) & 0xff;
+    uint32_t ma = a & 0x7fffffu, mb = b & 0x7fffffu;
+
+    if (ea == 0xff) {                            /* a inf/NaN */
+        if (ma) return a | 0x400000u;            /* NaN -> quiet */
+        if ((b & 0x7fffffffu) == 0) return 0x7fc00000u; /* inf * 0 -> NaN */
+        if (eb == 0xff && mb) return b | 0x400000u;
+        return (sign << 31) | 0x7f800000u;       /* inf */
+    }
+    if (eb == 0xff) {                            /* b inf/NaN */
+        if (mb) return b | 0x400000u;
+        if ((a & 0x7fffffffu) == 0) return 0x7fc00000u;
+        return (sign << 31) | 0x7f800000u;
+    }
+    if ((a & 0x7fffffffu) == 0 || (b & 0x7fffffffu) == 0)
+        return sign << 31;                       /* signed zero */
+
+    uint32_t siga = ma | (ea ? 0x800000u : 0);
+    uint32_t sigb = mb | (eb ? 0x800000u : 0);
+    int exp = (int)(ea ? ea : 1) + (int)(eb ? eb : 1) - 127;
+    if (!ea) while (!(siga & 0x800000u)) { siga <<= 1; exp--; }  /* subnormal */
+    if (!eb) while (!(sigb & 0x800000u)) { sigb <<= 1; exp--; }
+
+    uint64_t p = mul24(siga, sigb);              /* in [2^46, 2^48) */
+    int shift;
+    if (p & ((uint64_t)1 << 47)) { shift = 21; exp++; } /* Ma*Mb in [2,4) */
+    else                          { shift = 20; }        /* Ma*Mb in [1,2) */
+    uint32_t sticky = (p & (((uint64_t)1 << shift) - 1)) ? 1u : 0u;
+    uint32_t sum = (uint32_t)(p >> shift) | sticky;      /* 27-bit sum form */
+    return sf_pack(sign, exp, sum);
+}
+
+/* ---- IEEE-754 single divide, round-to-nearest-even --------------------- */
+/* Restoring long division (no __udivsi3/__udivdi3, which are also unavailable):
+ * pre-normalize so siga in [sigb, 2*sigb) => quotient in [1,2), then peel 27
+ * quotient bits so the integer bit lands at bit26 (sf_pack's implicit slot). */
+static uint32_t sf_div(uint32_t a, uint32_t b)
+{
+    uint32_t sa = a >> 31, sb = b >> 31, sign = sa ^ sb;
+    uint32_t ea = (a >> 23) & 0xff, eb = (b >> 23) & 0xff;
+    uint32_t ma = a & 0x7fffffu, mb = b & 0x7fffffu;
+
+    if (ea == 0xff) {                            /* a inf/NaN */
+        if (ma) return a | 0x400000u;
+        if (eb == 0xff) return 0x7fc00000u;      /* inf/inf -> NaN */
+        return (sign << 31) | 0x7f800000u;       /* inf/finite -> inf */
+    }
+    if (eb == 0xff) {                            /* b inf/NaN (a finite) */
+        if (mb) return b | 0x400000u;
+        return sign << 31;                       /* finite/inf -> signed 0 */
+    }
+    if ((b & 0x7fffffffu) == 0) {                /* divide by zero */
+        if ((a & 0x7fffffffu) == 0) return 0x7fc00000u; /* 0/0 -> NaN */
+        return (sign << 31) | 0x7f800000u;       /* x/0 -> inf */
+    }
+    if ((a & 0x7fffffffu) == 0) return sign << 31; /* 0/x -> signed zero */
+
+    uint32_t siga = ma | (ea ? 0x800000u : 0);
+    uint32_t sigb = mb | (eb ? 0x800000u : 0);
+    int exp = (int)(ea ? ea : 1) - (int)(eb ? eb : 1) + 127;
+    if (!ea) while (!(siga & 0x800000u)) { siga <<= 1; exp--; }
+    if (!eb) while (!(sigb & 0x800000u)) { sigb <<= 1; exp--; }
+
+    if (siga < sigb) { siga <<= 1; exp--; }      /* now ratio in [1,2) */
+
+    uint32_t rem = siga, q = 0;
+    for (int i = 0; i < 27; i++) {               /* 1 integer + 26 frac bits */
+        q <<= 1;
+        if (rem >= sigb) { rem -= sigb; q |= 1u; }
+        rem <<= 1;
+    }
+    uint32_t sum = q | (rem ? 1u : 0u);          /* fold remainder into sticky */
+    return sf_pack(sign, exp, sum);
+}
+
 /* ---- compiler-rt entry points (thin bit-cast wrappers) ----------------- */
 float __addsf3(float a, float b){ return u2f(sf_add(f2u(a), f2u(b))); }
 float __subsf3(float a, float b){ return u2f(sf_add(f2u(a), f2u(b) ^ 0x80000000u)); }
+float __mulsf3(float a, float b){ return u2f(sf_mul(f2u(a), f2u(b))); }
+float __divsf3(float a, float b){ return u2f(sf_div(f2u(a), f2u(b))); }
 
 long  __fixsfsi(float a){ return (long)sf_fix(f2u(a)); }
 
@@ -172,9 +281,12 @@ int __unordsf2(float a, float b){
 #include <stdio.h>
 #include <stdlib.h>
 static uint32_t nat_add(uint32_t a, uint32_t b){ return f2u(u2f(a) + u2f(b)); }
+static uint32_t nat_mul(uint32_t a, uint32_t b){ return f2u(u2f(a) * u2f(b)); }
+static uint32_t nat_div(uint32_t a, uint32_t b){ return f2u(u2f(a) / u2f(b)); }
 int main(void)
 {
-    unsigned long trials = 2000000, add_bad = 0, cmp_bad = 0, fix_bad = 0;
+    unsigned long trials = 2000000, add_bad = 0, cmp_bad = 0, fix_bad = 0,
+                  mul_bad = 0, div_bad = 0;
     static const float pool[] = {
         0.0f,-0.0f,1.0f,-1.0f,2.0f,0.5f,3.5f,-3.5f,7.0f,8.0f,100.0f,0.1f,
         3.14159f,-2.71828f,1e6f,1e-6f,123456.0f,-0.0009765625f,65504.0f,255.0f
@@ -200,6 +312,16 @@ int main(void)
         }
         int want = (fa<fb)?-1:(fa>fb?1:0);
         if (sf_cmp(a,b) != want) { if(cmp_bad<5) printf("CMP %.9g ? %.9g\n",fa,fb); cmp_bad++; }
+        if (sf_mul(a,b) != nat_mul(a,b)) {
+            if (mul_bad<5) printf("MUL  %.9g * %.9g : got %.9g want %.9g\n",
+                fa,fb,u2f(sf_mul(a,b)),u2f(nat_mul(a,b)));
+            mul_bad++;
+        }
+        if ((b & 0x7fffffffu) != 0 && sf_div(a,b) != nat_div(a,b)) {
+            if (div_bad<5) printf("DIV  %.9g / %.9g : got %.9g want %.9g\n",
+                fa,fb,u2f(sf_div(a,b)),u2f(nat_div(a,b)));
+            div_bad++;
+        }
         if ((int32_t)fa == fa || 1) {
             int32_t wf = (int32_t)fa;
             if (fa>=-2147483648.0f && fa<2147483648.0f && sf_fix(a)!=wf) {
@@ -208,8 +330,8 @@ int main(void)
             }
         }
     }
-    printf("trials=%lu  add_bad=%lu  cmp_bad=%lu  fix_bad=%lu\n",
-           trials, add_bad, cmp_bad, fix_bad);
-    return (add_bad||cmp_bad||fix_bad) ? 1 : 0;
+    printf("trials=%lu  add_bad=%lu  cmp_bad=%lu  fix_bad=%lu  mul_bad=%lu  div_bad=%lu\n",
+           trials, add_bad, cmp_bad, fix_bad, mul_bad, div_bad);
+    return (add_bad||cmp_bad||fix_bad||mul_bad||div_bad) ? 1 : 0;
 }
 #endif

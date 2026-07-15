@@ -59,6 +59,7 @@ f32 path is hand asm `src/libc/float32_*.src` (eZ80 ADL); `%f` =
 NOT reusable; the SoftFloat C core and nanoprintf ARE.
 
 ## 6. NEW verified bug — llvm-z80 branch relaxation emits out-of-range `jr`
+Filed as **ravn/llvm-z80#267** (repro: `bugs/jr_out_of_range.c`).
 Compiling this file's `sf_add` at -Cg-O1/-O2/-O3/-Os makes clang emit e.g.
 `jr nc,.LBB3_15` whose target is ~132 bytes away; the z88dk assembler rejects
 it: `error: integer range: $84` (0x84 = 132 > 127). It is present in **clang's
@@ -80,4 +81,20 @@ Prototype dodges it by compiling the lib at -O0 (correctness unaffected).
 $ ./tests/run.sh
   host self-test: trials=2000000 add_bad=0 cmp_bad=0 fix_bad=0
   Z80 (ticks):    s=5 d=1 e=105 f=94 / gt=1 lt=0 eq=1 / acc=35 / RESULT: PASS
+```
+
+## 8. Phase 2 (multiply/divide) — verified
+`__mulsf3` = shift-add `mul24` (24×24→48 into uint64; 64-bit add/shift link,
+32-bit `*` would need the missing `__mulsi3`). `__divsf3` = restoring long
+division (27 quotient bits; avoids the missing `__udivsi3`/`__udivdi3`).
+Confirmed the lib object pulls in **no** `__mulsi3`/`__muldi3`/`__udiv*`.
+Also fixed `sf_pack` subnormal rounding: it now denormalizes *before* rounding
+with a proper sticky bit (the old truncation lost up to 1 ULP — invisible to
+add, but mul/div underflow into subnormals far more often and exposed it).
+```
+$ ./tests/run.sh
+  host self-test: trials=2000000 add_bad=0 cmp_bad=0 fix_bad=0 mul_bad=0 div_bad=0
+  Z80 ft_add (ticks): ... RESULT: ft_add PASS
+  Z80 ft_mul (ticks): m=3 q2=25 sq=9 r=2 / qq=1 pacc=1024 / RESULT: ft_mul PASS
+RED (no lib): undefined symbol ___mulsf3, ___divsf3  (link fails as expected)
 ```
