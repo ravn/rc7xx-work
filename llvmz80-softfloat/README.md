@@ -80,7 +80,10 @@ int    __gtsf2 (float a, float b);   // 16-bit int; >0 means a>b
 - `__fixsfsi` return is **32-bit** (`_cvt` and `_cvtl` both tail-call it).
 - Shims are compiled by the same clang ⇒ **no manual register matching needed.**
 - 16-bit multiply links (inlined); **32-bit (`__mulsi3`) and 64-bit (`__muldi3`)
-  do NOT** — so Phase 2's mantissa multiply must be built from 16-bit multiplies.
+  do NOT** — Phase 2's mantissa multiply is built from shift-add instead.
+  For Phase 3 (f64) these wide integer multiplies/divides are supplied by the
+  sibling **`../llvmz80-intrt`** compiler-rt subset (now in place), so a vendored
+  Berkeley SoftFloat f64 core (which relies on 32×32→64 sub-multiplies) will link.
 
 ---
 
