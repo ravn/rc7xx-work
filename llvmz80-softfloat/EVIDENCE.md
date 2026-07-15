@@ -98,3 +98,20 @@ $ ./tests/run.sh
   Z80 ft_mul (ticks): m=3 q2=25 sq=9 r=2 / qq=1 pacc=1024 / RESULT: ft_mul PASS
 RED (no lib): undefined symbol ___mulsf3, ___divsf3  (link fails as expected)
 ```
+
+## 9. Phase 3 blocker — 64-bit GLOBAL initializers truncated (ravn/z88dk#27)
+Filed https://github.com/ravn/z88dk/issues/27 (ravn's own repo, no permission needed).
+- Symptom: `unsigned long long g = 0x4008000000000000ULL;` (global, static init)
+  reads back as 0 on target; runtime stores are fine. Table:
+  BIG 0x4008.. -> got `0 0` (want `0 1074266112`); MID 0x1_00000000 -> `0 0`
+  (want `0 1`); SMLL 0x7 -> `7 0` ok; RUN (runtime store) -> `0 1074266112` ok.
+- Root cause (verified 3 ways):
+  1. raw `clang --target=z80 -S` emits correct 8-byte `.quad`.
+  2. z88dk `DEFQ` is 4 bytes: `DEFQ 0x11223344`+`DEFB 0xAA` -> 5 bytes `44 33 22 11 aa`.
+  3. bridge rule `z88dk/lib/llvmz80/llvmz80_rules.1` (~L99): `.quad %1` -> `DEFQ %1`
+     `DEFQ 0`; the 64-bit `%1` is truncated to low 32 by the 4-byte DEFQ and the
+     real high 32 is overwritten by the padding 0.  (`.long %1 -> DEFQ %1` is fine.)
+- NOT the llvm-z80 backend (clang's `.quad` is correct); it is the copt bridge.
+- Repro: bugs/quad_global_init_truncated.c (RED verified).
+- Consequence for SoftFloat f64: `volatile double`/`long long` globals with high
+  bits init to garbage -> explains wrong values (and the shim hang on garbage input).
