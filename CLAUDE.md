@@ -224,7 +224,7 @@ NOT working in zsdcc: `constexpr`, `[[attributes]]` (use `__attribute__`), digit
   int→double codegen (suspected shim-body or arg/return marshaling; exact defect
   not isolated). Repro + full diagnosis:
   `llvmz80-softfloat/bugs/f64_int_to_double_miscompiled.{c,md}`. Distinct from
-  #268/#269/#270.
+  #268/#269/#270. Filed: ravn/llvm-z80#273.
 
 FIXED:
 - **sret setup skipped for no-arg functions returning > 4 bytes** — a no-arg
@@ -233,7 +233,7 @@ FIXED:
   sret-demotion block) → legalizer crash / corrupt sret. Fix: also require
   `FLI.CanLowerReturn` in the early-return guard. Commit `74378e7a78cc`, lit test
   `llvm/test/CodeGen/Z80/sret-noarg-return.ll`. Writeup:
-  `llvmz80-softfloat/bugs/sret_noarg_return_FIXED.md`.
+  `llvmz80-softfloat/bugs/sret_noarg_return_FIXED.md`. Filed: ravn/llvm-z80#274.
 - `"hl"` (and `bc`/`de`/`af`/`ix`/`iy`/`sp`) bare inline-asm pair constraints used
   to crash IRTranslator ("unable to translate instruction: call"): LLVM's
   IR-level InlineAsm parser splits a bare multi-letter constraint into

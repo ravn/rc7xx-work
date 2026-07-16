@@ -1,6 +1,6 @@
 # BUG (FIXED): sret setup skipped for no-argument functions returning > 4 bytes
 
-- **Upstream issue:** ravn/llvm-z80 — *(to be filed for traceability; number TBD)*
+- **Upstream issue:** [ravn/llvm-z80#274](https://github.com/ravn/llvm-z80/issues/274)
 - **Status:** **FIXED** 2026-07-17 in ravn/llvm-z80 commit `74378e7a78cc`
   (branch `fix-sret-noarg-return`, not yet pushed/merged).
 - **Regression test:** `llvm/test/CodeGen/Z80/sret-noarg-return.ll` (lit, green).

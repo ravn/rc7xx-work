@@ -1,6 +1,6 @@
 # BUG: `(double)int` conversion (`__floatsidf`) miscompiled by clang-z80
 
-- **Upstream issue:** ravn/llvm-z80 — *(to be filed; number TBD)*
+- **Upstream issue:** [ravn/llvm-z80#273](https://github.com/ravn/llvm-z80/issues/273)
 - **Repro:** [`bugs/f64_int_to_double_miscompiled.c`](f64_int_to_double_miscompiled.c)
 - **Status:** verified 2026-07-17, unfixed. **Blocks** any `double` program that
   converts an integer to `double` under `-compiler=llvmz80`.
