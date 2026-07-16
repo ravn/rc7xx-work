@@ -216,8 +216,12 @@ required** (kept only as a stock-z88dk fallback; `ft_fmt` can switch to variadic
   ~line 858, is `%a` hex-float), so `%e`/`%g` silently degrade to `%f` and emit
   the wrong string. The `ft_fmt` test is deliberately scoped to `%f` so it never
   asserts a wrong `%e`/`%g` string. Upgrading nanoprintf will NOT help; the only
-  fix is to add an IEEE double→string exponent path ourselves (needed e.g. for
-  the Whetstone driver, which prints `%12.4e`).
+  way to gain `%e`/`%g` would be to add an IEEE double→string exponent path
+  ourselves. **Decision (2026-07-16): we will NOT do that — nanoprintf's feature
+  set is the accepted ceiling for this project.** `%e`/`%g` are simply
+  unsupported; no custom exponent renderer will be written and no consumer may
+  rely on them. (The one driver that needed `%12.4e`, Whetstone, is dropped as a
+  test target — see the size-wall section.)
 - **`va_arg` was broken via z88dk `<stdarg.h>`, now FIXED** (z88dk `bb914a1`).
   This was **not** an llvm-z80 backend bug (clang's `__builtin_va_start` is
   ABI-correct): z88dk's classic `<stdarg.h>` located varargs via `&last`, which
