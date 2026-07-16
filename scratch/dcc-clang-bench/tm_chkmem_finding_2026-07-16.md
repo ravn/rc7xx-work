@@ -1,5 +1,20 @@
 # tm 3.43x-vs-dcc root cause: 87 % is the `chkmem` byte-compare loop (2026-07-16)
 
+> **CORRECTION (2026-07-16, later):** the *reduced* repro `chk.c` below (with a
+> light `err()` error path) is **unfaithful** — it dropped the `printf(p,v,c,*pc)`
+> args and so exhibited a milder `cp (hl)` pattern that is NOT what runs in `tm`.
+> Verified from the real `zcc -S` asm: the true bottleneck is **register pressure
+> from the cold error path** `printf("...",p,v,c,*pc); exit(1)` keeping `p` (BC),
+> `v`, `c` live across the loop. With 7 GP regs the allocator then spills the
+> counter (`ld (ix-2),e; ld (ix-1),d`, 38T), reloads it (38T), reloads the limit
+> `c` (38T), reloads `val` (`cp (ix-3)`, 19T) and recomputes the address
+> (`add hl,de`) EVERY iteration (~200 T/iter). Faithful repro must include the
+> printf args. A Z80 ISel `CP(HL)`-fusion-off-PHI change was tried: correct,
+> lit-clean, but ZERO effect on tm and all 8 benchmarks (byte-identical) — the
+> real loop never uses `cp (hl)`. Real fix = cold-path live-range sinking in the
+> allocator (generic-LLVM, larger effort). See ravn/llvm-z80#272 correction
+> comment. The `## Isolation experiment` (87% of tm is chkmem) below stays VALID.
+
 ## Landscape (zcc +cpm -compiler=llvmz80 -O2 vs dcc, z88dk-ticks cycle-accurate)
 
 | bench    | cyc-rat (zcc/dcc) | winner       |
