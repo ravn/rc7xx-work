@@ -16,7 +16,7 @@ targets **our** compiler + z88dk pipeline.
 | **1** | single-precision **no-multiply** ops: `__addsf3` `__subsf3` `__fixsfsi` and all six compares (`__gtsf2` `__ltsf2` `__gesf2` `__lesf2` `__eqsf2` `__nesf2`) | **DONE — verified on host + on Z80 (ticks)** |
 | **2** | single-precision multiply/divide: `__mulsf3` `__divsf3` (shift-add `mul24` + restoring division — no `__mulsi3`/`__muldi3`/`__udiv*` needed, all of which z88dk lacks) | **DONE — host 2M/0 + Z80 (ticks)** |
 | 3 | double precision (`__adddf3` … `__fixdfsi` …) — vendor **Berkeley SoftFloat** (BSD), FAST_INT64 + `INLINE_LEVEL=1` | **DONE — `ft_dbl` green on Z80 (ticks): `s=10 m=21 d=-4 q10=2333 / df10=15 sf=1000000 fx=1000000 di=-42 / gt=0 lt=1 eq=1 ne=0`.** Required fixing three bugs (see below). Closure links ~49 KB. |
-| 4 | `printf("%f")` — the classic z88dk formatter reads **math48**, not IEEE. Wire **nanoprintf** (MIT) or an IEEE float→string. | TODO |
+| 4 | `printf("%f")` — the classic z88dk formatter reads **math48**, not IEEE. Wire **nanoprintf** (MIT) or an IEEE float→string. | **`%f` works via this project's `npf_snprintf_f` shim** (50/50 byte-identical to glibc). **Stock `zcc printf("%f")` is a GAP** (broken — see Known limitations). **`%e`/`%g` NOT supported** (nanoprintf v0.6.1 gap). |
 
 Whetstone (double + libm sin/cos/exp/log) is the end-goal driver; it needs
 phases 3 + 4 plus `sinl/cosl/...`.
@@ -116,6 +116,80 @@ tests/ft_add.c  On-target runtime test (add/sub/compare/fix; NO multiply).
 tests/run.sh    Build + run host self-test AND the Z80 target test (ticks).
 EVIDENCE.md     Every probe command + output backing the claims above.
 ```
+
+## Stock `printf("%f")` status (verified 2026-07-16)
+
+Out-of-the-box `zcc +cpm -compiler=llvmz80` `printf("%f", x)` **does not work** —
+the `llvmz80-softfloat` nanoprintf path is the only working route:
+
+- **No pragma:** links fine but the float converter is stripped, so `%f`
+  silently produces nothing — `printf("x=%f\n", 3.14)` prints `x=f` on Z80
+  (literal `f`, value dropped).
+- **With `#pragma printf = "%f"`:** **link fails** — z88dk's `__dtoa__.asm`
+  pulls `asm_fpclassify`, `__dtoa_base10`, `__dtoa_digits`, `__dtoa_sgnabs`,
+  which are only supplied by the sccz80/sdcc genmath math libs, not the
+  `llvmz80` lib. Those helpers also assume the **48-bit math48** layout, so even
+  if linked they would misformat clang-z80's IEEE-754 binary64. Confirms the
+  header/ABI split behind [ravn/z88dk#28](https://github.com/ravn/z88dk/issues/28).
+
+## Footprint / should we split the f64 closure? (analysis 2026-07-16)
+
+**Recommendation: do NOT split the SoftFloat arithmetic closure.** Measured per
+`build64.sh` (32 objects, ~49 KB) the closure is already delivered at
+**per-function granularity**: `build64.sh` compiles only the objects reachable
+by undefined-symbol resolution from the program, so a program that never divides
+never pulls `f64_div.o` (4566 B), never multiplies → no `f64_mul.o` (2472 B) /
+`s_mul64To128.o` (1034 B), etc. The 49 KB figure is the *full-API* `ft_dbl`
+test (add+sub+mul+div+compares+all conversions); a real driver pays for its
+subset only.
+
+A two-way split would not help, because the bulk that any real double op needs
+is a **shared rounding/normalise core** that cannot be partitioned away:
+`s_subMagsF64` 5219, `s_normRoundPackToF64` 3972, `s_roundPackToF64` 2463,
+`s_addMagsF64` 2424, `s_shiftRightJam64` 1972, `s_shortShiftRightJam64` 1805,
+`s_propagateNaNF64UI` 1615 ≈ **15.5 KB shared**. Add-only ≈ that core + a couple
+hundred bytes; the closure already shrinks to ~20 KB for add-only. So the useful
+axis is *per-op selection* (already automatic), not a fixed two-file split.
+
+The **one split that IS real and already exploited**: `%f` formatting
+(nanoprintf) needs **zero soft-float** — it reads raw IEEE bits — so it is a
+separate ~24 KB closure built by `build_fmt.sh`, independent of the arithmetic
+closure above. Arithmetic-only and format-only programs are already two disjoint
+footprints.
+
+Actionable follow-up (not a split): package the arithmetic closure as a z88dk
+**`.lib`** so downstream programs get on-demand pulling without re-running
+`build64.sh`'s discovery loop.
+
+## Known limitations
+
+> For an upstream-facing, ready-to-paste version of these caveats (for when this
+> is filed with the z88dk project), see [`UPSTREAM_CAVEATS.md`](UPSTREAM_CAVEATS.md).
+
+- **`%f` is a gap in *stock* z88dk — it works ONLY through this project's
+  shim.** `%f` is verified correct (50/50 byte-identical to glibc) *when routed
+  through the project's non-variadic `npf_snprintf_f` nanoprintf shim*. Plain
+  `zcc +cpm -compiler=llvmz80` `printf("%f", x)` does **not** work (see "Stock
+  `printf("%f")` status" above): without a pragma the converter is stripped and
+  `%f` silently prints literal `f`; with `#pragma printf = "%f"` it fails to link
+  (genmath-only `asm_fpclassify`/`__dtoa_*` helpers, math48 layout). Two root
+  causes stack under it: the header/ABI split ([ravn/z88dk#28](https://github.com/ravn/z88dk/issues/28))
+  and broken `va_arg` ([ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270)).
+  So "float works for llvmz80" today means *via this project*, not out of the box.
+- **`%e` / `%g` are NOT supported** (known bug, tracked). This is a **nanoprintf
+  v0.6.1 feature gap, not a compiler bug**: `npf_ftoa_rev` always renders fixed
+  decimal, and the exponent code path (`nanoprintf.h` ~line 858) is `%a`
+  hex-float only. Scientific / shortest conversions are *parsed* but silently
+  degrade to `%f`, so the emitted string is wrong for `%e`/`%g`. The `ft_fmt`
+  test is deliberately scoped to `%f` so it never asserts a wrong `%e`/`%g`
+  string. Fix options if a driver needs them: enable a newer nanoprintf with
+  scientific support, or add an IEEE float→string exponent path.
+- **`va_arg` is broken in clang-z80** ([ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270))
+  — the `%f` path uses the non-variadic `npf_snprintf_f` shim to sidestep it;
+  real variadic `printf("%f", x)` still needs #270 fixed.
+- **`s_roundPackToF64.c` must be built at `-O0`** to dodge
+  [ravn/llvm-z80#267](https://github.com/ravn/llvm-z80/issues/267) (textual `jr`
+  under-relaxation once it is inlined large).
 
 ## How to resume / test
 
