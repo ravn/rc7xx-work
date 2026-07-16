@@ -161,6 +161,27 @@ Actionable follow-up (not a split): package the arithmetic closure as a z88dk
 **`.lib`** so downstream programs get on-demand pulling without re-running
 `build64.sh`'s discovery loop.
 
+## Path to stock `printf("%f")` (roadmap)
+
+`%f` splits into two independent capabilities; the **conversion already works**,
+only the **variadic delivery** is blocked:
+
+| Capability | State | Blocker |
+|-----------|-------|---------|
+| `double`→string `%f` conversion (nanoprintf, IEEE bits) | **WORKS**, 50/50 vs glibc | none |
+| Fetch the `double` from `printf`'s `...` via `va_arg` | **BROKEN** | [ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270) — `va_list` inits to frame base, not first vararg (IX+6) |
+| Stock z88dk `__dtoa_*` converter | math48-only, wrong for IEEE | irrelevant once nanoprintf is the `printf` backend |
+
+**So real variadic `printf("%f", x)` hinges on fixing #270.** Once #270 is fixed,
+wiring a nanoprintf-based **variadic** `printf` (clang-z80 compiled) needs no new
+formatter work and no math48 — the conversion path is already proven. Until then
+the only working route is the **non-variadic** `npf_snprintf_f(buf, x)` shim.
+
+Estimated scope: #270 looks localized to the Z80 backend varargs lowering
+(`Z80CallLowering.cpp:796` sets `VarArgsStackIndex`; `Z80LegalizerInfo.cpp` custom
+`G_VASTART` @ line 933, `G_VAARG` via `.lower()`), a plausibly hours-to-a-day fix
+rather than a rewrite. `%e`/`%g` remain a separate nanoprintf feature gap.
+
 ## Known limitations
 
 > For an upstream-facing, ready-to-paste version of these caveats (for when this
