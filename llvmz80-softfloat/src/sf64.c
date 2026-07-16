@@ -18,8 +18,6 @@
 /* ---- bit reinterpret helpers (no value conversion) --------------------- */
 static float64_t d2f64(double x){ union { double d; float64_t f; } u; u.d = x; return u.f; }
 static double    f642d(float64_t x){ union { double d; float64_t f; } u; u.f = x; return u.d; }
-static float32_t s2f32(float x){ union { float s; float32_t f; } u; u.s = x; return u.f; }
-static float     f322s(float32_t x){ union { float s; float32_t f; } u; u.f = x; return u.s; }
 
 static int isnan64(double x)
 {
@@ -34,8 +32,13 @@ double __muldf3(double a, double b){ return f642d(f64_mul(d2f64(a), d2f64(b))); 
 double __divdf3(double a, double b){ return f642d(f64_div(d2f64(a), d2f64(b))); }
 
 /* ---- conversions ------------------------------------------------------- */
-double __extendsfdf2(float a){ return f642d(f32_to_f64(s2f32(a))); }
-float  __truncdfsf2(double a){ return f322s(f64_to_f32(d2f64(a))); }
+/* NOTE: the float32<->float64 shims __extendsfdf2/__truncdfsf2 live in the
+ * sibling module src/sf64_f32.c so a pure-double program (e.g. the libm
+ * transcendental tests) linked against the .lib archive does NOT drag in the
+ * SoftFloat f32 core (f32_to_f64/f64_to_f32 + their round/normalize helpers,
+ * ~3 KB).  z80asm strips unreferenced .lib modules only -- keeping the f32 hop
+ * in its own module is what makes that stripping possible.  See
+ * bugs/rodata_cst_section_dropped.md sibling note and README "libm test". */
 long   __fixdfsi(double a){ return (long)f64_to_i32_r_minMag(d2f64(a), false); } /* trunc */
 double __floatsidf(long a){ return f642d(i32_to_f64((int_fast32_t)a)); }
 

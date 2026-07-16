@@ -52,4 +52,27 @@ qq=1 pacc=1024'
 if [ "$GOTM" = "$EXPECTM" ]; then echo "RESULT: ft_mul PASS"; else
     echo "RESULT: ft_mul FAIL"; echo "--- expected ---"; echo "$EXPECTM"; exit 1
 fi
+
+echo
+echo "=== [4/4] Z80 rodata.cstN regression (ticks) ==="
+# Regression guard for the ".rodata.cstN -> SECTION IGNORE" bridge bug in
+# z88dk/lib/llvmz80/llvmz80_rules.1: a runtime-indexed static const double[]
+# must read its real values, not 0.0.  Needs only the intrt memmove helper.
+zcc +cpm -compiler=llvmz80 -Cg-O2 -o "$OUT/ft_rocst" \
+    "$PROJ/tests/ft_rocst.c" "$WS/llvmz80-intrt/src/rt_mem.asm"
+GOTR=$(python3 "$TICKS" "$OUT/ft_rocst" | grep -v '^\[ticks\]')
+echo "$GOTR"
+EXPECTR='ROCST 16436 16420'
+if [ "$GOTR" = "$EXPECTR" ]; then echo "RESULT: ft_rocst PASS"; else
+    echo "RESULT: ft_rocst FAIL (rodata.cstN dropped -> const double[] reads 0)"
+    echo "--- expected ---"; echo "$EXPECTR"; exit 1
+fi
 rm -rf "$OUT"
+
+echo
+echo "=== [libm] transcendental suite via mathf64.lib ==="
+# Whetstone is NOT a suite member: full IEEE-754-64 Whetstone does not fit a
+# 64 KB CP/M TPA (see README "Whetstone / libm -- the 64 KB size wall").
+# Instead run_libm.sh verifies the transcendentals that DO fit (sqrt/atan/exp),
+# one binary each, linked against the dead-strippable mathf64.lib.
+sh "$HERE/run_libm.sh"

@@ -57,9 +57,14 @@ Stock `zcc +cpm -compiler=llvmz80` `printf("%f", x)` does **not** work:
   only by the sccz80/sdcc genmath libs, and those operate on the **math48**
   layout — wrong for IEEE binary64 even if linked.
 
-This project routes `%f` through vendored **nanoprintf** (MIT), verified 50/50
-byte-identical to glibc. **`%e`/`%g` are unsupported** in nanoprintf v0.6.1
-(fixed-decimal only; scientific silently degrades to `%f`).
+This project routes `%f` through vendored **nanoprintf** (0BSD/Unlicense),
+verified 50/50 byte-identical to glibc. **`%e`/`%g` are unsupported** — this is a
+**permanent, deliberate upstream design exception** (nanoprintf's own README:
+"aim for C11 standard compliance. The primary exceptions are scientific notation
+(`%e`, `%g`) …"), not a version gap: upstream `main` is still v0.6.0 and still
+renders fixed-decimal only, so `%e`/`%g` silently degrade to `%f`. A driver
+needing scientific output (e.g. Whetstone's `%12.4e`) requires a separate IEEE
+double→string exponent path.
 
 ### 4. `<stdarg.h>` located varargs via `&last` (fixed) — same class as #28
 

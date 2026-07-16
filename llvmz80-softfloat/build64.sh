@@ -31,9 +31,10 @@ compile(){ # $1 = path to .c
 }
 
 # seed: the entry points the test needs + shims + integer runtime
-SEED="f64_add f64_sub f64_mul f64_div f64_lt f64_le f64_eq f64_to_i32_r_minMag i32_to_f64 f32_to_f64 f64_to_f32 softfloat_state"
+SEED="f64_add f64_sub f64_mul f64_div f64_lt f64_le f64_eq f64_sqrt s_approxRecipSqrt_1Ks f64_to_i32_r_minMag i32_to_f64 f32_to_f64 f64_to_f32 softfloat_state"
 for f in $SEED; do compile "$(srcfor "$f")"; done
 compile src/sf64.c
+compile src/sf64_f32.c
 zcc +cpm -compiler=llvmz80 -Cg-O2 -c -o "$OUT/intrt.o" ../llvmz80-intrt/src/intrt.c 2>/dev/null
 # __memmove_rt: custom reg-ABI struct-copy helper clang-z80 emits (z88dk lacks it)
 zcc +cpm -compiler=llvmz80 -c -o "$OUT/rt_mem.o" ../llvmz80-intrt/src/rt_mem.asm 2>/dev/null

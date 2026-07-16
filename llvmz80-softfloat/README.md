@@ -16,10 +16,13 @@ targets **our** compiler + z88dk pipeline.
 | **1** | single-precision **no-multiply** ops: `__addsf3` `__subsf3` `__fixsfsi` and all six compares (`__gtsf2` `__ltsf2` `__gesf2` `__lesf2` `__eqsf2` `__nesf2`) | **DONE — verified on host + on Z80 (ticks)** |
 | **2** | single-precision multiply/divide: `__mulsf3` `__divsf3` (shift-add `mul24` + restoring division — no `__mulsi3`/`__muldi3`/`__udiv*` needed, all of which z88dk lacks) | **DONE — host 2M/0 + Z80 (ticks)** |
 | 3 | double precision (`__adddf3` … `__fixdfsi` …) — vendor **Berkeley SoftFloat** (BSD), FAST_INT64 + `INLINE_LEVEL=1` | **DONE — `ft_dbl` green on Z80 (ticks): `s=10 m=21 d=-4 q10=2333 / df10=15 sf=1000000 fx=1000000 di=-42 / gt=0 lt=1 eq=1 ne=0`.** Required fixing three bugs (see below). Closure links ~49 KB. |
-| 4 | `printf("%f")` — the classic z88dk formatter reads **math48**, not IEEE. Wire **nanoprintf** (MIT) or an IEEE float→string. | **`%f` works via this project's `npf_snprintf_f` shim** (50/50 byte-identical to glibc). **Stock `zcc printf("%f")` is a GAP** (broken — see Known limitations). **`%e`/`%g` NOT supported** (nanoprintf v0.6.1 gap). |
+| 4 | `printf("%f")` — the classic z88dk formatter reads **math48**, not IEEE. Wire **nanoprintf** (0BSD/Unlicense) or an IEEE float→string. | **`%f` works via this project's `npf_snprintf_f` shim** (50/50 byte-identical to glibc). **Stock `zcc printf("%f")` is a GAP** (broken — see Known limitations). **`%e`/`%g` NOT supported** (permanent upstream nanoprintf design exception — not a version gap). |
 
-Whetstone (double + libm sin/cos/exp/log) is the end-goal driver; it needs
-phases 3 + 4 plus `sinl/cosl/...`.
+Whetstone (double + libm sin/cos/exp/log) was the original end-goal driver but
+is **dropped as a test target**: full IEEE-754-64 Whetstone does not fit a 64 KB
+CP/M TPA (see "Whetstone / libm — the 64 KB size wall" below). libm correctness
+is instead verified per-function by `tests/run_libm.sh` (sqrt/atan/exp, each
+fits when linked against the dead-strippable `mathf64.lib`).
 
 > **Phase 3 — three bugs fixed to reach green (2026-07-15):**
 > 1. **[ravn/z88dk#27](https://github.com/ravn/z88dk/issues/27)** — 64-bit
@@ -78,7 +81,7 @@ through custom-CC glue; their f32 path is hand-written eZ80 ADL asm
 **Not reusable for us:** their runtime glue uses eZ80 calling conventions and
 ADL (24-bit) asm; their backend table targets those custom names.
 **Reusable for us:** the portable **Berkeley SoftFloat C core** (BSD) and
-**nanoprintf** (MIT). We compile them with **our** clang (default C ABI ⇒ ABI
+**nanoprintf** (0BSD/Unlicense). We compile them with **our** clang (default C ABI ⇒ ABI
 matches by construction) and bridge names with trivial shims.
 
 ## Why this is easy for us
@@ -201,14 +204,20 @@ required** (kept only as a stock-z88dk fallback; `ft_fmt` can switch to variadic
   blocker is the header/ABI split ([ravn/z88dk#28](https://github.com/ravn/z88dk/issues/28));
   the `va_arg` blocker is fixed (below). So "float works for llvmz80" means *via
   this project's nanoprintf*, not via z88dk's stock `printf`.
-- **`%e` / `%g` are NOT supported** (known bug, tracked). This is a **nanoprintf
-  v0.6.1 feature gap, not a compiler bug**: `npf_ftoa_rev` always renders fixed
-  decimal, and the exponent code path (`nanoprintf.h` ~line 858) is `%a`
-  hex-float only. Scientific / shortest conversions are *parsed* but silently
-  degrade to `%f`, so the emitted string is wrong for `%e`/`%g`. The `ft_fmt`
-  test is deliberately scoped to `%f` so it never asserts a wrong `%e`/`%g`
-  string. Fix options if a driver needs them: enable a newer nanoprintf with
-  scientific support, or add an IEEE float→string exponent path.
+- **`%e` / `%g` are NOT supported.** This is a **permanent, deliberate upstream
+  design exception in nanoprintf — not a version gap and not a compiler bug.**
+  The nanoprintf README states outright: "aim for C11 standard compliance. The
+  primary exceptions are scientific notation (`%e`, `%g`) …". It is not fixed in
+  a newer release: upstream `main` (charlesnicholson/nanoprintf) is still
+  **v0.6.0** — identical to our vendored copy — and still omits scientific
+  output. Mechanically: `npf_ftoa_rev` always renders fixed decimal; the parser
+  *recognises* `e/E/g/G` (distinct `FLOAT_SCI`/`FLOAT_SHORTEST` conv_specs) but
+  the renderer has no exponent path (the only exponent code, `nanoprintf.h`
+  ~line 858, is `%a` hex-float), so `%e`/`%g` silently degrade to `%f` and emit
+  the wrong string. The `ft_fmt` test is deliberately scoped to `%f` so it never
+  asserts a wrong `%e`/`%g` string. Upgrading nanoprintf will NOT help; the only
+  fix is to add an IEEE double→string exponent path ourselves (needed e.g. for
+  the Whetstone driver, which prints `%12.4e`).
 - **`va_arg` was broken via z88dk `<stdarg.h>`, now FIXED** (z88dk `bb914a1`).
   This was **not** an llvm-z80 backend bug (clang's `__builtin_va_start` is
   ABI-correct): z88dk's classic `<stdarg.h>` located varargs via `&last`, which
@@ -219,6 +228,58 @@ required** (kept only as a stock-z88dk fallback; `ft_fmt` can switch to variadic
 - **`s_roundPackToF64.c` must be built at `-O0`** to dodge
   [ravn/llvm-z80#267](https://github.com/ravn/llvm-z80/issues/267) (textual `jr`
   under-relaxation once it is inlined large).
+- **Mergeable const pools (`.rodata.cstN`) were silently dropped → `const
+  double[]` read 0 — now FIXED** (2026-07-16, `z88dk/lib/llvmz80/llvmz80_rules.1`).
+  clang places a fully-constant power-of-2-sized read-only object in
+  `.section .rodata.cstN`; the copt bridge had no rule for it so it hit the
+  `.section %1 → SECTION IGNORE` catch-all and the bytes were discarded. This is
+  what made musl `atan()`/`exp()`/`log()` return 0 on Z80 (they index static
+  const coefficient tables). Fixed by mapping `.rodata.cst%2 → rodata_compiler`;
+  regression guard = `tests/run.sh` step 4/4 (`ft_rocst`). Write-up:
+  [`bugs/rodata_cst_section_dropped.md`](bugs/rodata_cst_section_dropped.md).
+  Distinct from the `.quad→DEFQ` truncation ([ravn/z88dk#27](https://github.com/ravn/z88dk/issues/27)).
+
+## Whetstone / libm — the 64 KB size wall (measured 2026-07-16, PARKED)
+
+Whetstone needs IEEE-754-64 `sin/cos/atan/sqrt/exp/log` **all resident at once** on
+top of the ~49.7 KB SoftFloat f64 closure. With the `.rodata.cstN` bug fixed, the
+vendored musl transcendentals **compute correctly** on Z80. Packaging the closure +
+libm as a **`.lib` archive** (`tools/build_mathlib.sh` → `mathf64.lib`) lets the
+z80asm linker strip unreferenced modules, so a *single-function* program pulls only
+what it calls — this is measured, not assumed, and is what gets `exp` under the TPA:
+
+| fn      | inputs     | Z80 result (via lib)              | oracle                            | size (lib) | all-.o  |
+|---------|------------|-----------------------------------|-----------------------------------|-----------|---------|
+| `sqrt`  | 2,3,…      | `sq2=14142 sq2b=17320 fa=15 cs=-25` | same                            | 54705 B ✓ | —       |
+| `atan`  | 1.0, 0.5   | `7853 4636`                       | `7853 4636`                       | 63650 B ✓ | 62432 B |
+| `exp`   | 1.0, 0.5   | `27182 16487`                     | `27182 16487`                     | 60583 B ✓ | 65714 B ✗ |
+| `log`   | 2.0, 10.0  | (overflows TPA)                   | `6931 23025`                      | 67362 B ✗ | ovf     |
+| `sin`/`cos` | 1.0    | (overflows TPA)                   | `8414` / `5403`                   | ovf       | ovf     |
+
+`tests/run_libm.sh` runs the three that fit (`sqrt`, `atan`, `exp`) as the libm
+regression suite (wired into `tests/run.sh`). The `.lib` win is real but bounded:
+`exp` 65714 → 60583 B (the ~3 KB f32 core drops because `src/sf64_f32.c` is a
+separate module); `log` still overflows (`log_data` table 13.5 KB), and `sin/cos`
+pull `__rem_pio2` (15 KB), so those stay out.
+
+**Why all-at-once cannot fit.** SoftFloat f64 closure **49.7 KB**; full musl libm
+**~76 KB** (`__rem_pio2_large` 18.4, `__rem_pio2` 15, `log` 13.5, `exp` 8.6, `atan`
+7.9). compiler-rt's own f64 builtins are **larger** (59 KB), so SoftFloat is already
+the most compact IEEE-754-64 engine. **No compact 8-bit-native IEEE-754-64 libm
+exists** — z88dk's own small libms (math48 48-bit, mbf64 MBF) trade the *format*
+precisely to avoid this cost, so they are ABI-incompatible with clang's IEEE-754
+`double`.
+
+**Conclusion:** full IEEE-754-64 Whetstone under `zcc -compiler=llvmz80` does **not**
+fit a single 64 KB TPA, so **Whetstone is dropped as a test target** and replaced by
+the per-function `run_libm.sh` suite. To ever run the whole benchmark, the options
+(all deferred, user decision) are: (a) overlay/bank the libm across memory banks,
+(b) accept a reduced-format Whetstone (math48/32-bit), or (c) trim musl (`__rem_pio2_large`
+is unreachable for |x|<2 and is stubbable, but even so closure+libm ≫ 64 KB). The
+codegen-correctness work is done and independently valuable; the size wall is a
+memory-footprint fact, not a compiler bug.
+
+
 
 ## How to resume / test
 
@@ -241,5 +302,5 @@ Phases 1 & 2 are DONE (single precision: add/sub/mul/div/fix/compares, host 2M/0
    the soft-float cores deliberately avoid them via shift-add).
 2. Phase 3: vendor **Berkeley SoftFloat** (BSD) for double precision
    (`__adddf3` … `__fixdfsi` …), pure-int (SOFTFLOAT_FAST_INT64 off).
-3. Phase 4: `printf("%f")` via **nanoprintf** (MIT) or an IEEE float→string
+3. Phase 4: `printf("%f")` via **nanoprintf** (0BSD/Unlicense) or an IEEE float→string
    (z88dk's classic formatter reads math48, not IEEE).

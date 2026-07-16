@@ -84,5 +84,5 @@ compiler's real (IEEE-754) float, e.g. by deferring to `__DBL_*__` / `__FLT_*__`
 
 ## Environment
 - `zcc +cpm -compiler=llvmz80`; clang/llc/lli at `llvm-z80/build-macos/bin/`.
-- nanoprintf vendored @ `74fea30` (v0.6.1), config in `src/npf_cpm.h`.
+- nanoprintf vendored @ `74fea30` (v0.6.0, latest upstream), config in `src/npf_cpm.h`.
 - Run harness: `scratch/dcc-clang-bench/ticks_cpm.py`.

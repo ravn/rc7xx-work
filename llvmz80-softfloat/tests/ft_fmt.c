@@ -13,11 +13,14 @@
  *      every non-half-rounding %f case (they agree).  The only divergences are
  *      nanoprintf's rounding policy (round-half-away, not round-half-even).
  *
- * LIMITATION: nanoprintf v0.6.1 does NOT implement scientific (%e) or shortest
- * (%g); npf_ftoa_rev always renders fixed decimal, so %e/%g degrade to %f-style
- * output.  We therefore do not exercise %e/%g here (baking their non-standard
- * strings in would assert wrong behavior as correct).  If a driver needs %e/%g,
- * that is a follow-up (add a scientific renderer).
+ * LIMITATION: nanoprintf (v0.6.0, latest upstream) does NOT implement scientific
+ * (%e) or shortest (%g) -- a PERMANENT, deliberate upstream design exception
+ * (per nanoprintf's README), not a version gap.  npf_ftoa_rev always renders
+ * fixed decimal, so %e/%g degrade to %f-style output.  We therefore do not
+ * exercise %e/%g here (baking their non-standard strings in would assert wrong
+ * behavior as correct).  If a driver needs %e/%g (e.g. Whetstone's %12.4e),
+ * that is a follow-up (add an IEEE double->string scientific renderer;
+ * upgrading nanoprintf will not help).
  *
  * Built for host (native clang + stdio) and for Z80 (zcc +cpm -compiler=llvmz80).
  */

@@ -55,7 +55,7 @@ SQRT_F64 -> "sqrtl"  SIN_F64 -> "sinl"  (libm = *l; long double == double)
 Runtime: `CE-Programming/toolchain/src/softfloat/` = Berkeley SoftFloat (BSD,
 "Regents of the University of California", John R. Hauser, Release 3e);
 f32 path is hand asm `src/libc/float32_*.src` (eZ80 ADL); `%f` =
-`src/libc/printf/nanoprintf.c` (MIT). => custom names + custom CC + ADL asm are
+`src/libc/printf/nanoprintf.c` (0BSD/Unlicense). => custom names + custom CC + ADL asm are
 NOT reusable; the SoftFloat C core and nanoprintf ARE.
 
 ## 6. NEW verified bug — llvm-z80 branch relaxation emits out-of-range `jr`
