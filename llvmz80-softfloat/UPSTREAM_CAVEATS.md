@@ -61,12 +61,25 @@ This project routes `%f` through vendored **nanoprintf** (MIT), verified 50/50
 byte-identical to glibc. **`%e`/`%g` are unsupported** in nanoprintf v0.6.1
 (fixed-decimal only; scientific silently degrades to `%f`).
 
-### 4. `va_arg` is broken in clang-z80 (llvm-z80#270)
+### 4. `<stdarg.h>` located varargs via `&last` (fixed) — same class as #28
 
-Because of [ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270),
-variadic `printf("%f", x)` cannot fetch the `double` argument correctly. This
-project uses a **non-variadic** `npf_snprintf_f` shim to sidestep it; a real
-variadic `printf("%f")` needs #270 fixed first.
+z88dk's classic `<stdarg.h>` under `__Z88DK_R2L_CALLING_CONVENTION` (which
+llvmz80 selects) defined `va_start(marker,last)` as
+`marker = (va_list)&last + sizeof(last)` — locating varargs from the address of
+the last *named* parameter. That assumes named params sit contiguously in front
+of the pushed varargs on the stack (true for sccz80/sdcc, which keep params in
+place). clang-z80 copies each parameter into a local spill slot, so `&last` is a
+local (e.g. `IX-2`), not the incoming argument area (`IX+6`) → every `va_arg`
+reads saved-IX / return-address garbage.
+
+This was **not** an llvm-z80 backend bug (clang's `__builtin_va_start` is
+ABI-correct; bare `clang --target=z80` emits `va_list = IX+6`); it was the same
+header/ABI-divergence class as caveat #1 (`<float.h>`). **Fixed** by deferring
+`va_start`/`va_arg`/`va_end` to `__builtin_va_*` under `#if defined(__LLVMZ80)`
+(sccz80/sdcc branches untouched). Filed/root-corrected as
+[ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270) (backend not at
+fault; fix lives in z88dk). With it fixed, variadic `printf("%f")` via nanoprintf
+works and the non-variadic `npf_snprintf_f` shim is no longer required.
 
 ### 5. Backend bugs worked around (llvm-z80 side, not z88dk)
 
@@ -78,7 +91,8 @@ z88dk maintainer knows they are compiler-side, not header/library-side:
 - **#268** — sret-dest miscompile (`eliminateFrameIndex` added
   `CalleeSavedFrameSize` to incoming-arg/sret fixed objects) → wrong copy slot,
   CP/M warm-boot hang. Fixed.
-- **#270** — `va_arg` (above).
+- **#270** — misdiagnosed as backend; actually the z88dk `<stdarg.h>` bug in
+  caveat #4 (above). Fixed in z88dk.
 - **z88dk#27** — the `llvmz80` copt bridge truncated 64-bit (`long long`/
   `double`) **global initializers** to 32 bits (`.quad` → 4-byte `DEFQ`). Fixed
   by a pre-copt `splitquad.pl` pass in `z88dk/lib/llvmz80/`.

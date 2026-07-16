@@ -169,18 +169,20 @@ only the **variadic delivery** is blocked:
 | Capability | State | Blocker |
 |-----------|-------|---------|
 | `double`→string `%f` conversion (nanoprintf, IEEE bits) | **WORKS**, 50/50 vs glibc | none |
-| Fetch the `double` from `printf`'s `...` via `va_arg` | **BROKEN** | [ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270) — `va_list` inits to frame base, not first vararg (IX+6) |
+| Fetch the `double` from `printf`'s `...` via `va_arg` | **FIXED** | was [ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270) — **not a backend bug**: z88dk `<stdarg.h>` located varargs via `&last` (breaks under clang param-spilling). Fixed in z88dk `bb914a1` (defer to `__builtin_va_*` under `__LLVMZ80`). |
 | Stock z88dk `__dtoa_*` converter | math48-only, wrong for IEEE | irrelevant once nanoprintf is the `printf` backend |
 
-**So real variadic `printf("%f", x)` hinges on fixing #270.** Once #270 is fixed,
-wiring a nanoprintf-based **variadic** `printf` (clang-z80 compiled) needs no new
-formatter work and no math48 — the conversion path is already proven. Until then
-the only working route is the **non-variadic** `npf_snprintf_f(buf, x)` shim.
+**So real variadic `printf("%f", x)` now works.** The `va_arg` blocker (#270)
+was a **z88dk header bug** (`<stdarg.h>` located varargs via `&last`, which
+breaks under clang's parameter spilling — same class as the #28 `<float.h>`
+divergence), **not** an llvm-z80 backend defect. Fixed in z88dk `bb914a1` by
+deferring `va_start`/`va_arg`/`va_end` to `__builtin_va_*` under `__LLVMZ80`.
+Verified on Z80: `vsum(3,10,20,30)` -> 60 at -O0/-O1/-O2, and variadic
+`npf_snprintf("%.4f|%d|%.2f", 3.14159, 42, -2.5)` -> `3.1416|42|-2.50`.
 
-Estimated scope: #270 looks localized to the Z80 backend varargs lowering
-(`Z80CallLowering.cpp:796` sets `VarArgsStackIndex`; `Z80LegalizerInfo.cpp` custom
-`G_VASTART` @ line 933, `G_VAARG` via `.lower()`), a plausibly hours-to-a-day fix
-rather than a rewrite. `%e`/`%g` remain a separate nanoprintf feature gap.
+The non-variadic `npf_snprintf_f(buf, x)` shim is therefore **no longer
+required** (kept only as a stock-z88dk fallback; `ft_fmt` can switch to variadic
+`npf_snprintf` — tracked as `wire-variadic-printf`).
 
 ## Known limitations
 
@@ -189,14 +191,16 @@ rather than a rewrite. `%e`/`%g` remain a separate nanoprintf feature gap.
 
 - **`%f` is a gap in *stock* z88dk — it works ONLY through this project's
   shim.** `%f` is verified correct (50/50 byte-identical to glibc) *when routed
-  through the project's non-variadic `npf_snprintf_f` nanoprintf shim*. Plain
-  `zcc +cpm -compiler=llvmz80` `printf("%f", x)` does **not** work (see "Stock
-  `printf("%f")` status" above): without a pragma the converter is stripped and
-  `%f` silently prints literal `f`; with `#pragma printf = "%f"` it fails to link
-  (genmath-only `asm_fpclassify`/`__dtoa_*` helpers, math48 layout). Two root
-  causes stack under it: the header/ABI split ([ravn/z88dk#28](https://github.com/ravn/z88dk/issues/28))
-  and broken `va_arg` ([ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270)).
-  So "float works for llvmz80" today means *via this project*, not out of the box.
+  through this project's nanoprintf* — now via the **variadic** `npf_snprintf`
+  (since the `va_arg` fix below) or the non-variadic `npf_snprintf_f` shim.
+  Plain `zcc +cpm -compiler=llvmz80` `printf("%f", x)` (z88dk's own precompiled
+  formatter) still does **not** work (see "Stock `printf("%f")` status" above):
+  without a pragma the converter is stripped and `%f` silently prints literal
+  `f`; with `#pragma printf = "%f"` it fails to link (genmath-only
+  `asm_fpclassify`/`__dtoa_*` helpers, math48 layout). The remaining stock
+  blocker is the header/ABI split ([ravn/z88dk#28](https://github.com/ravn/z88dk/issues/28));
+  the `va_arg` blocker is fixed (below). So "float works for llvmz80" means *via
+  this project's nanoprintf*, not via z88dk's stock `printf`.
 - **`%e` / `%g` are NOT supported** (known bug, tracked). This is a **nanoprintf
   v0.6.1 feature gap, not a compiler bug**: `npf_ftoa_rev` always renders fixed
   decimal, and the exponent code path (`nanoprintf.h` ~line 858) is `%a`
@@ -205,9 +209,13 @@ rather than a rewrite. `%e`/`%g` remain a separate nanoprintf feature gap.
   test is deliberately scoped to `%f` so it never asserts a wrong `%e`/`%g`
   string. Fix options if a driver needs them: enable a newer nanoprintf with
   scientific support, or add an IEEE float→string exponent path.
-- **`va_arg` is broken in clang-z80** ([ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270))
-  — the `%f` path uses the non-variadic `npf_snprintf_f` shim to sidestep it;
-  real variadic `printf("%f", x)` still needs #270 fixed.
+- **`va_arg` was broken via z88dk `<stdarg.h>`, now FIXED** (z88dk `bb914a1`).
+  This was **not** an llvm-z80 backend bug (clang's `__builtin_va_start` is
+  ABI-correct): z88dk's classic `<stdarg.h>` located varargs via `&last`, which
+  breaks under clang's parameter spilling. Same class as z88dk#28. With it
+  fixed, variadic `printf("%f")` via nanoprintf works; the non-variadic
+  `npf_snprintf_f` shim is now only a stock-z88dk fallback. Was tracked as
+  [ravn/llvm-z80#270](https://github.com/ravn/llvm-z80/issues/270).
 - **`s_roundPackToF64.c` must be built at `-O0`** to dodge
   [ravn/llvm-z80#267](https://github.com/ravn/llvm-z80/issues/267) (textual `jr`
   under-relaxation once it is inlined large).
