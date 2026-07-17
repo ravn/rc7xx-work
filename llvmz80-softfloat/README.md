@@ -162,7 +162,8 @@ footprints.
 
 Actionable follow-up (not a split): package the arithmetic closure as a z88dk
 **`.lib`** so downstream programs get on-demand pulling without re-running
-`build64.sh`'s discovery loop.
+`build64.sh`'s discovery loop. **DONE** — `tools/build_softfloat_lib.sh` →
+`softfloat_cpm_z80.lib` (see below).
 
 ## Path to stock `printf("%f")` (roadmap)
 
@@ -242,6 +243,35 @@ required** (kept only as a stock-z88dk fallback; `ft_fmt` can switch to variadic
   regression guard = `tests/run.sh` step 4/4 (`ft_rocst`). Write-up:
   [`bugs/rodata_cst_section_dropped.md`](bugs/rodata_cst_section_dropped.md).
   Distinct from the `.quad→DEFQ` truncation ([ravn/z88dk#27](https://github.com/ravn/z88dk/issues/27)).
+
+## Runtime libraries (reproducible `make-lib` targets)
+
+Two archive targets package the closure so a downstream program links on demand
+(the z80asm linker strips unreferenced modules from a `.lib`, force-links a
+named `.o` whole):
+
+| target | script | contents | for |
+|--------|--------|----------|-----|
+| **`softfloat_cpm_z80.lib`** | `tools/build_softfloat_lib.sh` | f64 arithmetic closure + compiler-rt shims + i64 runtime | every `double` program |
+| `mathf64.lib` | `tools/build_mathlib.sh` | the above **+** musl libm (sin/cos/exp/…) | programs using transcendentals |
+
+```sh
+OUT=/tmp/softfloat_lib bash tools/build_softfloat_lib.sh
+# -> $OUT/softfloat_cpm_z80.lib  (~52 KB full-API; per-op pulling shrinks a real image)
+# link a program:
+zcc +cpm -compiler=llvmz80 -o prog prog.c -L/tmp/softfloat_lib -lsoftfloat_cpm_z80
+```
+
+`build_softfloat_lib.sh` builds the closure via `build64.sh` (`-Oz`), drops the
+`ft_dbl` driver object, archives with `z88dk-z80asm -d -xsoftfloat_cpm_z80`, then
+**re-links `tests/ft_dbl.c` against the archive alone** to prove it is
+self-contained and correctly indexed. Runtime correctness of the closure itself
+is covered by `tests/run.sh`. This is the library meant to ship *alongside the
+llvm-z80 clang binary* (compiler-rt model); the z88dk side auto-links it via the
+`LLVMZ80RTLIB` config var — it is **not** vendored into z88dk.
+
+The `%f` nanoprintf formatter (`build_fmt.sh`, ~24 KB, zero soft-float) stays a
+separate closure — a program links it only if it formats doubles.
 
 ## Whetstone / libm — the 64 KB size wall (measured 2026-07-16, PARKED)
 
