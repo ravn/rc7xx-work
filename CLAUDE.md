@@ -247,3 +247,46 @@ FIXED:
 - `address_space(2)` for port I/O — fixed in `0ff2114c62a6` + `0d71a91b4e18`
   (ravn/llvm-z80 #1, #44).  `*(volatile __attribute__((address_space(2)))
   uint8_t *)0x10` lowers cleanly to `IN A,(0x10)` / `OUT (0x10),A`.
+
+## z88dk `+cpm -compiler=llvmz80` C standard-library status (survey 2026-07-17)
+
+Making clang-z80 a first-class external z88dk backend. CP/M stdlib surface is
+**largely complete and verified** (compiled + run under ntvcm/MAME); the bridge
+layer lives in `z88dk/libsrc/l/llvmz80/` (ABI reference:
+`CALLING_CONVENTION.md`).
+
+**Works (bridged + tested):** `string.h` (str*/mem*), `ctype`, `stdlib`
+(atoi/itoa/ltoa/strtol/strtoul/qsort/abs/labs/rand/getenv/setenv/getopt),
+`malloc`/`calloc`/`realloc`/`free`, and the full `stdio` **FILE\*** layer
+(fopen/fread/fwrite/fgets/fputs/fseek…, 16/16 MAME). Non-variadic classic-clib
+calls convert the HL→DE 16-bit-return mismatch via the `__ZPROTO` bridges
+(they end `ex de,hl / ret`).
+
+**`double` runtime:** clang lowers `double` to compiler-rt soft-float libcalls
+that z88dk's classic clib lacks (its floats are 48-bit math48 / MBF). The
+Berkeley-SoftFloat closure is packaged as `softfloat_cpm_z80.lib`
+(reproducible target `llvmz80-softfloat/tools/build_softfloat_lib.sh`) and
+**auto-linked** by zcc when the config/env var **`LLVMZ80RTLIB`** points at it
+(full path, no `.lib` suffix; env wins, like `LLVMZ80EXE`). It ships WITH the
+clang binary (compiler-rt model), not inside z88dk. Being a `.lib` archive, an
+integer-only program links byte-identically whether or not it is set.
+
+**Known gaps / bugs (see also "Known Bugs in llvm-z80" above):**
+- **Variadic stdio return value is garbage** (`printf`/`fprintf`/`sprintf`/
+  `snprintf`/`scanf`/`fscanf`/`sscanf`). Output/parse are correct but the
+  returned count is wrong (e.g. `sscanf(...)`→ -362 want 3). Root cause
+  (verified from source + a control): the classic clib sdcc entry points return
+  the int in **HL**, clang `sdcccall(1)` reads **DE**, and the printf family is
+  NOT bridged (for clang `__vasmallc` is empty), so no `ex de,hl`. Fix needs a
+  return-address-interposing trampoline, not a plain `__ZPROTO` bridge.
+  Filed **ravn/z88dk#31**; writeup in `CALLING_CONVENTION.md` ("KNOWN GAP").
+- **`(double)int` (`__floatsidf`) miscompiled** — ravn/llvm-z80#273 (above).
+  Literal doubles + arithmetic on already-`double` values work; int→double
+  does not.
+- **`printf("%f")`** needs the separate nanoprintf closure (`build_fmt.sh`);
+  z88dk's variadic `printf` cannot format `double` here. nanoprintf's own
+  `va_start` is broken by ravn/llvm-z80#270 — use non-variadic
+  `npf_snprintf_f` for `double` output.
+- **POSIX fd-layer** (open/creat/read/write/close/lseek) resolves to no-op
+  dummy stubs on classic `+cpm` for ALL compilers — by design, not a gap; real
+  CP/M file I/O is the FILE\* layer.
