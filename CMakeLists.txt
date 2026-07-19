@@ -17,6 +17,18 @@ add_custom_target(z88dk_docker_files SOURCES
     z88dk/.github/workflows/build-docker-weekly.yml
 )
 
+# --- z88dk RC700 target C sources (index/navigation only) ---
+# The top-level z88dk/ RC700 driver sources (e.g. libsrc/target/rc700/i8275.c)
+# plus the z88dk include tree, so CLion can navigate <video/i8275.h>,
+# <arch/z80.h>, etc.  EXCLUDE_FROM_ALL: never actually built by CMake (these
+# are freestanding z88dk classic-C sources, built via zcc).
+file(GLOB Z88DK_RC700_SRC ${CMAKE_CURRENT_SOURCE_DIR}/z88dk/libsrc/target/rc700/*.c)
+add_library(z88dk_rc700_index OBJECT EXCLUDE_FROM_ALL ${Z88DK_RC700_SRC})
+set_target_properties(z88dk_rc700_index PROPERTIES LINKER_LANGUAGE C)
+target_include_directories(z88dk_rc700_index PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/z88dk/include
+)
+
 # --- RC700 autoload PROM (C, z88dk/sdcc + clang) ---
 add_subdirectory(rc700-gensmedet/autoload-in-c)
 
