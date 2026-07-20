@@ -22,10 +22,19 @@ forces every Z80 `.cpp.o` to rebuild, then `libLLVMZ80CodeGen.a`
 re-link, then `llc` re-link.  Once that runs to completion the state
 is clean again.
 
-A secondary failure mode: running TWO ninja processes against the same
-build directory (`build-macos/`) at the same time.  They contend on the
+A secondary failure mode: running TWO ninja processes against the **same
+build directory** (`build-macos/`) at the same time.  They contend on the
 log file's lock; both ninjas stall in `S` state with 0% CPU; killing
 either one causes the truncation symptom above.
+
+**But separate build directories are FINE to run concurrently** (user
+clarification 2026-07-12): `ninja -C build-macos` and
+`ninja -C build-macos-asserts` at the same time is safe — each dir has its
+OWN `.ninja_log`/`.ninja_deps`, so there is no lock contention, and the
+only shared state is sccache, which is built for concurrent clients. Use
+this to parallelize a Release + an asserts rebuild after a backend edit.
+The rule is strictly: never two ninjas on the SAME dir, never SIGKILL any
+ninja.
 
 **How to apply:**
 
@@ -49,6 +58,22 @@ either one causes the truncation symptom above.
 
 4. The harness's `run_in_background: true` for ninja invocations is
    fine — the background process is not killed unless YOU send a kill.
+   Do NOT poll it with `kill -0 $(pgrep ninja)` / signal-based existence
+   probes either — `kill -0` sends no signal but it reads as "killing
+   ninja" and alarms the user; just wait for the harness completion
+   notification (or `tail` the log file), never `pgrep|kill`.
+
+5. **Log ninja output to a stable, followable path so the user can watch
+   progress** (user directive 2026-07-12).  Background ninja lands in an
+   opaque `/private/tmp/claude-.../tasks/<id>.output`; symlink or tee it
+   to `scratch/ninja-build.log` (e.g. run `ninja … 2>&1 | tee
+   scratch/ninja-build.log`, or `ln -sf <bg-output> scratch/ninja-build.log`)
+   and tell the user that path so they can `tail -f` it live.
+
+**Reinforced 2026-07-12** (second reminder): the user restated both the
+never-kill rule AND the "don't run multiple ninjas" rule, plus added the
+progress-logging directive above.  Read this file BEFORE launching any
+ninja build.
 
 This rule emerged from session 58 (2026-05-11) implementing
 ravn/llvm-z80#131.  I killed three ninja processes that were running

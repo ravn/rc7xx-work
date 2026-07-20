@@ -8,7 +8,7 @@ is cycle-accurate (matches textbook T-states exactly) but is a bare Z80 with no
 CP/M BDOS, so a plain CP/M .COM that prints via `call 5` cannot run to
 completion on it.
 
-This wraps ticks with a tiny BDOS stub injected at 0xF000 (reached via a `jp` at
+This wraps ticks with a tiny BDOS stub injected at 0xFE00 (reached via a `jp` at
 0x0005) that services the BDOS calls a compute-and-print benchmark needs:
   C=0    system reset       exit
   C=2    conout             output E
@@ -36,7 +36,7 @@ Prints the program's console output to stdout, then one line to stderr:
 On an unsupported BDOS call, prints a fatal line to stderr and exits non-zero.
 -q suppresses the cycle line on stderr.
 
-The stub below is a pre-assembled position-dependent blob (org 0xF000) built from
+The stub below is a pre-assembled position-dependent blob (org 0xFE00) built from
 bdos_stub.s in this directory.  To regenerate:
   clang --target=z80 -c bdos_stub.s -o /tmp/s.o
   ld.lld -Ttext=0xF000 -e _start /tmp/s.o -o /tmp/s.elf
@@ -57,8 +57,8 @@ IOPORT = 0  # OUT (0),A -> stdout via -iochar 0
 #   ld.lld -Ttext=0xF000 -e _start /tmp/s.o -o /tmp/s.elf
 #   llvm-objcopy -O binary /tmp/s.elf /tmp/s.bin
 #   python3 -c "print(','.join(map(str,open('/tmp/s.bin','rb').read())))"
-STUB = bytes([121,183,202,158,240,254,2,40,38,254,6,40,38,254,9,40,41,254,11,40,46,254,12,40,47,254,13,40,40,254,14,40,37,254,25,40,33,254,26,40,28,254,108,40,34,24,92,123,211,0,201,123,254,255,200,211,0,201,26,254,36,200,211,0,19,24,247,175,201,201,175,201,46,34,38,0,68,125,201,33,128,240,126,183,40,5,211,0,35,24,247,122,205,108,240,123,205,108,240,62,93,211,0,62,10,211,0,201,245,31,31,31,31,205,117,240,241,230,15,198,144,39,206,64,39,211,0,201,91,49,48,56,32,114,99,61,48,120,0,237,255,62,222,50,240,255,62,173,50,241,255,121,50,242,255,195,158,240,195,0,0])
-STUB_ORG = 0xF000
+STUB = bytes([121,183,202,158,254,254,2,40,38,254,6,40,38,254,9,40,41,254,11,40,46,254,12,40,47,254,13,40,40,254,14,40,37,254,25,40,33,254,26,40,28,254,108,40,34,24,92,123,211,0,201,123,254,255,200,211,0,201,26,254,36,200,211,0,19,24,247,175,201,201,175,201,46,34,38,0,68,125,201,33,128,254,126,183,40,5,211,0,35,24,247,122,205,108,254,123,205,108,254,62,93,211,0,62,10,211,0,201,245,31,31,31,31,205,117,254,241,230,15,198,144,39,206,64,39,211,0,201,91,49,48,56,32,114,99,61,48,120,0,237,255,62,222,50,240,255,62,173,50,241,255,121,50,242,255,195,158,254,195,0,0])
+STUB_ORG = 0xFE00
 # Fatal sentinel written by the stub's unsupported-function path.
 SENT_ADDR = 0xFFF0
 SENT = (0xDE, 0xAD)

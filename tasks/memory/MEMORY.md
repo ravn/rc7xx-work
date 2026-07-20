@@ -96,9 +96,12 @@
 - [Test both compilers](feedback_dual_compiler_test.md) — rcbios changes build with BOTH z88dk and clang before commit
 - [Check memory for builds](feedback_check_memory_for_builds.md) — check memory for correct build flags first
 - [Build-tool binaries](reference_build_binaries.md) — cmake/ninja from CLion bundle (mac); native llc/clang in llvm-z80/build-macos/bin
+- **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — when a BSD utility misbehaves vs GNU, SAVE a memory note + workaround (no brew here; python3 is the fallback).**
+- [macOS awk lacks strtonum](reference_macos_awk_no_strtonum.md) — default awk is BWK not gawk; no strtonum/gensub/hex-parse. Use python3/printf/`$((16#..))` for hex crunching.
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations, BUILD_DIR/PATH overrides
 - **[AVR density oracle](feedback_avr_density_oracle.md) — HARD: before blaming a generic pass or filing upstream, compile the repro for in-tree AVR; AVR-cheap + Z80-expensive = OUR backend gap (and AVR shows the mechanism)**
-- **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log → 1700+ step rebuild; Ctrl-C ONCE**
+- **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log → 1700+ step rebuild; Ctrl-C ONCE. Separate build DIRS OK concurrently. Log to scratch/ninja-*.log; no pgrep|kill probes.**
+- **[Read build-tool docs before improvising](feedback_read_tool_docs_before_improvising.md) — rm only .ninja_log NOT .ninja_deps (deps DB → full rebuild); `set -o pipefail` for tee'd ninja (else exit code is echo's, not ninja's).**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
 - [Docker for missing binaries](feedback_docker_binaries.md) — don't suggest installing
 - **[Docker shim batch](feedback_docker_shim_batch.md) — HARD: build Makefiles batch multi-step Docker calls into ONE `docker run sh -c "..."`; ~150-500 ms container startup tax dominates otherwise**
@@ -276,3 +279,9 @@
 <!-- For project info that lives in the repo (not memory) — goal, TODOs, docs, MAME, PROM specs — see the "What's NOT in memory" map in README.md. -->
 
 - **[M6: narrow i16 EQ/NE of byte sext (strrchr IY shuttle)](reference_m6_sext_icmp_narrowing.md)** — ravn/llvm-z80#259. `*s==(char)c` → un-narrowed i16 compare → IY shuttle. InstCombine misses the `ashr(shl x,8),8` sext-inreg idiom (narrows canonical `sext==sext` only). Z80-local GISel combine fixes -Oz/-Os only (LICM ordering); IR-level narrowing is the uniform fix (CHOSEN). No upstream report until verified end-to-end.
+
+- **[z88dk runtime verify: ntvcm not ticks](reference_z88dk_runtime_verify_ntvcm.md)** — `+cpm` .COM under `ntvcm/ntvcm` for console output; `z88dk-ticks` does NOT emulate the `+test` `$ED$FE` console trap (no stdout). Idiomatic tests: `z88dk/test/clang/*.{c,sh}` via `NTVCM` env.
+
+- **[Z80Pseudo undersize → far-`jr` under-relaxation class (#266/#267 + 14 latent)](issue267_pseudo_undersize_class.md)** — isPseudo pseudos that expand post-BranchRelaxation are sized 0 by getInstSizeInBytes → textual `.s` keeps out-of-range `jr` that z88dk z80asm rejects. #266+#267 fixed; guarded-LDIR/IDX8/MUL8/DIV8/SAT8 still latent.
+
+- **[Pending canonical AGENTS.md edits](pending_agents_md_canonical_edits.md)** — cross-project rule changes discovered here but not yet applied to the canonical AGENTS.md repo. Currently queued: proactive oracle-coverage rule from #273 (every public entry point / sole helper user must run in the oracle).

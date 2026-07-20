@@ -33,7 +33,7 @@ Optimize the Z80 backend of ravn/llvm-z80 (a GlobalISel-based LLVM fork) to matc
 - **Compiler intrinsics/attributes** (#42 + #4 closed): clang SHIPS `<intrinsic.h>` (resource dir) so the SAME rcbios source compiles under clang AND SDCC with no `-I`/`#ifdef`.  Builtins `__builtin_z80_di/ei/halt/nop/im2/set_i`; `__attribute__((z80_critical))` (analog of SDCC `__critical`) drives Z80FrameLowering DI/EI.
 - **rcbios CP/NET SNIOS dual SIO+PIO** (session 73k): self-modifying JP-trampoline dispatch in NTWKIN reads SW1 bit 2 once; PIO impl = Mode 1 input + IRQ-driven 256 B SPSC ring at IVT slot 17.  **polypascal-pio-test PASS 16 s** (2026-07-08): `cpnet/polypascal_pio_test.sh` — H: → PPAS → compile PRIMES.PAS → PRIMES.COM (native, BDOS-9 print) → TESTDONE.COM prints "RCBIOS PIO TEST DONE".  Two fixes required: (1) ravn/mame `2eb88cea` z80pio `check_interrupts` — `B.ius` must not block port B's own next interrupt (global `A.ius||B.ius` gate was wrong; B.ius stuck permanently after first Mode-0→Mode-1 flip → ISR never fired → deadlock); (2) `cpnet/snios.asm` `RECVBY_PIO` → `JP RECVBT_PIO` — 82 ms timeout instead of unbounded busy-wait (cpnos passed earlier because its `transport_pio_recv_byte` already had a timeout; rcbios deadlocked because `RECVBY_PIO` had none).  Also added `TX_RETRY_CNT`/`RX_RETRY_CNT` BSS counters + `ERRRTN` CONOUT reporting.  MAME bug upstream candidate: ravn/mame#13.
 - **SW1 bit allocation** (all firmware components honor consistently): bit 0 (S01) console mode (rcbios + cpnos); bit 1 (S02) PROM1 lineprog enable (autoload); bit 2 (S03) CP/NET transport PIO/SIO (cpnos PROM1-only AND rcbios SNIOS).  Canonical doc: `rc700-gensmedet/docs/SW1_BIT_MAP.md`.  Migration note: post-73k SNIOS.SPR with default DIPs (S03 = On = 0) routes to PIO — SIO users must flip S03 to Off.
-- IX/IY: reserved by default (un-reserve gated on regalloc cost-model work, #38).  #189/#27/#112 byte-decompose leaks FIXED (session 73ab): `getLargestLegalSuperClass` GR16NoIR gate + `Z80NarrowNoIndex` pre-RA pass eliminate undocumented IYH/IYL emission and the #189 miscompile under `-z80-unreserve-iy`; production byte-identical.  Residual Class C (`push/pop iy` density in wide-int/float) = cost-model tradeoff, not a blocker.  See `llvm-z80/tasks/issue112-189-iy-leak-taxonomy-2026-05-25.md`.
+- IX/IY: reserved by default (un-reserve gated on regalloc cost-model work, #38).  #189/#27/#112 byte-decompose leaks FIXED (session 73ab): `getLargestLegalSuperClass` GR16NoIR gate + `Z80NarrowNoIndex` pre-RA pass eliminate undocumented IYH/IYL emission and the #189 miscompile under `-z80-unreserve-iy`; production byte-identical.  Residual Class C (`push/pop iy` density in wide-int/float) = cost-model tradeoff, not a blocker.  See `llvm-z80/tasks/issue112-189-iy-leak-taxonomy-2026-05-25.md`.  **Un-reserving IY is now worth ~0 on production (re-measured 2026-07-14, measure-all.sh clang 96394df: baseline vs `-z80-unreserve-iy` = BIOS 0, autoload -1 B, cpnos 0, AES -Oz 0, AES -O2 -123 B only).  The tiered #23 cost model + backend gains absorbed the old BIOS-23/autoload-11/cpnos-10/AES-145 win.  A GR16->cheap/index cost-tier split (#23 Phase 2) is therefore NOT data-justified and is PARKED — see `llvm-z80/tasks/plan-z80-cost-model-refinement-2026-06-08.md`.**
 - SDCC autoload build: unblocked (copt-rules path fix); per-compiler size policy = clang 2 KB hard / SDCC 4 KB MAME-only.
 - **MAME `rc702sem702` machine**: clone of `rc702` 8" with SEM702 RAM-backed chargen (2 KB RAM behind ports 0xD1/0xD2/0xD3, strict-latch model, ROA296 still serves alpha).  Use for SEM702-equipped-machine emulation; baseline `rc702` keeps ROA327.
 - **MAME rc702 driver col-80 fix** (ravn/mame@035d29086bf): `set_size(560, ...)` so 80 cols × 7 px = 560 visible pixels.  Build with `make OSD=sdl SOURCES=src/mame/regnecentralen/rc702.cpp REGENIE=1`.
@@ -183,6 +183,25 @@ Working in both: `true`/`false` keywords, `nullptr`, `_Bool`, `_Static_assert`, 
 
 NOT working in zsdcc: `constexpr`, `[[attributes]]` (use `__attribute__`), digit separators (`1'000`), `typeof` in expressions (`typeof(x){42}`).
 
+**GCC builtins operate on 16-bit `int` here — never assume 32-bit.** On z80/z88dk
+`int` is 16-bit, so `__builtin_clz`/`ctz`/`popcount`/`ffs` count over **16 bits**
+(verified: `--target=z80 -S` ends `ld hl,16; sbc hl,de`), and `__builtin_*_overflow`
+/ `__builtin_bswap` follow the 16-bit `int` width. Before relying on a width-sensitive
+builtin in runtime/library code — or enabling a config flag that routes to one (e.g.
+`-DSOFTFLOAT_BUILTIN_CLZ`) — verify the actual operand width in emitted asm. This exact
+trap caused ravn/llvm-z80#273: `-DSOFTFLOAT_BUILTIN_CLZ` made `countLeadingZeros32`
+a 16-bit count (off by 16), corrupting every `(double)int`. Fix (2026-07-21) was to
+**width-match the builtin** in `opts-GCC.h` (`__builtin_clzl` for the 32-bit clz,
+`__builtin_clz` for 16-bit, `__builtin_clzll` for 64-bit) + a `_Static_assert` on the
+widths — NOT a backend change. (Dropping the flag entirely would pull the portable
+`s_countLeadingZeros8.c`, whose 256-byte `.ascii` table the z88dk z80asm stage can't
+parse, so keeping the flag with corrected defs is the working fix.) Corollary for
+verification: a runtime closure is not verified until every public entry point runs at
+least once AND its result is observed **losslessly** — the *sole* user of an internal
+helper is the trap (int→double was the only user of `countLeadingZeros32`, and the one
+test that touched it observed via a lossy `(long)` cast that hid the 2¹⁶ error;
+arithmetic-only + truncating tests both missed it).
+
 ## Environment
 
 - Docker available for SDCC, **no brew** (never use or suggest brew)
@@ -216,8 +235,70 @@ NOT working in zsdcc: `constexpr`, `[[attributes]]` (use `__attribute__`), digit
 ## Known Bugs in llvm-z80
 
 - hasFP=false has runtime bug (parked)
-
 FIXED:
+- **`(double)int` (`__floatsidf`) "miscompile" was NOT a backend bug** — ravn/llvm-z80#273.
+  FIXED 2026-07-21. Root cause was our SoftFloat config, not clang-z80: `opts-GCC.h`
+  under `-DSOFTFLOAT_BUILTIN_CLZ` defined `softfloat_countLeadingZeros32 =
+  __builtin_clz`, but clang-z80 `int` is 16-bit so `__builtin_clz` counts 16 bits →
+  `i32_to_f64` shiftDist 16 too small → `(double)5` → `131074.5`. The original
+  "backend" diagnosis was misled by a host cross-check that used the same flag but,
+  on a 32-bit-int host, `__builtin_clz` is a correct 32-bit clz (false exoneration).
+  Fix = width-match the builtin (`__builtin_clzl` for the 32-bit clz) in
+  `llvmz80-softfloat/vendor/.../opts-GCC.h` + `_Static_assert` on the widths. New
+  int→double oracle `tests/ft_i2d.c`+`i2d_run.sh` (wired into `tests/run.sh`) — the
+  old `ft_dbl` observed `__floatsidf` only through a lossy `(long)` cast and missed
+  it. Full writeup: `llvmz80-softfloat/bugs/f64_int_to_double_miscompiled.{c,md}`.
+  ravn/llvm-z80#273 to be closed as not-a-compiler-bug.
+- **Textual `-S` emitted out-of-range `jr cc`** (FIXED 2026-07-20). BranchRelaxation
+  under-counted function size because the variable-shift pseudos
+  (`SHL8/16_VAR`, `LSHR8/16_VAR`, `ASHR8/16_VAR`, `ROTL8_VAR`, `ROTR8_VAR`) are
+  `Z80Pseudo` (isPseudo=1) and hit `if (isPseudo) return 0` in
+  `Z80InstrInfo::getInstSizeInBytes` — they actually expand (post-BranchRelaxation,
+  in `Z80ExpandPseudo::expandVarShift`) to 7–11 B loops. The under-count left
+  a `jr` really out of ±127 range; the object emitter silently relaxed it to
+  `jp` but textual `.s` did not, and external z88dk z80asm rejected it. Fix: give
+  the 8 VAR-shift pseudos their real expanded sizes in the IsSM83 size switch
+  (Z80InstrInfo.cpp; same class as #266). Lit test
+  `issue-267-jr-out-of-range-textual.ll` (XFAIL removed; asserts the 4 far
+  branches are `jp`). Repro `llvmz80-softfloat/bugs/jr_out_of_range.c`.
+  Filed: ravn/llvm-z80#267. **Systemic follow-up (FIXED 2026-07-21):** all ~14
+  expanding `Z80Pseudo`s that were still sized 0 (guarded LDIR/LDDR/MEMSET,
+  LOAD/STORE_IDX8, MUL8, S/U DIV8/MOD8, S/U ADD/SUBSAT8) now carry their real
+  IsSM83-aware expanded sizes in getInstSizeInBytes AND are registered in
+  `isInlineRuntimeSizedPseudo` so the #240 drift guard
+  (`-z80-verify-inline-runtime-size`) validates them. New lit test
+  `issue-267-pseudo-size-drift-guard.ll` (+ verify RUN lines added to
+  `issue-27-iy-indexed-addr.ll` and `issue-105-ldir-guarded.ll`). See
+  `tasks/memory/issue267_pseudo_undersize_class.md`.
+  **Separate root cause of the fmt64@-O2 failure (FIXED 2026-07-21):** it was NOT
+  a backend undercount but our own z88dk bridge `z88dk/lib/llvmz80/
+  bridge_postproc.sh`, which had a perl workaround rewriting every conditional
+  `jr cc`→`jp cc` (2B→3B). That +1B/site inflation ran AFTER clang's
+  BranchRelaxation and grew the span of an enclosing unconditional `jr` clang had
+  correctly left at ≤127B, tipping fmt64.c to 128 ($80). clang's Z80 backend
+  already relaxes conditional jr itself, so the rewrite was redundant AND harmful;
+  it was removed. The softfloat closure now builds clean at -O2 (the -O0
+  `s_roundPackToF64` / -Os `fmt64.c` workarounds were removed) and #273's lossless
+  int→double oracle (`tests/ft_i2d.c`) is GREEN at -O2.
+
+FIXED (earlier):
+- **sret return copied to wrong dest when value comes from an sret-returning
+  call** — a function returning `double`/struct via sret whose return value is
+  produced by another sret-returning call copied the callee's result to the
+  first-arg slot `[ix+6]` instead of the sret pointer `[ix+4]` (with a=3.0 →
+  write to 0x0000 warm-boot vector → hang). Fixed in `cf6c78afd775` ("Fix
+  sret/arg frame offset by CSR in static-stack+FP"); `_f` now uses `ld
+  l,(ix+4)` after `call _g`. Verified + issue closed 2026-07-20. Repro
+  `llvmz80-softfloat/bugs/sret_dest_from_sret_call.c`. Filed: ravn/llvm-z80#268
+  (CLOSED).
+- **sret setup skipped for no-arg functions returning > 4 bytes** — a no-arg
+  function returning `double`/`i64`/large struct never set up its hidden sret
+  pointer (`Z80CallLowering::lowerFormalArguments` early-returned before the
+  sret-demotion block) → legalizer crash / corrupt sret. Fix: also require
+  `FLI.CanLowerReturn` in the early-return guard. Commit `74378e7a78cc`, lit test
+  `llvm/test/CodeGen/Z80/sret-noarg-return.ll` (passes). Writeup:
+  `llvmz80-softfloat/bugs/sret_noarg_return_FIXED.md`. Verified + issue closed
+  2026-07-20. Filed: ravn/llvm-z80#274 (CLOSED).
 - `"hl"` (and `bc`/`de`/`af`/`ix`/`iy`/`sp`) bare inline-asm pair constraints used
   to crash IRTranslator ("unable to translate instruction: call"): LLVM's
   IR-level InlineAsm parser splits a bare multi-letter constraint into
@@ -231,3 +312,46 @@ FIXED:
 - `address_space(2)` for port I/O — fixed in `0ff2114c62a6` + `0d71a91b4e18`
   (ravn/llvm-z80 #1, #44).  `*(volatile __attribute__((address_space(2)))
   uint8_t *)0x10` lowers cleanly to `IN A,(0x10)` / `OUT (0x10),A`.
+
+## z88dk `+cpm -compiler=llvmz80` C standard-library status (survey 2026-07-17)
+
+Making clang-z80 a first-class external z88dk backend. CP/M stdlib surface is
+**largely complete and verified** (compiled + run under ntvcm/MAME); the bridge
+layer lives in `z88dk/libsrc/l/llvmz80/` (ABI reference:
+`CALLING_CONVENTION.md`).
+
+**Works (bridged + tested):** `string.h` (str*/mem*), `ctype`, `stdlib`
+(atoi/itoa/ltoa/strtol/strtoul/qsort/abs/labs/rand/getenv/setenv/getopt),
+`malloc`/`calloc`/`realloc`/`free`, and the full `stdio` **FILE\*** layer
+(fopen/fread/fwrite/fgets/fputs/fseek…, 16/16 MAME). Non-variadic classic-clib
+calls convert the HL→DE 16-bit-return mismatch via the `__ZPROTO` bridges
+(they end `ex de,hl / ret`).
+
+**`double` runtime:** clang lowers `double` to compiler-rt soft-float libcalls
+that z88dk's classic clib lacks (its floats are 48-bit math48 / MBF). The
+Berkeley-SoftFloat closure is packaged as `softfloat_cpm_z80.lib`
+(reproducible target `llvmz80-softfloat/tools/build_softfloat_lib.sh`) and
+**auto-linked** by zcc when the config/env var **`LLVMZ80RTLIB`** points at it
+(full path, no `.lib` suffix; env wins, like `LLVMZ80EXE`). It ships WITH the
+clang binary (compiler-rt model), not inside z88dk. Being a `.lib` archive, an
+integer-only program links byte-identically whether or not it is set.
+
+**Known gaps / bugs (see also "Known Bugs in llvm-z80" above):**
+- **Variadic stdio return value is garbage** (`printf`/`fprintf`/`sprintf`/
+  `snprintf`/`scanf`/`fscanf`/`sscanf`). Output/parse are correct but the
+  returned count is wrong (e.g. `sscanf(...)`→ -362 want 3). Root cause
+  (verified from source + a control): the classic clib sdcc entry points return
+  the int in **HL**, clang `sdcccall(1)` reads **DE**, and the printf family is
+  NOT bridged (for clang `__vasmallc` is empty), so no `ex de,hl`. Fix needs a
+  return-address-interposing trampoline, not a plain `__ZPROTO` bridge.
+  Filed **ravn/z88dk#31**; writeup in `CALLING_CONVENTION.md` ("KNOWN GAP").
+- **`(double)int` (`__floatsidf`)** — FIXED 2026-07-21 (ravn/llvm-z80#273 was
+  mis-filed as a backend bug; real cause was our SoftFloat clz-width config, see
+  "Known Bugs in llvm-z80" above). int→double now works at all opt levels.
+- **`printf("%f")`** needs the separate nanoprintf closure (`build_fmt.sh`);
+  z88dk's variadic `printf` cannot format `double` here. nanoprintf's own
+  `va_start` is broken by ravn/llvm-z80#270 — use non-variadic
+  `npf_snprintf_f` for `double` output.
+- **POSIX fd-layer** (open/creat/read/write/close/lseek) resolves to no-op
+  dummy stubs on classic `+cpm` for ALL compilers — by design, not a gap; real
+  CP/M file I/O is the FILE\* layer.
