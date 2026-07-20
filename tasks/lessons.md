@@ -108,3 +108,31 @@ After merging upstream LLVM, the build fails with gcc because newer LLVM uses cl
 ## 2026-05-25: Verify a propagated file's per-repo assumptions BEFORE committing
 
 The AGENTS.md migration shipped two defects of the same class, both from committing a file propagated identically across repos without checking its assumptions held in each target: (1) llvm-z80 `.gitignore` silently excluded AGENTS.md, so the first commit captured only the AGENT.md deletion (a half-done migration); (2) the AGENTS.md pointer asserted "PROJECT.md in this repo", which dangled in the two subprojects that have no PROJECT.md (caught by the user, not by me). Both would have been caught by a 30-second pre-commit pass. Rule: when committing a change to a file kept identical across repos, verify per repo — (a) byte-identical (`cmp`), (b) it is actually tracked (`git ls-files --error-unmatch`, i.e. not gitignored), (c) every cross-file reference/claim it makes resolves in that repo. "Verify before done" applies to docs that make claims, not just to code. Generalizes the self-improvement-loop + zoom-out habits from AGENTS.md.
+
+## 2026-07-21: The int->double miscompile (#273) was a 16-bit-int builtin trap + an oracle gap
+
+Root cause of ravn/llvm-z80#273 ((double)5 -> 131074.5): NOT the clang-z80 backend
+(as the filed issue claimed) but MY softfloat build config. `-DSOFTFLOAT_BUILTIN_CLZ`
+makes opts-GCC.h define `softfloat_countLeadingZeros32(a) = __builtin_clz(a)`. On z80
+`int` is 16-bit, so `__builtin_clz` counts over 16 bits (verified in asm: ends
+`ld hl,16; sbc hl,de`). i32_to_f64 then gets shiftDist off by 16 -> corrupt double.
+Fix (chosen): KEEP the builtins but width-match them to the clz operand
+(`__builtin_clz` for 16-bit, `__builtin_clzl` for 32-bit, `__builtin_clzll` for
+64-bit) + a `_Static_assert` pinning int=16/long=32/longlong=64.  Dropping
+`-DSOFTFLOAT_BUILTIN_CLZ` was tried first but is BLOCKED: the auto-resolver then
+pulls portable `s_countLeadingZeros8.c`, whose 256-byte `.ascii` table clang-z80
+emits cannot be parsed by z88dk z80asm.  The width-matched defs live in
+project-owned `vendor/config/platform.h` (NOT the vendored berkeley submodule,
+which stays pristine so `git submodule update` keeps the fix reproducibly).
+(See tasks/memory/ + bugs/f64_int_to_double_miscompiled.md.)
+
+Two lessons:
+1. GCC clz/ctz/popcount builtins take `unsigned int` = 16-bit here. Any softfloat/
+   runtime config that assumes `__builtin_clz` is 32-bit is wrong on this target.
+   I set the flag on an UNTESTED ABI assumption (platform.h:28 even documents the
+   assumption in my own words) -- verify builtin widths on a 16-bit-int target.
+2. Oracle gap: countLeadingZeros32 has exactly ONE user, i32_to_f64 (int->double).
+   The setup was validated on literal doubles + add/sub/mul/div/sqrt/compare, which
+   normalize via clz64 -- so the ONLY code path using the broken clz32 was never
+   run. "A bug found by luck is a bug in your oracle": the softfloat verify corpus
+   must include an int->double conversion, not just arithmetic.

@@ -183,6 +183,25 @@ Working in both: `true`/`false` keywords, `nullptr`, `_Bool`, `_Static_assert`, 
 
 NOT working in zsdcc: `constexpr`, `[[attributes]]` (use `__attribute__`), digit separators (`1'000`), `typeof` in expressions (`typeof(x){42}`).
 
+**GCC builtins operate on 16-bit `int` here — never assume 32-bit.** On z80/z88dk
+`int` is 16-bit, so `__builtin_clz`/`ctz`/`popcount`/`ffs` count over **16 bits**
+(verified: `--target=z80 -S` ends `ld hl,16; sbc hl,de`), and `__builtin_*_overflow`
+/ `__builtin_bswap` follow the 16-bit `int` width. Before relying on a width-sensitive
+builtin in runtime/library code — or enabling a config flag that routes to one (e.g.
+`-DSOFTFLOAT_BUILTIN_CLZ`) — verify the actual operand width in emitted asm. This exact
+trap caused ravn/llvm-z80#273: `-DSOFTFLOAT_BUILTIN_CLZ` made `countLeadingZeros32`
+a 16-bit count (off by 16), corrupting every `(double)int`. Fix (2026-07-21) was to
+**width-match the builtin** in `opts-GCC.h` (`__builtin_clzl` for the 32-bit clz,
+`__builtin_clz` for 16-bit, `__builtin_clzll` for 64-bit) + a `_Static_assert` on the
+widths — NOT a backend change. (Dropping the flag entirely would pull the portable
+`s_countLeadingZeros8.c`, whose 256-byte `.ascii` table the z88dk z80asm stage can't
+parse, so keeping the flag with corrected defs is the working fix.) Corollary for
+verification: a runtime closure is not verified until every public entry point runs at
+least once AND its result is observed **losslessly** — the *sole* user of an internal
+helper is the trap (int→double was the only user of `countLeadingZeros32`, and the one
+test that touched it observed via a lossy `(long)` cast that hid the 2¹⁶ error;
+arithmetic-only + truncating tests both missed it).
+
 ## Environment
 
 - Docker available for SDCC, **no brew** (never use or suggest brew)
@@ -216,24 +235,70 @@ NOT working in zsdcc: `constexpr`, `[[attributes]]` (use `__attribute__`), digit
 ## Known Bugs in llvm-z80
 
 - hasFP=false has runtime bug (parked)
-- **`(double)int` conversion (`__floatsidf`) miscompiled** (OPEN, verified
-  2026-07-17). Blocks `double` under `-compiler=llvmz80` + SoftFloat closure:
-  `(double)5` returns a corrupt double (formats `131074.500000`, want `5.000000`)
-  at every opt level. Literal doubles and sibling f64 shims (`__adddf3`) are
-  correct; the `i32_to_f64` core is correct on host → the fault is clang-z80's
-  int→double codegen (suspected shim-body or arg/return marshaling; exact defect
-  not isolated). Repro + full diagnosis:
-  `llvmz80-softfloat/bugs/f64_int_to_double_miscompiled.{c,md}`. Distinct from
-  #268/#269/#270. Filed: ravn/llvm-z80#273.
-
 FIXED:
+- **`(double)int` (`__floatsidf`) "miscompile" was NOT a backend bug** — ravn/llvm-z80#273.
+  FIXED 2026-07-21. Root cause was our SoftFloat config, not clang-z80: `opts-GCC.h`
+  under `-DSOFTFLOAT_BUILTIN_CLZ` defined `softfloat_countLeadingZeros32 =
+  __builtin_clz`, but clang-z80 `int` is 16-bit so `__builtin_clz` counts 16 bits →
+  `i32_to_f64` shiftDist 16 too small → `(double)5` → `131074.5`. The original
+  "backend" diagnosis was misled by a host cross-check that used the same flag but,
+  on a 32-bit-int host, `__builtin_clz` is a correct 32-bit clz (false exoneration).
+  Fix = width-match the builtin (`__builtin_clzl` for the 32-bit clz) in
+  `llvmz80-softfloat/vendor/.../opts-GCC.h` + `_Static_assert` on the widths. New
+  int→double oracle `tests/ft_i2d.c`+`i2d_run.sh` (wired into `tests/run.sh`) — the
+  old `ft_dbl` observed `__floatsidf` only through a lossy `(long)` cast and missed
+  it. Full writeup: `llvmz80-softfloat/bugs/f64_int_to_double_miscompiled.{c,md}`.
+  ravn/llvm-z80#273 to be closed as not-a-compiler-bug.
+- **Textual `-S` emitted out-of-range `jr cc`** (FIXED 2026-07-20). BranchRelaxation
+  under-counted function size because the variable-shift pseudos
+  (`SHL8/16_VAR`, `LSHR8/16_VAR`, `ASHR8/16_VAR`, `ROTL8_VAR`, `ROTR8_VAR`) are
+  `Z80Pseudo` (isPseudo=1) and hit `if (isPseudo) return 0` in
+  `Z80InstrInfo::getInstSizeInBytes` — they actually expand (post-BranchRelaxation,
+  in `Z80ExpandPseudo::expandVarShift`) to 7–11 B loops. The under-count left
+  a `jr` really out of ±127 range; the object emitter silently relaxed it to
+  `jp` but textual `.s` did not, and external z88dk z80asm rejected it. Fix: give
+  the 8 VAR-shift pseudos their real expanded sizes in the IsSM83 size switch
+  (Z80InstrInfo.cpp; same class as #266). Lit test
+  `issue-267-jr-out-of-range-textual.ll` (XFAIL removed; asserts the 4 far
+  branches are `jp`). Repro `llvmz80-softfloat/bugs/jr_out_of_range.c`.
+  Filed: ravn/llvm-z80#267. **Systemic follow-up (FIXED 2026-07-21):** all ~14
+  expanding `Z80Pseudo`s that were still sized 0 (guarded LDIR/LDDR/MEMSET,
+  LOAD/STORE_IDX8, MUL8, S/U DIV8/MOD8, S/U ADD/SUBSAT8) now carry their real
+  IsSM83-aware expanded sizes in getInstSizeInBytes AND are registered in
+  `isInlineRuntimeSizedPseudo` so the #240 drift guard
+  (`-z80-verify-inline-runtime-size`) validates them. New lit test
+  `issue-267-pseudo-size-drift-guard.ll` (+ verify RUN lines added to
+  `issue-27-iy-indexed-addr.ll` and `issue-105-ldir-guarded.ll`). See
+  `tasks/memory/issue267_pseudo_undersize_class.md`.
+  **Separate root cause of the fmt64@-O2 failure (FIXED 2026-07-21):** it was NOT
+  a backend undercount but our own z88dk bridge `z88dk/lib/llvmz80/
+  bridge_postproc.sh`, which had a perl workaround rewriting every conditional
+  `jr cc`→`jp cc` (2B→3B). That +1B/site inflation ran AFTER clang's
+  BranchRelaxation and grew the span of an enclosing unconditional `jr` clang had
+  correctly left at ≤127B, tipping fmt64.c to 128 ($80). clang's Z80 backend
+  already relaxes conditional jr itself, so the rewrite was redundant AND harmful;
+  it was removed. The softfloat closure now builds clean at -O2 (the -O0
+  `s_roundPackToF64` / -Os `fmt64.c` workarounds were removed) and #273's lossless
+  int→double oracle (`tests/ft_i2d.c`) is GREEN at -O2.
+
+FIXED (earlier):
+- **sret return copied to wrong dest when value comes from an sret-returning
+  call** — a function returning `double`/struct via sret whose return value is
+  produced by another sret-returning call copied the callee's result to the
+  first-arg slot `[ix+6]` instead of the sret pointer `[ix+4]` (with a=3.0 →
+  write to 0x0000 warm-boot vector → hang). Fixed in `cf6c78afd775` ("Fix
+  sret/arg frame offset by CSR in static-stack+FP"); `_f` now uses `ld
+  l,(ix+4)` after `call _g`. Verified + issue closed 2026-07-20. Repro
+  `llvmz80-softfloat/bugs/sret_dest_from_sret_call.c`. Filed: ravn/llvm-z80#268
+  (CLOSED).
 - **sret setup skipped for no-arg functions returning > 4 bytes** — a no-arg
   function returning `double`/`i64`/large struct never set up its hidden sret
   pointer (`Z80CallLowering::lowerFormalArguments` early-returned before the
   sret-demotion block) → legalizer crash / corrupt sret. Fix: also require
   `FLI.CanLowerReturn` in the early-return guard. Commit `74378e7a78cc`, lit test
-  `llvm/test/CodeGen/Z80/sret-noarg-return.ll`. Writeup:
-  `llvmz80-softfloat/bugs/sret_noarg_return_FIXED.md`. Filed: ravn/llvm-z80#274.
+  `llvm/test/CodeGen/Z80/sret-noarg-return.ll` (passes). Writeup:
+  `llvmz80-softfloat/bugs/sret_noarg_return_FIXED.md`. Verified + issue closed
+  2026-07-20. Filed: ravn/llvm-z80#274 (CLOSED).
 - `"hl"` (and `bc`/`de`/`af`/`ix`/`iy`/`sp`) bare inline-asm pair constraints used
   to crash IRTranslator ("unable to translate instruction: call"): LLVM's
   IR-level InlineAsm parser splits a bare multi-letter constraint into
@@ -280,9 +345,9 @@ integer-only program links byte-identically whether or not it is set.
   NOT bridged (for clang `__vasmallc` is empty), so no `ex de,hl`. Fix needs a
   return-address-interposing trampoline, not a plain `__ZPROTO` bridge.
   Filed **ravn/z88dk#31**; writeup in `CALLING_CONVENTION.md` ("KNOWN GAP").
-- **`(double)int` (`__floatsidf`) miscompiled** — ravn/llvm-z80#273 (above).
-  Literal doubles + arithmetic on already-`double` values work; int→double
-  does not.
+- **`(double)int` (`__floatsidf`)** — FIXED 2026-07-21 (ravn/llvm-z80#273 was
+  mis-filed as a backend bug; real cause was our SoftFloat clz-width config, see
+  "Known Bugs in llvm-z80" above). int→double now works at all opt levels.
 - **`printf("%f")`** needs the separate nanoprintf closure (`build_fmt.sh`);
   z88dk's variadic `printf` cannot format `double` here. nanoprintf's own
   `va_start` is broken by ravn/llvm-z80#270 — use non-variadic

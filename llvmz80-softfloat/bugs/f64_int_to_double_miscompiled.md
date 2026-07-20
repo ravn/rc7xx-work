@@ -2,17 +2,21 @@
 
 - **Upstream issue:** [ravn/llvm-z80#273](https://github.com/ravn/llvm-z80/issues/273)
 - **Repro:** [`bugs/f64_int_to_double_miscompiled.c`](f64_int_to_double_miscompiled.c)
-- **Status:** verified 2026-07-17, unfixed. **Blocks** any `double` program that
-  converts an integer to `double` under `-compiler=llvmz80`.
-- **Component:** ravn/llvm-z80 **backend** (int→f64 codegen). NOT the SoftFloat
-  shim (the `i32_to_f64` algorithm is correct on host — see §4), NOT the copt
-  bridge (literal doubles are correct — see §3).
-- **Severity:** high / silent value corruption. Every `(double)someInt` yields
-  garbage, at **every** optimization level, with **no diagnostic**.
-- **Suspected root cause (UNCONFIRMED):** clang-z80 miscompiles the int→double
-  conversion path — the `__floatsidf` shim body and/or the marshaling of its
-  `int_fast32_t` argument / 8-byte `float64_t` return. The exact defective
-  instruction/pass has **not** been isolated (investigation stopped by request).
+- **Status:** **FIXED 2026-07-21.** Root cause was **NOT** a compiler backend bug
+  (as this doc originally hypothesized) — it was a **SoftFloat build-config bug**
+  in *our* closure: a 16-bit `__builtin_clz` used where a 32-bit clz was required.
+  See §6 for the confirmed cause and §8 for the fix + green verification.
+- **Component:** ~~ravn/llvm-z80 backend~~ **CORRECTED:** our vendored SoftFloat
+  header `vendor/berkeley-softfloat-3/source/include/opts-GCC.h` (the
+  `SOFTFLOAT_BUILTIN_CLZ` clz definitions). The clang-z80 backend is **not** at
+  fault. **ravn/llvm-z80#273 should be closed as not-a-compiler-bug.**
+- **Severity (before fix):** high / silent value corruption. Every `(double)someInt`
+  yielded garbage at every optimization level with no diagnostic.
+- **Confirmed root cause:** `softfloat_countLeadingZeros32` was defined as
+  `__builtin_clz(a)`, but clang-z80 `int` is **16-bit**, so `__builtin_clz` counts
+  only 16 bits → the count is off by 16 → `i32_to_f64`'s `shiftDist` is 16 too
+  small → the packed exponent is 16 too large. Fix = width-match the builtin
+  (`__builtin_clzl` for the 32-bit clz); see §6/§8.
 
 ---
 
@@ -73,9 +77,14 @@ i32_to_f64(5):  bits=4014000000000000  d=5.000000   <-- correct IEEE 5.0
 i32_to_f64(10): bits=4024000000000000  d=10.000000
 ```
 
-The algorithm produces the correct IEEE-754 bit patterns. So the Z80 corruption is
-introduced by **clang-z80's compilation** of this path (the `__floatsidf` shim body
-and/or its argument/return marshaling), not by the math.
+The algorithm produces the correct IEEE-754 bit patterns **on the host**. This was
+originally read as "the math is sound, so the Z80 backend must be miscompiling it."
+That inference was **wrong** (see §6): the host cross-check compiles with the same
+`-DSOFTFLOAT_BUILTIN_CLZ`, but on a 64-bit host `int` is **32-bit**, so
+`__builtin_clz` is a correct 32-bit clz there. The very flag that is buggy on the
+16-bit-`int` Z80 target is **benign on the host** — which is exactly why the host
+passed and the target failed. The host green is a *false exoneration* of the
+config, not proof of a backend defect.
 
 ## 5. Relationship to already-filed sret bugs (distinct)
 
@@ -88,15 +97,84 @@ Related but NOT the same as:
   using the non-variadic `npf_snprintf_f`; the corruption is still present, so it
   is independent of #270.
 
-## 6. Suspected root cause (UNCONFIRMED — do not treat as verified)
+## 6. Confirmed root cause (was "suspected backend" — REFUTED)
 
-clang-z80 miscompiles the int→double conversion. Candidate mechanisms, none
-isolated:
-- (a) miscompilation of the `i32_to_f64` core / `__floatsidf` shim body as built by
-  clang-z80;
-- (b) wrong marshaling of the `long`→`int_fast32_t` argument or the 8-byte
-  `float64_t` return of `__floatsidf` specifically.
-Investigation was stopped by request; this section is a hypothesis, not a diagnosis.
+The original hypothesis in this section — "clang-z80 miscompiles the int→double
+conversion" — is **refuted**. The real cause is a **width bug in our SoftFloat
+config**, not in the compiler.
+
+`vendor/berkeley-softfloat-3/source/include/opts-GCC.h`, under
+`#ifdef SOFTFLOAT_BUILTIN_CLZ`, originally defined (upstream, assuming 32-bit int):
+
+```c
+softfloat_countLeadingZeros16(a) = a ? __builtin_clz(a) - 16 : 16;
+softfloat_countLeadingZeros32(a) = a ? __builtin_clz(a)      : 32;   // <-- bug on z80
+```
+
+clang-z80 `int` is **16-bit** (`__INT_WIDTH__ == 16`), so `__builtin_clz` counts
+leading zeros in a **16-bit** value. For a 32-bit `absA`, `countLeadingZeros32`
+therefore returned a count that is **16 too small**.
+
+`i32_to_f64` uses it as `shiftDist = countLeadingZeros32(absA) + 21`, then packs
+`exp = 0x432 - shiftDist`. A 16-too-small `shiftDist` makes the exponent 16 too
+large, i.e. the value is scaled by ~2¹⁶ (mixed with the mantissa shift, giving the
+observed `(double)5 → 131074.5`, `(double)2 → 65537`, etc.).
+
+**Why only int→double.** `countLeadingZeros32` has exactly **one** caller in this
+closure: `i32_to_f64`. The f64 arithmetic shims (`__adddf3`/`__muldf3`/…) normalize
+via `countLeadingZeros64` (`__builtin_clzll`, a correct 64-bit clz because
+`long long` is 64-bit here), so they were unaffected — matching §3/§5's observation
+that only the conversion entry was corrupt.
+
+**Fix.** Width-match the builtin to the requested clz width (correct on any target
+with int=16/long=32/longlong=64):
+
+```c
+softfloat_countLeadingZeros16(a) = a ? __builtin_clz (a) : 16;  // uint int  = 16 bits
+softfloat_countLeadingZeros32(a) = a ? __builtin_clzl(a) : 32;  // uint long = 32 bits
+softfloat_countLeadingZeros64(a) = a ? __builtin_clzll(a): 64;  // uint llong= 64 bits
+```
+
+Guarded by a `_Static_assert(__SIZEOF_INT__==2 && __SIZEOF_LONG__==4 &&
+__SIZEOF_LONG_LONG__==8, ...)` so the assumption can't silently rot.
+
+**Note (why not just drop `-DSOFTFLOAT_BUILTIN_CLZ`):** dropping the flag pulls the
+portable table `s_countLeadingZeros8.c`, whose 256-byte `.ascii` initializer the
+z88dk copt/z80asm stage cannot parse ("syntax error"). Keeping the flag with the
+width-matched inline defs both fixes the bug and avoids that toolchain limitation.
+
+## 8. The fix + green verification
+
+Fixed in our closure, none in the backend or z88dk. The width-matched clz defs
+(§6) + `_Static_assert` live in project-owned `vendor/config/platform.h`, **not**
+in the vendored submodule. `platform.h` was already the sole includer of
+`opts-GCC.h` (pulling it in only for the clz builtins; its INT128 block is
+inactive here), so we drop that `#include` and define the three width-matched
+`softfloat_countLeadingZeros{16,32,64}` inline in `platform.h` instead. The
+`berkeley-softfloat-3` submodule stays pinned to pristine upstream
+(`ucb-bar` a0c6494) — editing a vendored submodule is not reproducible after
+`git submodule update` on another machine, which is exactly how this fix was
+first (wrongly) placed.
+- `build64.sh`, `build_fmt.sh` — comments documenting why the flag stays.
+- `tests/ft_i2d.c` + `tests/ft_i2d.expected` + `tests/i2d_run.sh` — a permanent
+  int→double oracle wired into `tests/run.sh` (the pre-existing `ft_dbl` only
+  observed `__floatsidf` through a **lossy** `(long)` cast, which recovered `-42`
+  from the corrupt double and so never caught the bug; the new oracle formats the
+  **full** value via `%f`).
+
+Green (after fix):
+
+```bash
+export PATH="/Users/ravn/z80/z88dk/bin:$PATH"; export ZCCCFG=/Users/ravn/z80/z88dk/lib/config/
+export LLVMZ80EXE=/Users/ravn/z80/llvm-z80/build-macos/bin/clang
+cd /Users/ravn/z80/llvmz80-softfloat
+sh tests/i2d_run.sh    # -> i5|5.000000 ... div52|2.500000 ; RESULT: ft_i2d PASS
+```
+
+Red/green proof captured 2026-07-21: against a closure built with the old buggy
+clz, `ft_i2d` prints `i5|131074.500000 … i32767|536887295.500000` (every value
+corrupt); against the fixed closure it prints the exact expected integers and
+`div52|2.500000`.
 
 ## 7. How to re-verify (red)
 

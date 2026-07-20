@@ -10,12 +10,15 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
 V=vendor/berkeley-softfloat-3/source
 INC="-Ivendor/config -I$V/8086 -I$V/include"
+# Keep -DSOFTFLOAT_BUILTIN_CLZ: the clz defs in opts-GCC.h are width-matched for
+# clang-z80 (ravn/llvm-z80#273 was fixed there).  See build64.sh for the full note.
 DEF="-DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=1 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DSOFTFLOAT_BUILTIN_CLZ"
 OPT="${OPT:-O2}"
 OUT="${OUT:-/tmp/fmt64_out}"; rm -rf "$OUT"; mkdir -p "$OUT"
 
-# s_roundPackToF64 trips llvm-z80 #267 (jr out of range) at -O2 -> build -O0.
-O0FILES=" s_roundPackToF64 "
+# #267 (jr-out-of-range) FIXED: systemic getInstSizeInBytes pseudo-sizing landed,
+# so s_roundPackToF64 (and the rest) assemble clean at -O2.  No per-file override.
+O0FILES=""
 
 srcfor(){ [ -f "$V/$1.c" ] && { echo "$V/$1.c"; return; }; [ -f "$V/8086/$1.c" ] && echo "$V/8086/$1.c"; }
 

@@ -12,12 +12,19 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
 V=vendor/berkeley-softfloat-3/source
 INC="-Ivendor/config -I$V/8086 -I$V/include"
+# SOFTFLOAT_BUILTIN_CLZ makes opts-GCC.h define softfloat_countLeadingZeros{16,32,64}
+# inline via __builtin_clz*.  Those defs are width-matched for clang-z80
+# (int=16/long=32/llong=64) -- see opts-GCC.h.  The historical off-by-16
+# (ravn/llvm-z80#273: (double)5 -> 131074.5) was in opts-GCC.h, NOT here; keeping
+# the flag also avoids pulling the portable s_countLeadingZeros8.c whose 256-byte
+# .ascii table the z88dk copt/z80asm stage cannot parse.
 DEF="-DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=1 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DSOFTFLOAT_BUILTIN_CLZ"
 OPT="${OPT:-O2}"   # global optimization level for the SoftFloat closure
 OUT="${OUT:-/tmp/sf64_out}"; rm -rf "$OUT"; mkdir -p "$OUT"
 
-# s_roundPackToF64 trips llvm-z80 #267 (jr out of range) at -O2 -> build -O0.
-O0FILES=" s_roundPackToF64 "
+# #267 (jr-out-of-range) FIXED: systemic getInstSizeInBytes pseudo-sizing landed,
+# so the whole closure now assembles clean at -O2.  No per-file -O0 override.
+O0FILES=""
 
 # find the .c for a bare basename in source/ or source/8086/
 srcfor(){ [ -f "$V/$1.c" ] && { echo "$V/$1.c"; return; }; [ -f "$V/8086/$1.c" ] && echo "$V/8086/$1.c"; }

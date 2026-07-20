@@ -76,3 +76,10 @@ echo "=== [libm] transcendental suite via mathf64.lib ==="
 # Instead run_libm.sh verifies the transcendentals that DO fit (sqrt/atan/exp),
 # one binary each, linked against the dead-strippable mathf64.lib.
 sh "$HERE/run_libm.sh"
+
+echo
+echo "=== [i2d] int->double (__floatsidf) via lossless %f -- ravn/llvm-z80#273 ==="
+# Regression guard for the clz-width bug: (double)5 -> 131074.5.  Observes the
+# FULL value through nanoprintf %f (not a lossy (long) truncation like ft_dbl),
+# so a wrong i32_to_f64 shiftDist is caught.
+sh "$HERE/i2d_run.sh"

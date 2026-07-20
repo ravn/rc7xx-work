@@ -281,3 +281,7 @@
 - **[M6: narrow i16 EQ/NE of byte sext (strrchr IY shuttle)](reference_m6_sext_icmp_narrowing.md)** — ravn/llvm-z80#259. `*s==(char)c` → un-narrowed i16 compare → IY shuttle. InstCombine misses the `ashr(shl x,8),8` sext-inreg idiom (narrows canonical `sext==sext` only). Z80-local GISel combine fixes -Oz/-Os only (LICM ordering); IR-level narrowing is the uniform fix (CHOSEN). No upstream report until verified end-to-end.
 
 - **[z88dk runtime verify: ntvcm not ticks](reference_z88dk_runtime_verify_ntvcm.md)** — `+cpm` .COM under `ntvcm/ntvcm` for console output; `z88dk-ticks` does NOT emulate the `+test` `$ED$FE` console trap (no stdout). Idiomatic tests: `z88dk/test/clang/*.{c,sh}` via `NTVCM` env.
+
+- **[Z80Pseudo undersize → far-`jr` under-relaxation class (#266/#267 + 14 latent)](issue267_pseudo_undersize_class.md)** — isPseudo pseudos that expand post-BranchRelaxation are sized 0 by getInstSizeInBytes → textual `.s` keeps out-of-range `jr` that z88dk z80asm rejects. #266+#267 fixed; guarded-LDIR/IDX8/MUL8/DIV8/SAT8 still latent.
+
+- **[Pending canonical AGENTS.md edits](pending_agents_md_canonical_edits.md)** — cross-project rule changes discovered here but not yet applied to the canonical AGENTS.md repo. Currently queued: proactive oracle-coverage rule from #273 (every public entry point / sole helper user must run in the oracle).
