@@ -47,7 +47,7 @@ remaining gaps are narrow and known.
 
 | Function | Gap type | Reason |
 |----------|----------|--------|
-| `string.h` — `strerror` | LINK_ERROR | Missing error-string table `__rodata_error_strings_head` in z80 CP/M clib |
+| `string.h` — `strerror` | **Fixed 2026-07-21** | `__strerror_table.asm` provides `__rodata_error_strings_head` + classic errno strings (1-16) |
 | `stdlib.h` — `bsearch` | NOT_DECLARED | Not declared in z88dk CP/M `stdlib.h` (use `qsort` + linear search) |
 | `stdio.h` — `tmpfile` | NOT_DECLARED | Not in z88dk CP/M `stdio.h`; no temp files on CP/M |
 | `stdio.h` — `vprintf` | LINK_ERROR | Needs `<stdarg.h>` va_list; the bridge exists but variadic entry is `vfprintf` |
