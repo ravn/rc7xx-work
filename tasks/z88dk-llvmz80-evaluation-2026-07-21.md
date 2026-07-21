@@ -235,12 +235,19 @@ Auto-linked via the env var `LLVMZ80RTLIB` (no `.lib` suffix).  Integer-only
 programs that never touch `double` link byte-identically with or without the
 archive set.
 
-### Transcendental functions (sin, cos, sqrt, exp, log, atan)
+### Transcendental functions (sin, cos, sqrt, exp, log, atan) — closed as known gap
 
-**Not yet supplied.**  Berkeley SoftFloat provides the four basic operations
-and conversions but not the mathematical functions.  A program that calls these
-— including the Whetstone benchmark — will fail to link unless a compatible
-`libm` is added.
+**No libm, not planned.**  Berkeley SoftFloat provides the four basic
+arithmetic operations and all conversions but no mathematical functions.
+`math.h` symbols (`sqrt`, `sin`, `cos`, `exp`, `log`, `atan`, `pow`, `fabs`,
+`floor`, `ceil`) will produce a link error for all three compilers; this is a
+fundamental gap in the `+cpm` classic clib, not specific to llvmz80.
+
+Porting a transcendental library to IEEE-754 `double` on Z80 (e.g. a
+Berkeley-SoftFloat-based libm or a fixed-point approximation) is a
+substantial standalone project.  Whetstone is therefore not feasible.
+This gap is closed as **WONT_FIX_NOW**; revisit only if a production
+workload requires trigonometric or exponential functions.
 
 ### Dhrystone
 
