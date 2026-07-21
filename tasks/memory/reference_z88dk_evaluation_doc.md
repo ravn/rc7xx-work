@@ -27,4 +27,9 @@ Current gap types (2026-07-21):
 
 Test suite at `z88dk/test/clang/` (2026-07-21):
 - run_all.sh: master runner (auto-detects LLVMZ80EXE/NTVCM/ZCCCFG)
-- 15 tests all PASS: run with LLVMZ80EXE + NTVCM set
+- 16 tests all PASS (incl. va_start regression): run with LLVMZ80EXE + NTVCM set
+
+**Deferred investigation:** try `zcc +cpm -clib=new -compiler=llvmz80` (new library
+CP/M target) — the new library is built per-compiler-variant and may need fewer
+or different bridges than the classic clib.  Currently untested; could close some
+of the known gaps or reveal new ones.
