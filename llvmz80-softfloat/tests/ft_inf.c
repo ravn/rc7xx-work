@@ -9,7 +9,7 @@
 static char buf[64];
 static int fail;
 static void chk(const char *tag, double v, const char *want) {
-  npf_snprintf_f(buf, sizeof buf, "%f", v);
+  npf_snprintf(buf, sizeof buf, "%f", v);
   int ok = 0; { const char *a=buf,*b=want; while(*a&&*a==*b){a++;b++;} ok=(*a==*b); }
   printf("%s got=[%s] want=[%s] %s\n", tag, buf, want, ok?"PASS":"FAIL");
   if (!ok) fail = 1;

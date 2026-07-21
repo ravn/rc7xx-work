@@ -31,7 +31,7 @@ static char buf[128];
 
 #define SHOW(tag, fmt, val)                          \
   do {                                               \
-    npf_snprintf_f(buf, sizeof buf, (fmt), (val));   \
+    npf_snprintf(buf, sizeof buf, (fmt), (val));     \
     printf("%s|%s\n", (tag), buf);                   \
   } while (0)
 

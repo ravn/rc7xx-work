@@ -13,10 +13,12 @@
  *   not a truncation, or a factor-of-2^16 corruption slips through.
  *
  * This test converts real runtime ints/longs to double and formats each with
- * nanoprintf's non-variadic npf_snprintf_f("%f", ...) -- the lossless path that
+ * nanoprintf's variadic npf_snprintf("%f", ...) -- the lossless path that
  * exposes the bug.  Values span several clz(absA) buckets so a wrong shiftDist
  * shows up.  Built for host (native clang+stdio) and Z80 (zcc+cpm+llvmz80);
  * both must match tests/ft_i2d.expected byte-for-byte.
+ * (Previously used non-variadic npf_snprintf_f to avoid ravn/llvm-z80#270;
+ * removed 2026-07-21 now that va_start works via z88dk bb914a18.)
  */
 #include <stdio.h>
 #include "npf_cpm.h"
@@ -25,7 +27,7 @@ static char buf[96];
 
 static void show(const char *tag, double v)
 {
-    npf_snprintf_f(buf, sizeof buf, "%f", v);   /* non-variadic: avoids #270 */
+    npf_snprintf(buf, sizeof buf, "%f", v);
     printf("%s|%s\n", tag, buf);
 }
 

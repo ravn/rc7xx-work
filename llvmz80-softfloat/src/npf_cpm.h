@@ -63,9 +63,8 @@
 #include "nanoprintf.h"
 
 #include <stddef.h>
-/* Fixed-argument %f formatter (see src/fmt64.c).  Workaround for the clang-z80
- * broken-va_start bug (ravn/llvm-z80#270) that makes the variadic npf_snprintf
- * read garbage on Z80.  Same output as npf_snprintf("%f"...) for the %f subset. */
-int npf_snprintf_f(char *out, size_t sz, const char *fmt, double v);
+/* npf_snprintf_f() has been removed (2026-07-21): va_start works correctly
+ * since z88dk bb914a18 deferred to __builtin_va_start (ravn/llvm-z80#270 fixed).
+ * Use the normal variadic npf_snprintf() directly. */
 
 #endif /* NPF_CPM_H */
