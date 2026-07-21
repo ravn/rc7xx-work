@@ -48,8 +48,8 @@ remaining gaps are narrow and known.
 | Function | Gap type | Reason |
 |----------|----------|--------|
 | `string.h` — `strerror` | **Fixed 2026-07-21** | `__strerror_table.asm` provides `__rodata_error_strings_head` + classic errno strings (1-16) |
-| `stdlib.h` — `bsearch` | WONT_FIX | Classic clib has `l_bsearch(key,base,n,cmp)` — 4 args, no `size`; cannot expose as standard `bsearch(key,base,nmemb,size,compar)`. Newlib has the full 5-arg version. |
-| `stdio.h` — `tmpfile` | WONT_FIX | No temp-file semantics on CP/M; deliberately absent from `+cpm` stdio.h |
+| `stdlib.h` — `bsearch` | CLASSIC_DESIGN | Standard `bsearch(key,base,nmemb,size,compar)` requires `midpoint*size` (a 16-bit multiply per iteration). Classic clib deliberately avoids this with `l_bsearch(key,base,n,cmp)` — a 2-byte-element-only variant that uses a bit-shift instead (2005 design choice, documented in `Lbsearch.asm`). Newlib target has the full 5-arg version via `l_mulu_16_16x16`. |
+| `stdio.h` — `tmpfile` | CLASSIC_DESIGN | CP/M has no temp-file primitives; `tmpfile()` is deliberately absent from `+cpm` stdio.h across all compilers. |
 | `stdio.h` — `vprintf` | LINK_ERROR | Needs `<stdarg.h>` va_list; the bridge exists but variadic entry is `vfprintf` |
 | `math.h` — sqrt/sin/cos/exp/log/atan/pow/fabs/floor/ceil | NO_LIBM | Berkeley SoftFloat provides f64 arithmetic but not transcendental functions |
 | User-supplied variadic functions with `va_start` | **Fixed** | ravn/z88dk `bb914a18` defers to `__builtin_va_start`; `vsum(3,10,20,30)=60` verified (ravn/llvm-z80#270 closed) |
