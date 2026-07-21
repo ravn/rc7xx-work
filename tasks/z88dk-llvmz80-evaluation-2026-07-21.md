@@ -20,27 +20,40 @@ remaining gaps are narrow and known.
 
 | Category | Status |
 |----------|--------|
-| `string.h` — str\*/mem\* family | Bridged, MAME-verified |
-| `ctype.h` | Works |
-| `stdlib.h` — atoi/itoa/ltoa/strtol/strtoul/qsort/abs/labs | Works |
-| `stdlib.h` — rand/getenv/setenv/getopt | Works |
-| `malloc`/`calloc`/`realloc`/`free` | Works (z88dk heap) |
-| `stdio.h` FILE\* layer (fopen/fread/fwrite/fgets/fputs/fseek/ftell/…) | 16/16 functions, MAME-verified |
-| `printf`/`fprintf`/`sprintf`/`snprintf` — output correctness | Correct |
-| `scanf`/`fscanf`/`sscanf` — parse correctness | Correct |
-| `printf`/`scanf` family — return value (count) | **Fixed** (ravn/z88dk#31) |
+| `string.h` — memset/memcpy/memmove/memcmp/memchr | Bridged, ntvcm-verified |
+| `string.h` — strcpy/strncpy/strcat/strncat/strcmp/strncmp | Bridged, ntvcm-verified |
+| `string.h` — strchr/strrchr/strstr/strspn/strcspn/strtok | Bridged, ntvcm-verified |
+| `string.h` — strlen/strnlen/strcasecmp/strncasecmp | Bridged, ntvcm-verified |
+| `string.h` — strupr/strlwr/strrev/strstrip/strrstrip (z88dk ext.) | Bridged, ntvcm-verified |
+| `string.h` — strdup | Links and runs |
+| `ctype.h` — isalpha/isdigit/isalnum/isspace/isupper/islower/toupper/tolower/isprint/ispunct/iscntrl | Works, ntvcm-verified |
+| `stdlib.h` — atoi/atol | Works |
+| `stdlib.h` — strtol/strtoul | Bridged, ntvcm-verified |
+| `stdlib.h` — itoa/ltoa/ultoa | **Bridged 2026-07-21**, ntvcm-verified |
+| `stdlib.h` — abs/labs/rand/srand | Works, ntvcm-verified |
+| `stdlib.h` — malloc/calloc/realloc/free | Works, ntvcm-verified |
+| `stdlib.h` — qsort | Works with `__smallc` comparator, ntvcm-verified |
+| `stdlib.h` — exit | Works |
+| `stdio.h` FILE\* layer (fopen/fread/fwrite/fgets/fputs/fseek/ftell/rewind/feof/ferror/fclose/fflush/remove/rename/printf/fprintf/sprintf/snprintf/puts/putchar/getchar) | 27/27 link, MAME-verified |
+| `stdio.h` — scanf/fscanf/sscanf | Links and runs |
+| `printf`/`scanf` family — return value (count) | **Fixed** (ravn/z88dk#31, ntvcm-verified) |
 | `vfprintf`/`vsnprintf`/`vsscanf` | Fixed (same root cause) |
+| `time.h` — time/clock | Links (CP/M stubs) |
 | `double` arithmetic (+/-/\*/÷/compare/conversions) | Works via softfloat |
 | `(double)int` / `__floatsidf` | **Fixed** 2026-07-21 (ravn/llvm-z80#273) |
 | POSIX fd-layer (open/read/write/close) | No-op stubs — intentional, same as sccz80/sdcc |
 
-### Known gaps
+### Known gaps (documented, link fails)
 
-| Gap | Severity | Notes |
-|-----|----------|-------|
-| `printf("%f")` | Medium | Needs separate nanoprintf closure (`build_fmt.sh`); z88dk variadic `printf` cannot format `double` |
-| `va_start` in user-supplied variadic functions | Low | ravn/llvm-z80#270 — affects nanoprintf's own `va_start` call; z88dk's v\* forwarding is NOT affected |
-| Many str\*/stdlib functions still missing bridges | Medium | Symbols link-error at build time if called |
+| Function | Gap type | Reason |
+|----------|----------|--------|
+| `string.h` — `strerror` | LINK_ERROR | Missing error-string table `__rodata_error_strings_head` in z80 CP/M clib |
+| `stdlib.h` — `bsearch` | NOT_DECLARED | Not declared in z88dk CP/M `stdlib.h` (use `qsort` + linear search) |
+| `stdio.h` — `tmpfile` | NOT_DECLARED | Not in z88dk CP/M `stdio.h`; no temp files on CP/M |
+| `stdio.h` — `vprintf` | LINK_ERROR | Needs `<stdarg.h>` va_list; the bridge exists but variadic entry is `vfprintf` |
+| `math.h` — sqrt/sin/cos/exp/log/atan/pow/fabs/floor/ceil | NO_LIBM | Berkeley SoftFloat provides f64 arithmetic but not transcendental functions |
+| User-supplied variadic functions with `va_start` | BROKEN | ravn/llvm-z80#270 — affects nanoprintf's own `va_start`; z88dk's v\* forwarding unaffected |
+| `printf("%f")` | NO_FORMAT | Needs separate nanoprintf closure (`build_fmt.sh`); z88dk `printf` cannot format `double` |
 
 ---
 
