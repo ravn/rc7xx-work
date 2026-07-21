@@ -48,8 +48,8 @@ remaining gaps are narrow and known.
 | Function | Gap type | Reason |
 |----------|----------|--------|
 | `string.h` — `strerror` | **Fixed 2026-07-21** | `__strerror_table.asm` provides `__rodata_error_strings_head` + classic errno strings (1-16) |
-| `stdlib.h` — `bsearch` | NOT_DECLARED | Not declared in z88dk CP/M `stdlib.h` (use `qsort` + linear search) |
-| `stdio.h` — `tmpfile` | NOT_DECLARED | Not in z88dk CP/M `stdio.h`; no temp files on CP/M |
+| `stdlib.h` — `bsearch` | WONT_FIX | Classic clib has `l_bsearch(key,base,n,cmp)` — 4 args, no `size`; cannot expose as standard `bsearch(key,base,nmemb,size,compar)`. Newlib has the full 5-arg version. |
+| `stdio.h` — `tmpfile` | WONT_FIX | No temp-file semantics on CP/M; deliberately absent from `+cpm` stdio.h |
 | `stdio.h` — `vprintf` | LINK_ERROR | Needs `<stdarg.h>` va_list; the bridge exists but variadic entry is `vfprintf` |
 | `math.h` — sqrt/sin/cos/exp/log/atan/pow/fabs/floor/ceil | NO_LIBM | Berkeley SoftFloat provides f64 arithmetic but not transcendental functions |
 | User-supplied variadic functions with `va_start` | **Fixed** | ravn/z88dk `bb914a18` defers to `__builtin_va_start`; `vsum(3,10,20,30)=60` verified (ravn/llvm-z80#270 closed) |
