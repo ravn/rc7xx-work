@@ -12,7 +12,7 @@ areas to prioritise.
 
 `zcc +cpm -compiler=llvmz80` produces correct, runnable CP/M binaries for
 integer-only programs and for programs that use IEEE-754 `double` arithmetic
-(via the separate softfloat runtime; see §4).  The z88dk clib bridge is
+(via the separate softfloat runtime; see §6).  The z88dk clib bridge is
 substantially complete for the surfaces a typical CP/M program touches; the
 remaining gaps are narrow and known.
 
@@ -80,7 +80,72 @@ Full reference: `libsrc/l/llvmz80/CALLING_CONVENTION.md`.
 
 ---
 
-## 3. Code quality versus zsdcc
+## 3. Classic library vs new library — why the bridge layer exists
+
+z88dk ships two distinct library architectures that serve different compiler
+and target combinations:
+
+**Classic clib** (`+cpm`, `+zx`, etc.) is the original z88dk library, compiled
+once per CPU target and stored as pre-built object archives (`z80_crt0.lib`,
+`cpm_clib.lib`).  It is what `zcc +cpm` links, regardless of compiler.  The
+classic clib was designed for **sccz80** (z88dk's own compiler) whose functions
+receive all arguments from the stack (`__smallc` / `sdcccall(0)` convention)
+and return 16-bit results in HL.
+
+**New library** (newlib, `+embedded`, `+cpm` with `-clib=new`) is a separate
+architecture built differently per compiler sub-variant.  It is not discussed
+further here; llvmz80 currently only targets the classic clib.
+
+### The ABI gap and how the bridge layer closes it
+
+llvmz80 (clang-z80) uses `sdcccall(1)` by default: the first two 16-bit
+arguments arrive in HL and DE, further arguments are stacked, and 16-bit
+results land in DE, not HL.  The classic clib workers expect the **opposite**:
+all arguments on the stack, result in HL.
+
+Without adaptation, calling, say, `strcpy(dst, src)` from clang-compiled code
+would pass `dst` in HL and `src` in DE, but the classic `_strcpy` worker would
+read both from the stack and find only the saved return address — producing
+garbage or a hang.
+
+Three mechanisms close this gap transparently:
+
+1. **`__ZPROTO` macros** (`include/sys/proto.h`).  For 2- and 3-argument
+   functions the header declares a reversed-argument low-level entry point
+   (`__strcpy`, `__itoa`) and wraps it in an `always_inline` forwarder that
+   reorders the arguments.  clang sees a normal declaration; the low-level
+   symbol becomes `___strcpy` / `___itoa` in the object file.
+
+2. **Register-ABI bridge stubs** (`libsrc/l/llvmz80/*.asm`).  Hand-written
+   assembly adapters export the `___X` names, reorder or stack-massage the
+   incoming register arguments, call the underlying classic worker
+   (`asm_strcpy`, `asm_itoa`, …), and return the result in DE.  These stubs
+   are assembled into `z80_crt0.lib` at library build time.
+
+3. **`_fastcall` variants**.  Single-argument classic functions (strlen, atoi,
+   toupper, …) already have a `_fastcall` variant that reads the argument from
+   HL — exactly where llvmz80 places it.  The header simply `#define`s the
+   plain name to the fastcall variant under `__LLVMZ80`, requiring no asm stub.
+
+### Consequence for the "Known gaps" table
+
+A function **links** only if all three of the following hold:
+(a) its header declares it correctly for llvmz80 (via `__ZPROTO` or a
+`__LLVMZ80`-guarded `#define`),
+(b) the required bridge stub or fastcall worker is present in `z80_crt0.lib` or
+`cpm_clib.lib`, and
+(c) any internal helpers the stub calls (e.g. `asm_itoa`, `l_divs_16_16x16`)
+are also present.
+
+`strerror` fails condition (c) — the error-string table
+`__rodata_error_strings_head` is absent from the CP/M classic clib build.
+`bsearch` and `tmpfile` fail condition (a) — they are not declared in z88dk's
+CP/M `stdlib.h`.  The entire `math.h` transcendental family fails condition (b)
+— Berkeley SoftFloat provides arithmetic but not sin/cos/sqrt/exp/log.
+
+---
+
+## 4. Code quality versus zsdcc
 
 On production Z80 firmware (RC702 CP/M BIOS, two PROMs), llvmz80 consistently
 produces **smaller** code than zsdcc:
@@ -94,15 +159,18 @@ produces **smaller** code than zsdcc:
 The wins are systematic and come from the middle-end optimiser (clang can
 constant-fold, inline, and DCE across translation units) rather than from a
 single trick.  zsdcc typically wins only on individual tight loops that dcc's
-codegen was hand-tuned for (see §4 below).
+codegen was hand-tuned for (see §5 below).
 
 ---
 
-## 4. Code quality versus dcc — the DCC benchmark suite
+## 5. Code quality versus dcc — the DCC benchmark suite
 
-dcc (Dave Dunfield's C compiler, 1986) was designed specifically for CP/M Z80
-and produces hand-quality code for the four standard benchmarks.  This makes it
-a useful ceiling to measure against.
+dcc (gloveboxes/dcc, github.com/gloveboxes/dcc) is a C89 compiler targeting
+CP/M 2.2 on Z80.  It generates `.MAC` assembly, uses a dedicated peephole
+optimizer (`dccpeep`), and ships a hand-written Z80 runtime (`DCCRTL.MAC`).
+The four benchmark programs (`sieve`, `e`, `ttt`, `tm`) ship with its test
+suite and are a useful ceiling to measure against because the compiler's
+peephole pass + runtime are hand-tuned for CP/M Z80.
 
 All measurements use `zcc +cpm -compiler=llvmz80 -O2` (best opt level for each
 benchmark) and `z88dk-ticks` (cycle-accurate Z80 emulation) for fairness.
@@ -152,7 +220,7 @@ to use `-O3` for recursion-heavy code with small fixed-count inner loops.
 
 ---
 
-## 5. Floating-point runtime — libm status
+## 6. Floating-point runtime — libm status
 
 clang lowers every `double` operation to IEEE-754 compiler-rt libcalls
 (`__adddf3`, `__muldf3`, `__floatsidf`, etc.).  z88dk's classic clib uses its
@@ -198,7 +266,7 @@ verifying the resulting binary fits in TPA.
 
 ---
 
-## 6. Pragmatic recommendations
+## 7. Pragmatic recommendations
 
 | Area | Recommendation |
 |------|----------------|
