@@ -52,7 +52,7 @@ remaining gaps are narrow and known.
 | `stdio.h` — `tmpfile` | NOT_DECLARED | Not in z88dk CP/M `stdio.h`; no temp files on CP/M |
 | `stdio.h` — `vprintf` | LINK_ERROR | Needs `<stdarg.h>` va_list; the bridge exists but variadic entry is `vfprintf` |
 | `math.h` — sqrt/sin/cos/exp/log/atan/pow/fabs/floor/ceil | NO_LIBM | Berkeley SoftFloat provides f64 arithmetic but not transcendental functions |
-| User-supplied variadic functions with `va_start` | BROKEN | ravn/llvm-z80#270 — affects nanoprintf's own `va_start`; z88dk's v\* forwarding unaffected |
+| User-supplied variadic functions with `va_start` | **Fixed** | ravn/z88dk `bb914a18` defers to `__builtin_va_start`; `vsum(3,10,20,30)=60` verified (ravn/llvm-z80#270 closed) |
 | `printf("%f")` | NO_FORMAT | Needs separate nanoprintf closure (`build_fmt.sh`); z88dk `printf` cannot format `double` |
 
 ---

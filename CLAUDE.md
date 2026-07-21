@@ -349,9 +349,10 @@ integer-only program links byte-identically whether or not it is set.
   mis-filed as a backend bug; real cause was our SoftFloat clz-width config, see
   "Known Bugs in llvm-z80" above). int→double now works at all opt levels.
 - **`printf("%f")`** needs the separate nanoprintf closure (`build_fmt.sh`);
-  z88dk's variadic `printf` cannot format `double` here. nanoprintf's own
-  `va_start` is broken by ravn/llvm-z80#270 — use non-variadic
-  `npf_snprintf_f` for `double` output.
+  z88dk's variadic `printf` cannot format `double` here.
+- **`va_start`/`va_arg` in user variadic functions** — **FIXED** (ravn/z88dk `bb914a18`,
+  2026-07-21): z88dk `<stdarg.h>` now defers to `__builtin_va_start` under
+  `__LLVMZ80`; `vsum(3,10,20,30)=60` verified. ravn/llvm-z80#270 CLOSED.
 - **POSIX fd-layer** (open/creat/read/write/close/lseek) resolves to no-op
   dummy stubs on classic `+cpm` for ALL compilers — by design, not a gap; real
   CP/M file I/O is the FILE\* layer.
