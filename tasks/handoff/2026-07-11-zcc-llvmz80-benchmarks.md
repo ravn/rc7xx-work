@@ -3,6 +3,16 @@
 **Session:** Claude Sonnet 4.6 on behalf of @ravn.
 **Pick up with:** Read this file, then check `scratch/dcc-clang-bench/` for scripts.
 
+> **SUPERSEDED 2026-07-21 (revalidation):** the +30%/+65% sieve/e slowdowns and
+> "Phase A = sieve pointer strength reduction" premise below are STALE. The
+> authoritative status is `llvm-z80/tasks/plan-2026-07-09-beat-dcc-benchmarks.md`
+> (updated 2026-07-16): **Phase A (sieve) is DONE and shipped** — #250 pointer-walk
+> stack default-ON at -O2 (`b59770c`), sieve 27.46M < dcc 27.98M (clang WINS 0.98x;
+> SR confirmed present in current codegen). The real open work is **Phase B — `e`
+> benchmark M2 BSS spill traffic** (verified 2026-07-21: `e` BB0_4 still round-trips
+> `n`/-404, `x`/-406 and the a[] pointer/-402 through BSS around `___divhi3`).
+> Start with **B1 dead-BSS-store elimination** in `Z80LateOptimization.cpp`.
+
 ---
 
 ## UPDATE 2026-07-14 (Opus 4.8): exit-loop + tm RESOLVED
