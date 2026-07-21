@@ -11,7 +11,18 @@
 > SR confirmed present in current codegen). The real open work is **Phase B — `e`
 > benchmark M2 BSS spill traffic** (verified 2026-07-21: `e` BB0_4 still round-trips
 > `n`/-404, `x`/-406 and the a[] pointer/-402 through BSS around `___divhi3`).
-> Start with **B1 dead-BSS-store elimination** in `Z80LateOptimization.cpp`.
+>
+> **UPDATE 2026-07-21 (B1a shipped):** Non-adjacent dead-BSS-store-back peephole
+> extended in `Z80LateOptimization.cpp` (commit `f8d7f9b` in llvm-z80/main).
+> Scan now goes backward up to 32 instructions (was adjacent-only). Does NOT
+> fire on e.c BB0_4 (BC is modified in all three BSS-slot round-trips there —
+> the waste is structural, not a dead-store-back). Production triplet
+> byte-identical. Lit: 210 PASS.
+>
+> **Open:** B1b (16-bit cross-pair BSS forwarding) deferred — has cascade
+> interaction with `static-stack-loop-counter-desync.ll` test. B2 (pointer-walk
+> -402) and B3 (spill-sink for n/x) are the highest-ROI remaining e.c levers.
+> Start with B2: extend #250 pointer-IV machinery to indexed-store loops.
 
 ---
 
