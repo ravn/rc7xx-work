@@ -254,6 +254,8 @@
 
 ## 13. Reference / one-offs
 
+- **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — living document for z88dk project at `tasks/z88dk-llvmz80-evaluation-2026-07-21.md`; update after any bridge/benchmark/float change**
+
 - **[xcc issue-filing process](xcc-issue-filing-process.md) — retro-vault/xyz has issues DISABLED → file bugs as PR from ravn/xyz fork; repro goes in `x/tests/repro/` (their red-but-ignored convention, no xfail in cases/); root-cause via `xcc -S` (.ds vs .dw), GREEN oracle via docker gcc; libc/printf not auto-linked in the binary release. First bug: retro-vault/xyz#2**
 - **[ez80clang comparison oracle](reference_ez80clang_oracle.md) — CEdev `ez80-clang` (SelectionDAG eZ80 fork) as corpus 6th lane, CODE-QUALITY only; `setup_ez80clang.sh` + `EZ80CLANG_ORACLE_SETUP.md`; needs z88dk clang_rules.1 fix (branch rc700-gensmedet-1); 3 cells skipped (sieve/fannkuch codegen cliff, pi 32-bit runtime gap) → rc700-gensmedet#122**
 - **[RC703 TFj BIOS oracle](reference_rc703_tfj_bios_oracle.md) — datamuseum Bits:30003297 system tracks = a runnable assembled RC703 BIOS (`rel. TFj`); byte-level oracle for rcbios; system tracks preserved in rc703-div-bios-typer/**
