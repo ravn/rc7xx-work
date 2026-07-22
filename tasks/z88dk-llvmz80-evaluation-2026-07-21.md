@@ -93,8 +93,15 @@ receive all arguments from the stack (`__smallc` / `sdcccall(0)` convention)
 and return 16-bit results in HL.
 
 **New library** (newlib, `+embedded`, `+cpm` with `-clib=new`) is a separate
-architecture built differently per compiler sub-variant.  It is not discussed
-further here; llvmz80 currently only targets the classic clib.
+architecture built differently per compiler sub-variant (`sccz80`, `sdcc_ix`,
+`sdcc_iy`).  llvmz80's supported path is the classic clib, but newlib was
+evaluated empirically 2026-07-22: `-clib=new -compiler=llvmz80` *fails* (its
+sccz80 archive has no `_`-prefixed symbols), **but `-clib=sdcc_ix
+-compiler=llvmz80` links AND runs correctly** (string/malloc/printf/qsort all
+verified in ntvcm) at **~half the code size** of classic — because clang's
+`sdcccall(1)` ABI matches the sdcc newlib variant.  It stays unsupported (rides
+sdcc-ABI coincidence; `%f` broken).  Full writeup:
+`tasks/newlib-cpm-llvmz80-evaluation-2026-07-22.md`.
 
 ### The ABI gap and how the bridge layer closes it
 
