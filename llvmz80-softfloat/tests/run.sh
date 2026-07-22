@@ -83,3 +83,10 @@ echo "=== [i2d] int->double (__floatsidf) via lossless %f -- ravn/llvm-z80#273 =
 # FULL value through nanoprintf %f (not a lossy (long) truncation like ft_dbl),
 # so a wrong i32_to_f64 shiftDist is caught.
 sh "$HERE/i2d_run.sh"
+
+echo
+echo "=== [printf] nanoprintf-backed printf family (%f + all specifiers) ==="
+# End-to-end: __llvmz80_printf/snprintf via src/npf_printf.c, output byte-
+# identical to glibc golden.  Exercises IEEE %f AND %d/%s/%x/%c/%o/%u/precision/
+# width -- the latter also guards the clang-z80 jump-table off-by-one (%x).
+sh "$HERE/printf_run.sh"
