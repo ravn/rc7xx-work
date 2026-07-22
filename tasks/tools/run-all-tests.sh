@@ -51,9 +51,14 @@ if want lit; then
 fi
 
 # ---- Group C: z88dk clang integration ----  (before B: fast)
+# run_matrix.sh runs the suite against every clib (classic + newlib sdcc_iy);
+# fall back to run_all.sh (classic only) if the matrix runner is absent.
 if want z88dk; then
-  hdr "C. z88dk clang integration (test/clang/run_all.sh)"
-  if [ -f "$WS/z88dk/test/clang/run_all.sh" ]; then
+  hdr "C. z88dk clang integration (test/clang/run_matrix.sh: classic + newlib)"
+  if [ -f "$WS/z88dk/test/clang/run_matrix.sh" ]; then
+    sh "$WS/z88dk/test/clang/run_matrix.sh" 2>&1 | tail -30
+    mark "z88dk" "${PIPESTATUS[0]}"
+  elif [ -f "$WS/z88dk/test/clang/run_all.sh" ]; then
     sh "$WS/z88dk/test/clang/run_all.sh" 2>&1 | tail -22
     mark "z88dk" "${PIPESTATUS[0]}"
   else echo "SKIP: run_all.sh missing"; mark "z88dk" 77; fi
