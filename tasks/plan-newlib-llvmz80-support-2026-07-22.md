@@ -41,6 +41,34 @@ and clang-z80 honors it.
 The `_callee` case is the decisive one: it proves the callee-clean convention is
 applied correctly end-to-end, not bypassed.
 
+### Bonus: the classic `ex de,hl` bridge layer disappears entirely
+
+A second, independent argument for newlib.  The classic clib path
+(`-clib=default`) needs a hand-written adapter layer, `libsrc/l/llvmz80/*.asm`
+(`_fflush_fastcall`, `__itoa`, `__divhi3`, …), because its workers were built for
+sccz80: arguments on the stack and 16-bit results returned in **HL**, while clang
+passes arg1/arg2 in HL/DE and expects a 16-bit return in **DE**.  Every such call
+therefore routes through a bridge object that reshuffles the args and ends
+`ex de,hl / ret` to move HL→DE (and, per `fflush`, to fix stack-cleanup
+mismatches).  These bridges exist precisely because the classic clib has *no*
+`_fastcall`/`_callee` variant to route to.
+
+newlib **ships native `_fastcall`/`_callee` entry variants** for every function,
+built to the sdcc ABI that clang-z80 implements directly (`z80_fastcall`,
+`z80_callee`, `sdcccall(0/1)`).  So clang calls the newlib entry with a matching
+convention and the return register already agrees — no adapter, no ABI
+`ex de,hl`.  Measured: **0 `ex de,hl` in the entire newlib smoke build**
+(strcpy/strcat/strlen/malloc/free/snprintf/printf/atoi), and `strlen` even
+tail-calls (`jp _strlen_fastcall`).  This is the same reason printf/sprintf
+return values are correct *natively* on newlib, whereas classic needed the #31
+fix.
+
+Consequence for maintenance: the `libsrc/l/llvmz80/` bridge layer — a body of
+hand-written, per-function Z80 asm that must be kept in lock-step with the
+classic clib — is **not needed on the newlib path at all**.  (Caveat: clang may
+still emit `ex de,hl` as ordinary intra-expression register shuffling; what goes
+away is the *ABI-adapter* `ex de,hl` and the bridge objects themselves.)
+
 ## What is NOT yet done (the actual work)
 
 1. **No sanctioned `cpm.cfg` route.**  Today you must abuse
