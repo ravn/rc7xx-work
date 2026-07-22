@@ -191,6 +191,7 @@
 
 ## 8. Test / debug discipline
 
+- **[Boundary codegen needs a runtime fixture](feedback_boundary_codegen_needs_runtime_fixture.md) — HARD: switch/range-check/compare-narrowing/off-by-one codegen ships a RUNTIME FIXTURE exercising min/max/just-past — the load-bearing safeguard, an oracle INDEPENDENT of your reasoning. A lit test alone is insufficient and "derive CHECK from first principles" does NOT save you (the blind spot is in the reasoning). Origin: #86 jump-table off-by-one, lit-only, cemented ~2.5mo.**
 - **[Revalidate concern, not filename](feedback_revalidate_concern_not_filename.md) — HARD: file moved / workaround in place ≠ resolved; verify the symptom in CURRENT source**
 - **[Outlier-first, not sweep](feedback_outlier_first_not_sweep.md) — HARD: dig ≥1.5×/≥50 B divergences; don't touch every difference**
 - **[Verify matrix before theory](feedback_verify_matrix_before_theory.md) — HARD: contradictory cell pattern = stale state; clean + re-verify anchors first**

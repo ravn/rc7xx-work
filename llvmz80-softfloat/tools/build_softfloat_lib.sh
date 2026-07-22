@@ -38,6 +38,15 @@ fi
 cp "$OUT"/clos/*.o "$OUT/"
 rm -f "$OUT/ft_dbl.o"        # the closure driver's own object, not library code
 
+# nanoprintf-backed printf family (src/npf_printf.c).  Pulled ONLY when a
+# program references __llvmz80_printf/fprintf/sprintf/snprintf (it is a library
+# module), so integer/double programs that never printf pay nothing.  Gives
+# correct IEEE-754 %f (stock z88dk printf formats math48).
+echo "   + npf_printf (nanoprintf printf family)"
+zcc +cpm -compiler=llvmz80 -Cg-O2 -Isrc -Ivendor/nanoprintf -Ivendor/config \
+    -c -o "$OUT/npf_printf.o" src/npf_printf.c 2>"$OUT/npf_printf.err" \
+    || { echo "  COMPILE-FAIL npf_printf"; grep -iE 'error' "$OUT/npf_printf.err" | head; }
+
 echo "== [2/3] archive -> softfloat_cpm_z80.lib =="
 cd "$OUT"
 rm -f softfloat_cpm_z80.lib

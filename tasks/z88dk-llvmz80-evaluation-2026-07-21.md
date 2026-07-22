@@ -53,7 +53,7 @@ remaining gaps are narrow and known.
 | `stdio.h` — `vprintf` | LINK_ERROR | Needs `<stdarg.h>` va_list; the bridge exists but variadic entry is `vfprintf` |
 | `math.h` — sqrt/sin/cos/exp/log/atan/pow/fabs/floor/ceil | NO_LIBM | Berkeley SoftFloat provides f64 arithmetic but not transcendental functions |
 | User-supplied variadic functions with `va_start` | **Fixed** | ravn/z88dk `bb914a18` defers to `__builtin_va_start`; `vsum(3,10,20,30)=60` verified (ravn/llvm-z80#270 closed) |
-| `printf("%f")` | NO_FORMAT | Needs separate nanoprintf closure (`build_fmt.sh`); z88dk `printf` cannot format `double` |
+| `printf("%f")` | **Fixed 2026-07-22** | nanoprintf-backed printf family in `llvmz80-softfloat/src/npf_printf.c`, packaged in `softfloat_cpm_z80.lib`.  `__llvmz80_printf/fprintf/sprintf/snprintf` give correct IEEE-754 `%f` (and all specifiers) — byte-identical to glibc (`tests/ft_printf`).  Unblocked by fixing a clang-z80 jump-table off-by-one that made nanoprintf's `%x` fail (`llvm-z80/tasks/bug-jumptable-upper-bound-offbyone.md`).  Stock z88dk `printf` still formats math48, so route via the shim for `double` output. |
 
 ---
 
@@ -234,6 +234,55 @@ softfloat_cpm_z80.lib    # Berkeley SoftFloat f64 + compiler-rt shims + i64 runt
 Auto-linked via the env var `LLVMZ80RTLIB` (no `.lib` suffix).  Integer-only
 programs that never touch `double` link byte-identically with or without the
 archive set.
+
+### Why `printf("%f")` needs nanoprintf, not z88dk's own float printf
+
+This is the crux of the `double`-output story and worth spelling out for z88dk
+maintainers, because the intuitive fix ("just enable float printf") does not
+work.
+
+**The two float formats are incompatible at the byte level.**  clang-z80
+lowers `double` to **IEEE-754 binary64** (8 bytes) — the format LLVM's
+compiler-rt and the C standard mandate.  z88dk's classic clib float printf
+(`__printf_handle_f` → `__dtoa__` → `asm_fpclassify`/`__dtoa_base10`, enabled by
+linking a `--math*` library) is built for z88dk's **math48** (or math32)
+software float.  When a clang-compiled `printf("%f", x)` reaches z88dk's float
+handler, the handler reads the 8 IEEE bytes as if they were math48 and prints
+garbage (`printf("%.2f", 3.14)` → `val=f`).  So z88dk's own printf **cannot** be
+reused for clang's doubles; something that decodes IEEE-754 is required.
+
+**Writing an IEEE-754 `dtoa` in Z80 assembly was rejected.**  A correct
+double→decimal conversion (rounding, denormals, shortest/fixed digit
+generation) is a large, subtle routine — exactly what z88dk's math libraries
+already are, but for the wrong format.  Adding an IEEE variant into z88dk's
+shared classic printf would also mean surgery in core code used by every target
+and compiler, plus link-order/override plumbing (the classic clib is built once
+and shared; float format is selected at the user's link via `CLIB_*_FLOATS`
+constants).  High risk for a single compiler's benefit.
+
+**nanoprintf (0BSD/Unlicense) is the right adapter.**  It ships a self-contained
+IEEE-754-reading `ftoa` in pure C that decodes the raw double bits directly,
+with no dependency on z88dk's math libraries.  It was validated byte-identical
+to glibc across 50 `%f` cases (`llvmz80-softfloat/tests/ft_fmt`).  Because it
+also formats every other specifier (`%d/%s/%x/%c/%o/%u/…`), a single
+nanoprintf-backed printf covers the whole family consistently instead of
+patching only `%f`.  The shim (`llvmz80-softfloat/src/npf_printf.c`) reuses
+z88dk's own console/`FILE*` output (`putchar` for the console, `fputc` for real
+streams) and only replaces the *formatting*; it is packaged as a library module
+in `softfloat_cpm_z80.lib`, so a program pays for it only if it references
+`__llvmz80_printf`/`fprintf`/`sprintf`/`snprintf`.
+
+**A prerequisite backend fix fell out of this.**  nanoprintf's conversion parser
+tripped a real clang-z80 codegen bug — a jump-table upper-bound off-by-one that
+routed the maximum case value (`'x'`, the highest conversion char) to the
+default block at `-O1+`, so `%x` silently failed.  Root-caused and fixed in the
+backend (`Z80LateOptimization`'s `cp` narrowing used `cp Range` instead of
+`cp Range+1`); it also corrected a latent miscompile in the production RC702
+BIOS (`_specc`'s `erase_to_eos` escape).  See
+`llvm-z80/tasks/bug-jumptable-upper-bound-offbyone.md`.
+
+In short: **nanoprintf is the bridge between clang's IEEE-754 `double` and a
+correct decimal string, without touching z88dk's math48-based core printf.**
 
 ### Transcendental functions (sin, cos, sqrt, exp, log, atan) — closed as known gap
 
