@@ -113,8 +113,35 @@ away is the *ABI-adapter* `ex de,hl` and the bridge objects themselves.)
 6. **crt0 / startup.**  newlib `cpm_crt.asm.m4` assembles and runs, but validate
    stdio init, heap/`sbrk`, `atexit`, and `main` return path under clang codegen.
 
-7. **Zero test coverage in CI.**  Nothing exercises the newlib path; today's
-   evidence is ad-hoc.
+7. **`__attribute__((...))` breaks on the newlib preprocessing path.**  Found
+   2026-07-22: any `__attribute__((noinline))` / GNU attribute makes the newlib
+   build fail with `syntax error: token -> '(' ; column 15` (from the z88dk-ucpp
+   `-D__SDCC` stage), even with normal includes — this is the real reason
+   `runtime_intdiv` skips, not `__smallc`.  The *classic* path accepts the same
+   attribute once a header is included.  Root cause is the divergent newlib
+   `_DEVELOPMENT/common/sys/compiler.h` llvmz80 handling (same as #2/Phase C).
+   This is broader than one test: a large class of real C won't compile until
+   fixed.
+
+8. **FILE\* I/O does not link on the newlib CP/M target.**  Found 2026-07-22:
+   `fopen`/`fgets`/… fail at link with `undefined symbol: asm_target_open_p1 /
+   asm_target_open_p2` (`newlib/fcntl/z80/asm_vopen.asm`) — the CP/M target-open
+   primitives are not in the linked lib set.  The whole FILE\* layer (which
+   *works* and is MAME-verified on classic) is currently unavailable on newlib
+   until the right target lib/objects are pulled.  Needs investigation (missing
+   `-l`, or the newlib cpm target isn't fully wired for this build).
+
+9. **Zero test coverage in CI.**  Nothing exercises the newlib path; today's
+   evidence is ad-hoc (now partly captured by the `TEST_CLIB=sdcc_iy` run of
+   `test/clang`, but with 7 skips for the gaps above).
+
+### Confirmed WORKING on newlib (2026-07-22 probes)
+str/mem, malloc/calloc/free, atoi/strtol, printf/sprintf incl. **return values**
+(native, no bridge), vaarg, fastcall ABI, and — cleanly, source avoiding the
+broken tokens — **`bsearch` with a function-pointer callback** (the `_callee`
+convention + cross-ABI callback end-to-end: `found=11 idx=5`).  `long` divmod
+would work too but is blocked only by the `__attribute__` gap (#7), not by the
+32-bit ABI.
 
 ## Phased plan
 
