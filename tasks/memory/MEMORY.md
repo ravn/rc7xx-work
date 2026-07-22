@@ -255,6 +255,7 @@
 
 ## 13. Reference / one-offs
 
+- **[Canonical test aggregator](reference_run_all_tests.md) — `tasks/tools/run-all-tests.sh` runs all 4 test groups (lit / test-runner / z88dk run_all / softfloat) from one place; run at merge/checkpoint (canonical script, NOT a hook). `fast`=A+C+D, no-arg=full.**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — living document for z88dk project at `tasks/z88dk-llvmz80-evaluation-2026-07-21.md`; update after any bridge/benchmark/float change**
 
 - **[xcc issue-filing process](xcc-issue-filing-process.md) — retro-vault/xyz has issues DISABLED → file bugs as PR from ravn/xyz fork; repro goes in `x/tests/repro/` (their red-but-ignored convention, no xfail in cases/); root-cause via `xcc -S` (.ds vs .dw), GREEN oracle via docker gcc; libc/printf not auto-linked in the binary release. First bug: retro-vault/xyz#2**
