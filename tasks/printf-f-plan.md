@@ -1,7 +1,57 @@
 # Plan: `printf("%f")` for `zcc +cpm -compiler=llvmz80`
 
-**Status:** planning. Supersedes `printf-f-option2-design.md` (option 2's
-complexity turned out materially larger than first estimated — see below).
+**Status: IMPLEMENTED 2026-07-22 (Design B, shipped).** Supersedes
+`printf-f-option2-design.md` (option 2's complexity turned out materially larger
+than first estimated — see below). Outcome recorded in §9; the plan sections
+below are kept as the design record.
+
+---
+
+## 9. Outcome (as shipped)
+
+Design B landed exactly as recommended — **zero z88dk core changes**, all other
+targets untouched.
+
+**What shipped**
+- **nanoprintf-backed shim** `llvmz80-softfloat/src/npf_printf.c`:
+  `__llvmz80_printf`/`fprintf`/`sprintf`/`snprintf` (+ `__llvmz80_vfprintf`).
+  The stdout/stderr callback uses `putchar` (not `fputc(stdout,…)`, which HANGS
+  under CP/M ntvcm); real `FILE*` uses `fputc`. Packaged into
+  `softfloat_cpm_z80.lib` via `tools/build_softfloat_lib.sh` (pulled only when a
+  `printf`-family symbol is referenced).
+- **Transparent opt-in header route** `z88dk/include/stdio.h` (lines ~384-408,
+  guarded `#if defined(__LLVMZ80) && defined(__LLVMZ80_IEEE_PRINTF)`): compile
+  with `-D__LLVMZ80_IEEE_PRINTF` and **stock** `printf/fprintf/sprintf/snprintf`
+  `#define` to the shim — plain `printf("%f", x)` just works, all specifiers.
+  **Opt-in, not default**: routing pulls ~3 KB nanoprintf, and the shim lives in
+  the softfloat archive (auto-linked only when `LLVMZ80RTLIB` is set), so a
+  double program pays nothing extra to opt in while integer-only printf programs
+  (which may not link the archive) stay unaffected.
+- **Golden test** `llvmz80-softfloat/tests/ft_printf.{c,expected}` +
+  `printf_run.sh`, wired into `tests/run.sh` (byte-identical to glibc).
+- **Integration test** `z88dk/test/clang/runtime_printf_ieee.{c,sh}`: STOCK
+  `printf("%f")` under `-D__LLVMZ80_IEEE_PRINTF` → `3.141593`, ntvcm-verified.
+
+**The `%x` bug (open question §7) was NOT a nanoprintf config issue — it was a
+clang-z80 backend miscompile.** nanoprintf's conversion-char dispatch is a dense
+`switch`, which the Z80 backend lowers to a jump table; a jump-table upper-bound
+off-by-one (`cp <limit>` should have been `cp <limit>+1`) made the highest cases
+fall through, so `%x` (and the top of the specifier range) printed literally.
+Root-caused and fixed in `Z80LateOptimization.cpp`; this ALSO fixed a latent
+production BIOS miscompile in `_specc` (`erase_to_eos`). Writeup:
+`llvm-z80/tasks/bug-jumptable-upper-bound-offbyone.md`. Verified: lit 212/0,
+runtime 930/0, MAME rc702 77-track ERR=0.
+
+**Deviations from the plan**
+- `%x` root cause was a backend bug, not the `npf_cpm.h` flag guessed in §5.1/§7.
+- Shim folded INTO `softfloat_cpm_z80.lib` (not a separate
+  `nanoprintf_cpm_z80.lib`) — §7 open question resolved in favor of one archive.
+- Route made **opt-in** via `__LLVMZ80_IEEE_PRINTF` rather than unconditional
+  under `__LLVMZ80`, to keep integer-only programs off the softfloat archive.
+- The dead `CLIB_IEEE64_FLOATS` Design-A leftover (§5.5) was reverted as planned.
+
+**Permanent exception unchanged**: `%e`/`%g` render fixed-decimal only
+(nanoprintf limitation), documented in the eval doc.
 
 ---
 
