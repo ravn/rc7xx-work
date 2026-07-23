@@ -779,3 +779,10 @@ Delivered:
   (PUSHED 6c0af4cec12c on main).
 - Deferred SQL todo `llvm-x86-16bit-cpm86`: whether LLVM X86 "16bit-mode (i8086)"
   yields genuine 8086 output (for CP/M-86) or only 386-real-mode. Do-not-start.
+
+## 2026-07-23 (newlib llvmz80 Phase A + B)
+- hvor var vi? [summarized: newlib -clib=sdcc_ix/iy support for clang-z80; Phase A+B pending]
+- ja (proceed with Phase A + B)
+- gem i din hukommelse at timeout ikke findes på macos [already covered by reference_macos_timeout.md; noted I broke my own rule]
+- husk clang gør dobbelt job for både ez80clang og llvmz80 [new memory reference_clang_double_duty_ez80_llvmz80.md: both define __clang__, gate llvmz80 branches on __LLVMZ80]
+[Phase A DONE: variant=sdcc_iy, matrix green (classic 22P/1S/2X, sdcc_iy 15P/9S/1X). Correction: sdcc_iy CLIB links the sdcc_ix worker archive (only --reserve-regs-iy differs). Phase B __preserves_regs audit = GO for exercised surface: clang's only callee-saved GPR is IX; audited 44 IX-touching linked modules of a printf/malloc/atoi build — no public entry leaks IX (_printf push/pop ix; _fflush_fastcall ex(sp),ix; internal helpers hold FILE*/FDSTRUCT* in IX only within newlib chains). New memory reference_newlib_sdcc_iy_uses_ix_archive.md.]

@@ -194,6 +194,49 @@ Phases C–E on a green Phase B and an actual consumer who wants the size win.
 Standardize on **sdcc_iy**.  Keep classic (`-clib=default`) as the supported path
 meanwhile.
 
+## Phase A + B execution (2026-07-23)
+
+**Phase A — DONE. Variant = sdcc_iy, smoke green.**  `run_matrix.sh classic
+sdcc_iy` (LLVMZ80EXE build-macos, ntvcm): classic **22 PASS / 0 FAIL / 1 SKIP
+(softfloat lib absent) / 2 XFAIL**; sdcc_iy **15 PASS / 0 FAIL / 9 SKIP / 1
+XFAIL**.  The 9 sdcc_iy skips are the documented Phase B/C/D gaps.
+
+**Plan correction to item #5 (sdcc_iy vs sdcc_ix).**  `cpm.cfg` line 23 shows the
+`sdcc_iy` CLIB line links the **`sdcc_ix` archive** (`-L…/lib/sdcc_ix`, `-lcpm`)
+and merely adds `--reserve-regs-iy` to *user*-code compilation.  There is only one
+prebuilt newlib worker archive (sdcc_ix).  So choosing sdcc_iy does NOT yield an
+IY-clean worker set — it gives IY-reserved user code linked against the same
+IY-permitting workers.  This is still the right choice for clang (clang reserves
+IY too, and the CALL opcode already lists IY in its clobber set), but the
+*rationale* in #5 ("no newlib worker holds a value in IY") is wrong; the real
+reason is user-side IY reservation matching clang's.
+
+**Phase B — `__preserves_regs`/callee-saved audit: GO (for the exercised
+surface).**  The audit collapses to a single register:
+
+- clang-z80's only callee-saved GPR is **IX** (`Z80_CSR = (add IX)`); IY is
+  *reserved* (never allocated); the CALL opcode's TableGen `Defs = [A, BC, DE,
+  HL, IY, FLAGS]` means clang already assumes A/BC/DE/HL/IY are clobbered by any
+  call.  A worker preserving *fewer* GPRs than it declares therefore cannot
+  corrupt clang — clang keeps a live value across a call **only in IX**.  The
+  entire risk is: does any *public* newlib entry point clang links clobber IX
+  without restoring it?
+- Method: built a representative binary (printf/malloc/atoi/ultoa/strtol,
+  `-clib=sdcc_iy`), took the 134 linked modules from the `.map`, intersected with
+  IX-touching `.asm` (44 modules), classified push/pop-ix balance.
+- Result: **no public entry leaks IX.**  `_printf` = `push ix / call asm_printf /
+  pop ix / ret`.  `_fflush_fastcall` = `push hl / ex (sp),ix / call / pop ix /
+  ret` (the z88dk idiom: saves caller IX to stack *while* loading the FILE\* arg
+  into IX).  Newlib's internal stdio/fcntl helpers hold `FILE*`/`FDSTRUCT*` in IX
+  across `l_jpix`/`ex (sp),ix` fall-through chains, but those chains are entered
+  only from within newlib and are always bracketed by the public shim's
+  save/restore.  sdcc-compiled workers preserve IX by frame-pointer discipline.
+- Caveat: this proves the **stdio/malloc/string/atoi** surface the matrix pulls.
+  A full go/no-go still wants the same map-intersect audit run over a wider draw
+  (long divmod, qsort/bsearch `_callee`, struct-by-value, FILE\*) once the Phase C
+  compiler.h gap unblocks those tests from linking.  No IX-leak class found so
+  far; empirical 15/15 PASS agrees.
+
 ## Repro (current unsupported form)
 
 ```sh
