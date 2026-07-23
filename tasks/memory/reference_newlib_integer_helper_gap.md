@@ -1,5 +1,24 @@
 ---
-name: newlib clang route needs gcc-style integer helper libcalls
+name: newlib clang integer helper libcalls — CLOSED via llvmz80_imath.lib
+description: The -clib=newlib_iy clang route lacked __mulhi3/__divsi3/... ; now provided by llvmz80_imath.lib. Signed 8/16-bit mod is a separate z88dk newlib bug.
+type: reference
+---
+
+**RESOLVED 2026-07-23.** Provided the clang integer-helper libcalls on the
+newlib route via `z88dk/libsrc/l/llvmz80/newlib/llvmz80_imath.lib` (built by
+`build_imath_lib.sh` from thin adapters `__divhi3/__divsi3/__udivqi3/__mulsi3`
+that call the l_* cores already bundled in the newlib archive; wired into the
+newlib_ix/newlib_iy CLIB lines; force-committed past `**/*.lib` ignore).
+runtime_qsort/intdiv/long now PASS on newlib. `__mulsi3` (32-bit multiply) was a
+NEW gap — `long*long` failed to link on classic too (classic still lacks it).
+**Separate z88dk newlib bug found:** 8/16-bit signed `%` returns `|a%b|` (sign
+dropped) on newlib — stock sccz80/sdcc reproduce it, stale prebuilt libs predate
+upstream fix af5630797c. Bridge matches z88dk (parity accepted); tracked by
+`test/clang/xfail_signed_mod.*` + `BUG_newlib_signed_mod.md`. See
+[[reference_newlib_signed_mod_z88dk_bug]]. Original gap description below.
+
+---
+name: newlib clang route needs gcc-style integer helper libcalls (historical)
 description: The clean -clib=newlib_iy clang route lacks __mulhi3/__divsi3/__divmodsi4 etc.; the ABI bridge disappears but the integer-helper bridge does not
 type: reference
 ---

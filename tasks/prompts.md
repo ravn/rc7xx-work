@@ -790,3 +790,11 @@ Delivered:
 ## 2026-07-23 (continued — Phase C)
 - ja, gå videre med Phase C [DONE: compiler.h __LLVMZ80 mapping (proto+common) + cpm.cfg newlib_ix/newlib_iy CLIB lines (-compiler=llvmz80, no ucpp -D__SDCC choke). Closes #7 (attr) + qsort __smallc ABI (validated: mul-free comparator sorts 1 2 3 4 5 7 8 9). Matrix classic 22P; newlib_iy 18P/6S/0F (was sdcc_iy 15P/9S). Harness: run_matrix default classic+newlib_iy; variant-aware skips; fixed runtime_strerror.sh rt->rt.com bug. z88dk commit 3ad4856ee4.]
 - forklar "runtime_long FEJLER (integer-helper-gap, ikke i skip-listen)" [explained: clang emits gcc-style __divsi3/__modsi3 for 32-bit long div/mod; newlib lacks them; passed on sdcc_iy only because __SDCC ucpp routes long math to newlib-present symbols; wasn't yet registered as a skip so showed as hard FAIL until classified. New memory reference_newlib_integer_helper_gap.md; corrects plan "bridge disappears entirely" claim.]
+
+## 2026-07-23 (continued — integer-helper provisioning + z88dk newlib signed-mod bug)
+- jatak [proceed with integer-helper fix, approach B recommended]
+- lav en plan først [presented phased plan: reuse thin bridges over newlib-bundled l_* cores + llvmz80_imath.lib + CLIB wiring]
+- jatak, husk grundige tests [built llvmz80_imath.lib (__divhi3/__divsi3/__udivqi3/__mulsi3); thorough tests across widths/signs/opt-levels caught: (1) missing __udivqi3 at -Oz, (2) missing __mulsi3 (long*long fails on classic too), (3) SIGNED 8/16-bit mod WRONG on newlib (+5 vs -5)]
+- er det en fejl i z88dk? test med dets egne compilere? [YES — stock sccz80+newlib and sdcc give +5; sccz80+classic gives -5. Genuine z88dk newlib bug, not clang]
+- forbered en bugrapport på mit eget repo [investigated: root cause = stale prebuilt newlib libs (2026-03-26) predate upstream fix af5630797c (suborb 2026-06-28)]
+- lad os antage z88dk newlib-fejl, paritet med z88dk godt nok, tilføj fejlende men ignorerede testcases [DONE: xfail_signed_mod.{c,sh} (PASS classic -5, XFAIL newlib +5, FAIL if diverges from both) + BUG_newlib_signed_mod.md. imath.lib provides all clang integer helpers; qsort/intdiv/long PASS. Matrix: classic 23P/1S/2X, newlib_iy+ix 21P/3S/2X, 0 FAIL. z88dk commit 7aedcf407a.]
