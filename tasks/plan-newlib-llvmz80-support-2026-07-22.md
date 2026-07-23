@@ -237,6 +237,62 @@ surface).**  The audit collapses to a single register:
   compiler.h gap unblocks those tests from linking.  No IX-leak class found so
   far; empirical 15/15 PASS agrees.
 
+## Phase C execution (2026-07-23) — DONE (core), one new gap found
+
+**Landed the sanctioned clang newlib route + the header intent fix.**
+
+1. **`sys/compiler.h` `__LLVMZ80` branch** (both `_DEVELOPMENT/proto` and
+   `_DEVELOPMENT/common`): the `#if __clang__ | __CLANG` block now maps, under
+   `__LLVMZ80` only, `__smallc → __attribute__((sdcccall(0)))`,
+   `__z88dk_callee → z80_callee`, `__z88dk_fastcall → z80_fastcall`,
+   `__vasmallc → __smallc`.  Gated on `__LLVMZ80` (not bare `__clang__`) so the
+   ez80-clang oracle keeps the no-op mapping (`[[reference_clang_double_duty_ez80_llvmz80]]`).
+
+2. **`cpm.cfg` `newlib_ix` / `newlib_iy` CLIB lines**: same sdcc_ix worker
+   archive as sdcc_iy, but `-compiler=llvmz80` instead of `-compiler=sdcc`.  This
+   is the real fix for the ucpp choke (#7): with `-compiler=llvmz80` there is NO
+   `z88dk-ucpp -D__SDCC` pass — clang's own `-E` (with `-D__CLANG -D__LLVMZ80`)
+   preprocesses the `_DEVELOPMENT` headers, so `__smallc`/`__attribute__((...))`
+   sources compile.  (The sdcc_iy line forces `-compiler=sdcc`, which is what
+   dragged in the ucpp pass that chokes on the `__smallc` keyword.)  No
+   `--reserve-regs-iy`: clang reserves IY by default, so newlib_iy/newlib_ix
+   differ only in marker.
+
+**Validated (ntvcm, `-clib=newlib_iy`):** `runtime_attr` (#7 CLOSED),
+`runtime_stdmisc`, `runtime_strerror`, `nontrivial_demo`, `runtime_vaarg` all now
+PASS; a minimal `__smallc` qsort comparator sorts correctly
+(`1 2 3 4 5 7 8 9`) — proving the sdcccall(0)/callee-clean cross-ABI callback is
+correct end-to-end.  Matrix `classic newlib_iy`: **classic 22 PASS / 0 FAIL;
+newlib_iy 18 PASS / 0 FAIL / 6 SKIP / 1 XFAIL** (was sdcc_iy 15 PASS / 9 SKIP —
+strict improvement).  Harness: `run_matrix.sh` default → `classic newlib_iy`;
+`run_all.sh` `newlib_skip_reason` made variant-aware (sanctioned newlib_* skips
+only genuine gaps; unsupported sdcc_* keeps the broad source-feature skip set).
+Also fixed a pre-existing `runtime_strerror.sh` harness bug (`$WORK/rt` →
+`$WORK/rt.com`, matching the other tests; classic happened to produce a runnable
+`rt`, newlib `-create-app` produces `rt.com` + a 0-byte `rt`).
+
+**NEW GAP found — corrects the plan's "bridge disappears entirely" claim.**  The
+*ABI-adapter* `ex de,hl` bridge does disappear on newlib, BUT clang still emits
+gcc-style **integer helper libcalls** for runtime 16/32-bit mul/div/mod —
+`__mulhi3`, `__umodhi3`, `__divsi3`, `__modsi3`, `__divmodsi4`,
+`__udivmodsi4` — and **newlib has none of them**.  On classic they come from
+`libsrc/l/llvmz80/__divhi3.asm` + `__divsi3.asm`, which are tied to classic-clib
+build context (`config_private.inc` + `l_divs_32_32x32` / `l_mulu_16_16x16`
+cores) and are NOT linkable into a `-nostdlib` newlib build.  This blocks
+`runtime_qsort` (LCG mul/mod), `runtime_intdiv` (32-bit divmod), and
+`runtime_long` (32-bit div/mod) on newlib_iy (all now SKIP with the accurate
+"integer-helper gap" reason).  Note `runtime_long` PASSES on sdcc_iy only because
+the `-D__SDCC` ucpp path routes long arithmetic to symbols that DO exist in the
+newlib sdcc archive.  **This is the next blocker** — a distinct integer-runtime
+provisioning task (provide self-contained `__mulhi3`/`__divsi3`/… for the newlib
+route, or a newlib-context build of the llvmz80 integer bridge).  See
+[[reference_newlib_integer_helper_gap]].
+
+**Still open (unchanged):** FILE\* link (`asm_target_open_p1/p2`, plan #8);
+`%f`/softfloat (`LLVMZ80RTLIB` auto-link is compiler-driven so it applies to
+newlib_iy identically to classic, but the softfloat `.lib` must be built to run
+`%f` — mechanism confirmed, not re-run here).
+
 ## Repro (current unsupported form)
 
 ```sh
