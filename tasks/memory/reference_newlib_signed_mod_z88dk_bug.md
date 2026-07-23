@@ -1,7 +1,20 @@
 ---
-name: z88dk newlib 8/16-bit signed modulo returns |a%b| (stale prebuilt lib)
-description: A genuine z88dk newlib bug (not clang) — signed % drops the sign on newlib; stale prebuilt libs predate upstream fix af5630797c
+name: z88dk newlib 8/16-bit signed modulo returns |a%b| — RESOLVED by lib rebuild
+description: Was a stale-prebuilt-lib bug (not clang); FIXED 2026-07-24 by merging upstream + rebuilding the newlib libs (fix af5630797c)
 type: reference
+---
+
+**RESOLVED 2026-07-24.** Merged upstream/master into ravn/z88dk and rebuilt the
+newlib libs (`make -C libsrc/newlib cpm-clean && make -C libsrc/newlib cpm`) —
+signed 8/16-bit `%` is now C-correct on newlib for BOTH llvmz80 and stock sccz80
+(`-30000%7 == -5`). The rebuild is native (no Docker — see
+[[reference_z88dk_lib_toolchain_native]]). `xfail_signed_mod` now PASSES
+(regression guard). Upstream z88dk should regenerate its committed prebuilt
+newlib archives. Merge also left 2 classic clang regressions (ravn/z88dk #33
+qsort, #32 strerror) — see
+`z88dk/test/clang/FOLLOWUP_classic_qsort_strerror_after_upstream_merge.md`.
+Original diagnosis below.
+
 ---
 
 **Found 2026-07-23.** z88dk's **newlib** library returns `|a % b|` for 8-bit and

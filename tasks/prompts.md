@@ -798,3 +798,14 @@ Delivered:
 - er det en fejl i z88dk? test med dets egne compilere? [YES — stock sccz80+newlib and sdcc give +5; sccz80+classic gives -5. Genuine z88dk newlib bug, not clang]
 - forbered en bugrapport på mit eget repo [investigated: root cause = stale prebuilt newlib libs (2026-03-26) predate upstream fix af5630797c (suborb 2026-06-28)]
 - lad os antage z88dk newlib-fejl, paritet med z88dk godt nok, tilføj fejlende men ignorerede testcases [DONE: xfail_signed_mod.{c,sh} (PASS classic -5, XFAIL newlib +5, FAIL if diverges from both) + BUG_newlib_signed_mod.md. imath.lib provides all clang integer helpers; qsort/intdiv/long PASS. Matrix: classic 23P/1S/2X, newlib_iy+ix 21P/3S/2X, 0 FAIL. z88dk commit 7aedcf407a.]
+
+## 2026-07-23/24 (upstream merge into ravn/z88dk + native lib rebuild + signed-mod FIXED)
+- er det en fejl i z88dk? test med dets egne compilere [YES: stock sccz80/sdcc reproduce +5 on newlib; sccz80 classic correct -5]
+- forbered en bugrapport på mit eget repo [investigated: stale prebuilt newlib libs predate upstream fix af5630797c (suborb 2026-06-28)]
+- lad os antage z88dk newlib-fejl... tilføj fejlende men ignorerede testcases [xfail_signed_mod.{c,sh} + BUG_newlib_signed_mod.md]
+- betyder det at hvis jeg genbygger libs så er alt i orden [proxy-verified: fresh classic (same source) fully correct -> rebuild should fix]
+- jeg vil gerne hente z88dk upstream ind i ravn/z88dk og genbygge [merge: 213 upstream commits, 3 conflicts resolved (.gitignore/newlib-z80.lst/stdlib.h took upstream's redesigned qsort), all ravn work preserved, safety tag]
+- hvorfor kræver z88dk-zsdcc docker? [it doesn't — native arm64 binary; CLAUDE.md note stale. Corrected.]
+- ja, følg med [native rebuild: fixed ravn strtol.asm non-IX bug; make clean+TARGETS=cpm/z80+install; newlib cpm rebuild -> SIGNED-MOD FIXED (newlib -2/-5/-4 correct for llvmz80 AND sccz80). newlib_iy all green 22 PASS. 2 classic regressions surfaced (qsort ABI, strerror link)]
+- b [commit progress: strtol fix + BUG RESOLVED + FOLLOWUP doc. z88dk commits cff2e601b1, 1045678be2]
+- lav separat issue på regressionerne [ravn/z88dk #33 created (qsort comparator ABI); commented on existing #32 (strerror, pre-existing). Follow-up doc references both.]
