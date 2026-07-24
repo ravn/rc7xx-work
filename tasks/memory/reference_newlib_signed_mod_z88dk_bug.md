@@ -11,9 +11,17 @@ signed 8/16-bit `%` is now C-correct on newlib for BOTH llvmz80 and stock sccz80
 [[reference_z88dk_lib_toolchain_native]]). `xfail_signed_mod` now PASSES
 (regression guard). Upstream z88dk should regenerate its committed prebuilt
 newlib archives. Merge also left 2 classic clang regressions (ravn/z88dk #33
-qsort, #32 strerror) — see
-`z88dk/test/clang/FOLLOWUP_classic_qsort_strerror_after_upstream_merge.md`.
-Original diagnosis below.
+qsort, #32 strerror) — **both FIXED 2026-07-24, commit 9e13c271c2** (see
+`z88dk/test/clang/FOLLOWUP_classic_qsort_strerror_after_upstream_merge.md` and
+[[reference_llvmz80_qsort_strerror_classic_fix]]).  Bonus: standard 5-arg
+`bsearch` gap also closed (xfail_bsearch retired → runtime_bsearch).  Classic
+clang suite 24 PASS / 0 FAIL, newlib_iy 23 PASS / 0 FAIL.  Original diagnosis
+below.
+
+NB: `make -C libsrc TARGETS=z80 clean` wipes the gitignored newlib `.lib`
+artifacts too — rebuild them with `make -C libsrc/newlib cpm` or newlib links
+fail with `file not found: cpm.lib`.  See
+[[reference_z88dk_lib_toolchain_native]].
 
 ---
 
