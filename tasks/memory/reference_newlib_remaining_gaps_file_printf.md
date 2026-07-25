@@ -37,6 +37,15 @@ type: reference
   classic `-D__LLVMZ80_IEEE_PRINTF` nanoprintf route is now also wired into the
   newlib `_DEVELOPMENT` stdio.h + a newlib-compiled shim lib.
 
+- **ravn/z88dk #37 — `<math.h>` + libm — UNSUPPORTED FOR NOW** (wontfix,
+  2026-07-26). `<math.h>` fails to compile under llvmz80 (its `_FLOAT16_T` block
+  typedefs `_Float16`, a reserved clang keyword unsupported on z80); guard fix
+  known but NOT applied. Even guarded, libm doesn't link (`_sqrt_fastcall` uses
+  newlib's native float format, not clang IEEE-754 double; some compiler-rt float
+  libcalls absent). clang doubles use softfloat (`LLVMZ80RTLIB`) + `mathf64`, not
+  newlib math. All other core headers compile fine. Same "known gap" treatment as
+  #34.
+
 Not product gaps (no issue): `printf_ieee` on classic skips only because the
 softfloat lib isn't pre-built at `/tmp/softfloat_lib/` (test-env artifact);
 `xfail_tmpfile` is a CP/M platform limitation (no temp-file primitive).
