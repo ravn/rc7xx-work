@@ -22,8 +22,11 @@ type: reference
   newlib disk driver.** If ever finished: `asm_target_open` dispatcher
   (device-name vs filename) + a CPM_DISK_FILE STDIO_MSG driver over BDOS FCB,
   porting the classic `libsrc/target/cpm/fcntl/` (~1760 lines). Test
-  `runtime_file.sh` skipped on newlib. Staged for possible upstream filing after
-  maintainer confirms direction (asm hook vs FatFs C-wrapper #1426).
+  `runtime_file.sh` skipped on newlib. **Upstream discussion filed
+  2026-07-25: z88dk/z88dk#3022** (status question + offer of an AI-assisted CP/M
+  implementation of `asm_target_open` + a disk-file driver; cross-linked on
+  ravn/z88dk #34). Await maintainer direction (implement the hook vs FatFs
+  C-wrapper #1426 vs leave unsupported) before writing any code.
 
 - **ravn/z88dk #35 — newlib variadic `%f` — FIXED 2026-07-25** (z88dk commit
   cbbcc50031). Stock `printf("%f")` on `-clib=newlib_iy` + `-D__LLVMZ80_IEEE_PRINTF`
