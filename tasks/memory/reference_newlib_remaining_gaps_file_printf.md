@@ -7,14 +7,23 @@ type: reference
 **2026-07-24.** With the sanctioned `-clib=newlib_iy` route otherwise green
 (23 PASS / 0 FAIL), exactly two genuine product gaps remain, both filed:
 
-- **ravn/z88dk #34 — disk FILE\* I/O does not link on newlib.** `fopen`/fcntl
-  pull `libsrc/newlib/fcntl/z80/asm_vopen.asm`, which delegates to target hooks
-  `asm_target_open_p1`/`asm_target_open_p2`. The CP/M **newlib** target
-  (`libsrc/newlib/target/cpm/`) ships console/char drivers but **no file-open
-  driver**, so both hooks are undefined. **Compiler-independent** — sccz80
-  (`-clib=new`), sdcc (`-clib=sdcc_ix`) and clang (`-clib=newlib_iy`) all fail
-  identically. Classic clib FILE\* is complete + MAME-verified, so classic is
-  the working CP/M file-I/O path. Test `runtime_file.sh` skipped on newlib.
+- **ravn/z88dk #34 — disk FILE\* I/O does not link on newlib — UNSUPPORTED FOR NOW**
+  (wontfix, 2026-07-25). `fopen`/`open` -> `asm_vopen` delegates to target hooks
+  `asm_target_open_p1`/`asm_target_open_p2`, which **no newlib z80 target
+  implements** (symbols occur only as the EXTERN in `asm_vopen.asm`, header dated
+  "October 2014"; `git log -S` finds zero impls). NOT CP/M-specific and NOT
+  clang-specific — sccz80/sdcc/clang all fail, and rc2014/yaz180 `diskio` drivers
+  are raw block/sector, not wired to fopen. stdin/stdout/stderr work because the
+  CRT statically instantiates the console drivers, bypassing vopen. This is the
+  newlib "last mile" the architect **aralbrec acknowledged in upstream
+  z88dk/z88dk#1426** ("most of the pieces are there ... just missing the last
+  mile"); no open upstream issue tracks its completion. **Decision: use the
+  classic clib for CP/M file I/O (complete + MAME-verified); do not build the
+  newlib disk driver.** If ever finished: `asm_target_open` dispatcher
+  (device-name vs filename) + a CPM_DISK_FILE STDIO_MSG driver over BDOS FCB,
+  porting the classic `libsrc/target/cpm/fcntl/` (~1760 lines). Test
+  `runtime_file.sh` skipped on newlib. Staged for possible upstream filing after
+  maintainer confirms direction (asm hook vs FatFs C-wrapper #1426).
 
 - **ravn/z88dk #35 — newlib variadic `%f` — FIXED 2026-07-25** (z88dk commit
   cbbcc50031). Stock `printf("%f")` on `-clib=newlib_iy` + `-D__LLVMZ80_IEEE_PRINTF`
