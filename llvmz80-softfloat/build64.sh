@@ -43,6 +43,10 @@ for f in $SEED; do compile "$(srcfor "$f")"; done
 compile src/sf64.c
 compile src/sf64_f32.c
 zcc +cpm -compiler=llvmz80 -Cg-O2 -c -o "$OUT/intrt.o" ../llvmz80-intrt/src/intrt.c 2>/dev/null
+# __mulsi3 in its own object so the packaged archive can share it on demand with
+# newlib's llvmz80_imath.lib (no ___mulsi3 duplicate on -clib=newlib_iy) -- see
+# ../llvmz80-intrt/src/intrt_mulsi3.c
+zcc +cpm -compiler=llvmz80 -Cg-O2 -c -o "$OUT/intrt_mulsi3.o" ../llvmz80-intrt/src/intrt_mulsi3.c 2>/dev/null
 # __memmove_rt: custom reg-ABI struct-copy helper clang-z80 emits (z88dk lacks it)
 zcc +cpm -compiler=llvmz80 -c -o "$OUT/rt_mem.o" ../llvmz80-intrt/src/rt_mem.asm 2>/dev/null
 

@@ -16,13 +16,12 @@
  */
 #include <stdint.h>
 
-/* ---- 32-bit multiply (low word; same bits signed or unsigned) ---------- */
-uint32_t __mulsi3(uint32_t a, uint32_t b)
-{
-    uint32_t r = 0;
-    while (b) { if (b & 1u) r += a; a <<= 1; b >>= 1; }
-    return r;
-}
+/* ---- 32-bit multiply (low word) --------------------------------------- */
+/* __mulsi3 now lives in its own TU (intrt_mulsi3.c) so the packaged archive
+ * can share __mulsi3 with newlib's llvmz80_imath.lib without a duplicate
+ * definition -- see intrt_mulsi3.c.  Declared here for the self-test below;
+ * builds/links that want it must also compile intrt_mulsi3.c. */
+extern uint32_t __mulsi3(uint32_t a, uint32_t b);
 
 /* ---- 64-bit multiply (low 64 bits; same bits signed or unsigned) ------- */
 uint64_t __muldi3(uint64_t a, uint64_t b)

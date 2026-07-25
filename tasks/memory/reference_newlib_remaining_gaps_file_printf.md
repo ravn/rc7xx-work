@@ -16,15 +16,14 @@ type: reference
   identically. Classic clib FILE\* is complete + MAME-verified, so classic is
   the working CP/M file-I/O path. Test `runtime_file.sh` skipped on newlib.
 
-- **ravn/z88dk #35 — newlib variadic `%f` drops clang IEEE-754 double.**
-  `printf("%f", 3.5)` links + runs but prints `val=` (empty). clang lowers
-  `double` to IEEE-754; z88dk's variadic printf float converter expects native
-  math48/MBF. On **classic** the opt-in `-D__LLVMZ80_IEEE_PRINTF` header route
-  swaps in a nanoprintf/softfloat converter (works → `3.141593`), but that
-  interposition is not wired into the **newlib** stdio `vfprintf` path (plan
-  Phase D). Distinct from #25 (dhrystone spurious %f link fail) and #31
-  (variadic return-value garbage). Test `runtime_printf_ieee.sh` skipped on
-  newlib.
+- **ravn/z88dk #35 — newlib variadic `%f` — FIXED 2026-07-25** (z88dk commit
+  cbbcc50031). Stock `printf("%f")` on `-clib=newlib_iy` + `-D__LLVMZ80_IEEE_PRINTF`
+  now prints correct IEEE-754 (`3.141593`); `runtime_printf_ieee` flipped
+  skip→PASS (newlib_iy 24 PASS / 0 FAIL, classic 25/0). See
+  [[reference_llvmz80_newlib_ieee_printf_fix]]. Original diagnosis: clang lowers
+  `double` to IEEE-754; z88dk's variadic printf expects native math48/MBF. The
+  classic `-D__LLVMZ80_IEEE_PRINTF` nanoprintf route is now also wired into the
+  newlib `_DEVELOPMENT` stdio.h + a newlib-compiled shim lib.
 
 Not product gaps (no issue): `printf_ieee` on classic skips only because the
 softfloat lib isn't pre-built at `/tmp/softfloat_lib/` (test-env artifact);

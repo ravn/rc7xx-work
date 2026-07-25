@@ -17,7 +17,9 @@ export PATH="$WS/z88dk/bin:$PATH"
 export ZCCCFG="$WS/z88dk/lib/config/"
 
 echo "=== [1/2] host self-test (cores vs native 32/64-bit) ==="
-cc -O2 -DINTRT_SELFTEST -o /tmp/intrt_selftest "$PROJ/src/intrt.c"
+# intrt_mulsi3.c is a separate TU now (see intrt_mulsi3.c) -- compile both.
+cc -O2 -DINTRT_SELFTEST -o /tmp/intrt_selftest \
+    "$PROJ/src/intrt.c" "$PROJ/src/intrt_mulsi3.c"
 /tmp/intrt_selftest
 
 echo
@@ -26,11 +28,14 @@ OUT=$(mktemp -d)
 # Build at -O0: -O1+ trips the llvm-z80 branch-relaxation bug (ravn/llvm-z80#267,
 # out-of-range `jr` -> assembler "integer range") in large functions.
 zcc +cpm -compiler=llvmz80 -Cg-O0 -c -o "$OUT/intrt.o" "$PROJ/src/intrt.c"
+zcc +cpm -compiler=llvmz80 -Cg-O0 -c -o "$OUT/intrt_mulsi3.o" "$PROJ/src/intrt_mulsi3.c"
 
-# The library must be self-contained: linking ft_int against ONLY intrt.o must
-# resolve every symbol (no other multiply/divide helper pulled in).
+# The library must be self-contained: linking ft_int against ONLY the intrt
+# objects must resolve every symbol (no other multiply/divide helper pulled in).
+# __mulsi3 now comes from its own object intrt_mulsi3.o (split out so the
+# packaged archive can share it with newlib's imath -- see intrt_mulsi3.c).
 zcc +cpm -compiler=llvmz80 -Cg-O2 -o "$OUT/ft_int" \
-    "$PROJ/tests/ft_int.c" "$OUT/intrt.o"
+    "$PROJ/tests/ft_int.c" "$OUT/intrt.o" "$OUT/intrt_mulsi3.o"
 GOT=$(python3 "$TICKS" "$OUT/ft_int" | grep -v '^\[ticks\]')
 echo "$GOT"
 
