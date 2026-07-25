@@ -73,6 +73,7 @@
 ## 3. Before any memory-layout / linker / address change
 
 - **[RC702 IVT page constraint](project_rc702_ivt_page_constraint.md) — IM 2 IVT page must not overlap display 0xF800..0xFFCF; valid: 0xEC00/0xED00 (BSS) or 0xF500 (resident)**
+- [rcbios 32-bit RTC = diffs only](reference_rcbios_rtc_counter_diffs_only.md) — rtc0/rtc2 (0xFFFC/0xFFFE) is a 50Hz boot-relative tick counter; wraps ~2.72yr; use for elapsed-time differences, NEVER as a since-epoch timestamp. Same 50Hz as z88dk rc700 clock().
 - **[RC702 bank2h PROM mirror](feedback_rc702_bank2h_mirror.md) — HARD: 0x2800..0x2FFF is PROM1-mirror, NOT RAM**
 - **[Grep mem_map before BSS literal](feedback_grep_memmap_before_bss.md) — HARD: grep emulator mem_map before allocating BSS at a literal address**
 - **[Slave RAM state outside TPA](feedback_slave_state_outside_tpa.md) — HARD: pin slave state to SNIOS reserved area (0xED00..0xF7FF), never inside TPA**
