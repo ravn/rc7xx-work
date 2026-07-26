@@ -99,7 +99,8 @@ Workspace root is per-host: `/Users/ravn/z80/` (macbook), `/home/ravn/z80/` (son
   - `rcbios-in-c/` — CP/M BIOS in C
   - `cpnos-in-c/` — CP/NOS slave PROM1-only line program (production, PROM 1)
   - `cpnos-rom/`, `cpnos-in-asm/` — parked predecessors of cpnos-in-c
-- `z88dk/` — z88dk toolchain (github.com/z88dk/z88dk, shallow clone). Contains sdcc/sccz80 compilers, Docker build workflows.
+  - `z88dk/` — **NOT the fork.** A pinned prebuilt toolchain, tracked *inside* rc700-gensmedet: a small Makefile that downloads the official z88dk 2.4 macOS release (`download/z88dk-osx-2.4.zip`) and symlinks `bin/`/`lib/`/`include/`. Gives rc700 builds a stable stock `zcc`/`zsdcc`/`z80asm` without needing the fork built. Do not confuse with the top-level `z88dk/` below.
+- `z88dk/` — the **development fork** (github.com/ravn/z88dk, its own repo). All bridge/newlib/clang-integration work lives here (`libsrc/l/llvmz80/`, `include/_DEVELOPMENT/`). Built from source. Distinct from the prebuilt `rc700-gensmedet/z88dk/` above.
 
 The autoload Makefile references `LLVM_Z80` relative to this workspace (via `$(CURDIR)/../../llvm-z80`).
 
