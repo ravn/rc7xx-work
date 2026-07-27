@@ -238,6 +238,7 @@
 
 - **[Long-term goal: finish rcbios + autoload-in-c + CP/NET + cpnos](project_finishing_firmware_components.md) — bias work toward measurably advancing one of the four**
 - **[cpnos PARKED — awaiting physical parallel cable](project_cpnos_parked_awaiting_parallel_cable.md) — surface before acting on cpnos/PIO/polypascal tasks; unpark on user signal**
+- **[MP/M disks: local-only, library frozen](project_mpm_disks_local_only.md) — `make mpm-disks` (cpnos-in-c) builds all tailored disks into disks/local/; NEVER write disks/library/; slave netboot image is RC700.NOS (was cpnos.img)**
 - **[rcbios CP/NET PIO polypascal PASS 16s](project_rcbios_cpnet_pio_race_parked.md) — FIXED: z80pio 2eb88cea + snios RECVBY_PIO timeout; test: H:→PPAS→P PRIMES→PRIMES.COM→TESTDONE; ravn/mame#13 upstream candidate**
 - **[SEM702 chip-photo request](project_sem702_request_chip_photo.md) — when the RC702 is open, ask for photos of the piggyback boards (ic82 + under ic68)**
 - **[User's RC702 HAS SEM702, not ROA327](project_user_rc702_has_sem702.md) — define_sextants() is essential on the user's hardware (~79 ms, accepted); don't gate/remove it**
