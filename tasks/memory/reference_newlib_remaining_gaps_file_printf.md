@@ -1,6 +1,6 @@
 ---
-name: newlib clang remaining gaps — disk FILE* (#34) + variadic %f (#35)
-description: After Phase C + qsort/strerror fixes, the two remaining newlib_iy skips; both root-caused, filed on ravn/z88dk
+name: newlib clang remaining gaps — disk FILE* (#34) + libm (#37) WONTFIX; %f (#35) FIXED
+description: After Phase C the only remaining newlib_iy gaps are WONTFIX (#34 disk FILE*, #37 libm); #35 variadic %f is FIXED 2026-07-25
 type: reference
 ---
 

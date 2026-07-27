@@ -338,19 +338,33 @@ clang binary (compiler-rt model), not inside z88dk. Being a `.lib` archive, an
 integer-only program links byte-identically whether or not it is set.
 
 **Known gaps / bugs (see also "Known Bugs in llvm-z80" above):**
-- **Variadic stdio return value is garbage** (`printf`/`fprintf`/`sprintf`/
-  `snprintf`/`scanf`/`fscanf`/`sscanf`). Output/parse are correct but the
-  returned count is wrong (e.g. `sscanf(...)`→ -362 want 3). Root cause
-  (verified from source + a control): the classic clib sdcc entry points return
-  the int in **HL**, clang `sdcccall(1)` reads **DE**, and the printf family is
-  NOT bridged (for clang `__vasmallc` is empty), so no `ex de,hl`. Fix needs a
-  return-address-interposing trampoline, not a plain `__ZPROTO` bridge.
-  Filed **ravn/z88dk#31**; writeup in `CALLING_CONVENTION.md` ("KNOWN GAP").
+- **Variadic stdio return value** (`printf`/`fprintf`/`sprintf`/`snprintf`/
+  `scanf`/`fscanf`/`sscanf`) — **FIXED 2026-07-20 (ravn/z88dk#31 CLOSED).** Was:
+  output/parse correct but the returned count garbage (`sscanf(...)`→ -362 want
+  3). Root cause was a z88dk header bug, NOT a missing trampoline: classic clib
+  workers return the count in **HL**, clang `sdcccall(1)` reads **DE**, and the
+  variadic decls carried no convention attribute (`__vasmallc` expanded empty for
+  clang). Fix = one `__LLVMZ80`-guarded line in `include/sys/compiler.h`
+  (`#define __vasmallc __smallc`, i.e. sdcccall(0) so clang reads HL); the earlier
+  "return-address-interposing trampoline" idea was superseded (no asm thunk).
+  Writeup in `CALLING_CONVENTION.md` ("FIXED: variadic stdio return value").
 - **`(double)int` (`__floatsidf`)** — FIXED 2026-07-21 (ravn/llvm-z80#273 was
   mis-filed as a backend bug; real cause was our SoftFloat clz-width config, see
   "Known Bugs in llvm-z80" above). int→double now works at all opt levels.
-- **`printf("%f")`** needs the separate nanoprintf closure (`build_fmt.sh`);
-  z88dk's variadic `printf` cannot format `double` here.
+- **`printf("%f")`** — **FIXED 2026-07-25 (ravn/z88dk#35 CLOSED)** on the newlib
+  route. Stock `printf("%f")` on `-clib=newlib_iy`/`newlib_ix` with
+  `-D__LLVMZ80_IEEE_PRINTF` now formats clang IEEE-754 `double` correctly
+  (newlib_iy 24 PASS / 0 FAIL), mirroring classic. z88dk commit `cbbcc50031`;
+  three gotchas (split `__mulsi3` TU, per-clib printf shim, `#ifdef __ZXNEXT`
+  placement) documented in `tasks/memory/reference_llvmz80_newlib_ieee_printf_fix.md`.
+  Without the flag, the classic route still uses the separate nanoprintf closure
+  (`build_fmt.sh`).
+- **Disk FILE\* on newlib (`fopen` real file I/O)** — **WONTFIX / out of scope**
+  (ravn/z88dk#34). The CP/M newlib target ships no file-open driver
+  (`asm_target_open_p1/p2` undefined); maintainers do not want CP/M newlib file
+  support (classic is the forward direction — see
+  `reference_z88dk_direction_classic_not_newlib`). Not a bug to fix; real CP/M
+  file I/O is the FILE\* layer under classic.
 - **`va_start`/`va_arg` in user variadic functions** — **FIXED** (ravn/z88dk `bb914a18`,
   2026-07-21): z88dk `<stdarg.h>` now defers to `__builtin_va_start` under
   `__LLVMZ80`; `vsum(3,10,20,30)=60` verified. ravn/llvm-z80#270 CLOSED.
