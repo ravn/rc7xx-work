@@ -266,6 +266,7 @@
 - **[RC703 TFj BIOS oracle](reference_rc703_tfj_bios_oracle.md) — datamuseum Bits:30003297 system tracks = a runnable assembled RC703 BIOS (`rel. TFj`); byte-level oracle for rcbios; system tracks preserved in rc703-div-bios-typer/**
 - [User Profile](user_profile.md) — experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - **[TODO-later: cpmish distribution](project_cpmish_todolater.md) — undersøg davidgiven/cpmish som distributions-vehicle for rc702-8dd/5dd + rc703-qd diskbilleder**
+- **[FILE* test suite parked — newlib migration](project_fileio_suite_parked_newlib.md) — 4 XFAIL + 9 SKIP genoptages når z88dk newlib CP/M file-driver lander upstream (ravn/z88dk#34)**
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, `/home/ravn/z80`, headless, gh authed, upstream LLVM at `~/llvm-upstream/llvm-project`
 - [Safari breaks claude login callback](reference_claude_login_safari_workaround.md) — use ANTHROPIC_API_KEY or non-Safari default browser
 - [HiTech zc Docker image](reference_hitech_zc_docker.md) — `ghcr.io/ravn/hitech` provides `zc`
