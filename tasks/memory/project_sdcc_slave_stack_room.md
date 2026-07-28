@@ -5,6 +5,12 @@ metadata:
   type: project
 ---
 
+**PARKED 2026-07-28** (user direction) as a known problem — tracked in
+ravn/rc700-gensmedet#125 (label `parked`). The build guard stays ON (fails the
+sdcc build loudly), so nothing ships silently broken; the resident shrink is not
+being pursued now. Unpark trigger = user asks to make the sdcc slave boot, or
+someone needs the sdcc MAME-only path. clang (production) is unaffected and works.
+
 The cpnos-in-c **SDCC** PROM1 line-program slave has a hard resident-size
 ceiling driven by its stack, distinct from the PROM byte budget:
 
