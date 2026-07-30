@@ -55,6 +55,18 @@ the failure: a filing reached a maintainer that the user couldn't defend.
 6. **After filing**, paste the issue/PR URL back and confirm the body
    matches what was approved.
 
+**2026-07-08 violation (mamedev/mame#15664):** filed the z80pio
+`check_interrupts` bug to mamedev/mame immediately after the user said
+"analyser, opsummer, opret issues og commit" — without stopping to explain
+the root cause in chat and wait for "go ahead, file it." The issue was
+drafted earlier in the session (user approved the draft content) but
+"lav udkast men opret det ikke" (2026-07-08 earlier) was the last explicit
+gate instruction — that gate was never lifted for mamedev/mame specifically.
+Issue was closed within minutes on user request; tracking issue moved to
+ravn/mame#13. **The approval of a draft is NOT an approval to file. Every
+filing needs its own explicit "go ahead" at the moment of filing, after the
+draft has been reviewed in context.**
+
 **Scope of "upstream" for this rule.** Anything posted to a repository
 that isn't fully under the user's control:
 

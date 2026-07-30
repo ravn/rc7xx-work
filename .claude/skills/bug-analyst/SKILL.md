@@ -1,6 +1,6 @@
 ---
 name: bug-analyst
-description: Walk through a candidate compiler bug in the file-bugs-not-fixes discipline — smallest repro, current vs expected behavior, root cause (file:line), evidence (with AVR cross-check), contamination/doubt, verdict — with NO proposed fix.  Use when the user wants to evaluate a candidate bug for potential upstream filing OR when they ask "is X a bug?" / "what does pass Y do here?" / "should we file this upstream?".  Operationalizes the HARD rules `feedback_file_bugs_not_fixes` and `feedback_verdict_after_real_pass_output`.  Outputs a structured bug-analysis block ready for user review and per-filing go-ahead (per `feedback_explain_before_filing`).  Args: optional bug identifier (e.g. `bug2`, `#164`, an issue number, or a path to a repro file).
+description: 'Walk through a candidate compiler bug in the file-bugs-not-fixes discipline — smallest repro, current vs expected behavior, root cause (file:line), evidence (with AVR cross-check), contamination/doubt, verdict — with NO proposed fix.  Use when the user wants to evaluate a candidate bug for potential upstream filing OR when they ask "is X a bug?" / "what does pass Y do here?" / "should we file this upstream?".  Operationalizes the HARD rules `feedback_file_bugs_not_fixes` and `feedback_verdict_after_real_pass_output`.  Outputs a structured bug-analysis block ready for user review and per-filing go-ahead (per `feedback_explain_before_filing`).  Args: optional bug identifier (e.g. `bug2`, `#164`, an issue number, or a path to a repro file).'
 ---
 
 # Bug analyst

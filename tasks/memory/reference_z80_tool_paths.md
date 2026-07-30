@@ -17,6 +17,7 @@ metadata:
 | Native opt | `/Users/ravn/z80/llvm-z80/build-macos/bin/opt` |
 | Native llvm-nm | `/Users/ravn/z80/llvm-z80/build-macos/bin/llvm-nm` |
 | Native llvm-lit | `/Users/ravn/z80/llvm-z80/build-macos/bin/llvm-lit` |
+| **Asserts llc/clang** (supports `-debug-only=<pass>`) | `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/llc` |
 | z88dk-ticks (Z80 emulator for runtime verification) | `/Users/ravn/z80/z88dk/bin/z88dk-ticks` |
 | zcc (z88dk C compiler driver) | `/Users/ravn/z80/z88dk/bin/zcc` |
 | zmac (Z80 assembler) | `/Users/ravn/z80/rc700-gensmedet/zmac/bin/zmac` |
@@ -34,6 +35,50 @@ $NINJA -C build-macos clang llc opt        # both clang+llc per feedback_ninja_c
 ```
 
 After backend changes ALWAYS rebuild clang+llc together (the clang symlink would otherwise reference stale libLLVM if you `ninja llc` alone).
+
+### Debug/asserts build (for `-debug-only`, pass tracing)
+
+`build-macos/` is a **Release** build — it rejects `-debug-only=<pass>` ("Unknown
+command line argument"). Use `build-macos-asserts/` for `llc -debug-only=branch-relaxation`
+(and any assertion-checked / pass-debug run). It is NOT always current — rebuild first:
+
+```
+$NINJA -C build-macos-asserts llc     # (or clang), ~1-2 min incremental
+```
+
+### zcc with the llvmz80 backend (ravn/llvm-z80 GlobalISel clang)
+
+`zcc -compiler=llvmz80` looks for a binary named **`llvmz80-clang`** on PATH,
+overridable with the **`LLVMZ80EXE`** env var (env wins).  There is no
+`llvmz80-clang` on this machine, so point `LLVMZ80EXE` at the native build's
+clang:
+
+```
+export PATH=/Users/ravn/z80/z88dk/bin:$PATH
+export ZCCCFG=/Users/ravn/z80/z88dk/lib/config
+export LLVMZ80EXE=/Users/ravn/z80/llvm-z80/build-macos/bin/clang
+zcc +cpm -subtype=rc700 -compiler=llvmz80 -O2 file.c -o out -create-app
+```
+
+Without `LLVMZ80EXE` set it fails with `sh: llvmz80-clang: command not found`.
+The other two z88dk C compilers need no such env: `zcc +cpm -subtype=rc700`
+(default sccz80) and `... -compiler=sdcc -SO2 ...`.  For f64 programs also set
+`LLVMZ80RTLIB` to the SoftFloat archive (see the softfloat notes).
+
+
+### SDCC runtime assembler/archiver — native, no Docker (since 2026-06-30)
+
+The z80 runtime build (`z80_rt.a`/`z80_rt.lib`) only needs `sdasz80` + `sdar`
+(plus native `llvm-ar`).  Native arm64 SDCC binaries live in
+`/Users/ravn/z80/z88dk/src/sdcc-build/bin/` (`sdasz80`, `sdar`, `sdld`,
+`makebin`, `sdcc`; V02.00).  The shims `~/.local/bin/{sdasz80,sdar}` were
+repointed from the `sdcc-tools` Docker image to those native binaries — runtime
+rebuilds now take ~10 s with no Docker.  Each shim keeps the old `docker run`
+line commented as a fallback.  (Docker `sdcc-tools` image is still buildable —
+`FROM ubuntu:24.04 + apt install sdcc binutils`, `--platform linux/amd64` — but
+no longer needed for runtime builds.)  cmake glob `file(GLOB RT_SOURCES
+*.asm)` in `llvm/lib/Target/Z80/CMakeLists.txt` auto-picks new runtime `.asm`
+files after a `cmake build-macos` reconfigure.
 
 **Build size (for progress estimation, 2026-05-26):** a from-scratch `ninja clang llc`
 is **~2897 ninja edges / ~2992 object files** (full Release build of clang+lld+llc).

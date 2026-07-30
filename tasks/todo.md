@@ -60,7 +60,7 @@ Active queue, in priority order:
   #18-#25 closed/withdrawn, #176 closed, #26 + PR #27 remain (correctly scoped).
 - PARKED: cpnos work awaits physical parallel cable (`project_cpnos_parked_awaiting_parallel_cable`).
 - [x] **Investigate GDB-over-physical-RC702** (2026-06-17 → 2026-06-17 — first-pass done,
-  see `tasks/gdb-z80/findings.md`).  Built z80-elf-gdb 17.2 in Docker; verified it reads
+  see `rc700-gensmedet/tasks/gdb-z80-stub-findings-2026-06-19.md`).  Built z80-elf-gdb 17.2 in Docker; verified it reads
   our clang DWARF5 ELF (resolves `_bios_hw_init`, `_specc`, `_isr_crt` to addresses + 12
   source files).  MAME-gdbstub wire is already proven via `gdb_trace.py` (raw RSP) and
   `z88dk-gdb` (in our z88dk:2.4 Docker image).  Physical-hardware path: **Pi/Pico bus

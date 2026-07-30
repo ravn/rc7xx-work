@@ -1,0 +1,27 @@
+# Native macOS (cc -O2) reference outputs — authoritative oracle for the benchmarks.
+# Generated 2026-07-14. Integer benchmarks must match byte-for-byte on Z80;
+# whetston (double) float driver is DROPPED - does not fit 64 KB TPA (see foot).
+=== ackerman ===
+ackermann(3,6)=509
+=== tak ===
+tak(18,12,6)=7
+=== hanoi ===
+hanoi(20) moves=1048575
+=== nqueens ===
+  size    solutions
+     1            1
+     2            0
+     3            0
+     4            2
+     5           10
+     6            4
+     7           40
+     8           92
+# === whetston: DROPPED as a suite member (2026-07-16) ===
+# Full IEEE-754-64 Whetstone (sin/cos/atan/sqrt/exp/log + %e) does NOT fit a
+# 64 KB CP/M TPA: the SoftFloat f64 closure (~49.7 KB) plus the musl libm it
+# needs (~76 KB) far exceeds 64768 B, and no compact 8-bit-native IEEE-754-64
+# libm exists.  libm correctness is instead verified per-function by
+# llvmz80-softfloat/tests/run_libm.sh (sqrt/atan/exp, each fits the TPA when
+# linked against the dead-strippable mathf64.lib).  Rationale + measurements:
+# llvmz80-softfloat/README.md "Whetstone / libm -- the 64 KB size wall".

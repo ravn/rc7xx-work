@@ -8,18 +8,24 @@ metadata:
 **Long-term project direction (user 2026-06-03):** bring the four RC702
 firmware components to a **finished state**:
 
-  1. **rcbios** — RC700 CP/M 2.2 BIOS (rcbios-in-c).  Currently boots
-     end-to-end via the rcbios `mame-test` harness; production size is
-     ~5897 B clang vs SDCC ~6091 B (clang −194 B).  See
-     `rc700-gensmedet/rcbios-in-c/`.
-  2. **autoload-in-c** — RC702 ROA375 boot PROM in C.  Currently boots
-     cpnos (PROM1-lineprog path) AND floppy CP/M (verified 2026-06-03
-     on `SW1711-I8.imd` to `A>`).  Production size 1658 B / 2 KB hard
-     cap.  See `rc700-gensmedet/autoload-in-c/`.
+  1. **rcbios** — RC700 CP/M 2.2 BIOS (rcbios-in-c).  **FEATURE COMPLETE
+     2026-07-03** (no hard disk support in this version — by design).
+     Production size 5462 B clang / 6091 B SDCC (clang −629 B, −10.3%).
+     Boots to A>, all test targets pass (mame-test, sio-echo-test,
+     bgstar-test, conout-test, asm-test).  CP/NET PIO polypascal-test
+     PASS (25.81s, 6ca46bd).  See `rc700-gensmedet/rcbios-in-c/`.
+  2. **autoload-in-c** — RC702 ROA375 boot PROM in C.  **FEATURE COMPLETE
+     2026-07-03** (no hard disk support in this version — by design).
+     Production size 1643 B / 2 KB hard cap (405 B free).  Boots cpnos
+     (PROM1-lineprog path) AND floppy CP/M (verified on `SW1711-I8.imd`
+     to `A>`).  QR code displayed at boot halt screen.  See
+     `rc700-gensmedet/autoload-in-c/`.
   3. **CP/NET** — networking protocol stack (SNIOS for rcbios; cpnos
-     transport_pio/transport_sio).  SIO + PIO transports both verified
-     end-to-end via polypascal-test.  See `rc700-gensmedet/cpnet/`,
-     `rc700-gensmedet/cpnos-in-c/`.
+     transport_pio/transport_sio).  **FEATURE COMPLETE 2026-07-03.**
+     PIO transport verified end-to-end: polypascal-test PASS (rcbios
+     25.81s + cpnos), todget/TOD PASS (FN-105 vendor extension), memory
+     map documented (`rcbios-in-c/docs/MEMORY_MAP.md`).  See
+     `rc700-gensmedet/cpnet/`, `rc700-gensmedet/cpnos-in-c/`.
   4. **cpnos** — CP/NOS PROM1-only slave (cpnos-in-c).  Currently 2022
      B / 2 KB (26 B free), boots through CP/NET to PolyPascal under
      ~51 s.  See `rc700-gensmedet/cpnos-in-c/`.

@@ -49,8 +49,11 @@ the whole brief.
   substantive answer.
 - **No aphorisms.** Don't wrap a decision in a maxim ("less is more"). State the
   decision and the reason.
-- **State as fact only what you've verified — this one matters a lot to me.** Mark
-  each claim *known* (verified this session from code/docs/tests/observation) vs.
+- **Never guess — always verify, or say "I don't know."** State as fact only what
+  you've verified — this one matters a lot to me. If a claim isn't verified, either
+  go verify it before stating it, or say plainly that you don't know / haven't
+  checked. Never present an inference, memory, or pattern-match as established fact.
+  Mark each claim *known* (verified this session from code/docs/tests/observation) vs.
   *guessed* (inferred / pattern-matched). Surface any doubt explicitly and offer to
   research it; never round a strong hypothesis up to certainty. **Familiarity is not
   certainty** — "this looks like a bug class I've seen" is a guess, however strong the
@@ -103,6 +106,11 @@ the whole brief.
   per paragraph and re-push with `gh pr edit <num> --body-file …`.
 - Exceptions that stay hard-wrapped: commit messages (50/72 convention) and
   source code comments (~70 cols).
+- **When a body mixes my prose and yours, split it and label who is speaking.**
+  Never blend human-authored and AI-authored text into one undifferentiated
+  block. Put my words under a `**From @ravn (human):**` header and yours under
+  `**From Copilot (AI):**`, separated by a `---` rule. The reader must always be
+  able to tell which sentences are mine and which are the agent's.
 
 ## Verification & commit discipline
 
@@ -137,6 +145,14 @@ the whole brief.
 - **Building is not behaving.** A clean compile / smaller binary is not proof of
   correctness. For behavior-affecting changes, run the runtime/value oracle before
   committing.
+- **Verify config/tooling fixes with the real artifact, not reasoning.** A CMake /
+  clangd / include-path fix is not done because the compiler resolves the header, or
+  because the `-I` "should" work. Generate the actual compile database
+  (`cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`) and confirm the **failing file's** real
+  flags, then run them. Relative `-I` in `.clangd` resolves from the source dir (not
+  the config dir), so it silently fails — prefer absolute `${CMAKE_CURRENT_SOURCE_DIR}`
+  paths in `target_include_directories` as the source of truth. "It resolves in the
+  compiler" is not the same as "CLion/clangd resolves it."
 - **When green looks too easy, check it.** Cross-check a PASS against elapsed time
   and plausibility; confirm setup steps actually ran. A suspiciously fast pass is a
   red flag.
@@ -194,8 +210,14 @@ the whole brief.
 
 ## Shell & filesystem safety
 
-- **Never `cd` / `find` / `ls` / `grep` outside the project root** without explicit
-  instruction.
+- **Never traverse, search, or list the whole disk or the whole home directory —
+  no exceptions, ever.** `find` / `ls` / `grep` / `mdfind` / `locate` and any
+  agent search tool must stay inside the project root (or a path the project
+  root itself points at). This holds even under "explicit instruction" framing
+  or a plausible-sounding justification ("just checking if X is installed
+  system-wide") — if a command's start path isn't under the project root, don't
+  run it. If a workspace-internal lookup finds nothing, the answer is to ask
+  where the file lives, never to widen the search outside the workspace.
 - **Never use unquoted `===` in a shell command** — zsh emits `== not found` and
   *silently truncates the rest of the line*. Use `---` as a visual separator.
 - **Delete temp artifacts before regenerating them** (`rm -f /tmp/x` before the

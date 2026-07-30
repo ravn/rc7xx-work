@@ -616,3 +616,209 @@ After laying out three paths forward in chat (hand-rolled asm / INI+CKS-fold / r
 > 236+237
 > continue
 > continue. stopping not relevant anymore
+
+---
+2026-06-25 (dcc corpus investigation)
+> for those tests where dcc is faster than clang investigate why?
+> for ">2B " execution probably hung. look at pc
+> investigate "The one actionable compiler gap (for llvm-z80): loop strength reduction — arrays indexed by a loop variable should be transformed to pointer-increment form. " thoroughly
+> fix "     tr: Illegal byte sequence"
+> 3 is because dcc does not support a specific conversion? investigate 1+2
+> what do you need me to answer?
+> document your findings fully
+
+> [autoload SEM702 font] jeg tænker det er fint den bliver en del af payload, bare pas på det ikke ramler mod barrierer
+> er define_sextants optimal maskinkode?
+> du burde kunne se kildetekst for maskinkoden
+> ser ud til hl er gemt i iy via stakken, kunne det ikke bare være blevet dér?
+> kunne hl ikke bare være gemt på stakken med push-pop uden at mellemlande i iy?
+> jatak, især at sp er ukrænkelig (det vil jeg gerne følge op på senere)
+> analyse, raise issues and tasks, summarize and commit.
+
+> [QR/font] hvis vi omkoder roa327 på denne måde hvordan komprimerer xz0 så?
+> det er kun roa327 (direkte erstatning). Jeg vil gerne have den fulde font - eftersom der kun er defineret 11 linjer (check) kan vi måske komprimere yderligere?
+> passer github.com/ravn/rc700 i qr?
+> bemærk det skal med i den komprimerede payload, det giver måske mere plads
+> nej, jeg vil gerne se om vi kan redde nogen bytes et sted så der er plads til v2
+> [URL valg] det faktiske (github.com/ravn/rc700-gensmedet) — men bemærk: vi kan ikke læse fra charprom i det rigtige system (SEM702 = direkte 1:1 ROA327-erstatning, selvforsynende)
+> hvorfor "12c: ld e,a / 12d: ld a,e"?
+> fiks byggeprocessen
+> ved test start uden diskette, så skulle qr koden blive vist med fejlbesked
+> der kan også være kode at hente andre steder i autoload
+> er denne "sw >>= 1" noget som clang eventuelt kunne have fundet selv?
+> noter i "LSR is harmful" at vi har en usecase på at det kan gavne
+> tilføj også ved siden af b21
+> please add a failing test for this scenario
+> [aspect] a  (fix layout to true aspect)
+> vis screenshot  (×2)
+> jeg vil gerne have qr koden nederst til højre
+> merge
+> videoaspektet er forkert - skærmshots ser widescreen ud, monitoren er 4:3
+> er opsætningen forkert med antal linjer pr tegn?
+> crt sender et 50 hz ntsc signal
+> bruger vi midpoint par lige nu?
+> ja (fix MAME layout to true RC752 230:165)
+> RC700 familie: rc701/702/703; RC701 andre porte + ingen semigrafik; PROM-navne
+> analyser pdf i linket (RC702 Testprogrammer RCSL 42-i-1495)
+> ja (udvid memory-note med RC701→RC702-forskelle + ref [8])
+> undersøg RC703_Div_BIOS_typer-disken (Bits:30003297) for ny viden
+> ja (bevar system-spor + README + memory-note)
+> undersøg BDS C 1.50-disken (Bits:30005324) for ny viden
+> rc702e kan dække flere varianter — se om binært identiske (→ identisk, samme kilde)
+> undersøg Bits:30003294 (RC703_8051ASM) — muligvis noget interessant (→ ny RC703 rel 1.1)
+> analyse, raise issues and tasks, summarize and commit.
+> merge
+> hvad er verify_seek?
+> commit
+> rekonstruér rc703-rel11
+> hvad har ændret sig før og efter 1.1
+> debug information kan være rester fra uinitialiseret link
+> kunne ram-residue stamme fra et af programmerne på disken?
+> dokumenter i projektet
+> undersøg Bits:30003296 for ny information
+> det er nok, tilføj grundig dokumentation
+> er der ny viden i den rob358.mac du fandt?
+> analyse, raise issues and tasks, summarize and commit.
+> claude løb tør for tokens, kan du fortsætte?
+> dcc er opdateret upstream
+> opdater vores klon af dcc
+> genevaluer zsdcc+clang+dcc sammenligning
+> åben i browser
+> undersøg hvorfor dcc er hurtigere end clang
+> vi fandt ud af at autoboot eller lignende med lua sløvede for meget
+> you need to send a cpnet packet
+> is there a valid function codee ofr exactly this purpose?  A failing login would be fine
+> er du sikker på det er pio i begge ender?
+> er du sikker på det er pio i begge ender både mame og bridge?
+> ja
+> læg det til side som en kendt fejl for nu og tilføj al relevant informatino til projektet
+> check rcbios virker med clang
+> this worked earlier today :-/
+> has the fdc code altered in mame
+> trailing d is debug version
+> det virkede før vi begyndte at kigge på sdcc bygget af rcbios
+> rebuild everything including disk images and try again
+> hvad bruger autoload som bios?
+> det kan være en gammel mame med mine fdc rettelser der er blevet overskrevet
+> go back to an earlier build of rcbios from yerstersay and verify it
+> gem i projektet og forbered på genstart
+
+## 2026-07-05
+
+nyt mål: clang skal kunne bygge fulde CP/M programmer med et runtimebibliotek i produktionskvalitet. Undersøg z88dk ez80clang-understøttelse med z88dk runtime og lav en plan.
+
+## 2026-07-06 (ez80clang code-quality oracle)
+
+> vis sweep
+> Vis sweep i browser
+> analyser, opsummer, lav issues og opgaver, commit
+> åben 120 i browser
+> hvem har skrevet rt_helpers.c?
+> jeg vil gerne have ez80clang tilføjet som et oracle før vi kigger på 120
+> hvorfor er 32-bit hjælperne ikke integret?
+> hvad KAN ez80clang faktisk nu hvor der kun er adl 24-bit
+> burde vi have bygget ez80clang specifikt for z88dk?
+> jeg ønsker kun ez80clang som sammenligningsorakel på kodekvalitet
+> slå de fejlende ez80clang kørsler fra og lav et issue på at fikse dem
+> open sweep in browser
+> write docs and commit
+> nu samle sammen og sørge for at alt er committet
+
+## Session 2026-07-06 (Opus): rcbios -flto boot-hang — root cause, fix, robustness
+- "der var et problem med at rcbios ikke bootede i mame. undersøg om stadig er tilfældet, indsamle info til opus"
+- "det kan være at det seneste optimeringsarbejde har fjernet vigtig kode uden vi har opdaget det"
+- "can we trigger if the sp is set to a region we do not want it to be in?"
+- "mit gæt er at der er kode der er blevet optimeret væk ... at vi skal hinte at en given metode er vigtig"
+- "fortsæt analysen" / "det har du vist fundet ud af før?"
+- "undersøg grundigt hvordan dette problem kan løses og lav en plan"
+- "jeg vil gerne have færrest mulige overraskelser hvis man slår compilerflag til. senere: kigge på om der kan spares mere hukommelse ved at udnytte lto bedre"
+- OUTCOME: root cause = -flto mis-placed .boot_data (confi/conv) + .bios_jt (CP/M jump
+  table) via failed per-file linker matchers -> relocate_bios copied garbage into CFG ->
+  bad CTC -> FDC hang. FIX: section attrs. ROBUSTNESS: link-time ASSERTs (fire on
+  regression), .cflags fingerprint (flag toggle forces rebuild, kills stale-.o false PASS).
+  Both compilers boot A>. clang 5906 B. -flto kept (user choice) + guarded.
+  PARKED: exploit LTO for more size savings.
+
+## Session 2026-07-09/10 — sieve gap: Z80SinkColdLoopIV + Z80PinLoopPointer (#256/#250/#251)
+- "hvor var vi?" / "mål igen, ntvcm kør fuld hastighed" / "byg fra kilde" / "begge" / "husk du har kildetekst til compileren"
+- "dokumenter det grundigt i projektet, samt på 250"
+- "opsummer i projektet, analyser og opret issues og noter efter behov, commit"
+- "aktiver memory systemet for alle repos" -> "memory kræver betaling ... det vil jeg ikke nu" (use tasks/memory/ instead; no store_memory)
+- "gem i projektet og gør klar til /clear"
+- OUTCOME: Authored two opt-in default-OFF backend passes. Z80SinkColdLoopIV
+  (-z80-sink-cold-loop-iv, M3): sinks cold-only LSR IVs back into the taken
+  branch -> sieve -2.3% clean, E/TTT/TM +/-0%, all correct; red-green lit test;
+  full Z80 suite 183 PASS + 5 XFAIL; production byte-identical. Z80PinLoopPointer
+  (-z80-pin-loop-pointer + HLReg class, M5): kill loop optimal in isolation but
+  net-regresses sieve +1.4M T-states (scan-loop regalloc cascade) -> stays
+  opt-in. Filed #256 (M3 cold-IV hoist), commented #250 (M5 pin data) + #251
+  (HLReg cross-ref). Default-on RESERVED for user. Writeup:
+  llvm-z80/tasks/session-2026-07-09-sink-cold-loop-iv.md. Memory:
+  tasks/memory/reference_sieve_gap_passes.md.
+
+## 2026-07-11 — Dhrystone three-way (sdcccall 1 lane) + issues
+Prompts: add sdcccall(1) lane to Dhrystone suite; investigate how sdcccall1 is
+used; minimal zcc+sdcccall1 example; add three-part test to compiler suite +
+table in readme.md; no hardcoded abs paths in committed files; "dokumenter,
+analyser og lav issues og commit"; push; wrap up.
+
+Delivered:
+- z88dk (branch rc700-gensmedet-1, PUSHED 38673f713a): dhrystone21 `sdcccall1/`
+  lane (Makefile generates a PATH shim from `$(shell command -v z88dk-zsdcc)`,
+  no hardcoded path), `compare.sh` three-way harness (bash-3.2 safe), `readme.md`
+  three-way table; plus prior `c8e69aed1a` (intrinsic_label wire + Dhrystone lane).
+- Three-way @4MHz/20000 runs, all 20/20 self-validated: llvmz80 -O2 8461 cyc/run
+  (0.2691 DMIPS); sdcc --sdcccall 1 11044 (0.2061); sdcc --sdcccall 0 12158
+  (0.1872). Register convention closes only ~1/3 of the gap; llvmz80 lead is
+  inlining + fewer IX frames, NOT the calling convention.
+- Issues filed (own forks): ravn/z88dk#24 (zcc drops --sdcccall, never reaches
+  zsdcc), ravn/z88dk#25 (dhry.h forces %f converter under -DPRINTF though %f is
+  TIMEFUNC-only -> float link failure on llvmz80), ravn/llvm-z80#257 (three-way
+  tracking + codegen candidates, perf marked as hypotheses).
+- Writeup: llvm-z80/tasks/session-2026-07-11-dhrystone-sdcccall-three-way.md
+  (PUSHED 6c0af4cec12c on main).
+- Deferred SQL todo `llvm-x86-16bit-cpm86`: whether LLVM X86 "16bit-mode (i8086)"
+  yields genuine 8086 output (for CP/M-86) or only 386-real-mode. Do-not-start.
+
+## 2026-07-23 (newlib llvmz80 Phase A + B)
+- hvor var vi? [summarized: newlib -clib=sdcc_ix/iy support for clang-z80; Phase A+B pending]
+- ja (proceed with Phase A + B)
+- gem i din hukommelse at timeout ikke findes på macos [already covered by reference_macos_timeout.md; noted I broke my own rule]
+- husk clang gør dobbelt job for både ez80clang og llvmz80 [new memory reference_clang_double_duty_ez80_llvmz80.md: both define __clang__, gate llvmz80 branches on __LLVMZ80]
+[Phase A DONE: variant=sdcc_iy, matrix green (classic 22P/1S/2X, sdcc_iy 15P/9S/1X). Correction: sdcc_iy CLIB links the sdcc_ix worker archive (only --reserve-regs-iy differs). Phase B __preserves_regs audit = GO for exercised surface: clang's only callee-saved GPR is IX; audited 44 IX-touching linked modules of a printf/malloc/atoi build — no public entry leaks IX (_printf push/pop ix; _fflush_fastcall ex(sp),ix; internal helpers hold FILE*/FDSTRUCT* in IX only within newlib chains). New memory reference_newlib_sdcc_iy_uses_ix_archive.md.]
+
+## 2026-07-23 (continued — Phase C)
+- ja, gå videre med Phase C [DONE: compiler.h __LLVMZ80 mapping (proto+common) + cpm.cfg newlib_ix/newlib_iy CLIB lines (-compiler=llvmz80, no ucpp -D__SDCC choke). Closes #7 (attr) + qsort __smallc ABI (validated: mul-free comparator sorts 1 2 3 4 5 7 8 9). Matrix classic 22P; newlib_iy 18P/6S/0F (was sdcc_iy 15P/9S). Harness: run_matrix default classic+newlib_iy; variant-aware skips; fixed runtime_strerror.sh rt->rt.com bug. z88dk commit 3ad4856ee4.]
+- forklar "runtime_long FEJLER (integer-helper-gap, ikke i skip-listen)" [explained: clang emits gcc-style __divsi3/__modsi3 for 32-bit long div/mod; newlib lacks them; passed on sdcc_iy only because __SDCC ucpp routes long math to newlib-present symbols; wasn't yet registered as a skip so showed as hard FAIL until classified. New memory reference_newlib_integer_helper_gap.md; corrects plan "bridge disappears entirely" claim.]
+
+## 2026-07-23 (continued — integer-helper provisioning + z88dk newlib signed-mod bug)
+- jatak [proceed with integer-helper fix, approach B recommended]
+- lav en plan først [presented phased plan: reuse thin bridges over newlib-bundled l_* cores + llvmz80_imath.lib + CLIB wiring]
+- jatak, husk grundige tests [built llvmz80_imath.lib (__divhi3/__divsi3/__udivqi3/__mulsi3); thorough tests across widths/signs/opt-levels caught: (1) missing __udivqi3 at -Oz, (2) missing __mulsi3 (long*long fails on classic too), (3) SIGNED 8/16-bit mod WRONG on newlib (+5 vs -5)]
+- er det en fejl i z88dk? test med dets egne compilere? [YES — stock sccz80+newlib and sdcc give +5; sccz80+classic gives -5. Genuine z88dk newlib bug, not clang]
+- forbered en bugrapport på mit eget repo [investigated: root cause = stale prebuilt newlib libs (2026-03-26) predate upstream fix af5630797c (suborb 2026-06-28)]
+- lad os antage z88dk newlib-fejl, paritet med z88dk godt nok, tilføj fejlende men ignorerede testcases [DONE: xfail_signed_mod.{c,sh} (PASS classic -5, XFAIL newlib +5, FAIL if diverges from both) + BUG_newlib_signed_mod.md. imath.lib provides all clang integer helpers; qsort/intdiv/long PASS. Matrix: classic 23P/1S/2X, newlib_iy+ix 21P/3S/2X, 0 FAIL. z88dk commit 7aedcf407a.]
+
+## 2026-07-23/24 (upstream merge into ravn/z88dk + native lib rebuild + signed-mod FIXED)
+- er det en fejl i z88dk? test med dets egne compilere [YES: stock sccz80/sdcc reproduce +5 on newlib; sccz80 classic correct -5]
+- forbered en bugrapport på mit eget repo [investigated: stale prebuilt newlib libs predate upstream fix af5630797c (suborb 2026-06-28)]
+- lad os antage z88dk newlib-fejl... tilføj fejlende men ignorerede testcases [xfail_signed_mod.{c,sh} + BUG_newlib_signed_mod.md]
+- betyder det at hvis jeg genbygger libs så er alt i orden [proxy-verified: fresh classic (same source) fully correct -> rebuild should fix]
+- jeg vil gerne hente z88dk upstream ind i ravn/z88dk og genbygge [merge: 213 upstream commits, 3 conflicts resolved (.gitignore/newlib-z80.lst/stdlib.h took upstream's redesigned qsort), all ravn work preserved, safety tag]
+- hvorfor kræver z88dk-zsdcc docker? [it doesn't — native arm64 binary; CLAUDE.md note stale. Corrected.]
+- ja, følg med [native rebuild: fixed ravn strtol.asm non-IX bug; make clean+TARGETS=cpm/z80+install; newlib cpm rebuild -> SIGNED-MOD FIXED (newlib -2/-5/-4 correct for llvmz80 AND sccz80). newlib_iy all green 22 PASS. 2 classic regressions surfaced (qsort ABI, strerror link)]
+- b [commit progress: strtol fix + BUG RESOLVED + FOLLOWUP doc. z88dk commits cff2e601b1, 1045678be2]
+- lav separat issue på regressionerne [ravn/z88dk #33 created (qsort comparator ABI); commented on existing #32 (strerror, pre-existing). Follow-up doc references both.]
+- fortsæt newlib arbejdet [fixed the 2 deferred classic clang regressions: #33 qsort (stdlib.h __LLVMZ80 reversed-arg alias __qsort_llvmz80->_qsort via __asm label + __smallc comparator type) and #32 strerror (added __strerror_table.asm to llvmz80.lst -> z80_crt0.lib; z80nm proved the old "buildcrt glob" comment was wrong, module was never in the lib). Bonus: bsearch gap closed upstream -> retired xfail_bsearch to runtime_bsearch (PASS classic+newlib). Rebuilt z80_crt0.lib + newlib cpm libs. Classic 24 PASS/0 FAIL, newlib_iy 23 PASS/0 FAIL. Commit 9e13c271c2. Closed #33 + #32.]
+- analysér, opsummér og lav issues og commit [analysed remaining newlib_iy skips; root-caused 2 genuine gaps (compiler-independent) and filed ravn/z88dk #34 (disk FILE* — CP/M newlib target has no file-open driver, asm_target_open_p1/p2 undefined; sccz80/sdcc/clang all fail) + #35 (newlib variadic %f drops clang IEEE-754 double, no __LLVMZ80_IEEE_PRINTF route for newlib stdio, Phase D). Cited both in run_all.sh skip reasons. classic printf_ieee skip + xfail_tmpfile judged NON-gaps. z88dk commit 7ddbff6964; memory reference_newlib_remaining_gaps_file_printf added.]
+- #35 [WIRED newlib IEEE-754 %f printf. 3 gotchas solved: (1) split __mulsi3 into own TU in llvmz80-intrt so softfloat archive shares it on-demand with newlib imath (no ___mulsi3 dup); (2) per-clib shim -- classic npf_printf.o bakes _sgoioblk via stdout/putchar macros, so built a newlib-headers copy llvmz80_printf_newlib.lib linked before the archive; (3) the __LLVMZ80_IEEE_PRINTF block was silently inside #ifdef __ZXNEXT in _DEVELOPMENT stdio.h -> moved outside. classic 25/0, newlib_iy 24/0 (printf_ieee skip->PASS). z88dk cbbcc50031.]
+- forklar #34 / undersøg grundigt + lav plan + tjek eksisterende issues [Investigated newlib fopen: asm_vopen delegates to asm_target_open_p1/p2 hooks that NO z80 target implements (tree-wide dormant abstraction since "Oct 2014" header; git -S = 0 impls). Not CP/M/clang-specific (rc2014/yaz180 diskio = raw block drivers). It's the newlib "last mile" aralbrec acknowledged in upstream z88dk/z88dk#1426 (closed FatFs-wrapper alt); no open upstream issue. No dup on ravn/z88dk. Decision: UNSUPPORTED for now.]
+- ja, opdater #34 grundigt + marker uunderstøttet [Posted thorough architecture+provenance comment on ravn/z88dk #34; retitled [unsupported-for-now], labels wontfix+enhancement. Use classic clib for CP/M files. Memory reference_newlib_remaining_gaps_file_printf updated; run_all.sh skip reason reframed. Staged for possible upstream filing after maintainer confirms direction.]
+- åben upstream z88dk issue om #34 (status + AI-assisted impl-tilbud), plads til min indledning [User wrote intro (llvmz80/newlib file-support gap, sdcccall1 vs classic bridges, offer AI-assisted CP/M impl). Filed z88dk/z88dk#3022 with intro + technical context (asm_target_open unimplemented tree-wide) + 2 questions. Cross-linked on ravn/z88dk #34. First upstream z88dk filing.]
+- tilbage til z88dk rc700-platform: hvad kan den nu? + tilføj oversigt + clock-eksempel? [Surveyed z88dk +cpm -subtype=rc700: IMD floppy output, classic clib (disk FILE* works), 80x25 console + loadfont, gencon6 semigraphics (plotpixel/pointxy/respixel/xorpixel), RS232 SIO-A to 38400, clock() 50Hz, games lib. Added libsrc/target/rc700/README.md (z88dk convention). Standard clock demo = examples/graphics/clock.c (graphics.h+clock()); VERIFIED builds for rc700 -> clock.com+clock.imd. Commit 382a5ce71b.]
+- rcbios 32-bit clock: opløsning ikke nok til epoch, kun forskelle / cpnos-server-tid-demo / rc700 demo skærm-RAM direkte? [Verified: rcbios RTC rtc0/rtc2 (0xFFFC/0xFFFE) = 50Hz (20ms) boot-relative tick counter, wraps ~2.72yr -> diffs only, not epoch; wall-clock comes from CP/NET server under CP/NOS (demo exists). Saved memory reference_rcbios_rtc_counter_diffs_only. rc700 gfx/console are MEMORY-MAPPED at 0xF800: gencon6 plotpixel does vpeek/plotc read-modify-write of block-graphics chars in VRAM directly (via pixel6.inc + textpixl table), NOT BDOS char output.]
+- har vi issue på alle rc700 floppy-formater? lav lokalt issue [No existing issue anywhere. Root-caused: appmake rc700_spec (cpm2.c:1854) is uniform 9x512 MFM = only tracks 1-35; can't express RC702 mixed-density Track 0 (FM 128 side0 + MFM 256 side1) since disc_spec has single sector_size/encoding; and no 8" format at all -> emitted .imd not bootable RC702 disk. Filed LOCAL ravn/z88dk #36 (enhancement), cross-linked in rc700 README caveats. Not upstream per user.]
+- kommentarer på #3022 / gencheck "newlib=sdcccall(1)" / sikr korrekt z88dk-arkitektur-opfattelse [suborb+feilipu responded on #3022: classic is the way forward, newlib deprecated/compat-only, newlib file support NOT wanted (#34 stays), neither lib is sdcccall(1) (register passing = __z88dk_fastcall), sdcccall(0)+callee/fastcall beats per-call swapping. RE-CHECKED the sdcccall(1) claim empirically: user was substantially RIGHT (commit 8fec011 verified) -- newlib ships _callee/_fastcall variants clang calls directly (0 ex-de-hl adapters) vs classic's libsrc/l/llvmz80 adapters; only the LABEL "sdcccall(1)" was imprecise (mechanism = __z88dk_callee/fastcall), compatible with suborb -- no real contradiction. llvmz80 newlib support for today's surface COMPLETE (24 PASS/0 FAIL). Saved reference_z88dk_direction_classic_not_newlib; corrected my earlier "premise wrong" overstatement.]
+- verificér qsort-fix + persistér benchmark (1+2) [Verified: CP/M newlib __CLIB_OPT_SORT 1->2 (shellsort->quicksort, template config_clib.m4:470 not the generated .inc) cut isolated qsort 125.3M->93.2M (-26%) for +194B, output-verified r=2457819; reverted to shellsort default (z88dk decision, not shipped). Persisted: tasks/benchmarks/llvmz80-clib-speed-2026-07-26.md + bench_lib.c + memory reference_llvmz80_clib_speed_benchmark. Verdict: no single clib winner (classic qsort faster, newlib sprintf faster, string tie, newlib ~half size).]
+- lad math (libm + math.h) være kendte fejl [Verified 2-layer gap: <math.h> won't compile under llvmz80 (_FLOAT16_T block typedefs _Float16 reserved keyword, z80-unsupported; guard fix known but NOT applied) + libm not callable even guarded (_sqrt_fastcall native float format, __fixsfsi absent). Filed local ravn/z88dk #37 [unsupported-for-now] wontfix+enhancement; README + memory updated. clang doubles use softfloat+mathf64 not newlib math. Left as known gap like #34.]
+- MAME rc700 skærmfarver forkerte, jbox bedre (screenshot) + også kanten + se clock køre længe fuld hastighed [Sampled jbox ref (PIL): bg #4F2509 (79,37,9) dark brown, fg #C49B47 (196,155,71) soft amber -- MAME's 0xC06000/0xFFB400 was too bright/saturated. Fixed rc702_palette() (rc702.cpp) + layout border (rc702.lay), rebuilt (SUBTARGET=regnecentralen), re-snapshot clock verifies match. ravn/mame commit ffca0712; rc700-gensmedet doc 31c7ec5; memory reference_rc702_mame_palette_jbox. Launched clock full-speed (-nothrottle) in background for watching.]
