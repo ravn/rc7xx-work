@@ -160,6 +160,7 @@
 - [MAME PROM Checksum](feedback_mame_checksum.md) — verify CRC matches built PROM
 - [MAME ROM warning is a bug](feedback_mame_rom_warning.md) — fix BAD_DUMP, don't dismiss
 - [Full rebuild before MAME](feedback_mame_rebuild.md) — rm .o + full rebuild first
+- **[MAME always windowed + timeout](feedback_mame_always_window_timeout.md) — HARD: every launch needs `-window` AND finite `-seconds_to_run N`; never fullscreen, never timeout 0. User can't stop a runaway fullscreen instance.**
 - [Fresh BIOS+PROM before MAME](feedback_mame_fresh_build.md) — rebuild both
 - [Run MAME at full speed](feedback_mame_full_speed.md) — `-nothrottle` in unattended tests
 - **[Disable MAME audio in ALL tests](feedback_disable_audio_in_tests.md) — HARD: pass `-sound none`.  Motor sounds annoy user; CoreAudio causes SIGPIPE (exit 141) under sustained background-test load.**
