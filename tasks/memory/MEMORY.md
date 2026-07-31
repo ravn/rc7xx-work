@@ -161,6 +161,7 @@
 - [MAME ROM warning is a bug](feedback_mame_rom_warning.md) — fix BAD_DUMP, don't dismiss
 - [Full rebuild before MAME](feedback_mame_rebuild.md) — rm .o + full rebuild first
 - **[MAME always windowed + timeout](feedback_mame_always_window_timeout.md) — HARD: every launch needs `-window` AND finite `-seconds_to_run N`; never fullscreen, never timeout 0. User can't stop a runaway fullscreen instance.**
+- **[Never concurrent builds, never kill a build](feedback_never_concurrent_or_kill_builds.md) — HARD: one ninja/make at a time (shared obj dir races); never pkill a build (deletes partial .o -> full rebuild). Wait for it to finish/fail.**
 - [Fresh BIOS+PROM before MAME](feedback_mame_fresh_build.md) — rebuild both
 - [Run MAME at full speed](feedback_mame_full_speed.md) — `-nothrottle` in unattended tests
 - **[Disable MAME audio in ALL tests](feedback_disable_audio_in_tests.md) — HARD: pass `-sound none`.  Motor sounds annoy user; CoreAudio causes SIGPIPE (exit 141) under sustained background-test load.**
@@ -309,3 +310,5 @@
 - **[Z80Pseudo undersize → far-`jr` under-relaxation class (#266/#267 + 14 latent)](issue267_pseudo_undersize_class.md)** — isPseudo pseudos that expand post-BranchRelaxation are sized 0 by getInstSizeInBytes → textual `.s` keeps out-of-range `jr` that z88dk z80asm rejects. #266+#267 fixed; guarded-LDIR/IDX8/MUL8/DIV8/SAT8 still latent.
 
 - **[Pending canonical AGENTS.md edits](pending_agents_md_canonical_edits.md)** — cross-project rule changes discovered here but not yet applied to the canonical AGENTS.md repo. Currently queued: proactive oracle-coverage rule from #273 (every public entry point / sole helper user must run in the oracle).
+- [Preserve reviewed commit](feedback_preserve_reviewed_commit.md) — on a PR under review, keep the reviewed commit as-is + add follow-ups; never squash it
+- [RC702 MAME upstream PR #15805](project_rc702_mame_upstream_pr.md) — awaiting review; 3 commits, dot clock is PLL (plain int, not XTAL)
