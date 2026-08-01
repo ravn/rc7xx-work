@@ -262,6 +262,7 @@
 
 - **[Canonical test aggregator](reference_run_all_tests.md) — `tasks/tools/run-all-tests.sh` runs all 4 test groups (lit / test-runner / z88dk run_all / softfloat) from one place; run at merge/checkpoint (canonical script, NOT a hook). `fast`=A+C+D, no-arg=full.**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — living document for z88dk project at `tasks/z88dk-llvmz80-evaluation-2026-07-21.md`; update after any bridge/benchmark/float change**
+- **[Standing goal: z88dk full llvmz80 CP/M support for rc700, latest clang C](project_z88dk_llvmz80_full_support_goal.md) — prioritize closing evaluation-doc gaps + modern-C support over tangential work**
 
 - **[xcc issue-filing process](xcc-issue-filing-process.md) — retro-vault/xyz has issues DISABLED → file bugs as PR from ravn/xyz fork; repro goes in `x/tests/repro/` (their red-but-ignored convention, no xfail in cases/); root-cause via `xcc -S` (.ds vs .dw), GREEN oracle via docker gcc; libc/printf not auto-linked in the binary release. First bug: retro-vault/xyz#2**
 - **[ez80clang comparison oracle](reference_ez80clang_oracle.md) — CEdev `ez80-clang` (SelectionDAG eZ80 fork) as corpus 6th lane, CODE-QUALITY only; `setup_ez80clang.sh` + `EZ80CLANG_ORACLE_SETUP.md`; needs z88dk clang_rules.1 fix (branch rc700-gensmedet-1); 3 cells skipped (sieve/fannkuch codegen cliff, pi 32-bit runtime gap) → rc700-gensmedet#122**
