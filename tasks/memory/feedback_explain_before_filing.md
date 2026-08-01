@@ -67,6 +67,24 @@ ravn/mame#13. **The approval of a draft is NOT an approval to file. Every
 filing needs its own explicit "go ahead" at the moment of filing, after the
 draft has been reviewed in context.**
 
+**2026-07-31 violation (llvm-z80/llvm-z80#34, math32/float32 discussion
+issue):** an "Upstream discussion opened" post went out to the fork
+(21:23:42Z) asking the fork owner whether 32-bit `double` + reusing
+z88dk's `math32` was a wanted direction -- but the investigation backing
+it was still incomplete at that point: further open items (`m32_fsdiv`
+operand order, conversion register layout, compare-surface size) were
+only resolved in a later comment the same evening (`ravn/llvm-z80#277`,
+19:23:41Z entry filed *before* -- timestamps show the issue went out mid-
+investigation, not after it concluded), and substantially more design
+work (Phase 0/1 implementation, the full sdcccall(0) ABI measurement,
+and the 2026-08-01 all-7-ops math32-vs-compiler-rt benchmark) followed
+afterward. The user closed #34 themselves same night (23:31:51Z, no
+comment) and later explained why: "det var utilstrækkeligt undersøgt"
+(it was insufficiently investigated). Lesson: "the investigation looks
+far enough along to ask upstream" is not the same bar as "the
+investigation is actually done" -- finish resolving known open items
+*before* drafting the upstream post, not concurrently with it.
+
 **Scope of "upstream" for this rule.** Anything posted to a repository
 that isn't fully under the user's control:
 
