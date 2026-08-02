@@ -33,9 +33,24 @@ changes needed. See `z88dk/include/cpm.h` (`bdos`/`bdosh`) and
 
 **Scope of remaining risk:** ~1500 other `__z88dk_callee` declarations exist
 across z88dk headers (string.h, stdio.h, stdlib.h, math.h, arch/*.h, etc.).
-Only `bdos`/`bdosh`/`z80_outp` have been audited and fixed so far. Any other
-multi-arg `__z88dk_callee` function reached via `-compiler=llvmz80` should be
-assumed unverified until individually checked with the same `-S`
-push-order + width comparison, since the register/stack layout differs per
-function signature (this is NOT a single global backend bug -- each function
-needs its own reversed/widened prototype).
+Only `bdos`/`bdosh`/`z80_outp`/`sem702_loadglyph` have been audited and fixed
+so far. Any other multi-arg `__z88dk_callee` OR `__smallc` function reached via
+`-compiler=llvmz80` should be assumed unverified until individually checked with
+the same `-S` push-order + width comparison, since the register/stack layout
+differs per function signature (this is NOT a single global backend bug -- each
+function needs its own reversed/widened prototype).
+
+**CRITICAL follow-up (sem702_loadglyph, 2026-08-02, commit af7776f043):** the
+bug class also affects plain `__smallc` functions (caller-cleans), not just
+`__z88dk_callee` -- because the push-order + width issues are properties of
+sdcccall(0) stack layout, and `__smallc` IS sdcccall(0). MORE IMPORTANTLY:
+adding the `__smallc` annotation ALONE is NECESSARY BUT NOT SUFFICIENT. For
+sem702_loadglyph the earlier fix added only `__smallc`, which stopped the
+immediate stack-desync hang but left the args SCRAMBLED (ch<->nlines swapped +
+1-byte-vs-2-byte narrowing) -- the program ran to completion but wrote garbage
+to the SEM702 chargen, so the visible output was silently wrong (semigraphics
+text rendered as noise) with no hang and no crash. Lesson: after annotating a
+classic worker `__smallc` for clang, ALWAYS also verify push order AND arg width
+via `-S` (or an end-to-end output check) -- "it no longer hangs" does NOT mean
+"the args arrive correctly." A MAME I/O port-write trace (or z88dk-ticks BDOS
+trace) is the reliable end-to-end oracle.
