@@ -313,3 +313,4 @@
 - **[Pending canonical AGENTS.md edits](pending_agents_md_canonical_edits.md)** — cross-project rule changes discovered here but not yet applied to the canonical AGENTS.md repo. Currently queued: proactive oracle-coverage rule from #273 (every public entry point / sole helper user must run in the oracle).
 - [Preserve reviewed commit](feedback_preserve_reviewed_commit.md) — on a PR under review, keep the reviewed commit as-is + add follow-ups; never squash it
 - [RC702 MAME upstream PR #15805](project_rc702_mame_upstream_pr.md) — awaiting review; 3 commits, dot clock is PLL (plain int, not XTAL)
+- [z88dk __z88dk_callee ABI mismatch class under -compiler=llvmz80](z88dk_z88dk_callee_llvmz80_abi_class.md) — bdos/bdosh + z80_outp fixed (commit 68a3462825): clang push-order is opposite of classic worker for some funcs, and clang narrows uint8_t stack args to 1 byte while classic uses fixed 2-byte slots. ~1500 other __z88dk_callee decls still unaudited.
