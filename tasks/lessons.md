@@ -136,3 +136,25 @@ Two lessons:
    normalize via clz64 -- so the ONLY code path using the broken clz32 was never
    run. "A bug found by luck is a bug in your oracle": the softfloat verify corpus
    must include an int->double conversion, not just arithmetic.
+
+---
+
+## 2026-08-05 — Fix at the layer that OWNS the emission (ravn/z88dk#27)
+
+64-bit `long long` global initializers were truncated to 32 bits under
+`-compiler=llvmz80` (clang emitted 8-byte `.quad`; z88dk `DEFQ` is 4 bytes).
+First fix was an external perl pre-pass (`splitquad.pl`) in the bridge — because
+the task was framed as "fix the bridge pipeline", which biases toward pipeline
+tools (copt rule / perl). The clean root-cause fix was in the **compiler
+backend**: `Z80MCAsmInfo` leaves `Data64bitsDirective` null, so
+`MCAsmStreamer::emitValueImpl` splits every 8-byte value into two little-endian
+`.long` — no `.quad` ever reaches the bridge, and the external program is deleted.
+
+Lesson (asked by the user: "how should I have instructed you to reach this
+first?"): on a dialect/emission mismatch, **identify which layer OWNS the
+emission** (frontend -> backend/MC -> bridge -> assembler) and fix in the
+**earliest suitable layer** before adding a post-processing pass. Ask "who emits
+this token, and can that emitter simply not?" before reaching for a text pass. A
+downstream pre/post-pass is a band-aid on the symptom; AGENTS.md's "find the real
+cause, as close to the source as possible" applies to the LAYER choice, not just
+the code change. (See tasks/memory/reference_quad_init_backend_split.md.)

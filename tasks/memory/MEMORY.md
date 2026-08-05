@@ -128,6 +128,7 @@
 - [Verify codegen not just size](feedback_verify_codegen.md) — read disassembly per compiler; same size ≠ same behavior
 - **[Compiler is not trusted](feedback_compiler_not_trusted.md) — HARD: inspect generated asm BEFORE blaming source/runtime/hardware**
 - **[Verdict AFTER real pass output](feedback_verdict_after_real_pass_output.md) — HARD: show the IR/asm the named pass actually produces + contamination + remaining doubt BEFORE stating any verdict; synthetic worst-case ≠ evidence**
+- **[Fix at the layer that owns the emission](reference_quad_init_backend_split.md) — on a dialect/emission mismatch ask "who emits this token, and can that emitter simply NOT?"; fix in the earliest suitable layer (frontend→backend/MC→bridge→assembler) before adding a text pre/post-pass. ravn/z88dk#27: backend `Data64bitsDirective=null` replaced an external splitquad.pl perl pass (see also tasks/lessons.md 2026-08-05).**
 - [Late-opt audit](reference_late_opt_audit.md) — session-37 Keep/Migrate/Delete classification of all 46 peepholes
 - [Root-cause over peephole](feedback_root_cause_over_peephole.md) — favor upstream fixes over post-RA peepholes
 - **[Peephole safety guards](feedback_peephole_safety_guards.md) — HARD: erase/move/convert peepholes need complete liveness + slot-aliasing + iterator guards**
