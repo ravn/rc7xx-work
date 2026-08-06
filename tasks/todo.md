@@ -1093,3 +1093,8 @@ See: rcbios-in-c/tasks/26-line-status.md
 - [ ] Prepare PROM1 (ROA327) binary for SEM702 character generator loader
   - load_chargen in autoload PROM expects a properly prepared PROM1 at 0x2000
   - Need to build/extract the correct ROM image with the right font data and bit order
+- [ ] Printer support in the MAME rc702 driver so printer output is captured to a file
+  - Purpose: capture LST:/printer output somewhere when SIO-B is NOT being used to drive
+    debug I/O (currently SIO-B doubles as the debug/console channel; a real printer sink
+    frees it and lets us verify programs that print)
+  - Likely a printer/paper-tape device wired to the printer port, with a `-bitbN file` sink
