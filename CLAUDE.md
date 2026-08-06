@@ -184,6 +184,13 @@ Working in both: `true`/`false` keywords, `nullptr`, `_Bool`, `_Static_assert`, 
 
 NOT working in zsdcc: `constexpr`, `[[attributes]]` (use `__attribute__`), digit separators (`1'000`), `typeof` in expressions (`typeof(x){42}`).
 
+**How the C standard is set on the clang path (three routes, don't confuse them):**
+- **Production firmware drives clang directly** (autoload/cpnos/rcbios Makefiles, `--target=z80 ... -std=c23`) — this is the authoritative path and already gets C23.
+- **`zcc +cpm -compiler=llvmz80`** (z88dk integration + `test/clang` suite): zcc hardcodes the clang `-std` in `src/zcc/zcc.c` (the llvmz80 branch, both the preprocess and compile invocations). **Default is now `gnu23`** (bumped from `gnu11`, 2026-08-06, so C23 features like `constexpr`/`nullptr`/`#embed` compile without extra flags). **Override per build with `-Cg-std=<std>`** — `-Cg` options feed `clangarg`, appended after the hardcoded `-std`, and clang honours the LAST `-std`, so the caller wins without editing/rebuilding zcc. Changing the default requires editing those two `zcc.c` lines + `make -C src/zcc install`.
+- **Bare `clang --target=z80`** (no `-std`): clang's own default is `gnu17` (`__STDC_VERSION__ 201710L`) — newer than the old zcc `gnu11`, but still lacks C23 keywords.
+
+Also auto-injected on the `-compiler=llvmz80` path (2026-08-06): `-mllvm -z80-float-sdcccall0`, so 32-bit-`double` (float32-math32, ravn/llvm-z80#277) arithmetic libcalls use the sdcccall(0) ABI that bridges to z88dk math32. See `[[project_double_is_float32_retire_softfloat]]`, `[[feedback_use_math32_flag]]`.
+
 **GCC builtins operate on 16-bit `int` here — never assume 32-bit.** On z80/z88dk
 `int` is 16-bit, so `__builtin_clz`/`ctz`/`popcount`/`ffs` count over **16 bits**
 (verified: `--target=z80 -S` ends `ld hl,16; sbc hl,de`), and `__builtin_*_overflow`

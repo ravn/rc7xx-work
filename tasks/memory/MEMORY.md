@@ -97,7 +97,9 @@
 - **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel `ifeq COMPILER` recipes must emit the SAME artifact set**
 - **[Build-var artifacts content-check, not mtime](feedback_build_var_artifacts_content_check.md) — HARD: files embedding TRANSPORT/COMPILER regen via content grep**
 - [Test both compilers](feedback_dual_compiler_test.md) — rcbios changes build with BOTH z88dk and clang before commit
+- **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use `-Cg-O2` (bare `-O2` leaves clang at -O0 → -O2-only codegen like `.rodata.cstN` never emitted → vacuous pass); verify const data in the SHELL (C-side `x[i]==LIT` folds from the const initializer). Build against classic, not newlib.**
 - [Check memory for builds](feedback_check_memory_for_builds.md) — check memory for correct build flags first
+- **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — use the literal `--math32` flag (don't substitute `-lmath32`/`-lm`/hand-rolled `-L`). Path B also needs `-mllvm -z80-float-sdcccall0` + fmath bridge `-lllvmz80_fmath`. Bridge INCOMPLETE (only add/cmp/floatsi; `__fixsfsi`/`__gtsf2`/`__mulsf3` missing) — blocks softfloat retirement (#44).**
 - [Build-tool binaries](reference_build_binaries.md) — cmake/ninja from CLion bundle (mac); native llc/clang in llvm-z80/build-macos/bin
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — when a BSD utility misbehaves vs GNU, SAVE a memory note + workaround (no brew here; python3 is the fallback).**
 - [macOS awk lacks strtonum](reference_macos_awk_no_strtonum.md) — default awk is BWK not gawk; no strtonum/gensub/hex-parse. Use python3/printf/`$((16#..))` for hex crunching.
@@ -131,6 +133,7 @@
 - **[Compiler is not trusted](feedback_compiler_not_trusted.md) — HARD: inspect generated asm BEFORE blaming source/runtime/hardware**
 - **[Verdict AFTER real pass output](feedback_verdict_after_real_pass_output.md) — HARD: show the IR/asm the named pass actually produces + contamination + remaining doubt BEFORE stating any verdict; synthetic worst-case ≠ evidence**
 - **[Fix at the layer that owns the emission](reference_quad_init_backend_split.md) — on a dialect/emission mismatch ask "who emits this token, and can that emitter simply NOT?"; fix in the earliest suitable layer (frontend→backend/MC→bridge→assembler) before adding a text pre/post-pass. ravn/z88dk#27: backend `Data64bitsDirective=null` replaced an external splitquad.pl perl pass (see also tasks/lessons.md 2026-08-05).**
+- **[double is float32 on z80; retire llvmz80-softfloat/](project_double_is_float32_retire_softfloat.md) — since #277 (2026-08-05) `double`==`long double`==32-bit binary32 (`sizeof==4`, `sf` libcalls, math32 runtime). The 64-bit `llvmz80-softfloat/` closure is superseded → retire it (user 2026-08-06). Any `.rodata.cstN` guard (#30) must be rebuilt ABI-independently, not on a 64-bit double.**
 - [Late-opt audit](reference_late_opt_audit.md) — session-37 Keep/Migrate/Delete classification of all 46 peepholes
 - [Root-cause over peephole](feedback_root_cause_over_peephole.md) — favor upstream fixes over post-RA peepholes
 - **[Peephole safety guards](feedback_peephole_safety_guards.md) — HARD: erase/move/convert peepholes need complete liveness + slot-aliasing + iterator guards**
