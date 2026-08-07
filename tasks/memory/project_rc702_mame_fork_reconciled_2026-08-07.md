@@ -16,6 +16,7 @@ Commits on top of `upstream/master` (origin head `d2b090f`):
 3. z80pio `set_mode(MODE_OUTPUT)` set `m_mode` before output callback — upstream-ready
 4. cpnet_bridge PIO-port card, relocated to `src/mame/regnecentralen/pio_port/` — fork-only
 5. README restored + build command updated — fork-only doc
+6. rc702: default RS232 null_modem slots to 38400 8-N-1 — fork-only (see harness note below)
 
 The three z80pio/luaengine fixes were deliberately committed WITHOUT the fork's
 µs-timestamp `LOG` layer so they are clean upstream candidates (the old dev
@@ -45,8 +46,25 @@ pushed to origin. `master` was force-pushed (`--force-with-lease`).
   a hand-curated `.lua` also drags in undependent optional devices like sun_kbd).
   Dropped it — use SOURCES=.
 - Verification bar met: build exit 0, `-validate rc702` exit 0, `-listslots`
-  shows `piob -> cpnet_bridge`. Full end-to-end `cpnos-polypascal-test` (needs
-  MP/M + NDOS orchestration, [[project_cpnos_mame_prereqs]]) not re-run this session.
+  shows `piob -> cpnet_bridge`. **Full end-to-end `cpnos-polypascal-test`
+  (clang, pio-irq) PASSES** on the reconciled base (E>->PPAS->primes 29989->Q->E>,
+  ~45 s emulated; 10k+ cpnet_bridge byte transfers). Needs a fresh DEBUG build
+  `regnecentralend` (the harness uses `$(MAME)/regnecentralend` + debugger lua).
+
+**Two harness fixes were needed after reconciliation (both real deltas):**
+1. **RS232 baud (mame commit 6, fork-only):** upstream #15805 sets NO baud
+   default on the rs232a/rs232b null_modem slots. The harness mirrors the slave
+   console to SIO-B via a host bitbanger; with no matching baud the capture is
+   framing garbage (53 B of high-bit noise). Restored the fork's
+   DEVICE_INPUT_DEFAULTS (38400 8-N-1) on both slots -> clean ASCII capture.
+   NOTE: the null_modem default only models the *host* end; cpnos firmware
+   (init.c init_hardware) already programs SIO-B to 38400 8-N-1 at cold start
+   (CTC ch1 TC=1 = 0.6144 MHz/16 = 38400; SIO-B WR4=0x44/WR3=0xE1/WR5=0x6A = 8N1).
+   Both ends must agree; RS232 has no autonegotiation.
+2. **DIP field name (rc700-gensmedet `cpnos-shared/mame/polypascal_test.lua`):**
+   upstream labels the transport DIP plainly `"S03"`; the fork's lua looked it up
+   by the descriptive `"S03 cpnos transport (On=PIO, Off=SIO)"`. Harmless for PIO
+   (default already PIO) but noisy. Now tries `"S03"` first with fallback.
 
 Gotcha re-learned twice this session: `git checkout <rev> -- <path>` **stages**
 the file, so a later `git commit` (which commits ALL staged) silently sweeps it
