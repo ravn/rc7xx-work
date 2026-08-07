@@ -1,9 +1,21 @@
 ---
 name: reference_llvmz80_bdos_pointer_arg_scramble
-description: zcc +cpm -compiler=llvmz80 scrambles bdos() when an argument is a pointer (FCB/DMA) — issue20's int-only guard misses it
+description: FIXED — bdos() scrambled the func number under -compiler=llvmz80 when an arg was a pointer; root cause was #279 (__smallc→z80_smallc) breaking cpm.h's reversed-param workaround
 metadata:
   type: reference
 ---
+
+**FIXED 2026-08-07** (ravn/z88dk#52, cpm.h commit `b9e7e72b98`, branch
+`fix/llvmz80-graphics-hl-return`, local/unpushed). Root cause: cpm.h had an
+llvmz80-only reversed-order `__bdos_llvmz80(arg,func)` + swapping macro, correct
+while `__smallc` == sdcccall(0) (right-to-left). **#279 redefined `__smallc` as
+`z80_smallc` (left-to-right)** → double reversal → `func` on top, but the
+`bdos_callee.c` worker pops `de=arg` (top) / `bc=func` (deeper), so a pointer
+arg became the func number (0xE8) and `bdos(f,0)` issued func 0 = warm boot.
+Fix: drop the llvmz80 special-case; natural `bdos(func,arg)` is correct for both
+conventions now. Guard: `test/clang/issue52_bdos_ptr_abi.{c,sh}` (pointer arg).
+Both classic + clang builds of the cpnos disk-quicksort test now pass. The rest
+of this note is the original diagnosis (kept for context).
 
 `zcc +cpm -compiler=llvmz80`: `bdos(func, arg)` works when both args are
 small integers (e.g. `bdos(12, 0)` version — ravn/z88dk#20 GREEN,
