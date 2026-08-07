@@ -845,3 +845,24 @@ Delivered:
 - fix 281 - ukendte kombinationer skal give fejl [FIXET på ravn/llvm-z80 branch fix-281-conflicting-cc-diagnostic (ikke pushet). clang/lib/AST/Type.cpp: AttributedType::isCallingConv() manglede de 5 Z80/SDCC-CC-kinds (SDCCCall, Z80AllReg, Z80FastCall, Z80Callee, Z80SmallC) -> getCallingConvAttributedType() null -> konflikt-guard i SemaType.cpp fyrede aldrig. Tilføjede dem -> modstridende CC-kombinationer giver nu err_attributes_are_not_compatible (som alle andre mål). Tilføjede også Z80/SDCC-navne i getNameForCallConv() (ellers tom besked i release). Ny test clang/test/Sema/z80-conflicting-callconv.c (PASS). Alle 11 z80-clang-tests grønne; x86-mekanisme intakt. KONSEKVENS: __smallc __z88dk_callee (graphics.h) er nu HÅRD FEJL under llvmz80 indtil #282 løses.]
 - undersøg #282 grundigt og lav en plan / komposition-mekanisme / tilføj til issue og start [Undersøgte: konventionerne er ortogonale akser (order/cleanup/reg-placering/preserves_regs). Nøgle-constraint: ABI-akser (order/cleanup) SKAL i funktions-typen (indirekte kald via funktionspegere, fx qsort-komparator) -> må være CallingConv, ikke ren decl-attr som preserves_regs. Plan: aksekodet CC + clang-komposition-lag; #281=samme-akse-konflikt-fejl, #282=forskellig-akse-komposition. Plan-doc: llvm-z80/tasks/plan-2026-08-07-composable-z88dk-conventions.md. Postede design til #282. STARTEDE Fase 0-2 (backend): ny Z80_SmallCCallee=133 (L2R+callee), isSmallCArgOrder()-helper + isCalleeCleanup + classifyArg + getRegsForCC afkoder akser; byte-identisk for eksisterende CC'er; ny lit-test z80-smallc-callee.ll beviser kompositionen (kaldsted: L2R push + ingen caller-clean; callee: EX-trick). Branch fix-282-smallc-callee-composition (off main, uafhængig af #281). Fuld Z80-backend-lit 0 fail. STOP-punkt før Fase 3 (clang-komposition, den svære/usikre del).]
 - go (fortsæt til Fase 3: clang-komposition-lag for #282) [Flettede først #281-grenen ind i fix-282 (--no-ff): kompositionen genbruger #281's konflikt-diagnostik-sti, så Fase 3 bygger oven på den. Implementerede clang-komposition-laget: ny frontend-CC CC_Z80SmallCCallee (Specifiers.h); composeZ80CallingConvs() i SemaType.cpp komponerer smallc+callee->cc133 ved konflikt-punktet (ellers uændret fejl for ægte samme-akse-konflikter, ordens-uafhængigt); CGCall getCallingConventionForDecl håndterer begge decl-attrs->cc133 + toLLVMCallingConv-mapping; getNameForCallConv/ItaniumMangle/MicrosoftMangle/TypePrinter/Z80.cpp checkCallingConvention udvidet. Nøgle-indsigt: handleCallConvAttr returnerer tidligt for hasDeclarator -> type-niveau-komposition (handleFunctionTypeAttr) er det rette hook. Opdaterede #281-Sema-test (smallc+callee er nu OK/komponerer, ægte konflikter forbliver fejl) + ny CodeGen-test z80-smallc-callee.c (verificerer cc133 på def+kaldsted+funktionspeger). Byggede clang, kørte tests.]
+
+## Session 2026-08-07 (graphics HL-return + clock() 32-bit return + benchmark)
+- claude was looking at whether __STDC_ABI_ONLY is still needed for rc700 graphics / now that the calling has been fixed
+- er problemet løst? Virker demoen nu?
+- lav gerne en lille makefil så du kan huske det til senere
+- rc700-jbox virker ikke med mame, det gør rc700.8dd / det ligner en skaleringsfejl
+- det dukker op igen og igen at return-værdi-register-bug kræver en ombyg de og hl bro fordi clang ikke overholder konventionen. Opret issue på det.
+- med den nye mekanisme til at styre konventioner kan vi rette til med hvor returværdien forventes / i stedet for at tilføje en ny attribut, kan vi bare berige med en af dem vi har
+- cirklene for sdcc80 og llvmz80 er ikke helt ens. Er det afrundingsfejl? (svar: nej, forskellig circle-worker fra callee-routing; minimal fastcall-fix → byte-identisk)
+- optimér tegneproceduren mest muligt; commit for now og undersøg hvordan andre platforme tegner hurtigere
+- lav en benchmark: sæt alle pixels en efter en og slet dem igen; kør nok til nogen sekunders køretid; brug clock() til at tælle frames
+- skærmen er sort når mame kører (ikke usynlig) — flag der skjuler skærm (-video none headless); vis hvad du laver / ikke fuldskærm
+- clock() burde være bundet til bios-ISR's 32-bit tæller for rc700 (verificeret: den ER; bug var kun return-swap)
+- the rc700 bios has a vendor extension bios call for reading the clock
+- jeg skal til at gå. Gem al relevant information i projektet og gør klar til nedlukning.
+
+Outcomes: graphics.h HL-return fix (commit b284cd5b14) + time.h clock() 32-bit fix
+(aa9d9d8103) on z88dk branch fix/llvmz80-graphics-hl-return; issue ravn/z88dk#51
+filed; benchmark in rc700-gensmedet/scratch/sine-demo (BENCHMARK.md, baseline
+llvmz80 50.30s vs sccz80 57.22s). Draw-optimization (#1 arithmetic reverse-decode
+in shared pixel6.inc) documented + baselined, DEFERRED (genuine fork, awaits go-ahead).

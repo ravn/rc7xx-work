@@ -158,3 +158,15 @@ this token, and can that emitter simply not?" before reaching for a text pass. A
 downstream pre/post-pass is a band-aid on the symptom; AGENTS.md's "find the real
 cause, as close to the source as possible" applies to the LAYER choice, not just
 the code change. (See tasks/memory/reference_quad_init_backend_split.md.)
+
+## Header edits are invisible to a `.c`-only Makefile dep → false-negative fix tests (2026-08-07)
+When a fix lives in a **header** (`time.h`, `graphics.h`) but the Makefile's rule
+only lists the `.c` as a prerequisite, editing the header does NOT rebuild the
+`.COM` — the test re-runs the STALE binary and the fix "does nothing". Hit twice
+this session: `__z88dk_fastcall` on graphics.h AND on clock()'s time.h both looked
+like no-ops until a forced `rm` of the artifact. LESSON: when verifying a
+header-level fix, either `make clean`/`rm` the output first, or add the header as
+an explicit prerequisite. A "the attribute doesn't fix it" conclusion from an
+un-forced rebuild is untrustworthy — it's the stale-binary trap, not evidence.
+Corollary to AGENTS.md "building is not behaving": also *rebuild what you think
+you rebuilt*.
