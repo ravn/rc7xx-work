@@ -6,7 +6,20 @@ metadata:
 ---
 
 **mamedev/mame PR #15805** — RC702/RC703 working driver with CP/M boot.
-Status as of 2026-07-31: OPEN, **awaiting review** (pmackinlay did the first round).
+Status **MERGED** (confirmed 2026-08-07, "Systems promoted to working").
+Upstream now carries rc702/rc702mini/rc702sem702/rc703, the driver-local
+`src/mame/regnecentralen/pio_port/` slot (keyboard card), 560-col fix,
+jbox palette, 2716/2732 jumper + prom1, sem702 RAM-chargen, 8275 PLL dot clock.
+
+**Fork reconciled to post-merge upstream 2026-08-07** (see
+[[project_rc702_mame_fork_reconciled_2026-08-07]]): `master` reset to
+`upstream/master` + 5 targeted commits; old dev master preserved as branch
+`master-predev-2026-08-07` (local + origin). Plan
+`tasks/mame-post-pr-merge-plan-2026-08-06.md` was partly stale (its "fork-only
+follow-ups" sem702/jumper were actually in the PR; ROM-hash/warning was already
+reverted in the fork — both moot).
+
+Status as of 2026-07-31 (pre-merge): OPEN, awaiting review (pmackinlay round 1).
 
 - Branch: `upstream-rc702-clean` on `origin` (git@github.com:ravn/mame.git),
   built on mamedev base `8f21e978`. Local mame repo is on this branch.
