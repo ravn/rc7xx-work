@@ -278,6 +278,8 @@
 - [User Profile](user_profile.md) — experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - **[TODO-later: cpmish distribution](project_cpmish_todolater.md) — undersøg davidgiven/cpmish som distributions-vehicle for rc702-8dd/5dd + rc703-qd diskbilleder**
 - [TODO-later: z88dk RC700 wiki](reference_z88dk_rc700_wiki.md) — opdater github.com/z88dk/z88dk/wiki/Platform-Regnecentralen-RC700 med nye diskformater + llvmz80; trigger ved upstream PR
+- [z88dk +cpm -subtype=rc700 build](reference_z88dk_rc700_subtype_build.md) — rc700.lib IKKE shippet (byg: `make -C libsrc TARGETS=rc700` + install); llvmz80-rute virker på niveau med SDCC; disk skal være eksplicit (-Cz+cpmdisk -f rc700-8dd); grafik = gencon 2x3-sekstant 160x75; eksempler i examples/rc700/
+- [CANDIDATE BUG: llvmz80 miscompiles graphics.h calls](project_llvmz80_z88dk_callee_graphics_miscompile.md) — __smallc __z88dk_callee kald mishandles (sccz80 OK, llvmz80 dropper de fleste); blokerer <graphics.h> under llvmz80; ikke analyseret/filed endnu
 - **[FILE* test suite parked — newlib migration](project_fileio_suite_parked_newlib.md) — 4 XFAIL + 9 SKIP genoptages når z88dk newlib CP/M file-driver lander upstream (ravn/z88dk#34)**
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, `/home/ravn/z80`, headless, gh authed, upstream LLVM at `~/llvm-upstream/llvm-project`
 - [Safari breaks claude login callback](reference_claude_login_safari_workaround.md) — use ANTHROPIC_API_KEY or non-Safari default browser

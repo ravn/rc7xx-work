@@ -9,6 +9,10 @@ metadata:
 
 Never launch MAME:
 - in fullscreen (i.e. without `-window`), or
+- headless via `-video none` as a substitute — the user wants to SEE the
+  window, so pass `-window` even for automated framebuffer-tap tests (they
+  read display RAM from memory and work fine with a real window open;
+  reinforced 2026-08-06 after a `-video none` COMAL regression run), or
 - without a timeout, i.e. `-seconds_to_run 0` (which runs indefinitely) or
   omitting the flag entirely.
 
