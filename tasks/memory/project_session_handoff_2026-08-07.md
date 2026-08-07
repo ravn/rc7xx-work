@@ -46,8 +46,9 @@ exact commits:
 ### Open items / filed issues
 - **ravn/z88dk#52** bdos pointer-arg — FIXED (commit local, unpushed), commented.
 - **ravn/z88dk#53** classic stdio `fopen("rb+")` mis-parsed read-only (`+` after
-  `b` ignored in `_freopen1.c`); only `"r+b"` works. Also: `"r+b"` random
-  write-back doesn't land (fflush is a stub) — CP/M reliable path is direct BDOS.
-  NOT yet fixed — candidate next task.
+  `b` ignored in `_freopen1.c`); only `"r+b"` works. NOT yet fixed.
+- **ravn/z88dk#54** classic stdio `fseek()+fwrite()` random write-back does not
+  persist (and corrupts a neighbour); `fflush` is a stub. Repro filed. NOT fixed.
+  CP/M reliable path is direct BDOS F_READRAND/F_WRITERAND (as cpnos-qsort uses).
 - ntvcm was built at `/Users/ravn/z80/ntvcm/ntvcm` (clang++, no -static) for
   local CP/M verification; it is gitignored/untracked there.
