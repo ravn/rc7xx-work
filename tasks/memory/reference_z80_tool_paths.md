@@ -20,7 +20,24 @@ metadata:
 | **Asserts llc/clang** (supports `-debug-only=<pass>`) | `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/llc` |
 | z88dk-ticks (Z80 emulator for runtime verification) | `/Users/ravn/z80/z88dk/bin/z88dk-ticks` |
 | zcc (z88dk C compiler driver) | `/Users/ravn/z80/z88dk/bin/zcc` |
+| **ntvcm** (CP/M emulator for FILE* / stdio runtime tests, arm64 native) | `/Users/ravn/z80/ntvcm/ntvcm` |
 | zmac (Z80 assembler) | `/Users/ravn/z80/rc700-gensmedet/zmac/bin/zmac` |
+
+### Running CP/M runtime fixtures (`z88dk/test/clang/runtime_fileio_*.sh`)
+
+Harnesses need `zcc` + `ntvcm` on PATH; the `-compiler=llvmz80` half also needs
+a binary literally named **`llvmz80-clang`** on PATH (zcc default; override via
+`LLVMZ80EXE` env/config — see `z88dk/src/zcc/zcc.c:349`). Wire it up per session:
+
+```bash
+export ZCCCFG=/Users/ravn/z80/z88dk/lib/config
+export PATH="/Users/ravn/z80/z88dk/bin:/Users/ravn/z80/ntvcm:$PATH"
+# llvmz80-clang shim (native clang is a symlink clang -> clang-23):
+ln -sf /Users/ravn/z80/llvm-z80/build-macos/bin/clang /tmp/llvmz80-clang
+export PATH="/tmp:$PATH"          # or: export LLVMZ80EXE=.../build-macos/bin/clang
+sh z88dk/test/clang/runtime_fileio_qsort.sh    # NTVCM auto-found on PATH
+```
+
 
 NOT a brew machine.  No system clang/llc/opt to be confused for the llvm-z80 ones.
 
