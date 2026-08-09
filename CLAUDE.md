@@ -58,8 +58,8 @@ Root is per-host (`/Users/ravn/z80/` macbook, `/home/ravn/z80/` sonnyboy):
   - `rcbios-in-c/` — CP/M BIOS in C
   - `cpnos-in-c/` — CP/NOS slave PROM1-only line program (production, PROM 1)
   - `cpnos-rom/`, `cpnos-in-asm/` — parked predecessors
-  - `z88dk/` — **NOT the fork.** Pinned prebuilt toolchain (downloads official z88dk 2.4 macOS release, symlinks bin/lib/include) tracked inside rc700-gensmedet. Gives builds a stable stock `zcc`/`zsdcc`/`z80asm`.
-- `z88dk/` — the **development fork** (github.com/ravn/z88dk, own repo). All bridge/newlib/clang-integration work (`libsrc/l/llvmz80/`, `include/_DEVELOPMENT/`). Built from source. Distinct from the prebuilt one above.
+  - `z88dk/` — **RETIRED 2026-08-10.** Was a pinned prebuilt stock z88dk 2.4 (479 MB unzip of `z88dk-osx-2.4.zip`). Deleted; SDCC builds now run through the **`z88dk:2.4` Docker image** (pull `z88dk/z88dk:2.4` + `docker tag ... z88dk:2.4`, or build from the fork per `rc700-gensmedet/docs/z88dk_docker_rebuild.md`). Only the `z88dk:2.4` Docker image ships the classic `sdcc_iy/z80.lib`; newer official images (`latest`/nightlies) do NOT, so stay pinned to `2.4`. Makefiles auto-select Docker when no native z88dk with `sdcc_iy/z80.lib` is present.
+- `z88dk/` — the **development fork** (github.com/ravn/z88dk, own repo). All bridge/newlib/clang-integration work (`libsrc/l/llvmz80/`, `include/_DEVELOPMENT/`). Built from source. The sole on-disk z88dk tree in the workspace now (classic sccz80 + zx0 + clang integration); it does NOT ship the classic `sdcc_iy/z80.lib` — that lives only in the Docker image.
 
 The autoload Makefile references `LLVM_Z80` via `$(CURDIR)/../../llvm-z80`.
 
