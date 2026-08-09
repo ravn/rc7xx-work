@@ -4,12 +4,12 @@
 #   Group A  llvm-z80 lit suite            (llvm-lit CodeGen/Z80)
 #   Group B  llvm-z80 runtime value oracle (test-runner: cargo run -- clang)
 #   Group C  z88dk clang integration       (z88dk/test/clang/run_all.sh)
-#   Group D  softfloat / double + printf   (llvmz80-softfloat/tests/run.sh)
+#            -- includes double/float32 (--math32) + printf %f coverage
 #
 # Scope:
-#   run-all-tests.sh fast    A + C + D            (quick correctness, ~1-3 min)
-#   run-all-tests.sh         A + B + C + D (full, default; B is ~minutes)
-#   run-all-tests.sh <group> run one group: lit | runtime | z88dk | softfloat
+#   run-all-tests.sh fast    A + C                (quick correctness, ~1-3 min)
+#   run-all-tests.sh         A + B + C (full, default; B is ~minutes)
+#   run-all-tests.sh <group> run one group: lit | runtime | z88dk
 #
 # A missing tool (ntvcm, z88dk-ticks, cargo, MAME) SKIPs its group, never fails.
 # Overall exit: non-zero if any group FAILs.  Env: SKIP_TESTS=1 short-circuits.
@@ -22,7 +22,6 @@ LLVM="$WS/llvm-z80"
 BUILD="${BUILD_DIR:-$LLVM/build-macos}"
 export LLVMZ80EXE="${LLVMZ80EXE:-$BUILD/bin/clang}"
 export NTVCM="${NTVCM:-$WS/ntvcm/ntvcm}"
-export LLVMZ80RTLIB="${LLVMZ80RTLIB:-/tmp/softfloat_lib/softfloat_cpm_z80}"
 export PATH="$WS/z88dk/bin:$PATH"
 export ZCCCFG="${ZCCCFG:-$WS/z88dk/lib/config/}"
 
@@ -62,15 +61,6 @@ if want z88dk; then
     sh "$WS/z88dk/test/clang/run_all.sh" 2>&1 | tail -22
     mark "z88dk" "${PIPESTATUS[0]}"
   else echo "SKIP: run_all.sh missing"; mark "z88dk" 77; fi
-fi
-
-# ---- Group D: softfloat + printf ----
-if want softfloat; then
-  hdr "D. softfloat / double + printf (tests/run.sh)"
-  if [ -f "$WS/llvmz80-softfloat/tests/run.sh" ]; then
-    sh "$WS/llvmz80-softfloat/tests/run.sh" 2>&1 | tail -15
-    mark "softfloat" "${PIPESTATUS[0]}"
-  else echo "SKIP: softfloat run.sh missing"; mark "softfloat" 77; fi
 fi
 
 # ---- Group B: runtime value oracle (slow) ----

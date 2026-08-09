@@ -14,12 +14,11 @@ Groups (each SKIPs if its tool is missing, never hard-fails):
 - **B runtime** — test-runner value oracle (`cargo run -- clang`, glob-discovered
   `testcases/clang/*.c`) — the slow one (~minutes)
 - **C z88dk** — `z88dk/test/clang/run_all.sh` (itoa/printf_ret/vaarg/strerror/
-  stdlib_coverage/str/mem/… — auto-detects LLVMZ80EXE/NTVCM/ZCCCFG)
-- **D softfloat** — `llvmz80-softfloat/tests/run.sh` (double + i2d + nanoprintf
-  `%f` printf)
+  stdlib_coverage/str/mem/float/printf_autoformat/rodata_cstn/… — auto-detects
+  LLVMZ80EXE/NTVCM/ZCCCFG; also covers 32-bit double/float via `--math32`)
 
-Scope: `run-all-tests.sh fast` = A+C+D (~1-3 min, skips slow runtime oracle);
-no arg = full (A+B+C+D); or one group: `lit|runtime|z88dk|softfloat`.
+Scope: `run-all-tests.sh fast` = A+C (~1-3 min, skips slow runtime oracle);
+no arg = full (A+B+C); or one group: `lit|runtime|z88dk`.
 `SKIP_TESTS=1` short-circuits. Non-zero exit if any group FAILs.
 
 Individual tests are still auto-discovered *within* their suites — this script

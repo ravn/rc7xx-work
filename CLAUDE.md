@@ -145,7 +145,7 @@ Sources use **C23 features that work in both clang and z88dk zsdcc 4.5.0**.
 - **hasFP=false has a runtime bug** (parked).
 
 Recently fixed (full writeups in the cited files; kept as pointers):
-- `(double)int` / `__floatsidf` was NOT a backend bug — our SoftFloat clz-width config (ravn/llvm-z80#273, FIXED 2026-07-21). See C Language Standard above + `llvmz80-softfloat/bugs/f64_int_to_double_miscompiled.md`.
+- `(double)int` / `__floatsisf` was NOT a backend bug — it was a SoftFloat clz-width config issue (ravn/llvm-z80#273, FIXED 2026-07-21). See C Language Standard above. (The former `llvmz80-softfloat/` tree that hosted the writeup has since been retired, ravn/z88dk#44.)
 - Textual `-S` out-of-range `jr cc` — VAR-shift & other expanding `Z80Pseudo`s sized 0 in `getInstSizeInBytes` (ravn/llvm-z80#267, FIXED 2026-07-20/21). Systemic class + drift guard `-z80-verify-inline-runtime-size`; see `tasks/memory/issue267_pseudo_undersize_class.md`. (A separate fmt64@-O2 failure was our z88dk `bridge_postproc.sh` `jr→jp` rewrite, removed.)
 - sret copied to wrong dest from an sret-returning call (`cf6c78afd775`, ravn/llvm-z80#268 CLOSED); sret setup skipped for no-arg >4-byte returns (`74378e7a78cc`, #274 CLOSED).
 - Bare pair inline-asm constraints (`"hl"` etc.) crashed IRTranslator — `Z80TargetInfo::convertConstraint` rewrites to braced form.
@@ -159,6 +159,6 @@ Recently fixed (full writeups in the cited files; kept as pointers):
 CP/M stdlib surface is largely complete and verified (compiled + run under ntvcm/MAME); bridge layer in `z88dk/libsrc/l/llvmz80/` (ABI: `CALLING_CONVENTION.md`).
 
 - **Works:** `string.h`, `ctype`, `stdlib` (atoi/itoa/strtol/qsort/rand/getenv/getopt…), `malloc` family, full `stdio` **FILE\*** layer (16/16 MAME). Non-variadic classic-clib calls bridge the HL→DE 16-bit-return mismatch via `__ZPROTO`.
-- **`double` runtime:** clang lowers `double` to soft-float libcalls z88dk classic lacks. Berkeley-SoftFloat closure `softfloat_cpm_z80.lib` (build: `llvmz80-softfloat/tools/build_softfloat_lib.sh`), auto-linked when `LLVMZ80RTLIB` points at it. **Note the double=float32-math32 direction** (`[[project_double_is_float32_retire_softfloat]]`) is superseding the softfloat route.
+- **`double`/`float` runtime:** on z80 `double`==`float`==`long double`==32-bit IEEE-754 binary32 (#277), so clang emits only single-precision (`sf`) soft-float libcalls, never `df`. These are resolved by the auto-linked `llvmz80_fmath.lib` math32 bridge (pass `--math32`); no env var. The old 64-bit Berkeley-SoftFloat closure (`softfloat_cpm_z80.lib`/`LLVMZ80RTLIB`, tree `llvmz80-softfloat/`) is **RETIRED** (ravn/z88dk#44, `[[project_double_is_float32_retire_softfloat]]`).
 - **Fixed:** variadic stdio return value (z88dk header, ravn/z88dk#31); `va_start`/`va_arg` in user functions (ravn/z88dk `bb914a18`, #270); `printf("%f")` on newlib with `-D__LLVMZ80_IEEE_PRINTF` (ravn/z88dk#35, see `tasks/memory/reference_llvmz80_newlib_ieee_printf_fix.md`).
 - **WONTFIX / out of scope:** disk FILE\* on newlib (ravn/z88dk#34 — CP/M newlib ships no file-open driver; classic is the forward direction). POSIX fd-layer (open/read/write…) resolves to no-op stubs on classic `+cpm` by design — real CP/M file I/O is the FILE\* layer under classic.

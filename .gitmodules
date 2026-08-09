@@ -28,9 +28,6 @@
 [submodule "cpm_compilers"]
 	path = cpm_compilers
 	url = git@github.com:ravn/cpm_compilers.git
-[submodule "llvmz80-softfloat/vendor/berkeley-softfloat-3"]
-	path = llvmz80-softfloat/vendor/berkeley-softfloat-3
-	url = https://github.com/ucb-bar/berkeley-softfloat-3.git
 [submodule "z88dk-wiki"]
 	path = z88dk-wiki
 	url = https://github.com/z88dk/z88dk.wiki.git
