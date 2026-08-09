@@ -25,18 +25,19 @@ metadata:
 
 ### Running CP/M runtime fixtures (`z88dk/test/clang/runtime_fileio_*.sh`)
 
-Harnesses need `zcc` + `ntvcm` on PATH; the `-compiler=llvmz80` half also needs
-a binary literally named **`llvmz80-clang`** on PATH (zcc default; override via
-`LLVMZ80EXE` env/config — see `z88dk/src/zcc/zcc.c:349`). Wire it up per session:
+Harnesses need `zcc` + `ntvcm` on PATH; the `-compiler=llvmz80` half locates
+the clang binary via the **`LLVMZ80EXE`** env var (canonical route — no PATH
+shim needed; zcc source `z88dk/src/zcc/zcc.c:349`). Wire it up per session:
 
 ```bash
 export ZCCCFG=/Users/ravn/z80/z88dk/lib/config
 export PATH="/Users/ravn/z80/z88dk/bin:/Users/ravn/z80/ntvcm:$PATH"
-# llvmz80-clang shim (native clang is a symlink clang -> clang-23):
-ln -sf /Users/ravn/z80/llvm-z80/build-macos/bin/clang /tmp/llvmz80-clang
-export PATH="/tmp:$PATH"          # or: export LLVMZ80EXE=.../build-macos/bin/clang
+export LLVMZ80EXE=/Users/ravn/z80/llvm-z80/build-macos/bin/clang
 sh z88dk/test/clang/runtime_fileio_qsort.sh    # NTVCM auto-found on PATH
 ```
+
+(Fallback if you can't set the env var: put a binary literally named
+`llvmz80-clang` on PATH, e.g. `ln -sf .../build-macos/bin/clang /tmp/llvmz80-clang`.)
 
 
 NOT a brew machine.  No system clang/llc/opt to be confused for the llvm-z80 ones.
