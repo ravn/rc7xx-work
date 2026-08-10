@@ -27,3 +27,13 @@ production-size measurement (scan a linked production image for duplicated
 rodata/string blocks). On 2KB-PROM targets (autoload, cpnos) each image is
 single-TU-dominated so cross-TU duplication is expected small. Related: #30
 (section-drop fix), #45 (warn on drop). Guard: test/clang/runtime_rodata_cstn.c.
+
+## CRITICAL SCOPING (verified 2026-08-11): only the z80asm path is affected
+`z80asm` here = z88dk's OWN assembler/linker (`z88dk/src/z80asm`), reached via
+`zcc +cpm -compiler=llvmz80`. It is NOT from llvm-z80. llvm-z80 ships clang +
+**ld.lld**, and ld.lld DOES dedup SHF_MERGE (verified: same 2-TU repro linked
+with ld.lld -> constant appears ONCE; via z80asm -> TWICE). The 2KB-PROM
+production firmware links with ld.lld, not z80asm (autoload-in-c Makefile
+`CLANG_LD=.../ld.lld`, cpnos-in-c `LD=.../ld.lld`), so production ALREADY gets
+cross-TU merge for free. #46 duplication is confined to the z88dk `zcc +cpm`
+toolchain path. This lowers priority further — production is unaffected.
