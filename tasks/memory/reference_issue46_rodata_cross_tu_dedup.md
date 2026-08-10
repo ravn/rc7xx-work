@@ -1,0 +1,29 @@
+# ravn/z88dk#46 — cross-TU rodata/string dedup gap (missed-opt, OPEN)
+
+**Status (2026-08-11): investigated, verified, plan posted; NOT implemented. OPEN.**
+
+Missed optimization (size-only, no correctness effect): the llvmz80 -> z88dk
+pipeline does not deduplicate identical mergeable read-only data across object
+files. clang emits `.section .rodata.cstN,"aM",@progbits,N` (SHF_MERGE + entsize)
+and `.rodata.str1.1` for strings; the copt bridge
+(`lib/llvmz80/llvmz80_rules.1`) collapses all of them to a single `SECTION
+rodata_compiler`, dropping the merge attribute/entsize, and z80asm's linker only
+concatenates modules (no dedup).
+
+**Verified scope — strictly cross-TU** (within-TU pooling already works via clang):
+- same 16B const table in 2 TUs -> 2 copies in the image (not merged)
+- same string literal in 2 TUs -> 2 copies (str1.1 also not deduped)
+- same string twice within 1 TU -> 1 copy (clang pools)
+
+**Feasibility:** the hard part of any fix is a **relocation-aware** dedup in
+z80asm's linker (collapse identical entries, then rewrite every symbol/reloc to
+the survivor) — substantial + risky. The 'easy half' (route cstN/str to
+dedicated sections preserving entsize) is NOT safe to land alone: any new
+section must be added to the crt memory map
+(`crt/newlib/crt_memory_model_z80.inc`) or it hits the #30 silent-drop bug.
+
+**Recommendation:** keep open, do not implement speculatively; gate on a concrete
+production-size measurement (scan a linked production image for duplicated
+rodata/string blocks). On 2KB-PROM targets (autoload, cpnos) each image is
+single-TU-dominated so cross-TU duplication is expected small. Related: #30
+(section-drop fix), #45 (warn on drop). Guard: test/clang/runtime_rodata_cstn.c.
