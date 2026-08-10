@@ -12,11 +12,12 @@ The `llvm-z80` clang backend and z88dk's classic clib disagree on argument/retur
 conventions in many places, and the symptom is almost always *garbage*, not a
 crash. This has bitten us repeatedly — it is a whole class, not a one-off:
 
-- **ferror/feof under llvmz80** (2026-08-10): plain `int ferror(FILE*)` decl falls
-  outside the `__z88dk_fastcall` bridge under `__STDC_ABI_ONLY`; clang passes the
-  FILE\* in a register, the hand-asm entry `pop`s it off the stack -> returns stale
-  caller bytes (1123 / 1139 / all-1s). Fix = unconditional `__z88dk_fastcall`.
-  (See `xfail_ferror_feof` fixture.)
+- **ferror/feof under llvmz80** (FIXED 2026-08-10): plain `int ferror(FILE*)` decl fell
+  outside the `__z88dk_fastcall` bridge under `__STDC_ABI_ONLY`; clang passed the
+  FILE\* in a register, the hand-asm entry `pop`ped it off the stack -> returned stale
+  caller bytes (1123 / 1139 / all-1s). Fix = drop the `#ifndef __STDC_ABI_ONLY` guard
+  so the fastcall decl + redirect macro apply unconditionally (stdio.h, z88dk commit
+  703bccfa53). Guard: `test/clang/runtime_fileio_ferror_feof`.
 - **bdos() pointer-arg scramble** — #279/#52 (`reference_llvmz80_bdos_pointer_arg_scramble.md`).
 - **32-bit `long` return word-swapped** — #51 (`reference_llvmz80_32bit_return_swap.md`):
   `clock()` delivered `ticks<<16`; HL/DE low/high disagreement.
