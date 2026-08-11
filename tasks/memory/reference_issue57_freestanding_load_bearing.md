@@ -83,3 +83,11 @@ VERIFIED (build-macos native clang 23.0.0git, `ninja clang opt llc`):
 
 Mechanism 2 (Sema LangOpt at SemaDecl.cpp:3902) ASSESSED NOT NEEDED for the MVP: hosted printf->puts + both constant-folded and runtime source-level strlen/strcmp produced correct runtime output with mechanism-1 flag alone. Deferred.
 zcc wiring for production (add `-mllvm -z80-classic-libc-cc` alongside the existing -z80-float-sdcccall0, and make -ffreestanding conditional) NOT yet committed to zcc.c — pending user go-ahead. Flag is OFF by default so no path changes until zcc opts in. No PR; #57 stays OPEN.
+
+## WIRED INTO zcc: hosted by default + both -mllvm flags (2026-08-11, DONE)
+Per user ("freestanding skal angives udtrykkeligt af brugeren udenfor zcc; flagene tilføjes til llvmz80 compiler config"). Changes on z88dk branch xthra/issue-57-hosted-default:
+- src/zcc/zcc.c (-compiler=llvmz80 branch): REMOVED hardcoded -ffreestanding from the compile line (`--target=z80 -S -std=gnu23 -o - %s`), so hosted is now the default. ADDED `add_option_to_compiler("-mllvm -z80-classic-libc-cc");` right after the existing `-mllvm -z80-float-sdcccall0`. Both flags now always emitted for llvmz80.
+- User opts into freestanding EXPLICITLY with `-Cg-ffreestanding` (forwarded to clang after config flags; clang takes last of -ffreestanding/-fhosted -> reliable override, no rebuild).
+- Doc: libsrc/l/llvmz80/CAPABILITIES.md new section "6b. Hosted by default — C-library optimisations & how to opt out".
+VERIFIED end-to-end (rebuilt zcc via `make` in src/zcc, cp to bin/zcc; ntvcm): DEFAULT (no -Cg) rt.c 4-printf -> correct `A=42/banner line/len=5/cmp=0`; banner.c 5881 B correct. `-Cg-ffreestanding` override -> banner.c 7338 B (back to freestanding size), still correct = -19.8% default win. zcc verbose confirms compile line `--target=z80 -S -std=gnu23 -o - -O2 -mllvm -z80-float-sdcccall0 -mllvm -z80-classic-libc-cc` (no -ffreestanding).
+STATUS: llvm-z80 branch xthra/issue-57-classic-libc-cc (compiler flag + lit) and z88dk branch xthra/issue-57-hosted-default (zcc wiring + doc) both committed locally, NOT merged/pushed, no PR. #57 open.
