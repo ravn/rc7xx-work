@@ -22,6 +22,20 @@ dedicated sections preserving entsize) is NOT safe to land alone: any new
 section must be added to the crt memory map
 (`crt/newlib/crt_memory_model_z80.inc`) or it hits the #30 silent-drop bug.
 
+**Feasibility — refined after reading z80asm internals (2026-08-11):** LESS bad
+than "relocation-aware rewrite". z80asm has no dedup/COMDAT (only merge_modules
+= concat). BUT internal refs are symbol + link-time-expression based, NOT baked
+offsets: a const table keeps a LOCAL symbol (e.g. `_fa_t`) and each use is an
+expression `E W ... _fa_t` patched at link. So dedup = symbol-redirection +
+section compaction (repoint duplicate module's local symbol to survivor, drop
+bytes) — no need to rewrite patched code. Verified via `z88dk-z80nm a.o`.
+Real blocker: the copt bridge (`lib/llvmz80/llvmz80_rules.1`) funnels all
+`.rodata.cstN`/`.str1.1` into one `rodata_compiler` AND strips `.size`, so block
+size/entsize is lost → a dedup pass must infer boundaries from consecutive local
+symbols (fragile) unless the bridge is changed to preserve size. Concrete design:
+(1) bridge preserves per-block size, (2) link pass folds identical blocks by
+repointing local symbols + compacting rodata.
+
 **Recommendation:** keep open, do not implement speculatively; gate on a concrete
 production-size measurement (scan a linked production image for duplicated
 rodata/string blocks). On 2KB-PROM targets (autoload, cpnos) each image is
