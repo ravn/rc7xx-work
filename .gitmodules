@@ -31,3 +31,8 @@
 [submodule "z88dk-wiki"]
 	path = z88dk-wiki
 	url = https://github.com/z88dk/z88dk.wiki.git
+[submodule "open-watcom-v2"]
+	path = open-watcom-v2
+	url = git@github.com:ravn/open-watcom-v2.git
+	branch = master
+	shallow = true
