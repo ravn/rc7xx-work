@@ -51,3 +51,13 @@ production firmware links with ld.lld, not z80asm (autoload-in-c Makefile
 `CLANG_LD=.../ld.lld`, cpnos-in-c `LD=.../ld.lld`), so production ALREADY gets
 cross-TU merge for free. #46 duplication is confined to the z88dk `zcc +cpm`
 toolchain path. This lowers priority further — production is unaffected.
+
+## Measurement — dedup gain on production firmware (2026-08-11)
+
+**Verdict: 0 bytes on ALL three production firmware.** Measured empirically, not reasoned.
+
+- **autoload-in-c** (4 TUs rom/runtime/boot/intvec, links via ld.lld): only `rom.o` has mergeable rodata (`.rodata.cst32` 32B + `.rodata.str1.1` 122B); the other 3 TUs have none. Relinked pass1 ELF at `ld.lld -O0` (merge OFF) vs `-O1`/`-O2` (merge ON): `.text` = **3393 bytes, byte-identical** at all three. Cross-TU dedup has nothing to fold (only one TU carries mergeable rodata).
+- **cpnos-in-c prom1-lineprog** (8 TUs, ld.lld): **zero** `.rodata.cst*`/`.rodata.str*` sections; only one named `.rodata._specc`. No duplicates → gain 0.
+- **rcbios-in-c** (8 TUs): objects are **LLVM IR bitcode (LTO)** → single merged module, LLVM pools identical whole constants at IR level (stronger than any linker merge). Final `bios.clang.elf` `.rodata` = 447B; a duplicate-run scan found only short (8-13B) periodic self-similarity *within* structured tables (DPB-like records), NOT separable identical constants. Gain 0.
+
+Corollary reinforced: all production firmware links via **ld.lld** (or LTO), never z80asm — so #46 is definitionally 0 for firmware. #46 remains a `zcc +cpm` (z80asm-path) missed-opt only; keep DEFERRED. Do not implement absent a measured multi-TU `zcc +cpm` workload that shows a real byte win.
