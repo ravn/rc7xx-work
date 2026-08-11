@@ -17,6 +17,9 @@ printf("SYNTH\n"), __smallc printf prototype:
 ```
 Also: with real headers, hosted mode warns `z80_smallc calling convention is not supported on builtin function [-Wignored-attributes]` for puts/fread/fwrite — clang treats them as builtins and drops the CC attr. Explicit `__smallc` calls clang does NOT treat as builtins still bridge fine in both modes; breakage is specifically clang synthesizing/builtin-substituting a classic clib call without the bridge.
 
+## Exact upstream-clang source of the CC-drop (verified, SemaDecl.cpp:3902)
+The warning is generic clang Sema, NOT backend. In `clang/lib/Sema/SemaDecl.cpp` `mergeFunctionTypes()` (~line 3902): when a function is re-declared with a different CC AND the prior decl is a recognized builtin (`Old->getBuiltinID()` non-zero), clang deliberately discards the new CC: `NewTypeInfo = NewTypeInfo.withCallingConv(OldTypeInfo.getCC())` (comment: "Calling Conventions on a Builtin aren't really useful ... warn and ignore"). `getBuiltinID()` is non-zero only in hosted mode -> the warning vanishes under `-ffreestanding` (there `puts` is not a builtin). Consequence sharpened: even an EXPLICIT `puts(...)` whose header prototype carries `__smallc` has the attribute silently overwritten in hosted mode. So a per-prototype `__smallc` fix cannot work in hosted mode; the CC must come from the backend's default libcall lowering, not source attributes.
+
 ## Verification recipe
 `-fhosted` overrides an earlier `-ffreestanding` (last-wins; `-fno-freestanding` is NOT a valid clang flag). So test the drop end-to-end WITHOUT rebuilding zcc: `zcc +cpm -compiler=llvmz80 -O2 -Cg-fhosted -create-app prog.c`. Env: ZCCCFG=.../z88dk/lib/config, PATH includes z88dk/bin + ntvcm, LLVMZ80EXE=llvm-z80 clang.
 
