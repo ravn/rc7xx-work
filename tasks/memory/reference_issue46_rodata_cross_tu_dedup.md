@@ -61,3 +61,7 @@ toolchain path. This lowers priority further — production is unaffected.
 - **rcbios-in-c** (8 TUs): objects are **LLVM IR bitcode (LTO)** → single merged module, LLVM pools identical whole constants at IR level (stronger than any linker merge). Final `bios.clang.elf` `.rodata` = 447B; a duplicate-run scan found only short (8-13B) periodic self-similarity *within* structured tables (DPB-like records), NOT separable identical constants. Gain 0.
 
 Corollary reinforced: all production firmware links via **ld.lld** (or LTO), never z80asm — so #46 is definitionally 0 for firmware. #46 remains a `zcc +cpm` (z80asm-path) missed-opt only; keep DEFERRED. Do not implement absent a measured multi-TU `zcc +cpm` workload that shows a real byte win.
+
+## Resolution — CLOSED wontfix (2026-08-11)
+
+ravn/z88dk#46 closed as **wontfix** (GitHub reason "not planned" + `wontfix` label; comment 5249776997). Rationale: measured 0-byte gain on all production firmware (see measurement section above); every production artifact links via ld.lld or LTO, never z80asm; the gap is real but strictly `zcc +cpm`-path only, and no production binary is on that path. A fix is a medium/high-risk 3-6 day z80asm linker feature not worth its cost absent a measured multi-TU `zcc +cpm` win. Reopen only if such a workload later shows a real byte gain.
