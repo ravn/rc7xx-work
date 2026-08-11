@@ -22,9 +22,9 @@ Also: with real headers, hosted mode warns `z80_smallc calling convention is not
 **Mechanism 2 — frontend builtin-CC-drop (Sema).** For builtin-recognized funcs, an explicit __smallc prototype has its CC silently discarded at `clang/lib/Sema/SemaDecl.cpp` ~3902 (`Old->getBuiltinID()` branch: `NewTypeInfo = NewTypeInfo.withCallingConv(OldTypeInfo.getCC())`, comment "Calling Conventions on a Builtin aren't really useful ... warn and ignore"). VERIFIED consequence: explicit `strlen(s)` -> `jp _strlen` (wrong) in hosted vs `push hl; call _strlen` in freestanding. getBuiltinID() is non-zero only in hosted -> vanishes under -ffreestanding.
 
 ## Can we teach clang the stdlib routines' CC so hosted works? (answer to user 2026-08-11)
-Yes, but two target-independent changes, and the CC is clib-dependent (classic __smallc vs newlib/sdcccall) so it must come from TargetLibraryInfo via a driver flag, not a hardcoded target constant:
-- Fix mechanism 1: `getOrInsertLibFunc` (BuildLibCalls.cpp:1506) stamps a target-provided libfunc CC on fresh decls; emit* helpers propagate it for free.
-- Fix mechanism 2: stop discarding the CC attr on builtin redeclarations (SemaDecl.cpp:3902) for targets declaring a non-default libc CC.
+Yes. SCOPE: llvmz80 targets the z88dk CLASSIC clib only (newlib out of scope, user 2026-08-11), so the libc CC is unconditionally `__smallc` on the `zcc +cpm -compiler=llvmz80` path — no clib-selection matrix needed. zcc just conveys ONE always-on setting ("libc CC = __smallc") like it already passes `-mllvm -z80-float-sdcccall0` and `-ffreestanding`. That single flag drives two target-independent changes:
+- Fix mechanism 1: `getOrInsertLibFunc` (BuildLibCalls.cpp:1506) stamps the libfunc CC on fresh decls; emit* helpers propagate it for free.
+- Fix mechanism 2: stop discarding the CC attr on builtin redeclarations (SemaDecl.cpp:3902) when the classic-libc-CC setting is active.
 Header-only trick can only paper over mechanism 1 (force cc132 decls referenced); cannot fix mechanism 2 (CC stripped at parse time). `-ffreestanding` is effectively the coarse `-fno-builtin` form -> currently the correct safe setting. `Z80_SmallC` = cc132 (`llvm/include/llvm/IR/CallingConv.h:336`); no backend `getLibcallCallingConv` exists for these (that hook only covers RTLIB/compiler-rt calls, not SimplifyLibCalls C-lib calls).
 
 ## Verification recipe
