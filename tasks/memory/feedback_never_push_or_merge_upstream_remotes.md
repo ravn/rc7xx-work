@@ -28,7 +28,7 @@ Concrete examples (2026-06-11):
   **OK to push, OK to merge.**
 - `rc700-gensmedet` → `git@github.com:ravn/rc700-gensmedet.git` —
   user-owned, **OK to push, OK to merge.**
-- Workspace `/Users/ravn/z80` → `git@github.com:ravn/z80-compiler-suite-workspace.git`
+- Workspace `/Users/ravn/z80` → `git@github.com:ravn/rc7xx-work.git`
   — user-owned, **OK to push, OK to merge** (per the cross-machine
   wrap-up rule).
 

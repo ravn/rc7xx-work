@@ -7,7 +7,7 @@ you up to date except for the **Anthropic API key**, which you install yourself.
 ## 1. Clone (one command, recursive)
 
 ```sh
-git clone --recurse-submodules git@github.com:ravn/z80-compiler-suite-workspace.git ~/z80
+git clone --recurse-submodules git@github.com:ravn/rc7xx-work.git ~/z80
 cd ~/z80
 ```
 

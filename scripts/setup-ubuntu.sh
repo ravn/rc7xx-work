@@ -225,8 +225,8 @@ NEXT STEPS:
   3. Clone the workspace per BOOTSTRAP.md:
 
         git clone --recurse-submodules \\
-            git@github.com:ravn/z80-compiler-suite-workspace.git ~/z80
-        # (or use the HTTPS URL: https://github.com/ravn/z80-compiler-suite-workspace.git)
+            git@github.com:ravn/rc7xx-work.git ~/z80
+        # (or use the HTTPS URL: https://github.com/ravn/rc7xx-work.git)
 
   4. Authenticate gh for issue/PR work (interactive):
 
