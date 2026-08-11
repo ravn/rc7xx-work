@@ -36,3 +36,7 @@
 	url = git@github.com:ravn/open-watcom-v2.git
 	branch = master
 	shallow = true
+[submodule "cpm86-crossdev"]
+	path = cpm86-crossdev
+	url = git@github.com:ravn/cpm86-crossdev.git
+	branch = main
