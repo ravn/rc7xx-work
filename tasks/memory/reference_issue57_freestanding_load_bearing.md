@@ -32,3 +32,11 @@ Header-only trick can only paper over mechanism 1 (force cc132 decls referenced)
 
 ## Recommendation
 Keep `-ffreestanding` — it is exactly what stops clang replacing/synthesizing classic clib calls that bypass the `__smallc` bridge. Capturing the ~20% printf-elimination win requires a builtin-aware `__smallc` bridge (clang won't honor CC attrs on functions it classifies as builtins), a much larger task than a flag flip. No production driver is on this path (RC702 firmware drives clang directly, not `zcc +cpm`). Suggested resolution: wontfix / document `-ffreestanding` as required.
+
+## Correction + "default __smallc?" thought experiment (2026-08-11)
+CORRECTION: TargetLibraryInfo has NO scalar-libcall CC hook. The `std::optional<CallingConv::ID> CC` in TLI belongs to `VecDesc` (vector-function ABI, libmvec/SLEEF), not scalar libcalls. The relevant existing gate is `TargetLibraryInfoImpl::isCallingConvCCompatible` (TargetLibraryInfo.cpp:66): cc132 hits `default: return false` so LLVM refuses to simplify a call *carrying* cc132 — but the gate checks the INPUT call (printf = ccc, passes), not the synthesized OUTPUT (puts), which is why the win leaks.
+
+"Can llvmz80 just default to __smallc?" -> NO (verified against classic headers):
+1. Global flip breaks production sdcccall ELF ABI (firmware drives clang directly; -z80-float-sdcccall0/CallLowering/CC tests).
+2. Classic clib is a per-function CC MIX, not one CC: 502 __smallc, 228 __z88dk_fastcall, 211 __z88dk_callee, 12 __vasmallc, rest bare. Even within the synthesized set: puts/fputc/putchar=__smallc, printf=__vasmallc, strlen=bare(default, NOT smallc; strlen_fastcall=fastcall), memcpy/strcpy via *_callee=__smallc+__z88dk_callee. One default fixes puts/printf but breaks strlen+fastcall -> just trades one mismatch for another.
+That heterogeneity is why classic uses per-function bridge shims (__ZPROTO/_callee); synthesized libcalls bypass those shims and -ffreestanding blocks that path. CONSEQUENCE: no "one default CC" fix; only (a) keep -ffreestanding, or (b) a PER-LIBFUNC CC table stamped by getOrInsertLibFunc + the SemaDecl.cpp:3902 fix (needs a real clang frontend flag; -mllvm doesn't reach Sema).
