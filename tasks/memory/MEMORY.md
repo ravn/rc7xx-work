@@ -128,6 +128,7 @@
 - **CRITICAL framing — [Z80 staged collaboration model](project_z80_upstream_goal.md): near-term llvm-z80/llvm-z80; long-term llvm/llvm-project; collaborate with owner**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD (cross-listed §2): value oracle required**
 - **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD (cross-listed §4): non-reentrant, silently miscompiles recursion**
+- [Z80AutoStaticStack cross-TU soundness fix](autostaticstack_cross_tu_soundness_2026-08-11.md) — auto-inject pass now gated `hasLocalLinkage() || !ReachesExternal`; fixed cross-TU mutual-recursion miscompile (test_09). Production explicit-`+static-stack` byte-identical (verified). Explicit opt-in still bypasses the gate by design.
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test per bug
 - [Verify codegen not just size](feedback_verify_codegen.md) — read disassembly per compiler; same size ≠ same behavior
 - **[Compiler is not trusted](feedback_compiler_not_trusted.md) — HARD: inspect generated asm BEFORE blaming source/runtime/hardware**
