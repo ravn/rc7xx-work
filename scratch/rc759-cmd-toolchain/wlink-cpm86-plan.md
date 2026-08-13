@@ -873,3 +873,51 @@ symmetry check. Familiarity with the algorithm is NOT a reason to reinvent.
 Correct order for any "build X" request: (1) grep the tree for an existing X and
 any checked-in expected output, (2) reuse the source verbatim, (3) diff against
 the pre-existing oracle. Only write new code if none exists.
+
+---
+
+## Finding (i): BOTH DR C memory models work (small CLEARS + large CLEARL) (2026-08-13)
+
+The target now builds & runs against BOTH DR C runtime libraries from ONE
+unchanged user source. Mandelbrot and hello (DR C `strlen`) are byte-verified in
+each. Driver: `cc-cpm86.sh -m s|l` (default l).
+
+### What each model needs (over the working large-model path)
+- **Library**: link `CLEARS.L86` (small) vs `CLEARL.L86` (large). DR C ships
+  exactly these two runtimes -- so "all memory models" == these two.
+- **`-nt=CODE` (small only)**: names Watcom's text segment `CODE` so it merges
+  with CLEARS's own `CODE` group. WITHOUT it, LINK-86 reports
+  `TARGET OUT OF RANGE  MODULE: XMAIN  TARGET: main` -- CLEARS's XMAIN reaches
+  `main` with a NEAR (intra-group) call, impossible while our `_TEXT` is a
+  separate segment. Large model uses FAR calls so it never hit this.
+- **far vs near convention (THE subtle one)**: the DR C call/return is FAR in the
+  large model (`retf`) and NEAR in the small model (`ret`). Getting it wrong is
+  NOT a link error -- it MISCOMPILES the return. A `far`-declared `main` returned
+  to by CLEARS's near-calling XMAIN executes `retf`, popping IP + a garbage CS,
+  and lands in the weeds (observed as emu2 `unimplemented opcode 63` (ARPL) at
+  exit). Symptom was model-dependent: mandel (2000 bytes, flushed) showed the full
+  image then crashed on exit; hello (3 bytes, buffered) showed NOTHING because the
+  crash beat the flush. Both are the SAME bug -- a far return in a near world.
+
+### The fix (one mechanism, zero user-source change)
+Watcom predefines `__SMALL__` with `-ms` and `__LARGE__` with `-ml` (verified by
+disassembly). So `drcbridge.h` AND the generated `_preincl.h` gate the `far`
+keyword on `#ifdef __LARGE__`:
+```c
+#ifdef __LARGE__
+#pragma aux DRC      "*" parm caller [] value [ax] far;
+#pragma aux drc_main "main" far;
+#else
+#pragma aux DRC      "*" parm caller [] value [ax];
+#pragma aux drc_main "main";
+#endif
+```
+`install-cpm86-target.sh` now also unions the stdlib symbol list from BOTH
+CLEARS+CLEARL. `cc-cpm86.sh -m s` = `-ms -nt=CODE` + CLEARS; `-m l` = `-ml` +
+CLEARL. The same mandel_cpm86.c / hello_cpm86.c build unchanged for both.
+
+### Verified (mandel-cpm86.sh, both models)
+- small (CLEARS): 25 rows, width 78, **byte-identical to genuine DR C MANDEL-DRC.CMD**.
+- large (CLEARL): 25 rows, width 78, **byte-identical to the DR C oracle**.
+- small output == large output, byte-for-byte; both exit cleanly (exit 0, no
+  opcode-63). hello: `strlen("HELLO")` -> 5 in both models.
