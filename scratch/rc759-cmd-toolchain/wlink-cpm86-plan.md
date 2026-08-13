@@ -1312,7 +1312,15 @@ timing). Watcom `-fpi87`, by contrast, emits inline 8087 ESC.
 
 ### DR C `-f` (8087) build recipe + number (2026-08-13)
 Built the DR C float twin with the `-f` switch (inline 8087) to get the
-Unicorn number the user asked for. Recipe (all inside a SHORT work dir):
+Unicorn number the user asked for. **Codified into the toolchain** (2026-08-13):
+`drc-oracle.sh` now builds both float twins natively via env flags —
+`DRC_PUTCHAR=1` links the FAR putchar and `DRC_8087=1` adds `-f`. Both outputs
+are byte-identical to the committed `owc-drc/MANDELF-DRC{,-8087}.CMD`:
+```
+DRC_PUTCHAR=1          ./drc-oracle.sh mandelf.c OUT.CMD   # software (RC759-faithful)
+DRC_8087=1 DRC_PUTCHAR=1 ./drc-oracle.sh mandelf.c OUT.CMD # inline 8087
+```
+Underlying recipe (all inside a SHORT work dir):
 1. `emu2 DRC.CMD "srcfile -b -f"` — big model + 8087 codegen -> `srcfile.obj`.
 2. Assemble the FAR putchar with bwasm, giving it a SHORT module name so DR
    LINK-86 accepts the THEADR: `bwasm -0 -ml -nm=PF PUTFAR.ASM -fo=PUTFAR.OBJ`.
@@ -1322,7 +1330,8 @@ Unicorn number the user asked for. Recipe (all inside a SHORT work dir):
    fine, >=36 throws ERROR 10 (binary-searched 2026-08-13). The `-nm=<name>`
    option sets the OMF module name directly, so no post-patch of the 0x80
    record is needed. Verified: the resulting binary is byte-identical to the
-   earlier THEADR-post-patched build.)
+   earlier THEADR-post-patched build.) **This native `-nm=` flag is why the
+   toolchain now needs ZERO OMF fix-up scripts on the DR C float path.**
 3. `emu2 LINK86.CMD "M87=M87,PUTFAR,CLEARL.L86[S]"`.
 Result `owc-drc/MANDELF-DRC-8087.CMD` (20,992 B, 255 bytes in the D8-DF ESC
 range vs ~0 in the software build). **Output byte-identical to the independent

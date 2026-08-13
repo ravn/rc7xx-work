@@ -10,14 +10,35 @@
 #   prog.c must define main() (DR C entry). DR C is K&R C89: no unsigned char
 #   casts (Error 13), old-style params. DR C defaults to the LARGE model, so we
 #   link with CLEARL.L86 (small-model CLEARS gives __BDOS TARGET OUT OF RANGE).
+#
+# Env flags (default off = the original small-libc integer-oracle behaviour):
+#   DRC_PUTCHAR=1  link a LARGE-model FAR putchar (owc-drc/putchar-far.asm) so
+#                  putchar()-emitting programs actually produce output. DR C
+#                  large-model far-calls externals; the small/near putchar
+#                  corrupts the stack (see wlink-cpm86-plan.md). The far putchar
+#                  is assembled by Open Watcom bwasm with -nm=PF, which sets the
+#                  OMF module name DIRECTLY -- this is the whole point: without
+#                  it bwasm stamps the 82-char absolute mktemp path into the
+#                  THEADR and DR LINK-86 v1.4 rejects any name >35 chars with
+#                  "OBJECT FILE ERROR 10". -nm= is a NATIVE tool flag, so there
+#                  is NO THEADR post-patch / OMF-checksum fix-up script.
+#   DRC_8087=1     compile with -f (inline 8087 ESC codegen) instead of the
+#                  default software double. NOT RC759-faithful (RC759 has no
+#                  8087); use only for the coprocessor-timing comparison.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
+BWASM="${BWASM:-$HERE/../../open-watcom-v2/build/binbuild/bwasm}"
+PUTFAR_ASM="${PUTFAR_ASM:-$HERE/../../open-watcom-v2/contrib/ravn/owc-drc/putchar-far.asm}"
 DRC="$HERE/drc86111"
 SRC="$1"; [ -z "$SRC" ] && { echo "usage: drc-oracle.sh prog.c [out.cmd]"; exit 1; }
 BASE="$(basename "${SRC%.c}")"
 OUT="${2:-$BASE.CMD}"
 [ -x "$EMU2" ] || { echo "emu2 not built at $EMU2 (run make in its dir)"; exit 1; }
+if [ -n "$DRC_PUTCHAR" ]; then
+    [ -x "$BWASM" ] || { echo "bwasm not built at $BWASM (build Open Watcom)"; exit 1; }
+    [ -f "$PUTFAR_ASM" ] || { echo "putchar-far.asm not found at $PUTFAR_ASM"; exit 1; }
+fi
 
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 # DR C compiler chain + large-model libc, all from the tracked drc86111 archive.
@@ -32,12 +53,22 @@ cp "$SRC" "$WORK/srcfile.c"
 cat "$WORK/CPMEOF.ASC" >> "$WORK/srcfile.c" 2>/dev/null || true
 
 # 1. compile: DRC.CMD chains DRC860 (preprocess) -> DRC861 (codegen) -> srcfile.obj
-( cd "$WORK" && EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A "$EMU2" DRC.CMD "srcfile -b" )
+#    -b = big/large model; DRC_8087 adds -f for inline 8087 codegen.
+CFLAGS="-b"; [ -n "$DRC_8087" ] && CFLAGS="-b -f"
+( cd "$WORK" && EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A "$EMU2" DRC.CMD "srcfile $CFLAGS" )
 [ -f "$WORK/srcfile.obj" ] || { echo "DR C compile failed"; exit 1; }
 
-# 2. link with the LARGE-model runtime -> runnable CMD
+# 2. link with the LARGE-model runtime -> runnable CMD.
+#    DRC_PUTCHAR adds the FAR putchar. bwasm -nm=PF sets the OMF module name
+#    directly (NATIVE flag) so DR LINK-86 accepts the THEADR -- no post-patch.
 cp "$WORK/srcfile.obj" "$WORK/OUT.OBJ"
-( cd "$WORK" && EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A "$EMU2" LINK86.CMD "OUT,CLEARL.L86[S]" )
+LINKLIST="OUT,CLEARL.L86[S]"
+if [ -n "$DRC_PUTCHAR" ]; then
+    "$BWASM" -0 -ml -nm=PF "$PUTFAR_ASM" -fo="$WORK/PUTFAR.OBJ" >/dev/null
+    [ -f "$WORK/PUTFAR.OBJ" ] || { echo "bwasm putchar-far failed"; exit 1; }
+    LINKLIST="OUT,PUTFAR,CLEARL.L86[S]"
+fi
+( cd "$WORK" && EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A "$EMU2" LINK86.CMD "$LINKLIST" )
 [ -f "$WORK/OUT.CMD" ] || { echo "DR C link failed"; exit 1; }
 cp "$WORK/OUT.CMD" "$OUT"
-echo "built $OUT ($(stat -f%z "$OUT") bytes) via DR C 1.11 oracle"
+echo "built $OUT ($(stat -f%z "$OUT") bytes) via DR C 1.11 oracle${DRC_8087:+ [8087]}${DRC_PUTCHAR:+ [far-putchar]}"
