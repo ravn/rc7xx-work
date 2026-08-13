@@ -1190,3 +1190,44 @@ overridable env vars (`EMU2=`, `LINK86=`), defaulting to the workspace root.
 `owc-drc/stdcbench/omf-delocal.py` (contrib, upstreamable) carry identical
 LEXTDEF/LPUBDEF-swap + `--merge-text-into-code` logic; the scratch copy also
 shortens long THEADR. Cross-reference headers added to both; keep in sync.
+
+## RE-TEST — 2026-08-13 (n): large-model stdcbench STILL broken after cgsupp swap
+
+Quick experiment (user request) to see whether standardizing on Open Watcom's OWN
+cgsupp `i4m`/`i4d` helpers (which fixed Bug 1, the near/far-ret defect of the
+retired hand-written owmath.asm) also cleared the residual large-model hang from
+finding (l). **It did not.** Large is still broken.
+
+### What was observed (VERIFIED)
+- `./stdcbench-cpm86.sh -m l` builds cleanly: `SCB.CMD` = 98816 bytes, no
+  undefined symbols (beyond the benign `clear_error`), no link errors.
+- At runtime the program prints ONLY the `stdcbench 0.8` banner, then never emits
+  the first benchmark score (same early-exit symptom as finding (l)).
+- Root-cause CLASS refined: it is **NOT a CPU fault**. Running under a patched
+  copy of `cpm86run_unicorn.py` (temp `/tmp/runner_dbg.py`, wrapping `emu_start`
+  to dump any exception + CS:IP), `emu_start` returned **without raising** — it
+  simply exhausted `MAX_INSNS` (200,000,000 instructions). Instrumentation:
+  `code-bytes=414,953,268`, `emulated-seconds=592.79` (CPM86_CLOCK_HZ=700000).
+  So after the banner the program spins in an **infinite / unbounded loop inside a
+  compute module**, consistent with finding (l)'s "hangs inside a benchmark
+  module" — it is a genuine hang, not a swallowed fault.
+- NOT yet captured: the exact looping CS:IP / which module. (The debug runner was
+  set up to report the last executed address but that specific run was not taken
+  before stopping. A next session should print `_last` after `emu_start` to
+  localize the loop, then map the linear addr back to a module via the link map.)
+
+### Standing conclusion (unchanged)
+- **Working default remains the SMALL model** (`-m s`, 7/5/12, verified on both
+  emulators). Large has no reference score on any path anyway.
+- The cgsupp standardization is orthogonal to this residual: Bugs 1+2 fixes are
+  correct and in-tree; a further large-model defect (near/far pointer or long-math
+  in one compute module) remains uncharacterised and DEFERRED.
+
+### Cheap next-step recipe (for whoever resumes)
+1. Patch `cpm86run_unicorn.py` `emu_start` to record last address (UC_HOOK_CODE)
+   and print it on return; run `SCB-l.CMD` → linear address of the loop.
+2. Feed that linear addr through the DR LINK-86 map (or CS base from the CMD group
+   descriptors) to name the module (finding (l) saw CS:IP wander 1438/1475/1C81/
+   19C2 = compression/isort/immul).
+3. Disassemble the loop; look for a 16-bit vs far-pointer compare or a `long`
+   counter that never reaches its bound (the classic large-model near/far leak).
