@@ -1231,3 +1231,36 @@ finding (l). **It did not.** Large is still broken.
    19C2 = compression/isort/immul).
 3. Disassemble the loop; look for a 16-bit vs far-pointer compare or a `long`
    counter that never reaches its bound (the classic large-model near/far leak).
+
+## ASSESSMENT — 2026-08-13 (o): can Open Watcom itself run UNDER CP/M-86? (quick)
+
+Question (user): how big is the 16-bit Watcom and could it be hosted on CP/M-86?
+Verdict: **No, not in practice.** Watcom stays a cross-compiler on a modern host;
+only its 16-bit OMF OUTPUT runs under CP/M-86 (= our canonical toolchain).
+
+### Sizes (measured)
+- Our `bwcc` = 1,439,464 B, `bwasm` = 343,452 B — but these are **arm64 macOS**
+  (Mach-O 64-bit) host cross-compilers; irrelevant to CP/M-86 (wrong CPU). KNOWN.
+- DR C, a REAL CP/M-86-hosted C compiler, for scale: driver DRC.CMD 17.5 KB +
+  passes DRC860 32 KB / DRC861 107 KB / DRC862 30 KB. Multi-pass => peak resident
+  ~one pass (~107 KB). It fits CP/M-86 by design. KNOWN (dir listing).
+
+### Why Watcom can't be hosted on CP/M-86 (3 layers)
+1. What we have (`bwcc`) is a 64-bit host binary — dev-machine only. KNOWN.
+2. Open Watcom V2's own 16-bit *target* compilers (`wcc` etc.) are packaged as
+   32-bit protected-mode host executables — need a 386+/flat env, do NOT run in
+   real-mode 8086, so not under CP/M-86. GUESSED (high-confidence; not verified
+   in-tree this session).
+3. A CP/M-86-*hosted* Watcom would require (a) recompiling the compiler itself as
+   16-bit 8086 with a CP/M-86 C runtime, (b) fitting the segmented model (each
+   group <=64 KB; >64 KB only via overlays, cf. finding on LINK86 groups), and
+   (c) replacing its host-OS layer (file I/O, malloc, argv) with CP/M-86 BDOS
+   calls. Watcom's optimizer is a large single-pass compiler with big internal
+   tables, an order of magnitude larger than DR C's passes and built for a flat
+   32-bit host. GUESSED (architectural reasoning).
+
+### Takeaway
+DR C fits CP/M-86 because it was designed as small multi-pass 16-bit passes
+(peak ~107 KB, 64 KB segment ceiling). Watcom was never hosted on CP/M-86 and
+doesn't fit the model. Correct architecture (already ours): Watcom cross-compiles
+on a modern host; its OMF output is what runs under CP/M-86.
