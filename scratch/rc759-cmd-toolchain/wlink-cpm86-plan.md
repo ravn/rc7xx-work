@@ -776,3 +776,55 @@ the dead `clear_error` 8087 stub remains undefined).
 **Bottom line:** per DR C routine = 1 extern + 1 `#pragma aux (DRC) name;`. Per
 program = `#include "drcbridge.h"` + `DRC_MAIN`. Build = `bwcc -0 -ml -s -q -zu`,
 classicize, link `APP,WMARKS,CLEARL.L86`. That is the floor for the large model.
+
+---
+
+## Finding (g): Watcom-side CP/M-86 target glue, generated from DR C (2026-08-13)
+
+Two user constraints drove this: (1) the DRC bridge convention must apply ONLY to
+DR C stdlib routines — our own Watcom libraries stay on the native convention; and
+(2) DR C's files stay unmodified — all glue lives on the Watcom side and loads
+automatically when you select the CP/M-86 target. Both satisfied and verified.
+
+### (1) The convention is per-symbol, so own code is untouched — VERIFIED
+`bridge-mixed.sh`: one program calls DR C `strlen` (via `#pragma aux (DRC) strlen`)
+AND our own Watcom `triple()` (plain extern, no pragma). Disassembly proves the
+split — `call strlen` (bare name, DR C cdecl) vs `call triple_` (Watcom-mangled,
+native watcall) — and it runs: output **`5 21`**. This is exactly why a
+module-wide `#pragma aux default` is wrong (it would drag own code onto the DR C
+convention); the *named* `(DRC)` applied per stdlib symbol is the right tool.
+
+### (2) Glue on the Watcom side, auto-loaded, DR C untouched — VERIFIED
+Mechanism: Watcom auto-includes a file named **`_preincl.h`** from the include
+path (its default pre-include, option `-fip`). So the whole bridge can live in a
+Watcom-side target dir that the target driver puts on `-i`, with the user writing
+NO pragmas.
+
+Also VERIFIED: `#pragma aux (DRC) fn;` binds even when it appears BEFORE the
+routine's declaration (the pre-include runs first, DR C's own prototype can come
+later), and an unused `(DRC)` pragma for a never-called routine is harmless — so a
+single generated `_preincl.h` can safely list the whole stdlib.
+
+### The installation step (transforms DR C -> practical Watcom glue)
+`install-cpm86-target.sh` READS `CLEARL.L86`'s export table and EMITS a Watcom-side
+target dir (`open-watcom-v2/cpm86/`) — DR C files are never modified:
+- `_preincl.h` — the `DRC` convention, the `DRC_MAIN` entry macro, and one
+  `#pragma aux (DRC) fn;` for every public DR C stdlib routine (112 symbols,
+  derived from CLEARL so it stays in sync). A small blocklist excludes non-callees
+  (`main`, `errno`, `sys_nerr`, `nostart`, `nofloat`, `clear_error`).
+- `WMARKS.OBJ` — classicized `_big_code_`/`_small_code_`=0 marker stub.
+
+`cc-cpm86.sh` is the "select target" driver: `bwcc -0 -ml -s -q -zu -i<target>`
+(auto-includes `_preincl.h`) -> classicize -> `LINK-86 objs,WMARKS,CLEARL.L86`.
+
+### End-to-end proof (no bridge pragmas in user source)
+`hello_cpm86.c` is ordinary C — `extern unsigned strlen(char*);` + `DRC_MAIN { ...
+strlen("HELLO") ... }`, zero pragmas. `./install-cpm86-target.sh` then
+`./cc-cpm86.sh -o HELLO86.CMD hello_cpm86.c` -> runs -> **`5`**. Mixed own+stdlib
+through the same driver (`mix86.c + mylib_own.c`) -> **`5 21`**.
+
+### Files (tracked)
+- `install-cpm86-target.sh` — generates the Watcom-side glue from CLEARL (DR C untouched).
+- `cc-cpm86.sh`             — the CP/M-86 target compile+link driver.
+- `hello_cpm86.c`          — demo with NO bridge pragmas (glue auto-loaded).
+- `bridge_mixed.c`, `mylib_own.c`, `bridge-mixed.sh` — DR C-stdlib-vs-own isolation proof.

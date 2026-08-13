@@ -6,6 +6,16 @@
  * and define your entry point with the DRC_MAIN macro:
  *     DRC_MAIN { ... }
  *
+ * IMPORTANT -- apply `#pragma aux (DRC) fn;` ONLY to routines that live in DR C's
+ * own stdlib (CLEARL/CLEARS). Your OWN Watcom-compiled routines (and your own
+ * libraries) must NOT get it: declare them as plain `extern` with no pragma so
+ * they keep Watcom's native convention. The named `(DRC)` convention is applied
+ * per symbol precisely so it touches nothing else. Verified: a program calling
+ * both DR C `strlen` (via DRC) and an own Watcom `triple()` (native) links and
+ * runs correctly -- see bridge-mixed.sh. (This is also why a module-wide
+ * `#pragma aux default` is WRONG here: it would drag your own code onto the DR C
+ * convention too.)
+ *
  * That is the entire per-program surface. Build with:  bwcc -0 -ml -s -q -zu
  * and link the classicized OBJ + this-file's marker stub + CLEARL.L86 under
  * LINK-86 (see bridge-min.sh). No hand-written crt0: DR C's CLEARL startup runs
