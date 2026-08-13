@@ -1006,3 +1006,47 @@ stdcbench large exists on any path yet.
 
 Files: `scratch/cpm86-tools/emu2-cpm86/src/{cpu.c,emu.h,cpm86.c}` (emu2 fork
 repo), `scratch/rc759-cmd-toolchain/{clock_test.c,clock-runner.sh}`.
+
+---
+
+## STATE SNAPSHOT — 2026-08-13 (c): both memory models run under two independent emulators
+
+**Where we are:** the Open Watcom C -> DR C 1.11 -> CP/M-86 `.CMD` toolchain now
+runs programs in **both memory models** (small AND large/compact), verified on
+**two independent CP/M-86 hosts** (the Unicorn/QEMU-core runner and emu2-cpm86),
+against the DR C oracle and an independent host computation.
+
+**What works (verified this segment):**
+| Program        | small          | large          | oracle / cross-check                          |
+|----------------|----------------|----------------|-----------------------------------------------|
+| mandel         | byte-identical | byte-identical | == DR C `MANDEL-DRC.CMD`, on Unicorn + emu2   |
+| far-demo       | 51662 / 353    | 51662 / 353    | == independent host (Python), Unicorn + emu2  |
+| stdcbench      | 7 / 5 / 12     | early-exit *   | 7/5/12 identical on Unicorn AND emu2          |
+
+**Two fixes landed:**
+1. **Unicorn runner large-model loader** (finding (j),
+   `open-watcom-v2/contrib/ravn/cpm86run_unicorn.py`): `_load` now places AND
+   base-page-describes every group (EXTRA/STACK/AUX 1..4), not just CODE+DATA, so
+   large-model CMDs stop aborting "LINK86 V1.2". Mirrors emu2's proven loader.
+   Regression: `large-model-runner.sh` (far calls + far data; fails without the fix).
+2. **emu2 XIOS Int 28h fn 19 clock** (finding (k),
+   `scratch/cpm86-tools/emu2-cpm86/src/{cpu.c,emu.h,cpm86.c}`): deterministic
+   code-byte virtual clock (bytes / `CPM86_CLOCK_HZ`), so self-timing programs run
+   under emu2. Regression: `clock-runner.sh` (monotonic; fails without the clock).
+
+**Key property:** both clocks are driven by executed **code-byte count** (identical
+instruction stream in both emulators), so stdcbench scores 7/5/12 EXACTLY on both
+QEMU's core and emu2's hand-written decoder — a non-circular cross-check of both
+the score and the clock model.
+
+**\* Open (deferred, not the loader/clock):** stdcbench **large** terminates early
+(banner only, ~204K insns) on BOTH emulators. Since mandel/far-demo large are
+byte-perfect and stdcbench large reproduces the early-exit under emu2's independent
+proven large loader, the cause is in the stdcbench-large BUILD/program (deep
+recursion or a specific lib call), not any runner. No reference score for stdcbench
+large exists on any path yet. Next dig: bisect which stdcbench module/call triggers
+the early BDOS-0 in large model.
+
+**Commits:** workspace `main` (`72d5ccf` demo+large-test, `3f6a655` clock-test);
+`open-watcom-v2` (`2c6b3e60`, local — contribution repo); emu2 fork
+`cpm86-drc-headless` (`5aa05dd`, local).
