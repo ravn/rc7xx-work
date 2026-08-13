@@ -219,6 +219,7 @@
 - **[Extract rules from time-sinks](feedback_extract_rules_from_time_sinks.md) — HARD (meta): after long debug sessions, propose new memory rules proactively**
 - **[Multi-pass marker interactions](feedback_multi_pass_marker_interactions.md) — HARD: when an optimization "should fire" but doesn't, `-print-after-all` and check if the trigger marker existed earlier and was stripped mid-pipeline**
 - **[Verify PASS condition before trusting green](feedback_verify_pass_condition.md) — HARD: cross-check elapsed time + artefact evidence; unexplained workaround = red flag**
+- **[Search workspace before fetching](feedback_search_workspace_before_fetching.md) — HARD: before downloading any asset, search the WHOLE workspace by filename first (assets often in sibling submodules)**
 - [User guesses are not constraints](feedback_user_guesses_not_constraints.md) — treat as starting suggestion; probe-first
 - ["Intermittent" is a hypothesis](feedback_intermittent_is_hypothesis.md) — falsify via data-content checks before chasing timing
 - [Integration Tests Expensive](feedback_integration_tests.md) — full suite only before merge/PR
@@ -286,6 +287,7 @@
 - [Safari breaks claude login callback](reference_claude_login_safari_workaround.md) — use ANTHROPIC_API_KEY or non-Safari default browser
 - [HiTech zc Docker image](reference_hitech_zc_docker.md) — `ghcr.io/ravn/hitech` provides `zc`
 - [COMAL80 language manual](reference_comal80_manual.md) — RCSL 42-I-1758 @ Bits:30000018 (Dec 1981, OLDER than disk rev 1.07: no CHAIN/EXTERNAL); explains why .PRG apps won't load
+- [DRI C Programmer's Guide location](reference_dri_cpm86_manuals_location.md) — DR C 1.11 ref PDF+txt already at cpm86-crossdev/docs/manuals/DRI_C_Programming_86.pdf (md5 41db5709…); do NOT re-download
 - [simavr master required for .mmcu console](reference_simavr_master_required.md) — distro 1.6 is too old; build master in Docker
 - [Memory in tasks/memory/, never ~/.claude/](feedback_no_claude_memory.md) — canonical here, read manually at session start
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: stop editing, add an undeniable marker, prove new bytes are running before edit #3**

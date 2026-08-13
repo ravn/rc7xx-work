@@ -249,6 +249,14 @@ the whole brief.
   system-wide") — if a command's start path isn't under the project root, don't
   run it. If a workspace-internal lookup finds nothing, the answer is to ask
   where the file lives, never to widen the search outside the workspace.
+- **Search the WHOLE workspace before fetching anything from the internet.**
+  Before downloading, cloning, or re-creating any external asset (manual, PDF,
+  dataset, tarball, reference file), search the entire project root by filename
+  first — not just the subdirectory you're working in. Assets frequently live
+  in sibling submodules (a subtree-scoped search misses them). Only go to the
+  network once a whole-workspace search comes up empty. (2026-08-13: searched
+  only `scratch/.../docs/`, re-downloaded a 25 MB DR C manual that was already
+  in `cpm86-crossdev/docs/manuals/` — identical file — forcing a commit+revert.)
 - **Never use unquoted `===` in a shell command** — zsh emits `== not found` and
   *silently truncates the rest of the line*. Use `---` as a visual separator.
 - **Delete temp artifacts before regenerating them** (`rm -f /tmp/x` before the
