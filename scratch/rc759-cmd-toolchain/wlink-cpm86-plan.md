@@ -1122,3 +1122,71 @@ has no reference score on any path anyway.
 - `open-watcom-v2/contrib/ravn/owc-drc/stdcbench/owmath.asm` — `@CodeSize` `RET_` macro.
 - `open-watcom-v2/contrib/ravn/owc-drc/stdcbench/portme.c` — `static` tick struct + why.
 - Both changes carry the root-cause explanation inline as comments.
+
+## CANONICAL TOOLCHAIN — 2026-08-13 (m): standardized on Watcom + DR LINK-86 v1.4
+
+Per user directive ("vi skal standardisere på en toolchain"), the ONE canonical
+CP/M-86 build stack, mirroring DR C 1.11's OWN flow from `.OBJ` onward:
+
+    Open Watcom bwcc/bwasm        C/asm -> Intel/MS OMF (.OBJ) + its OWN cgsupp
+      (-0 -ms -s -zl -ecc          runtime helpers (i4m/i4d -> __U4M/__I4M/__U4D/
+       -fpi87 -nt=CODE)            __I4D). -ecc (cdecl) is MANDATORY.
+        |
+        v
+    omf_classicize.py            OMF format adapter (bridge, ours): swaps
+      / omf-delocal.py            LEXTDEF/LPUBDEF (0xB4/0xB6) -> EXTDEF/PUBDEF
+      (--merge-text-into-code)    (0x8C/0x90), shortens THEADR, and folds helper
+        |                         _TEXT -> CODE for the small-model near CALL.
+        v
+    DR LINK-86 v1.4              native CP/M-86 linker, 19 March 1984
+      (LINK86.CMD, run under      (drc86111/LINK86.CMD). Emits .CMD DIRECTLY with
+       emu2-cpm86 fork)           CLEARS.L86[S] (small) / CLEARL.L86 (large)
+        |                         library search — NO separate GENCMD step.
+        v
+    .CMD  (run under scratch/cpm86-tools/emu2-cpm86/emu2, executes .CMD natively)
+
+DR C 1.11 is the OUTPUT ORACLE (behaviour must match its build byte-for-byte).
+
+### Two governing user directives (permanent)
+1. **All functional/runtime code comes from Open Watcom or DR C, never
+   hand-written by the agent — only ABI/format bridges are ours.** This retired
+   the hand-written `owmath.asm`: the 32-bit long helpers now come from Open
+   Watcom's OWN `bld/clib/cgsupp/a/{i4m,i4d}.asm` (model-aware near/far ret via
+   `mdef.inc` — automatically correct, which owmath.asm was NOT: Bug 1 above).
+2. **Do NOT use `linkcmd.exe` (LINK-86 v2.02, 02/Feb/87) — it is anachronistic
+   ("for ny").** Use the authentic LINK-86 v1.4 (19 March 1984), the same linker
+   DR C itself uses. Verified banners: `linkcmd.exe`="LINK86 v2.02 (02/Feb/87)";
+   `drc86111/LINK86.CMD`="v1.4 (19 March 1984)".
+
+### The `_TEXT` -> `CODE` merge (why --merge-text-into-code exists)
+DR LINK-86 merges segments by NAME, not class. `bwcc -nt=CODE` puts user code in
+segment `CODE`; Watcom's cgsupp helpers sit in segment `_TEXT`. A small-model
+near CALL from CODE -> _TEXT is "TARGET OUT OF RANGE". Fix: repoint the helper
+SEGDEF's seg-name-index `_TEXT` -> `CODE`. Needed ONLY for small (`-ms`/`-nt=CODE`);
+large model far-calls the helper so it is left untouched. SEGDEF seg-name index
+sits at record-body offset 3+1+(3 if A-align==0)+2; our objects use A=2 (para)
+so offset 5, 1-byte index.
+
+### DR C's own obj->CMD flow (confirms our path is identical from .OBJ on)
+`DRC.CMD` driver -> DRCRPP (cpp) + DRC860/861/862 (3 passes) + R.CMD -> `.OBJ`
+-> **LINK86.CMD v1.4** -> `.CMD` directly (CLEARS.L86[S] search). No gencmd.
+
+### Consumers converted + VERIFIED (2026-08-13, all under v1.4 + Watcom cgsupp)
+- `scratch/rc759-cmd-toolchain/stdcbench-cpm86.sh` — small = 7/5/12.
+- `open-watcom-v2/contrib/ravn/bench-mandel.sh` — 4 variants all MATCH ✓ oracle.
+- `open-watcom-v2/contrib/ravn/bench.sh` — O0/O3/mixed all MATCH ✓ oracle.
+- `open-watcom-v2/contrib/ravn/owc-drc/build-owc-drc.sh` — dhry runs, mandel
+  renders, stdcbench = 7/5/12.
+- `open-watcom-v2/contrib/ravn/owc-drlink/build-owc-drlink.sh` — hello runs.
+Contrib scripts reference the canonical scratch tools via `$WS`-relative
+overridable env vars (`EMU2=`, `LINK86=`), defaulting to the workspace root.
+
+### owmath.asm — DELETED
+`owc-drc/stdcbench/owmath.asm` removed; all consumers use Watcom cgsupp. READMEs
+(owc-drc, owc-drc/stdcbench, owc-drlink, pure-drc/FINDINGS) updated.
+
+### Two OMF bridges are equivalent copies (kept per-tree by design)
+`scratch/.../omf_classicize.py` (scratch, local commits) and
+`owc-drc/stdcbench/omf-delocal.py` (contrib, upstreamable) carry identical
+LEXTDEF/LPUBDEF-swap + `--merge-text-into-code` logic; the scratch copy also
+shortens long THEADR. Cross-reference headers added to both; keep in sync.

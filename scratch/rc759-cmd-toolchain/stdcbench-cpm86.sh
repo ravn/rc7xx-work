@@ -6,9 +6,10 @@
 #
 # Reuses the EXISTING port under
 #   open-watcom-v2/contrib/ravn/owc-drc/stdcbench/
-# (portme.c, cpmlibc.c, inc/, owmath.asm and the unmodified upstream src/), which
-# already solved the missing-libc (cpmlibc), 32-bit long-helper (owmath) and heap
-# -base (portme brk) problems. The ONLY thing we change vs that port is the build
+# (portme.c, cpmlibc.c, inc/ and the unmodified upstream src/), which already
+# solved the missing-libc (cpmlibc) and heap-base (portme brk) problems. The
+# 32-bit long helpers (__U4M/__I4M/__U4D/__I4D) come from Open Watcom's OWN
+# pre-built cgsupp objects (i4m.obj/i4d.obj), NOT any hand-written asm. The ONLY thing we change vs that port is the build
 # path: instead of owcrt.asm + cmain + LINKCMD.EXE (small only), we go through
 # OUR target -- DRC_MAIN entry + auto-included _preincl.h + LINK-86 + CLEAR?.L86 --
 # so the SAME sources build in either model.
@@ -50,12 +51,21 @@ SRC="$SB/src/stdcbench-0.8"
 MODEL="s"
 while [ $# -gt 0 ]; do case "$1" in -m) MODEL="$2"; shift 2;; *) echo "usage: $0 [-m s|l]"; exit 2;; esac; done
 case "$MODEL" in
-  s) MFLAGS="-ms -nt=CODE"; CLEAR="CLEARS.L86"; MNAME="small"; ZU="";;
+  s) MFLAGS="-ms -nt=CODE"; CLEAR="CLEARS.L86"; MNAME="small"; ZU=""
+     CGMODEL="ms"; CGMERGE="--merge-text-into-code";;
   l) MFLAGS="-ml";          CLEAR="CLEARL.L86"; MNAME="large"; ZU="-zu"
+     CGMODEL="ml"; CGMERGE=""
      echo "WARNING: stdcbench LARGE model is known broken (hangs in a compute" >&2
      echo "         module) -- see wlink-cpm86-plan.md finding (l). Use -m s." >&2;;
   *) echo "unknown model '$MODEL'"; exit 2;;
 esac
+# Open Watcom's OWN pre-built 8086 long-math helpers (__U4M/__I4M/__U4D/__I4D),
+# compiled by its build system per model. We link these instead of any hand-
+# written asm -- runtime helpers must come from the compiler, and Watcom's build
+# already selects the correct near(ms)/far(ml) RET automatically.  ms/ml pick the
+# matching model dir.  (windows.086 would work equally -- these cgsupp helpers are
+# pure integer math, OS-agnostic -- but msdos.086 is the canonical 8086 target.)
+CGDIR="$TGT/../bld/clib/cgsupp/library/msdos.086/$CGMODEL"
 
 [ -x "$OW/bwcc" ] || { echo "Open Watcom not built at $OW"; exit 1; }
 [ -f "$TGT/_preincl.h" ] || "$HERE/install-cpm86-target.sh" >/dev/null
@@ -76,7 +86,6 @@ MODS="stdcbench c90base c90base-compression c90base-data \
 cp "$SRC"/*.c "$SRC"/*.h "$WORK/" 2>/dev/null || true
 cp "$SB"/portme.c "$SB"/portme.h "$SB"/cpmlibc.c "$WORK/"
 cp "$SB"/inc/*.h "$WORK/"
-cp "$SB"/owmath.asm "$WORK/"
 
 # portme.c: swap the owcrt-style `int cmain(void)` entry for our DRC_MAIN (which
 # _preincl.h defines). Drop the `return 0;` (DRC_MAIN is void).
@@ -100,14 +109,17 @@ for m in $MODS; do compile "$m.c"; done
 compile portme.c
 compile cpmlibc.c
 
-# owmath.asm -> OBJ (Watcom 32-bit long helpers DR C lacks).
-"$OW/bwasm" -0 $MFLAGS -q "owmath.asm" -fo="OWMATH.OBJ" \
-    || { echo "owmath assemble failed"; exit 1; }
-python3 "$HERE/omf_classicize.py" "OWMATH.OBJ" "OWMATH.OBJ" >/dev/null
+# Open Watcom's own pre-built long-math helper objects (no hand-written asm).
+# i4m.obj = __U4M/__I4M, i4d.obj = __U4D/__I4D.  For the small model the helper's
+# _TEXT is merged into CODE (--merge-text-into-code) so the near CALL resolves;
+# large far-calls them so no merge is needed.  See omf_classicize.py.
+[ -f "$CGDIR/i4m.obj" ] || { echo "Watcom cgsupp helpers not built at $CGDIR"; exit 1; }
+python3 "$HERE/omf_classicize.py" "$CGDIR/i4m.obj" "I4M.OBJ" $CGMERGE >/dev/null
+python3 "$HERE/omf_classicize.py" "$CGDIR/i4d.obj" "I4D.OBJ" $CGMERGE >/dev/null
 
 cp "$DRC/LINK86.CMD" "$DRC/$CLEAR" "$TGT/WMARKS.OBJ" "$WORK/"
-echo "linking $MNAME model ($(echo "$OBJS" | tr ',' ' ' | wc -w | tr -d ' ') modules + owmath + WMARKS + $CLEAR)..."
-EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A "$EMU2" LINK86.CMD "SCB=$OBJS,OWMATH,WMARKS,$CLEAR" > link.log 2>&1 || true
+echo "linking $MNAME model ($(echo "$OBJS" | tr ',' ' ' | wc -w | tr -d ' ') modules + Watcom i4m/i4d + WMARKS + $CLEAR)..."
+EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A "$EMU2" LINK86.CMD "SCB=$OBJS,I4M,I4D,WMARKS,$CLEAR" > link.log 2>&1 || true
 if grep -qiE "target out|object file error" link.log; then echo "LINK FAILED:"; cat link.log; exit 1; fi
 UND=$(sed -n '/Undefined/,/USE FACTOR/p' link.log | grep -E '^[a-z]' | grep -viE 'clear_error' || true)
 [ -z "$UND" ] || { echo "Undefined symbols (beyond clear_error):"; echo "$UND"; cat link.log; exit 1; }
