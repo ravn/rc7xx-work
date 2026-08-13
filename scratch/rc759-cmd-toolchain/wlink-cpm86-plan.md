@@ -828,3 +828,36 @@ through the same driver (`mix86.c + mylib_own.c`) -> **`5 21`**.
 - `cc-cpm86.sh`             — the CP/M-86 target compile+link driver.
 - `hello_cpm86.c`          — demo with NO bridge pragmas (glue auto-loaded).
 - `bridge_mixed.c`, `mylib_own.c`, `bridge-mixed.sh` — DR C-stdlib-vs-own isolation proof.
+
+---
+
+## Finding (h): Mandelbrot runs on the large-model target, oracle-verified (2026-08-13)
+
+The canonical fixed-point 8.8 Mandelbrot now builds AND runs through the new
+large-model CP/M-86 target (`install-cpm86-target.sh` + `cc-cpm86.sh`, `-zu`,
+CLEARL) and its output is **byte-identical to the genuine Digital Research C 1.11
+build**.
+
+- Source reuse: the compute kernel is copied verbatim from the existing
+  `open-watcom-v2/contrib/ravn/owc-drc/mandel-ow.c` (the DR C oracle's IMUL
+  variant). `fpmul` lowers `FP_MUL` to one 16x16->32 signed `imul` + byte extract,
+  so the link needs NO Watcom 32-bit helper (`__I4M`) that our DR C CLEARL link
+  would not provide. Only the glue differs: entry `DRC_MAIN` (not `int main()` +
+  owcrt.asm's cmain bridge), output via BDOS conout (not putchar.asm), and width
+  78 not 80 (RC759 console margin — the user's overflow constraint).
+
+- **Correctness oracle (independent of our link path):** ran the pre-built
+  `owc-drc/MANDEL-DRC.CMD` (genuine DR C 1.11, small/8080 model) under the same
+  emu2 and compared. Our 78-wide output equals the DR C oracle's first 78 columns
+  of ALL 25 rows, **zero mismatches** — and likewise vs `MANDEL-OWIMUL.CMD`. So a
+  DIFFERENT compiler build path AND a DIFFERENT memory model (our large `-zu` +
+  CLEARL vs DR C's small CLEARS) yield the same pixels. This is a real
+  correctness check, not an equivalence loop: the ground truth is the genuine DR
+  C build, which does not share our Watcom code path.
+
+- Reproduce: `./mandel-cpm86.sh` (asserts 25 rows, width <= 78, set body present)
+  then the byte-diff above.
+
+### Files (tracked)
+- `mandel_cpm86.c`  — canonical kernel (verbatim) on the large-model target.
+- `mandel-cpm86.sh` — build+run proof.
