@@ -290,6 +290,7 @@
 - [DRI C Programmer's Guide location](reference_dri_cpm86_manuals_location.md) — DR C 1.11 ref PDF+txt already at cpm86-crossdev/docs/manuals/DRI_C_Programming_86.pdf (md5 41db5709…); do NOT re-download
 - [DR C float/8087 ABI](reference_drc_float_8087_abi.md) — `-f` needs an 8087 (RC759 has none → default = software float, 0 ESC); double returns in DX:CX:BX:AX, float in BX:AX; all FP done in double
 - [wlink vs DR C OMF/.L86](reference_wlink_drc_omf_l86.md) — wlink READS DR OMF modules fine (all 131 of CLEARL.L86 parse clean); REJECTS .L86 container (E2012, 0xA4 header not 0xF0/AR). Unpacker: unpack_l86.py. Native CMD → new loadcpm.c modeled on loaddos.c
+- [Watcom→DR C ABI bridge](reference_watcom_drc_abi_bridge.md) — `-ecc` (cdecl) + `#pragma aux default "*"` (no underscore) bridges Watcom→DR C for int/ptr (VERIFIED: hello/dhry/mandel/stdcbench run). Gap: long/float return DX:AX vs BX:AX, double AX:BX:CX:DX vs DX:CX:BX:AX — needs per-fn `aux value [regs]`
 - [simavr master required for .mmcu console](reference_simavr_master_required.md) — distro 1.6 is too old; build master in Docker
 - [Memory in tasks/memory/, never ~/.claude/](feedback_no_claude_memory.md) — canonical here, read manually at session start
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: stop editing, add an undeniable marker, prove new bytes are running before edit #3**
