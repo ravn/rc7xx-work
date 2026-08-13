@@ -669,8 +669,56 @@ pointer args ❌ (SS/DS split).
 - `bridge_scalar.c`  — Watcom caller; the `#pragma aux` bridge, documented inline.
 - `bridge-scalar.sh` — reproducible build+run proof (asserts output == "16").
 - `bridge_ml.c`      — earlier strlen/pointer probe (kept; demonstrates the SS/DS
-  blocker).
+  blocker WITHOUT `-zu`).
+- `bridge_pointer.c` — pointer bridge; passes 3 string literals to DR C `strlen`.
+- `bridge-pointer.sh`— reproducible proof (asserts output == "5 0 11").
 
-Todos: `abi-large` scalar case DONE (this finding); pointer case is the remaining
-open item. `abi-small` still blocked (near-call segment merge / TARGET OUT OF
-RANGE); large model is the working direction.
+Todos: `abi-large` scalar case DONE; pointer case DONE (finding (e) below).
+`abi-small` still blocked (near-call segment merge / TARGET OUT OF RANGE);
+large model is the working direction.
+
+---
+
+## Finding (e): POINTER arguments UNBLOCKED — Watcom `-zu` (2026-08-13)
+
+**Result:** Watcom-compiled large-model code now passes C string pointers to a
+genuine DR C 1.11 library routine (`strlen`) correctly. `bridge-pointer.sh`
+prints **`5 0 11`** for `strlen("HELLO")`, `strlen("")`, `strlen("hello world")`
+— reproducible PASS. This closes the pointer gap in finding (d); the ABI bridge
+now covers scalars AND data pointers.
+
+**The one-flag fix: compile with `-zu` (SS != DGROUP).** Path 2 of finding (d)
+turned out to be the clean solution — no startup shim needed.
+
+Finding (d) root-caused the blocker: for DGROUP data Watcom `-ml` emitted
+`push ss`, assuming SS == DS == DGROUP (its own startup's guarantee), but DR C's
+CLEARL startup runs SS != DS, so `strlen` read the wrong segment and returned 0.
+
+`-zu` tells Watcom the stack is NOT in the data group, so it can no longer use SS
+as the DGROUP segment. Instead it emits a real DGROUP **segment fixup** that the
+CMD loader relocates to the true data paragraph — exactly what DR C's own code
+does. Disassembly (`bwdis`) before vs after:
+
+```
+# WITHOUT -zu (broken):            # WITH -zu (correct):
+push ss                            mov ax,DGROUP:CONST   ; <- segment fixup,
+mov  ax,offset DGROUP:L$1          push ax               ;    loader-relocated
+push ax                            mov ax,offset DGROUP:L$1
+call far strlen                    push ax
+                                   call far strlen
+```
+
+**Causal proof (both endpoints measured):** identical source, same link recipe —
+WITHOUT `-zu` → `0 0 0` (wrong); WITH `-zu` → `5 0 11` (correct). The flag is the
+sole difference, so it is the cause, not a guess.
+
+**Build recipe (pointer-capable large-model bridge):**
+`bwcc -0 -ml -s -q -zu app.c` → classicize OMF → link `APP,WMARKS,CLEARL.L86`
+under LINK-86 → run under patched emu2. (Same as the scalar recipe plus `-zu`.)
+`-zu` is a strict superset — safe to make it the default for ALL large-model
+bridge builds (scalar output is unchanged; it only affects data-pointer segment
+emission).
+
+**Scope of the bridge now:** scalar in/out (int, long via DX:AX) ✅ ; data
+pointer args ✅ (via `-zu`). Remaining: `abi-small` (near-call segment merge) and
+exercising a full DR C libc call chain (e.g. `printf`) end-to-end vs the oracle.

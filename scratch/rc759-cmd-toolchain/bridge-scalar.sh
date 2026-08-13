@@ -16,8 +16,8 @@
 # Linking against CLEARL yields a proper multi-group relocatable CMD whose loader
 # fixes up far-call segments, exactly like a native DR C large-model program.
 #
-# SCOPE: scalar args/returns only (int in/out, long in DX:AX). Pointer args are
-# blocked by the Watcom-DS==SS vs DR-C-DS!=SS split -- see wlink-cpm86-plan.md (d).
+# SCOPE: scalar args/returns only (int in/out, long in DX:AX). Pointer args need
+# the `-zu` flag (SS != DGROUP) -- see bridge-pointer.sh and wlink-cpm86-plan.md (e).
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
