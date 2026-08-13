@@ -1,39 +1,41 @@
-# Watcom→DR C bridge bug: `long` accumulated across a loop is not written back
+# Watcom→DR C bridge: `long` mul/div in a loop — undefined `__I4M`, FIXED
 
-Discovered 2026-08-13 building the RC759/MAME acceptance test.
+Root-caused & fixed 2026-08-13 while building the RC759/MAME acceptance test.
 
-**Symptom:** a `long` updated each iteration of a `for`/`while` loop keeps its
-INITIAL value; sometimes hangs instead.
+**Symptom (before fix):** a `long` updated with `*`/`/`/`%` each iteration of a
+`for`/`while` loop kept its INITIAL value under emu2 and HUNG on real MAME rc759.
 
 ```c
 long r = 1; int i;
-for (i = 0; i < 4; i++) r = r * 10;   /* expected 10000; bridge yields 1 */
+for (i = 0; i < 4; i++) r = r * 10;   /* wanted 10000; hung / yielded 1 */
 ```
 
-**Bisection (`-ecc -0 -ml`, cc-cpm86.sh, run under emu2):**
-- SAFE: a single runtime `long` op OUTSIDE a loop — `a=a*7`, `b=b/13`, `c=c%13`,
-  `s=s<<20` all correct.
-- SAFE: `int` accumulated in a loop (sieve/gcd/popcount/sums).
-- BROKEN: `long` accumulated in a loop (`r=r*10` and `r=r*10L` both yield 1);
-  a long-returning factorial with a loop can hang.
+**ROOT CAUSE (verified: `bwdis` disasm + full manual LINK-86):** Open Watcom's
+32-bit long-math helper `__I4M` (`__I4D` for div/mod) was UNDEFINED at link.
+DR C's `CLEAR?.L86` doesn't provide it and `cc-cpm86.sh` didn't link Watcom's own
+`i4m.obj`/`i4d.obj`. `call far ptr __I4M` → unresolved ~0000:0000 → hang on real
+80186 (MAME), wrong/no-op under emu2. Watcom's loop codegen was CORRECT
+(accumulator DX:AX, multiplier CX:BX, counter SI).
 
-**Likely cause:** the long lives in a register pair across the loop; the
-`__I4M`/`__I4D` helper clobbers it and the result is not stored back — a
-writeback/reg-alloc defect in the Watcom `-ecc` cdecl path for this target
-(deterministically the *initial* value ⇒ store-back failure, NOT emu2 noise).
+**Why undetected earlier:** every prior "passing" single-long case (`a=a*7L`,
+probe8 A/B/C) was CONSTANT-FOLDED at compile time and never emitted a runtime
+`__I4M` call. A loop-carried long multiply is the first non-foldable long op.
+This RETRACTS the earlier "register writeback / store-back" hypothesis — it was a
+missing library link, not a codegen bug.
 
-**CONFIRMED in real MAME rc759 (2026-08-13):** `longloop.c` (the `r=r*10` loop)
-booted as the autostart program HANGS after printing its header — all 45 post-boot
-snapshots are byte-identical (same md5). So the defect reproduces on genuine
-RC759 hardware emulation, NOT just emu2: under emu2 the same pattern returns the
-wrong value (r=1) or hangs; in MAME it hangs. Either way the loop never completes
-correctly. Evidence: `mame-tests/LONGLOOP_HANG_confirmed.png`.
+**FIX (`cc-cpm86.sh`):** classicize the model's cgsupp helpers
+(`bld/clib/cgsupp/library/msdos.086/{ms,ml}/i4m.obj`→`I4M.OBJ`, `i4d.obj`→
+`I4D.OBJ`; small model needs `--merge-text-into-code`) and link
+`OUT=$OBJLIST,I4M,I4D,WMARKS,$CLEAR`. Also broadened the undefined-symbol guard to
+fail on ANY undefined except the dead `clear_error` 8087 path (old allowlist only
+caught `big_code|small_code|cstart`, so `__I4M` slipped through → silent hang).
+i4m.obj = `__U4M`/`__I4M`, i4d.obj = `__U4D`/`__I4D`.
 
-**Workaround:** keep loop-carried arithmetic in `int`; compute each `long` as a
-single op outside any loop. Factorials/powers via loop accumulation must be
-restructured or precomputed. `scratch/rc759-cmd-toolchain/mame-tests/mtest.c`
-follows this (17/17 PASS in MAME).
+**VERIFIED FIXED:**
+- emu2, both models: `mame-tests/longloop.c` → `loop r=10000`.
+- **Real MAME rc759, large model: `mame-tests/mtest.c` → RESULT: PASS 19/19**,
+  incl. loop-carried `lfact 12!`(=479001600) and `lpow10 5`(=100000). Evidence:
+  `mame-tests/MTEST_PASS_19of19.png`.
 
-**TODO:** disassemble the loop body (bwdis) to pin the missing store, then file
-against the bridge / omf_classicize path. Full write-up: `drc-libtest/COVERAGE.md`
-§"Known bridge codegen limitation".
+Full write-up: `scratch/rc759-cmd-toolchain/drc-libtest/COVERAGE.md`
+§"Bridge codegen bug: `long` mul/div in a loop — ROOT-CAUSED & FIXED".

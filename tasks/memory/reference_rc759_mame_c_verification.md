@@ -32,8 +32,24 @@ The on-screen `RESULT: PASS n/n` line (viewed from the PNG) is the oracle.
 - **cpmtools** at `$HOME/.local/bin` — INVOKE by full path; never `find`/`ls`
   inside home. `kill $VAR` is blocked by a hook — kill by literal numeric PID.
 
+## Completion signal (guest → host) — added 2026-08-13
+Instead of snapshotting on a blind fixed timer, the guest tells the host exactly
+when it is done: `#include "mame-tests/mamedone.h"` and call `mame_done(code)` as
+the last statement. It emits `OUT 0x2FE,AX` (`#pragma aux`). Port **0x2FE is
+undecoded** by rc759_io (floppy ends 0x290, iSBX starts 0x300) → no hardware
+effect, but `mame-tests/done_signal.lua` installs a MAME **io-space write-tap**
+on 0x2FE: on the first write it snapshots, prints
+`DONE-SIGNAL word=0x…  pass=N fail=M`, and calls `machine:exit()`. Passing run
+now stops in **~24 s real** (frame ~4028) vs waiting out the 400 s cap; the host
+reads pass/fail from the word (mtest.c convention: low byte=pass, high byte=fail,
+`0x0013`=19/0) with no OCR. `-seconds_to_run 400` stays only as a safety cap — no
+`DONE-SIGNAL` line ⇒ guest hung/regressed ⇒ failure. Tap object MUST be held in a
+Lua global (a GC'd tap stops firing). Reusable by any program.
+
 ## Result achieved (2026-08-13)
-`mtest.c` → 17/17 PASS: long mul/div/mod, `<<20`, u16 wrap, gcd, sieve, signed
-div, popcount; full binary file round-trip (fopenb/fputc/fgetc/putw/getw/fwrite/
-fread/ftell/fseek/ungetc/rewind). Proof PNG committed as
-`mame-tests/MTEST_PASS_17of17.png`. The file I/O emu2 garbles is correct here.
+`mtest.c` → **19/19 PASS** (real MAME rc759, large model): long mul/div/mod,
+`<<20`, u16 wrap, gcd, sieve, signed div, popcount, **loop-carried long**
+(`lfact 12!`=479001600, `lpow10 5`=100000 — the pattern that exposed the __I4M
+bug); full binary file round-trip (fopenb/fputc/fgetc/putw/getw/fwrite/fread/
+ftell/fseek/ungetc/rewind). Proof PNG `mame-tests/MTEST_PASS_19of19.png`. The
+file I/O emu2 garbles is correct here.

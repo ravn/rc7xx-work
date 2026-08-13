@@ -40,27 +40,33 @@ cp "$HERE/../drc-libtest/drctest.h" "$HERE/" 2>/dev/null || true
 echo "== 2. install $CMD as autostart MENU.CMD on a copy of mandel.img =="
 IMG="$IMAGES/${PROG}.img"
 cp "$IMAGES/mandel.img" "$IMG"
+# cpmtools reads ./diskdefs from CWD (DISKDEFS env is ignored), so run from $IMAGES.
+cd "$IMAGES"
 # The turnkey disk is packed (~10K free); free room for the ~55K CMD by removing
 # utilities not needed to boot + autorun (comal/diskvedl/help + the old menu).
 for f in menu.cmd comal80.cmd diskvedl.cmd help.hlp; do "$CPMRM" -f "$FMT" "$IMG" "0:$f" 2>/dev/null || true; done
 "$CPMCP" -f "$FMT" "$IMG" "$HERE/$CMD" 0:menu.cmd
 "$CPMLS" -f "$FMT" -l "$IMG" | grep -i "menu.cmd" || true
 
-echo "== 3. boot MAME rc759 (~150s real; snapshots every 500 frames >= 12500) =="
-cat > /tmp/mame_snap.lua <<'LUA'
-local n = 0
-emu.register_frame_done(function()
-  n = n + 1
-  if n>=12500 and n%500==0 then manager.machine.video:snapshot() end
-end)
-LUA
+echo "== 3. boot MAME rc759; guest signals completion via OUT 0x2FE (done_signal.lua) =="
 cd "$MAME_DIR"
 rm -f snap/rc759/*.png nvram/rc759/nvram 2>/dev/null || true
+# -seconds_to_run is only a SAFETY CAP now: done_signal.lua calls machine:exit()
+# the instant the guest writes port 0x2FE, so a passing run stops early (~150s
+# real). If the guest hangs/regresses and never signals, the cap ends it and no
+# "DONE-SIGNAL" line is printed -- which the caller can treat as failure.
 ./regnecentralend rc759 -bios 0 -skip_gameinfo -rompath roms \
   -flop1 "$IMG" \
-  -autoboot_script /tmp/mame_snap.lua -seconds_to_run 400 \
-  -nothrottle -sound none -video bgfx -window -nomax
+  -autoboot_script "$HERE/done_signal.lua" -seconds_to_run 400 \
+  -nothrottle -sound none -video bgfx -window -nomax 2>&1 | tee /tmp/mame_done.log | grep -i "DONE-SIGNAL" || true
 
-echo "== 4. snapshots (view the last one for RESULT: PASS n/n) =="
-ls -la snap/rc759/*.png
-echo "Latest: $MAME_DIR/snap/rc759/$(ls snap/rc759/ | tail -1)"
+echo "== 4. result =="
+if grep -qi "DONE-SIGNAL" /tmp/mame_done.log; then
+  grep -i "DONE-SIGNAL" /tmp/mame_done.log
+  echo "Guest signalled completion."
+else
+  echo "WARNING: no DONE-SIGNAL -- guest never finished (hang/regression?) within the cap."
+fi
+ls -la snap/rc759/*.png 2>/dev/null || echo "(no snapshot)"
+LAST=$(ls snap/rc759/ 2>/dev/null | tail -1)
+[ -n "$LAST" ] && echo "Latest snapshot (view for the RESULT line): $MAME_DIR/snap/rc759/$LAST"

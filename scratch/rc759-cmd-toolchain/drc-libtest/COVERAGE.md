@@ -142,41 +142,51 @@ library (the part whose ABI the bridge must get right) is fully exercised and gr
 
 ---
 
-## Known bridge codegen limitation: `long` accumulated across a loop (2026-08-13)
+## Bridge codegen bug: `long` mul/div in a loop — ROOT-CAUSED & FIXED (2026-08-13)
 
-Discovered while building the RC759/MAME acceptance test (`../mame-tests/mtest.c`).
+Discovered while building the RC759/MAME acceptance test (`../mame-tests/mtest.c`),
+then root-caused and fixed the same day.
 
-**Symptom:** a `long` variable updated on each iteration of a `for`/`while` loop
-keeps its INITIAL value -- the per-iteration update is not written back.
+**Symptom (before fix):** a `long` variable updated with `*`/`/`/`%` on each
+iteration of a `for`/`while` loop kept its INITIAL value under emu2, and HUNG on
+real MAME rc759.
 
 ```c
 long r = 1; int i;
-for (i = 0; i < 4; i++) r = r * 10;   /* expected 10000; bridge yields 1 */
+for (i = 0; i < 4; i++) r = r * 10;   /* wanted 10000; hung / yielded 1 */
 ```
 
-**Scope (bisected, `-ecc -0 -ml`, run under emu2):**
-- SAFE: a *single* runtime `long` op outside a loop -- `a = a*7`, `b = b/13`,
-  `c = c%13`, `s = s<<20` are all correct (probe8 A/B/C).
-- SAFE: `int` accumulated in a loop (sieve, gcd, popcount, `for` sums).
-- BROKEN: `long` accumulated in a loop (probe8 D/E: `r = r*10L` and `r = r*10`
-  both yield 1). Sometimes manifests as a hang instead of a wrong value
-  (probe5/probe6 with a long-returning factorial).
+**ROOT CAUSE (verified via `bwdis` disassembly + a full manual LINK-86):**
+Open Watcom's 32-bit long-math helper `__I4M` (and `__I4D` for div/mod) was
+**UNDEFINED at link time**. DR C's `CLEAR?.L86` does not provide it, and
+`cc-cpm86.sh` did not link Watcom's own `i4m.obj`/`i4d.obj` cgsupp objects. So
+`call far ptr __I4M` targeted an unresolved address (~0000:0000) → hang on the
+real 80186 (MAME), wrong/no-op value under emu2. Watcom's loop codegen itself was
+CORRECT (accumulator in DX:AX, multiplier in CX:BX, counter in SI).
 
-**Likely cause:** the long lives in a register pair across the loop; the
-`__I4M`/`__I4D` helper call clobbers it and the result is not stored back (a
-writeback/register-allocation bug in the Watcom `-ecc` cdecl path for this
-target, NOT an emu2 artifact -- the result is deterministically the *initial*
-value, which is a store-back failure, not CPU-emulation noise).
+**Why no earlier test caught it:** every prior "passing" single-long case
+(`a=a*7L`, probe8 A/B/C) was **constant-folded at compile time** and never emitted
+a runtime `__I4M` call. A loop-carried long multiply is the first non-foldable
+long op, so it was the first to reference the missing helper.
 
-**CONFIRMED on real MAME rc759 (2026-08-13):** `../mame-tests/longloop.c` (the
-`r=r*10` loop) autostarted in the FDC-fixed driver HANGS after its header -- all
-45 post-boot snapshots are byte-identical (same md5). So the defect reproduces on
-genuine hardware emulation, not just emu2. See `../mame-tests/README.md` +
-`LONGLOOP_HANG_confirmed.png`.
+This RETRACTS the earlier "register writeback / store-back" hypothesis — it was
+never a codegen writeback bug, purely a missing-library-link.
 
-**Workaround (used by mtest.c):** keep loop-carried arithmetic in `int`; do each
-`long` computation as a single op outside any loop. Factorials/powers computed by
-loop accumulation must be restructured or precomputed.
+**FIX (`cc-cpm86.sh`):** classicize the model-appropriate cgsupp helpers
+(`bld/clib/cgsupp/library/msdos.086/{ms,ml}/i4m.obj` → `I4M.OBJ`, `i4d.obj` →
+`I4D.OBJ`; small model needs `--merge-text-into-code`) and link them:
+`LINK86 "OUT=$OBJLIST,I4M,I4D,WMARKS,$CLEAR"`. The undefined-symbol guard was also
+broadened to fail on ANY undefined symbol except the dead `clear_error` 8087 path
+(the old allowlist only caught `big_code|small_code|cstart`, so `__I4M` slipped
+through and produced a silently-hanging CMD).
+
+**VERIFIED FIXED:**
+- emu2, both models: `../mame-tests/longloop.c` prints `loop r=10000`.
+- **Real MAME rc759, large model: `mtest.c` → RESULT: PASS 19/19**, including the
+  loop-carried long checks `lfact 12!` (= 479001600) and `lpow10 5` (= 100000).
+  See `../mame-tests/MTEST_PASS_19of19.png`.
+
+No workaround is needed anymore — loop-carried `long` arithmetic works.
 
 **TODO:** confirmed in MAME (hangs — `LONGLOOP_HANG_confirmed.png`); next
 disassemble the loop body (bwdis) to pin the missing store and file it against

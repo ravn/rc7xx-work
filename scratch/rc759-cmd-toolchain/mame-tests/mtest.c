@@ -1,4 +1,5 @@
 #include "drctest.h"
+#include "mamedone.h"
 
 /* mtest.c -- self-checking RC759/MAME acceptance test.
  *
@@ -40,12 +41,27 @@ static void ck(name, ok) char *name; int ok;
 
 /* --- integer helpers (each result checked against a hand-computed value) --- */
 
-/* NOTE (bridge limitation, discovered 2026-08-13): a `long` accumulated ACROSS
- * for/while iterations is NOT written back under this bridge config (-ecc -0
- * -ml) -- the loop leaves the long at its initial value (proven: `for(i=0;i<4;
- * i++) r=r*10;` yields 1, not 10000; single long ops OUTSIDE a loop are correct).
- * So every long check below uses a SINGLE runtime long op; loop-carried
- * accumulation stays in `int` (gcd/sieve/popcount). See COVERAGE.md. */
+/* NOTE (bridge codegen, root-caused 2026-08-13, FIXED): long mul/div in a loop
+ * previously hung/produced wrong values because Open Watcom's 32-bit helper
+ * `__I4M`/`__I4D` (cgsupp i4m.obj/i4d.obj) was NOT linked -- `call far ptr __I4M`
+ * went to an undefined address. cc-cpm86.sh now classicizes and links those
+ * helpers, so loop-carried long accumulation works. The checks below exercise it
+ * on purpose (lfact/lpow10). See COVERAGE.md and reference_watcom_drc_long_loop_bug.md. */
+
+/* loop-carried long multiply -- the exact pattern that exposed the __I4M bug */
+static long lfact(n) int n;
+{
+    long r = 1L; int i;
+    for (i = 2; i <= n; i++) r = r * (long)i;
+    return r;                       /* 12! = 479001600 */
+}
+
+static long lpow10(n) int n;
+{
+    long r = 1L; int i;
+    for (i = 0; i < n; i++) r = r * 10L;
+    return r;                       /* 10^5 = 100000 */
+}
 
 static int gcd(a, b) int a, b;
 {
@@ -88,6 +104,8 @@ static void int_tests()
     ck("sieve<100=25",  sieve() == 25);
     ck("sdiv -7/2,%",   (-7 / 2) == -3 && (-7 % 2) == -1);
     ck("popcount",      popc((unsigned)(0xF0F0 ^ 0x0FF0)) == 8);  /* 0xFF00 */
+    ck("lfact 12!",     lfact(12) == 479001600L);   /* loop-carried long mul */
+    ck("lpow10 5",      lpow10(5) == 100000L);       /* loop-carried long mul */
 }
 
 static void file_tests()
@@ -144,4 +162,7 @@ TMAIN
     file_tests();
     if (fail == 0) printf("RESULT: PASS %d/%d\n", pass, pass);
     else           printf("RESULT: FAIL %d/%d\n", pass, pass + fail);
+    /* Tell the MAME host we are done (low byte=pass, high byte=fail) so it can
+     * stop exactly here instead of snapshotting on a timer. Must be last. */
+    mame_done((unsigned)(((fail & 0xFF) << 8) | (pass & 0xFF)));
 }

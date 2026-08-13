@@ -42,13 +42,28 @@ done
 #   -zu   : SS != DGROUP -- correct only for the LARGE model (DR C small has
 #           SS == DS == DGROUP, where -zu wrongly introduces far pointers, W112).
 case "$MODEL" in
-  l) MFLAGS="-ml";           CLEAR="CLEARL.L86"; ZU="-zu";;
-  s) MFLAGS="-ms -nt=CODE";  CLEAR="CLEARS.L86"; ZU="";;  # -nt=CODE: merge text into CLEARS's CODE group
+  l) MFLAGS="-ml";           CLEAR="CLEARL.L86"; ZU="-zu"; CGMODEL="ml"; CGMERGE="";;
+  s) MFLAGS="-ms -nt=CODE";  CLEAR="CLEARS.L86"; ZU=""; CGMODEL="ms"; CGMERGE="--merge-text-into-code";;  # -nt=CODE: merge text into CLEARS's CODE group
   *) echo "unknown model '$MODEL' (use s or l)"; exit 1;;
 esac
 
+# 32-bit long helpers (__U4M/__I4M/__U4D/__I4D) are NOT in DR C's CLEAR?.L86 --
+# they are Open Watcom's OWN pre-built cgsupp objects (i4m.obj = __U4M/__I4M,
+# i4d.obj = __U4D/__I4D). Without linking them, any runtime `long` mul/div emits
+# `call far ptr __I4M` to an UNDEFINED symbol (address ~0) -> hang on real
+# hardware (MAME rc759), wrong value under emu2. Watcom's build already picks the
+# correct near(ms)/far(ml) RET per model; ms needs the helper _TEXT merged into
+# CODE (CGMERGE) like the user modules. (msdos.086 == canonical 8086; the helpers
+# are pure integer math, OS-agnostic.)
+CGDIR="$CPM86_TARGET_DIR/../bld/clib/cgsupp/library/msdos.086/$CGMODEL"
+
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 cp "$DRC/LINK86.CMD" "$DRC/$CLEAR" "$CPM86_TARGET_DIR/WMARKS.OBJ" "$WORK/"
+
+# Classicize Open Watcom's long-math helper objects (see CGDIR note above).
+[ -f "$CGDIR/i4m.obj" ] && [ -f "$CGDIR/i4d.obj" ] || { echo "Watcom cgsupp helpers not built at $CGDIR"; exit 1; }
+python3 "$HERE/omf_classicize.py" "$CGDIR/i4m.obj" "$WORK/I4M.OBJ" $CGMERGE >/dev/null
+python3 "$HERE/omf_classicize.py" "$CGDIR/i4d.obj" "$WORK/I4D.OBJ" $CGMERGE >/dev/null
 
 OBJLIST=""
 i=0
@@ -61,12 +76,17 @@ for src in "${SRCS[@]}"; do
 done
 
 ( cd "$WORK" && EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A "$EMU2" \
-    LINK86.CMD "OUT=$OBJLIST,WMARKS,$CLEAR" > link.log 2>&1 )
+    LINK86.CMD "OUT=$OBJLIST,I4M,I4D,WMARKS,$CLEAR" > link.log 2>&1 )
 if grep -qiE "target out|no file" "$WORK/link.log"; then
     echo "LINK-86 failed:"; cat "$WORK/link.log"; exit 1
 fi
-# Only `clear_error` (dead 8087 path) may remain undefined for integer programs.
-BAD=$(sed -n '/Undefined/,/USE FACTOR/p' "$WORK/link.log" | grep -iE "big_code|small_code|cstart" || true)
+# Fail on ANY undefined symbol -- only `clear_error` (dead 8087 path) is allowed.
+# A missing runtime helper (e.g. __I4M when the cgsupp link is dropped) otherwise
+# links to address ~0 and produces a CMD that HANGS on real hardware, so this
+# guard must be broad, not a big_code/small_code/cstart allowlist. Undefined rows
+# are "symbol  FILE.{L86,OBJ}  MODULE"; match on the file-reference column to
+# avoid the trailing CODE/DATA/EXTRA/STACK segment-size table in the same block.
+BAD=$(sed -n '/Undefined/,/USE FACTOR/p' "$WORK/link.log" | grep -iE "\.(L86|OBJ)" | grep -viE "clear_error" || true)
 [ -z "$BAD" ] || { echo "Unexpected undefined symbols:"; echo "$BAD"; cat "$WORK/link.log"; exit 1; }
 [ -f "$WORK/OUT.CMD" ] || { echo "no CMD produced"; cat "$WORK/link.log"; exit 1; }
 cp "$WORK/OUT.CMD" "$OUT"
