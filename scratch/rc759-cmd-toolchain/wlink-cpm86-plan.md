@@ -966,3 +966,43 @@ Small/8080 have none of these groups, so their path is byte-for-byte unchanged.
   reference score for stdcbench large anywhere yet. Deferred.
 - emu2 XIOS Int 28h fn 19 clock still unimplemented (would let emu2 score
   stdcbench for an independent cross-check of the Unicorn 7/5/12).
+
+## FINDING — 2026-08-13 (k): emu2 XIOS Int 28h fn 19 clock implemented + cross-check
+
+emu2-cpm86 had no hardware clock, so self-timing programs spun forever under it
+(stdcbench's `while(clock()-start < SECONDS)` never advanced). Implemented the
+RC759 XIOS Int 28h **function 19** ("16 ms counter") the same way the Unicorn
+runner does — a deterministic *code-byte* virtual clock:
+- `src/cpu.c`: global `uint64_t emu_code_bytes`, incremented in `FETCH_B` (+1)
+  and `FETCH_W` (+2) — the only IP-advancing instruction-stream fetches, so the
+  sum is the exact executed code-byte count (decoder-independent).
+- `src/emu.h`: `extern uint64_t emu_code_bytes;`.
+- `src/cpm86.c` `intr_cpm_int28`: on `AL == 19`, seconds = bytes/`CPM86_CLOCK_HZ`
+  (default 700000), periods = remainder*1000/(HZ*`CPM86_TICK_MS`) (default 16);
+  return DX:AX = seconds, CX = periods. Handled before the existing DI==4
+  keyboard-poll path.
+
+### Verified
+- **stdcbench small under emu2** with `CPM86_CLOCK_HZ=700000` = **7/5/12** —
+  IDENTICAL to the Unicorn runner. Because the clock is driven by code-byte
+  *count* (same instruction stream in both), two independent emulators (QEMU
+  core vs emu2's hand-written decoder) agree exactly: a genuine, non-circular
+  cross-check of both the score and the clock model.
+- Fast regression `clock-runner.sh` + `clock_test.c` (three fn 19 reads, checks
+  strict monotonicity): PASS on both emu2 and the Unicorn runner. Confirmed it
+  prints "clock: FAIL" when the emu2 clock is reverted (fn19 falls through,
+  registers unchanged) and PASS with it.
+- mandel large still byte-identical to the DR C oracle under the patched emu2
+  (the FETCH counter does not alter execution).
+
+### Bonus: stdcbench large early-exit is emulator-independent (rules out loaders)
+With the clock present, **stdcbench large under emu2 no longer spins** — it now
+terminates early after the banner (~no scores), the SAME failure as the Unicorn
+runner (~204K insns). Since emu2 is an independent, proven CP/M-86 large loader
+(runs mandel large byte-perfectly), reproducing the early-exit there confirms the
+stdcbench-large problem is in the BUILD/program (deep recursion or a specific lib
+call), NOT either runner's loader or clock. Still deferred; no reference score for
+stdcbench large exists on any path yet.
+
+Files: `scratch/cpm86-tools/emu2-cpm86/src/{cpu.c,emu.h,cpm86.c}` (emu2 fork
+repo), `scratch/rc759-cmd-toolchain/{clock_test.c,clock-runner.sh}`.
