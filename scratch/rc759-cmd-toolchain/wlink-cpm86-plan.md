@@ -722,3 +722,57 @@ emission).
 **Scope of the bridge now:** scalar in/out (int, long via DX:AX) ✅ ; data
 pointer args ✅ (via `-zu`). Remaining: `abi-small` (near-call segment merge) and
 exercising a full DR C libc call chain (e.g. `printf`) end-to-end vs the oracle.
+
+---
+
+## Finding (f): how simple the bridge can be — a reusable header (2026-08-13)
+
+**Result:** the entire per-program source surface collapses to three kinds of line:
+
+```c
+#include "drcbridge.h"              /* convention + entry, defined once */
+
+extern unsigned strlen(char *s);
+#pragma aux (DRC) strlen;           /* ONE line per DR C routine you call */
+
+DRC_MAIN {                          /* your entry */
+    conout('0' + strlen("HELLO"));  /* -> 5 */
+}
+```
+
+Verified end-to-end by `bridge-min.sh` (PASS, prints 5, fully clean link — only
+the dead `clear_error` 8087 stub remains undefined).
+
+### What moved into the reusable header (`drcbridge.h`)
+- `#pragma aux DRC "*" parm caller [] value [ax] far;` — DR C large-model cdecl,
+  defined ONCE as a named convention. Apply per routine with `#pragma aux (DRC) fn;`.
+- `"*"` alias emits the **bare** symbol name (`strlen`, not Watcom's `strlen_`),
+  so it matches DR C's exports with no per-symbol alias string.
+- Entry: `#pragma aux drc_main "main" far;` + `#define DRC_MAIN void drc_main(void)`.
+
+### Two naming facts that keep the link clean (both verified via `strings`/link log)
+- **Name the entry `drc_main`, not `main`.** The literal identifier `main` makes
+  Watcom emit a reference to its own startup `_cstart_` (undefined here). Aliasing
+  a differently-named function to the bare export `"main"` avoids `_cstart_`
+  entirely — CLEARL's startup is the only startup.
+- **The only residual Watcom markers are `_big_code_` / `_small_code_`** — model
+  markers, stubbed `equ 0` in the fixed `wmarks.asm`. Not per-program.
+
+### What CANNOT be simplified away (verified)
+- **`#pragma aux default "*" ...` (module-wide) is too broad** — it rewrites the
+  calling convention of *local* helpers too, breaking inline-asm parameter refs
+  (e.g. `conout`). Use the *named* convention `(DRC)` applied per external routine;
+  it leaves local functions untouched.
+- **`-zu` build flag** is mandatory for any pointer arg (finding (e)).
+- **`omf_classicize.py`, the marker stub, and the CLEARL link** are fixed
+  infrastructure — write once, reuse for every program; not per-call boilerplate.
+
+### Files (tracked)
+- `drcbridge.h`   — the reusable bridge header (all the pragmas + DRC_MAIN).
+- `bridge_min.c`  — minimal example using it (strlen -> 5).
+- `bridge-min.sh` — reproducible proof + the fixed build recipe (asserts "5",
+  and asserts the link has no unexpected undefined symbols).
+
+**Bottom line:** per DR C routine = 1 extern + 1 `#pragma aux (DRC) name;`. Per
+program = `#include "drcbridge.h"` + `DRC_MAIN`. Build = `bwcc -0 -ml -s -q -zu`,
+classicize, link `APP,WMARKS,CLEARL.L86`. That is the floor for the large model.
