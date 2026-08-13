@@ -88,3 +88,16 @@ status is analysed separately in `../DRC_FLOAT_ANALYSIS.md` (transcendentals are
 real software routines & correct in genuine DR C; only *double-returning* library
 calls fail to bridge under Watcom `-fpi87`). Tracked as ravn/rc7xx-work#3.
 Large-model stdcbench on MAME is unverified (small-model only) — tracked as #4.
+
+## Mandelbrot on real MAME rc759 (2026-08-14) — visual render
+`mame-tests/mandel-mame.c` renders the canonical fixed-point 8.8 Mandelbrot (same
+IMUL kernel as `mandel_cpm86.c`/the DR C oracle) full-screen on the real rc759
+console. Run: `mame-tests/run-mame.sh mandel-mame.c`. Two screen/harness tweaks
+vs `mandel_cpm86.c`: (1) the CR/LF is emitted BEFORE each row except row 0 (never
+after row 24) so the 25th newline does not scroll row 0 off the 25-line console;
+(2) it ends with `mame_done(0)` (OUT 0x2FE) so `done_signal.lua` snapshots the
+finished image and stops the emulator the instant drawing completes (~frame 4229,
+~25 s real). Proof PNG `mame-tests/MANDEL_mame_rc759.png` shows the full set
+(cardioid + bulb). Compute is oracle-clean by construction (kernel byte-identical
+to the oracle-verified `mandel_cpm86.c`; only newline placement + done-signal
+differ, neither touches pixel content).
