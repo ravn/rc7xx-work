@@ -30,7 +30,14 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
 BWASM="${BWASM:-$HERE/../../open-watcom-v2/build/binbuild/bwasm}"
 PUTFAR_ASM="${PUTFAR_ASM:-$HERE/../../open-watcom-v2/contrib/ravn/owc-drc/putchar-far.asm}"
-DRC="$HERE/drc86111"
+# Toolchain source. Default = the OFFICIAL Regnecentralen RC759 DR C v1.11 disk
+# (datamuseum.dk bits 30005869), extracted to rc759-drc-official/ -- the pristine
+# oracle. The hobby drc86111/ port (identical codegen passes, ~9 patched serial
+# bytes in DRC/LINK86/RASM86) is the FALLBACK, and also supplies the few helper
+# files the single official disk lacks (CPMEOF.ASC, DOS.H, ALLOC.H). Override
+# with DRC=... to force a specific toolchain dir.
+DRC="${DRC:-$HERE/rc759-drc-official}"
+DRC_FALLBACK="${DRC_FALLBACK:-$HERE/drc86111}"
 SRC="$1"; [ -z "$SRC" ] && { echo "usage: drc-oracle.sh prog.c [out.cmd]"; exit 1; }
 BASE="$(basename "${SRC%.c}")"
 OUT="${2:-$BASE.CMD}"
@@ -41,10 +48,13 @@ if [ -n "$DRC_PUTCHAR" ]; then
 fi
 
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
-# DR C compiler chain + large-model libc, all from the tracked drc86111 archive.
+# DR C compiler chain + large-model libc. Prefer $DRC (official disk); fill any
+# file it lacks from $DRC_FALLBACK (hobby port). Official disk stores lowercase
+# names; macOS FS is case-insensitive so DRC.CMD matches drc.cmd.
 for f in DRC.CMD DRC860.CMD DRC861.CMD DRC862.CMD DRCRPP.CMD LINK86.CMD \
          CLEARL.L86 CPMEOF.ASC STDIO.H CTYPE.H PORTAB.H DOS.H ALLOC.H; do
-    [ -f "$DRC/$f" ] && cp "$DRC/$f" "$WORK/"
+    if [ -f "$DRC/$f" ]; then cp "$DRC/$f" "$WORK/$f"
+    elif [ -f "$DRC_FALLBACK/$f" ]; then cp "$DRC_FALLBACK/$f" "$WORK/$f"; fi
 done
 
 # DR C needs the source EOF-padded with esc bytes (its batch files do this via an

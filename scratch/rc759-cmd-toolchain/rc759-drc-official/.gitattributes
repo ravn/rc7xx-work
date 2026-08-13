@@ -1,0 +1,2 @@
+# Authentic CP/M-86 disk bytes -- never apply CRLF/text conversion.
+* -text -diff

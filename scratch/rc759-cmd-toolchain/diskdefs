@@ -1,0 +1,14 @@
+# cpmtools diskdef for the official Regnecentralen RC759 "Piccoline" DR C
+# diskettes (datamuseum.dk IMD blobs). Verified against bits 30005869
+# ("DR C v.1.11"): 77 cyl x 2 heads, 8x1024 B/track, CP/M-86 filesystem,
+# block 2048, 96 dir entries, 2 reserved cylinders (boottrk 4 -> dir @ 0x8000).
+# NB: this cpmtools build reads ./diskdefs from the CWD (DISKDEFS env ignored).
+diskdef rc759-drc
+  seclen 1024
+  tracks 154
+  sectrk 8
+  blocksize 2048
+  maxdir 96
+  boottrk 4
+  os 2.2
+end
