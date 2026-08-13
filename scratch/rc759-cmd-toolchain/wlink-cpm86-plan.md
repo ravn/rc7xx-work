@@ -1307,7 +1307,31 @@ timing). Watcom `-fpi87`, by contrast, emits inline 8087 ESC.
 | DR C **int** (fixed-point 8.8) | small | integer        |  5,538,255  |  49,957,263   |  8,326   | yes             |
 | Watcom **int** `-ox`           | small | integer        |  3,725,230  |  28,033,978   |  4,672   | yes             |
 | DR C **float**                 | large | **software**   | 53,354,065  | 466,826,602   | 77,804   | **yes**         |
+| DR C **float** `-f`            | large | inline **8087**|  2,817,567  |  18,984,279   |  3,164   | **NO** (needs 8087)|
 | Watcom **float** `-fpi87`      | small | inline **8087**|  1,443,489  |   8,717,054   |  1,453   | **NO** (see below)|
+
+### DR C `-f` (8087) build recipe + number (2026-08-13)
+Built the DR C float twin with the `-f` switch (inline 8087) to get the
+Unicorn number the user asked for. Recipe (all inside a SHORT work dir):
+1. `emu2 DRC.CMD "srcfile -b -f"` — big model + 8087 codegen -> `srcfile.obj`.
+2. Assemble the FAR putchar with bwasm: `bwasm -0 -ml PUTFAR.ASM -fo=PUTFAR.OBJ`,
+   then **rewrite its THEADR to a short name** (bwasm stamps the absolute
+   `/private/var/.../PUTFAR.ASM` path = 82 chars -> DR LINK-86 "OBJECT FILE
+   ERROR 10"; patch the 0x80 record to name `PF` + fixed length + checksum).
+3. `emu2 LINK86.CMD "M87=M87,PUTFAR,CLEARL.L86[S]"`.
+Result `owc-drc/MANDELF-DRC-8087.CMD` (20,992 B, 255 bytes in the D8-DF ESC
+range vs ~0 in the software build). **Output byte-identical to the independent
+host-double oracle** (`/tmp/mref.py`) AND to the software DR C build.
+
+- **DR C `-f` costs 3,164 ms** — a **24.6x** speedup over DR C software float
+  (77,804 ms). But the SAME two caveats as Watcom `-fpi87` apply: (1) cycles186
+  charges a flat 4 clocks/ESC, so the real 8087 cost is grossly understated;
+  (2) it REQUIRES an 8087, which the RC759 does not have, so on real hardware
+  the ESCs are NOPs and the result is wrong. It ran here only because
+  Unicorn/QEMU always has an x87. **Not RC759-faithful — a coprocessor "what-if".**
+- **DR C 8087 (2.82M insns) vs Watcom 8087 (1.44M insns): DR C's inline-8087
+  codegen emits ~1.95x more instructions** for the same picture — Watcom's FP
+  scheduling is tighter (fewer FLD/FSTP round-trips through memory).
 
 ### Reading the numbers
 - **DR C: float costs ~9.3x fixed-point** (77,804 vs 8,326 ms). This is the
