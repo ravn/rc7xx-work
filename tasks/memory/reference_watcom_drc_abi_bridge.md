@@ -34,20 +34,50 @@ DX:CX:BX:AX). No `-ec` flag changes this.
 | long / float       | DX:AX              | BX:AX             | NO    |
 | double             | AX:BX:CX:DX        | DX:CX:BX:AX       | NO    |
 
+**VERIFIED against the genuine oracle (not just the manual)** — disassembled the
+official CLEARL.L86 modules (Open Watcom `bwdis -a` on the unpacked OMF):
+- `ATOL` epilogue: `push -6[bp]; push -8[bp]; pop ax; pop bx; ... retf` -> AX=low
+  word, BX=high word, i.e. **long returns in BX:AX**.
+- `FTELL`, `GETL` epilogues likewise end `pop ax; pop bx; ... retf` -> BX:AX.
+- `ATOF` epilogue: `pop ax; pop bx; pop cx; pop dx; ... retf` -> **double returns
+  in DX:CX:BX:AX** (AX least significant .. DX most significant).
+These confirm the table above; the Watcom defaults (DX:AX, AX:BX:CX:DX) differ.
+
 The working pipeline SIDESTEPS this: stdcbench excludes float/double modules;
 floats use `-fpi87` (8087 ST(0), not DR's software BX:AX float return); `long`
 multiplies use Watcom's OWN `__I4M/__I4D` cgsupp helpers, not DR's runtime. So a
 function that RETURNS long/float/double FROM DR's library is still unbridged.
 
-## Closing the gap (if/when non-int DR returns are needed)
+## Closing the gap -- DONE for long (BX:AX), staged for double
 
-Open Watcom's aux pragma CAN pin the DR return registers per function:
-`#pragma aux <fn> value [bx ax]` (long/float) and
-`#pragma aux <fn> value [dx cx bx ax]` (double), plus `parm caller []` for stack
-args and `"*"` for the bare name (`docs/doc/cmn/pragma.gml` §"Returning ...
-Values in Registers"). That is the precise, per-signature way to be 100%
-DR-C-compatible on returns — needed only for functions that actually return
-long/float/double across the Watcom<->DR boundary.
+**FIXED for the CP/M-86 target (`cc-cpm86.sh`/`_preincl.h`), 2026-08-13.** The
+generated glue `install-cpm86-target.sh` -> `_preincl.h` now splits the DRC
+convention by return width via three aliases:
+```
+#pragma aux DRC      "*" parm caller [] [far];                    /* int/ptr */
+#pragma aux DRC_LONG "*" parm caller [] value [bx ax] [far];      /* long/float */
+#pragma aux DRC_DBL  "*" parm caller [] value [dx cx bx ax] [far];/* double */
+```
+and tags the VERIFIED long-returning routines `atol/ftell/getl` as `(DRC_LONG)`
+and `atof` as `(DRC_DBL)`; everything else stays `(DRC)`. Extend the LONG/DBL
+sets only after the same `bwdis` epilogue check (the generator lists them in
+`DRC_LONG_FNS`/`DRC_DBL_FNS`).
+
+**A wrong prior claim was corrected**: the old `_preincl.h` comment asserted
+"DX:AX for long ... matches DR C exactly" — that was FALSE (DR C is BX:AX). The
+bug was latent only because no shipped program consumed a long/double return.
+
+Proof (failing-test-first, `drc-abi-test.sh` + `atol_bridge_test.c`):
+`atol("70000")` = 0x00011170. BEFORE the fix both models printed `00001170`
+(high word 0x0001 stranded in BX; Watcom read DX=0). AFTER the fix both models
+print `00011170`. Mandelbrot (int/fixed-point) still oracle-verified -> no
+regression on int/ptr returns.
+
+**Double (DRC_DBL) caveat**: the register mapping is disassembly-verified, but a
+clean RUNTIME double proof is confounded by DR C's separate "nofloat" atof-stub
+linkage (a probe built with the genuine DR C compiler returned 0.0 because the
+linker pulled the nofloat stub). So `atof` is bridged on the strength of the
+disassembly, not yet a runtime value assertion.
 
 ## Cross-refs
 - DR C return regs / float ABI: reference_drc_float_8087_abi.md
