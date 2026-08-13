@@ -161,3 +161,21 @@ CLEARL (transcendentals return garbage even in the pure genuine build) + softwar
 -double-vs-8087 representation gap. File I/O uses a committed `.expect` oracle
 because genuine DR C's read path is confounded under emu2 (bridge is
 independently correct). Full per-routine status: drc-libtest/COVERAGE.md.
+
+## Math library compatibility (verified 2026-08-13 via official §2.5 TEST.C)
+Q: is DR C's math library compatible with Watcom, or use Watcom's? Answer, split:
+- **Basic float/double arithmetic (+ - * /) + printf/scanf %g/%f/%ld: COMPATIBLE.**
+  DR C's distribution TEST.C (rc759-drc-official/test.c, manual §2.5) built by
+  genuine DR C AND both bridge models gives byte-identical output (float
+  1.234+0.001=1.235; double 5635678.0/1234.0=4567). DR C's printf reads Watcom's
+  IEEE-8087 doubles correctly. => keep DR C's CLEARL runtime for float VALUE I/O.
+  It is now suite test t_testc (differential, PASS both models).
+- **Transcendentals (sqrt sin cos tan atan exp log log10 pow): use WATCOM'S.**
+  DR C's default CLEARL has only nofloat STUBS (garbage even in pure genuine
+  build; real DR C math = a separate FP lib absent from the v1.11 disk). Watcom
+  -fpi87: fabs/sqrt inline to 8087 ops (with ANSI proto + #pragma intrinsic);
+  sin/cos/exp/log/tan/atan/pow emit EXTRN `IF@DSQRT`/`IF@DSIN`/... + `__8087`,
+  `_fltused_` -> Watcom's 8087 helper lib must be linked into the CMD
+  (Watcom-OMF -> classicize, or provide equivalents). NOT yet wired; tracked in
+  drc-libtest/blocked_float.c. Note: K&R `extern double sqrt()` does NOT trigger
+  intrinsic inlining -- needs the typed prototype `double sqrt(double)`.

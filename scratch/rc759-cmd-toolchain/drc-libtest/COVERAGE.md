@@ -75,15 +75,32 @@ fopen fclose fputs fgets ftell unlink
   freopb freopbb freopen4 perror : CATALOG (same file-stream family + DRC_PTR/LONG
   bridge; representative subset above is PASS).
 
-## math (double)           -> blocked_float.c   (BLOCKED)
+## official DR C §2.5 validation   -> t_testc.c   (PASS)
+The distribution's own TEST.C (rc759-drc-official/test.c): int, long, **float add,
+double divide**, printf %u/%ld/%g. Runs as a full differential test (genuine
+main() vs bridge DRC_MAIN via the TMAIN macro). Both bridge models reproduce
+genuine DR C byte-for-byte (float 1.235, double 4567) -- so basic float/double
+ARITHMETIC + printf formatting is compatible across the Watcom(-fpi87 IEEE 8087)
+-> DR C CLEARL bridge.
+
+## math library: compatibility summary
+- **Basic float/double arithmetic (+ - * /) and printf/scanf %g/%f/%e/%ld: COMPATIBLE**
+  (verified by t_testc). DR C's printf reads Watcom's IEEE-8087 doubles correctly.
+  So for value-level float I/O you use DR C's CLEARL runtime unchanged.
+- **Transcendentals (sqrt sin cos tan atan exp log log10 pow): use WATCOM'S, not
+  DR C's.** DR C's default CLEARL provides only *nofloat stubs* for these (they
+  return garbage even in a pure genuine build; real DR C math needs a separate FP
+  library not present on the v1.11 disk). Watcom -fpi87 supplies them, but only as
+  external helpers: with proper ANSI prototypes + `#pragma intrinsic`, fabs/sqrt
+  inline to 8087 ops while sin/cos/exp/log/tan/atan/pow emit calls to Watcom's
+  8087 helper library (EXTRN `IF@DSQRT`/`IF@DSIN`/... + `__8087`, `_fltused_`).
+  Those helpers would need to be linked into the CMD (Watcom-OMF -> classicize, or
+  provide equivalents) -- not yet wired up. Tracked in blocked_float.c.
+
+## math transcendentals (double)   -> blocked_float.c   (BLOCKED)
 atof sqrt sin cos tan atan exp log log10 fabs
-  DRC_DBL register mapping is disassembly-verified (atof epilogue pops
-  ax,bx,cx,dx). Runtime is BLOCKED: DR C's default CLEARL provides only *nofloat
-  stubs* for the transcendentals (verified: genuine build returns garbage for
-  sqrt/sin/cos/exp/atan). Real math needs DR C's separate FP library, not yet
-  wired into the oracle. Also, DR C software-double is not guaranteed IEEE while
-  the bridge's -fpi87 assumes IEEE, so a double *value* round-trip is not a valid
-  differential. fabs works under 8087 on the bridge.
+  DRC_DBL register mapping disassembly-verified; runtime BLOCKED (nofloat stubs,
+  see above). Route these to Watcom's math, not DR C's.
 - expv sqrtb sqrtz : INTERNAL (double-valued helpers behind exp/sqrt).
 
 ## console input (needs stdin)   (CATALOG)
@@ -107,12 +124,13 @@ m0_ su7 vload line lineseek uldiv uldivr rewindj
 ---
 
 ## Summary
-- **PASS: 33 routines** across 7 tests (string/mem 16, conv 2, mem 4, stdlib 3,
-  setjmp 2, fmt 3, fileio 6 -- printf shared).
-- **BLOCKED: 11** (float/double transcendentals + atof/ftoa -- nofloat-stub +
-  representation confound; register mapping verified).
+- **PASS: 8 tests** (string/mem 16 routines, conv 2, mem-alloc 4, stdlib 3,
+  setjmp 2, fmt 3, fileio 6, official §2.5 TEST.C -- int/long/float/double math).
+  Basic float/double arithmetic + printf formatting VERIFIED compatible.
+- **BLOCKED: transcendentals** (sqrt/sin/cos/exp/log/tan/atan + atof/ftoa) --
+  DR C's are nofloat stubs; route to Watcom's math (register mapping verified).
 - **CATALOG: ~60** (file-stream family, console-input, CP/M syscalls -- bridge
   classes assigned; representative members PASS; full coverage needs I/O fixtures).
 - **INTERNAL: ~12** (helpers, excluded by design).
-The computational + pointer + memory + control-flow core of the DR C library
-(the part whose ABI the bridge must get right) is fully exercised and green.
+The computational + pointer + memory + control-flow + basic-float core of the DR C
+library (the part whose ABI the bridge must get right) is fully exercised and green.
