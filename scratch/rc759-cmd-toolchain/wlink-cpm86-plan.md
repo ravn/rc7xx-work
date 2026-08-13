@@ -861,3 +861,15 @@ build**.
 ### Files (tracked)
 - `mandel_cpm86.c`  — canonical kernel (verbatim) on the large-model target.
 - `mandel-cpm86.sh` — build+run proof.
+
+### Lesson (process): search for existing artifacts before writing new ones
+
+When asked for Mandelbrot I first WROTE a fresh mandel.c instead of searching
+the tree. Two ready versions (`owc-drc/mandel-ow.c`, `mandel.c`) and pre-built
+oracle CMDs (`MANDEL-DRC.CMD`, `MANDEL-OWIMUL.CMD`) already existed. Cost of the
+shortcut: I re-derived the IMUL-avoids-__I4M trick that mandel-ow.c already had,
+and I had no independent oracle so I fell back on a self-invented (and wrong)
+symmetry check. Familiarity with the algorithm is NOT a reason to reinvent.
+Correct order for any "build X" request: (1) grep the tree for an existing X and
+any checked-in expected output, (2) reuse the source verbatim, (3) diff against
+the pre-existing oracle. Only write new code if none exists.
