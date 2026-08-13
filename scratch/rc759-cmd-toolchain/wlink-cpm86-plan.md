@@ -1314,10 +1314,15 @@ timing). Watcom `-fpi87`, by contrast, emits inline 8087 ESC.
 Built the DR C float twin with the `-f` switch (inline 8087) to get the
 Unicorn number the user asked for. Recipe (all inside a SHORT work dir):
 1. `emu2 DRC.CMD "srcfile -b -f"` — big model + 8087 codegen -> `srcfile.obj`.
-2. Assemble the FAR putchar with bwasm: `bwasm -0 -ml PUTFAR.ASM -fo=PUTFAR.OBJ`,
-   then **rewrite its THEADR to a short name** (bwasm stamps the absolute
-   `/private/var/.../PUTFAR.ASM` path = 82 chars -> DR LINK-86 "OBJECT FILE
-   ERROR 10"; patch the 0x80 record to name `PF` + fixed length + checksum).
+2. Assemble the FAR putchar with bwasm, giving it a SHORT module name so DR
+   LINK-86 accepts the THEADR: `bwasm -0 -ml -nm=PF PUTFAR.ASM -fo=PUTFAR.OBJ`.
+   (Without `-nm=`, bwasm stamps the absolute `/private/var/.../PUTFAR.ASM`
+   path = 82 chars into the THEADR -> DR LINK-86 "OBJECT FILE ERROR 10". The
+   exact limit is **35 characters**: a THEADR module name of <=35 chars links
+   fine, >=36 throws ERROR 10 (binary-searched 2026-08-13). The `-nm=<name>`
+   option sets the OMF module name directly, so no post-patch of the 0x80
+   record is needed. Verified: the resulting binary is byte-identical to the
+   earlier THEADR-post-patched build.)
 3. `emu2 LINK86.CMD "M87=M87,PUTFAR,CLEARL.L86[S]"`.
 Result `owc-drc/MANDELF-DRC-8087.CMD` (20,992 B, 255 bytes in the D8-DF ESC
 range vs ~0 in the software build). **Output byte-identical to the independent
