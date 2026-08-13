@@ -168,10 +168,16 @@ writeback/register-allocation bug in the Watcom `-ecc` cdecl path for this
 target, NOT an emu2 artifact -- the result is deterministically the *initial*
 value, which is a store-back failure, not CPU-emulation noise).
 
+**CONFIRMED on real MAME rc759 (2026-08-13):** `../mame-tests/longloop.c` (the
+`r=r*10` loop) autostarted in the FDC-fixed driver HANGS after its header -- all
+45 post-boot snapshots are byte-identical (same md5). So the defect reproduces on
+genuine hardware emulation, not just emu2. See `../mame-tests/README.md` +
+`LONGLOOP_HANG_confirmed.png`.
+
 **Workaround (used by mtest.c):** keep loop-carried arithmetic in `int`; do each
 `long` computation as a single op outside any loop. Factorials/powers computed by
 loop accumulation must be restructured or precomputed.
 
-**TODO:** confirm whether MAME reproduces it (emu2 is not authoritative), then
+**TODO:** confirmed in MAME (hangs — `LONGLOOP_HANG_confirmed.png`); next
 disassemble the loop body (bwdis) to pin the missing store and file it against
 the bridge/omf_classicize path.

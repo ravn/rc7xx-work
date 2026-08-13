@@ -57,5 +57,8 @@ Uses the FDC/DMA-fixed `mame/regnecentralend` (commit 59b21dc1312, rebuilt
 A `long` **accumulated across loop iterations** is not written back under this
 bridge config (`-ecc -0 -ml`): `for(i=0;i<4;i++) r=r*10;` yields `1`, not
 `10000`. Single `long` ops outside a loop are correct; loop-carried arithmetic
-must stay in `int`. Full bisection in `../drc-libtest/COVERAGE.md`
+must stay in `int`. **Confirmed on real MAME rc759** by `longloop.c`, which
+HANGS after its header (45 byte-identical post-boot snapshots —
+`LONGLOOP_HANG_confirmed.png`), so this is a genuine bridge codegen defect, not
+an emu2 artifact. Full bisection in `../drc-libtest/COVERAGE.md`
 (§"Known bridge codegen limitation"). `mtest.c` is written to avoid the pattern.

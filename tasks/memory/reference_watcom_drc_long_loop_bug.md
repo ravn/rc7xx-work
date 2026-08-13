@@ -22,12 +22,18 @@ for (i = 0; i < 4; i++) r = r * 10;   /* expected 10000; bridge yields 1 */
 writeback/reg-alloc defect in the Watcom `-ecc` cdecl path for this target
 (deterministically the *initial* value ⇒ store-back failure, NOT emu2 noise).
 
+**CONFIRMED in real MAME rc759 (2026-08-13):** `longloop.c` (the `r=r*10` loop)
+booted as the autostart program HANGS after printing its header — all 45 post-boot
+snapshots are byte-identical (same md5). So the defect reproduces on genuine
+RC759 hardware emulation, NOT just emu2: under emu2 the same pattern returns the
+wrong value (r=1) or hangs; in MAME it hangs. Either way the loop never completes
+correctly. Evidence: `mame-tests/LONGLOOP_HANG_confirmed.png`.
+
 **Workaround:** keep loop-carried arithmetic in `int`; compute each `long` as a
 single op outside any loop. Factorials/powers via loop accumulation must be
 restructured or precomputed. `scratch/rc759-cmd-toolchain/mame-tests/mtest.c`
-follows this.
+follows this (17/17 PASS in MAME).
 
-**TODO:** confirm MAME reproduces (emu2 not authoritative), disassemble the loop
-body (bwdis) to pin the missing store, then file against the bridge /
-omf_classicize path. Full write-up: `drc-libtest/COVERAGE.md` §"Known bridge
-codegen limitation".
+**TODO:** disassemble the loop body (bwdis) to pin the missing store, then file
+against the bridge / omf_classicize path. Full write-up: `drc-libtest/COVERAGE.md`
+§"Known bridge codegen limitation".
