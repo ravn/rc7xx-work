@@ -99,7 +99,7 @@ compile() {  # compile <basename-with-.c>
     n=$((n+1)); obj=$(printf 'N%02d' "$n")
     # -i order: work dir (portme.h, stdcbench.h), our neutral libc headers are here
     # too; TGT for the auto-included _preincl.h (DR C convention + DRC_MAIN).
-    "$OW/bwcc" -0 $MFLAGS -s -q $ZU -zl -ecc -fpi87 -i="$WORK" -i="$TGT" "$base" -fo="$obj.OBJ" \
+    "$OW/bwcc" -0 $MFLAGS -s -q $ZU -zl -ecc -fpi87 $SCB_EXTRA -i="$WORK" -i="$TGT" "$base" -fo="$obj.OBJ" \
         || { echo "COMPILE FAILED: $base"; exit 1; }
     python3 "$HERE/omf_classicize.py" "$obj.OBJ" "$obj.OBJ" >/dev/null
     OBJS="${OBJS:+$OBJS,}$obj"
@@ -126,6 +126,11 @@ UND=$(sed -n '/Undefined/,/USE FACTOR/p' link.log | grep -E '^[a-z]' | grep -viE
 [ -f SCB.CMD ] || { echo "no SCB.CMD produced"; cat link.log; exit 1; }
 cp SCB.CMD "$HERE/SCB-$MODEL.CMD"
 echo "built SCB.CMD ($(stat -f%z SCB.CMD) bytes)"
+
+# SCB_NORUN=1 skips the Unicorn run (used by scb-mame.sh, which boots the CMD in
+# the real MAME rc759 driver instead -- there the genuine PICCOLINE XIOS Int 28h
+# clock drives stdcbench's timing, so no CPM86_CLOCK_HZ virtual clock is needed).
+if [ -n "$SCB_NORUN" ]; then echo "SCB_NORUN set -- skipping Unicorn run"; exit 0; fi
 
 echo "=== running stdcbench ($MNAME model, unicorn runner) ==="
 CPM86_CLOCK_HZ=700000 python3 "$RUNNER" SCB.CMD 2>&1 | sed 's/\r$//'

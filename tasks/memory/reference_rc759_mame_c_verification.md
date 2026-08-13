@@ -53,3 +53,28 @@ Lua global (a GC'd tap stops firing). Reusable by any program.
 bug); full binary file round-trip (fopenb/fputc/fgetc/putw/getw/fwrite/fread/
 ftell/fseek/ungetc/rewind). Proof PNG `mame-tests/MTEST_PASS_19of19.png`. The
 file I/O emu2 garbles is correct here.
+
+## stdcbench 0.8 on real MAME (2026-08-14) — clock source: BDOS, not XIOS
+`mame-tests/scb-mame.sh [s|l]` builds stdcbench (`-DMAME_DONE`) and boots it on
+MAME; it ends with `mame_done(score)` so the run auto-stops. Result: **final
+score 13** (c90base 8, c90lib 5) on the real rc759, small model. Proof PNG
+`mame-tests/STDCBENCH_score13_mame.png`.
+
+**Root cause of the earlier hang (VERIFIED, not guessed):** stdcbench self-times
+by polling a clock in a tight, syscall-free loop "until elapsed >= 8 s". The
+original `portme.c` clock read the PICCOLINE XIOS **Int 28h fn 19 "16 ms
+counter"**. On this turnkey disk under **Concurrent CP/M-86 3.1**, that XIOS does
+NOT maintain the counter — the `clktest.c` probe read it after a busy loop, after
+20000 BDOS syscalls, and after another busy loop, and every field stayed **0**
+(snapshot `mame/snap/rc759/0000.png` from that run). So the loop's `end - start`
+was always 0 < 8000 → spin forever → banner shown, no score.
+
+**Fix:** `portme.c` `stdcbench_clock()` now uses the ordinary BDOS call
+**T_SECONDS (fn 155 / 0x9B)** via `INT 0E0h` — the same time-of-day the CCP/M
+status-line clock reads, which *does* advance. 1-second resolution is coarser
+than 16 ms, but the score formula divides by the *actual* measured elapsed
+(`SECONDS / (end - start)`), so it only quantises, does not bias. **Policy going
+forward: use only BDOS (INT 0E0h) calls in this glue, no XIOS calls.**
+TOD struct is `{unsigned day; unsigned char hour, min, sec;}` (hour/min/sec are 2
+BCD digits); must be a **static** (DGROUP/DS) struct, not a stack local, so the
+BDOS write lands where we read (DS != SS in large model).
