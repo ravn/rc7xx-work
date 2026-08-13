@@ -39,12 +39,21 @@ zalloc/_blkio/...` (DR C uses NO leading underscore on C names).
 
 - **Unpacker written**: `scratch/rc759-cmd-toolchain/unpack_l86.py CLEARL.L86 out/`
   splits a `.L86` into `NNN_<name>.obj` OMF modules (verified: 131 clean modules).
+- **VERIFIED END-TO-END (2026-08-13)**: `l86-to-lib.sh CLEARL.L86 CLEARL.lib`
+  (unpack + `bwlib -q -b -c`) builds a real OMF `.lib` (0xF0 header). wlink then
+  links against it natively: a test object referencing `atoi` resolves cleanly
+  under `format dos`, and the map shows wlink pulled `CLEARL.lib(ATOI)` PLUS its
+  transitive deps `CLEARL.lib(CTYPE)` and `CLEARL.lib(INCDEC)` — so DR's internal
+  library symbol/dependency graph resolves correctly through wlink's OMF
+  dictionary. No object-format or undefined errors. (Under `format dos com` you
+  get benign `W1019 segment relocation` warnings because .COM is single-segment;
+  the real CMD format, which HAS segment groups, is the correct target.)
+  Both DR runtimes convert: CLEARL.L86 -> 131 modules, CLEARS.L86 -> 129 modules.
 - Two ways to make wlink link DR's runtime:
-  - (a) Repackage the unpacked modules into a real OMF `.lib` (0xF0/0xF1 +
-    dictionary) with **wlib**, or feed the `.obj` modules directly. Small,
-    self-contained — the pragmatic first step.
+  - (a) **Repackage** the unpacked modules into an OMF `.lib` with **wlib**
+    (`l86-to-lib.sh`, DONE + verified) — the pragmatic path, no wlink change.
   - (b) Teach wlink to read the DR `.L86` container (a reader in `libr.c`). More
-    invasive; preserves the exact library bytewise.
+    invasive; preserves the exact library bytewise. Now unnecessary given (a).
 - The unresolved `_NES/_WCS/...` frames are DR C's group-base symbols; they must
   be satisfied by the DR C startup/group definitions (what LINK-86 provides via
   its group model) — part of the Watcom<->DR C ABI/group bridge, not a format gap.
