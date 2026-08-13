@@ -1,0 +1,318 @@
+------------------------------------------------------------------
+|								 |
+|								 |
+|								 |
+|								 |
+|	    ================================================	 |
+|	    |						   |	 |	
+|	    |						   |	 |
+|	    |	    *****  Digital Research C  *****	   |	 |
+|	    |						   |	 |
+|	    |	       for the CP/M-86 Family of	   |	 |
+|	    |		  Operating Systems		   |	 |
+|	    |						   |	 |
+|	    |		     ---------------		   |	 |
+|	    |						   |	 |
+|	    |		    READ.ME File Notes		   |	 |
+|	    |						   |	 |
+|	    |		      -  May 1984  -		   |	 |
+|	    |						   |	 |
+|	    |		  Digital Research Inc.		   |	 |
+|	    |		      P.O. Box 579		   |	 |
+|	    |		Pacific Grove, CA  93950	   |	 |
+|	    |						   |	 |
+|	    ================================================	 |
+|								 |
+|								 |
+|								 |
+|	  This file presents enhancements  and  modifications	 |
+|	  made to Digital Research  C  Language  software and	 |
+|	  documentation.   Changes  described  in  this  file	 |
+|	  apply  to   Digital  Research C  compiler  software	 |	 
+|	  Version 1.11 and the "C Language Programmer's Guide	 |
+|	  for  the  CP/M-86   family  of  operating  systems.	 |
+|	  Second Edition:  October 1983.			 |
+|								 |
+|	  You can print  the information in this file on your	 |
+|	  line  printer  using  8 by 11 inch  paper  with the	 |
+|	  printer set to 6 lines per inch.   You can trim the	 |
+|	  pages along the dotted  lines and place  the  pages	 |
+|	  in your product documentation binder.			 |
+|								 |
+|								 |
+|								 |
+|								 |
+|								 |
+|								 |
+|								 |	
+|								 |
+|								 |
+|								 |
+------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------------
+|  Digital Research C READ.ME File Notes	        May 1984 |
+|								 |
+|								 |
+|	 1. The  following   rules   apply  to  any  assembly    |
+|           language  routine  designed to  interface  with a	 |
+|           C program.				                 |
+|								 |
+|	  o If the assembly program  alters  values in the ES    |
+|	    register,  you must save the original value in ES    |
+|           upon entry to the routine.   You must restore the    |
+|	    original ES value upon exit from the routine.  If    |
+|	    you call a C function from  the assembly routine,    |
+|	    you must restore the original ES before the call.    |
+|	    This applies for small model C programs only.        |
+|								 |
+|         o If your program sets the direction flag, you must    |
+|           clear it upon exit from the routine.                 |
+|								 |
+|	 2. The C compiler now  has  two  additional  command  	 |
+|	    line options.					 |
+|	    							 |
+|         o Use the -E option to change the maximum number of	 |
+|	    errors the compiler detects before  stopping  the	 |
+|	    compilation.        The  default  is  10  errors.	 |
+|	    The following example changes the  maximum number	 |
+|	    of errors to 25.					 |
+|								 |
+|		B>DRC PROGRAM -E25				 |
+|								 |
+|	  o Use the -S option  to  reduce  the  size  of  the	 |
+|	    symbol table by truncating  symbolic names during	 |
+|	    compilation.  Specify a  length  after  the -S as	 |
+|	    shown in the following example.  In this example,	 |
+|	    all symbolic names are truncated to 8 characters.	 |
+|								 |
+|		B>DRC PROGRAM -S8				 |
+|								 |
+|	 3. Symbolic names  are now significant up  to  forty	 |
+|	    (40) characters instead of eight (8).  Use the -S	 |
+|	    option to  reduce  the  symbol  table  size  when	 |
+|	    compiling large programs that use lengthy  names.	 |
+|								 |
+|	 4. The compiler displays  a  warning message if your	 |
+|	    program attempts to compute the address (&)  of a	 |
+|	    register variable.				 	 |
+|								 |
+|				Page 1				 |
+|								 |
+------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------------
+|  Digital Research C READ.ME File Notes	        May 1984 |
+|								 |
+|								 |
+|								 |
+|	 5. You can create overlays  that  either  accumulate	 |
+|	    or overlay the data in various overlays.  Use the	 |
+|	    LINK86 CUM  option  to  specify cumulative  data.	 |
+|	    Use  the   LINK86   NOCUM   option   to   specify	 |
+|	    non-cumulative data.  Overlays on the same  level	 |
+|	    share data areas.					 |
+|								 |
+|	 6. The  C  compiler  has  three  additional  library	 |
+|	    functions: readl, writel, and rename.		 |
+|								 |
+|	  o The readl function is just like the read function	 |
+|	    except readl uses a long int argument and returns	 |
+|	    a long int value.					 |
+|								 |
+|	  o The  writel  function  is  just  like  the  write	 |
+|	    function except that it uses a long int  argument	 |
+|	    and returns a long int value.			 |
+|								 |
+|	  o Use the rename function to change  the name  of a	 |
+|	    file.  This function uses two parameters as shown	 |
+|	    in the following syntax specification.		 |
+|								 |
+|		rename(oldname,newname)				 |
+|								 |
+|	    The rename function returns a 1 if successful and	 |
+|	    a 0 if the file has a Read/Only  status  or  does	 |
+|	    not exist.						 |
+|								 |
+|	 7. If you mix a C  program  with  assembly  language	 |
+|	    routines, your main program must be a  C function	 |
+|	    to  initialize  the  C  environment.   This  only	 |
+|	    requires a few extra bytes of space as  shown  in	 |
+|	    the following example.				 |
+|								 |
+|		main(){maina86();}				 |
+|								 |
+|	 8. The -X option  has been disabled because the size	 |
+|	    of  the  inline  code  that  saves  and  restores	 |
+|	    registers in an assembly routine call is smaller.	 |
+|								 |
+|	 9. The  -c and -m  options  for  compact  and medium	 |
+|	    model compilation are no longer supported.		 |
+|								 |
+|				Page 2				 |
+|								 |
+------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------------
+|  Digital Research C READ.ME File Notes	        May 1984 |
+|								 |
+|								 |
+|								 |
+|	10. This and previous versions of DRC  do not  support	 |
+|	    the enumeration data type.				 |
+|								 |
+|	11. When using the -f  switch for  compiling programs,   |
+|	    functions returning a floating point value must be	 |
+|           declared as 'double' instead of 'float'.		 |
+|								 |
+|	12. In addition to the I/O redirection operators < and	 |
+|	    >,  the Run-time library functions now support the	 |
+|           following features.					 |
+|								 |
+|	  o Strings enclosed in quotation marks are grouped as	 |
+|           one argument.					 |
+|								 |
+|	  o Wildcard expansion.    All  argument  strings that	 |
+|           contain a question mark  or  an  asterisk  and not	 |
+|	    enclosed  in quotation  marks  are  wildcard  file	 |
+|	    specifications.   Such an argument can be replaced	 |
+|	    by all filenames in  the  current  directory  that	 |
+|	    match the filespec.   The following  example lists	 |
+|	    all files with a .c filetype.			 |
+|								 |
+|		echo  *.c					 |
+|								 |
+|	    If no files in the  directory  match  the wildcard	 |
+|	    file  specification,   the   compiler  produces  a	 |
+|	    message as shown below.				 |
+|								 |
+|	        *.c:  No match					 |
+|								 |
+|	  o Append to an  existing  file  operator,  >>.   The	 |
+|	    following example demonstrates  the  use  of  this	 |
+|	    operator.						 |
+|								 |
+|	        cat  file1 >  out.1				 |
+|		cat  file2 >> out.1				 |
+|								 |
+|	    The preceeding statements  are equivalent  to  the	 |
+|	    following statement.				 |
+|								 |
+|		cat  file1  file2  >  out.1			 |
+|								 |
+|								 |
+|								 |
+|				Page 3				 |
+|								 |
+------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------------
+|  Digital Research C READ.ME File Notes	        May 1984 |
+|								 |
+|								 |
+|	13. A  minimum   192K   of  random  access  memory  is	 |
+|	    recommended to operate the C compiler.		 |
+|								 |
+|	14. The command line example for  reverse preprocessor	 |
+|	    operation on page 2-16 of the  Programmer's  Guide	 |
+|	    should read as follows.				 |
+|								 |
+|	    	B>DRC CTEMP.TOK					 |
+|								 |
+|	15. Note that the __BDOS function  described  on  page   |
+|	    3-4  of  the  Programmer's  Guide  uses a "double"	 |
+|	    underscore character.  It is easy  to  mistake  it	 |
+|	    for a single underscore.				 |
+|								 |
+|	16. The first line  of the sample program, OVERLAY1.C,	 |
+|	    on page 7-3 of the  Programmer's  Guide  does  not	 |
+|	    need the semi-colon.   The  line  should  read  as	 |
+|	    follows:  overlay1(s)				 |
+|								 |
+|	17. Note that the compiler command line options -R and	 |
+|	    -A described in Section 2.1.3  of the Programmer's	 |
+|	    Guide are mutually exclusive.    This  means  that	 |
+|	    when  you  specify  one  option,    the  other  is	 |
+|	    automatically canceled.				 |
+|								 |
+|	18. There  is  an  additional  compiler  command  line	 |
+|	    option that is not documented in the  Programmer's	 |
+|	    Guide.  The -4  option  directs  the  compiler  to	 |
+|	    search a specified  drive  for  the  DRC.ERR file.	 |
+|	    The following  example  directs  the  compiler  to	 |
+|	    search drive d: for DRC.ERR.				 |
+|								 |
+|		B>DRC PROGRAM -4d:				 |
+|								 |
+|	19. There is a preferred procedure you must follow  if	 |
+|	    you  encounter an  "Internal Compiler Error"  when	 |
+|	    using Digital Research C.				 |
+|								 |
+|	    After determining how you  produced  the  internal	 |
+|	    error, reproduce  the  error  in  a  small  sample	 |
+|	    program.     Submit  the  sample  to  the  Digital	 |
+|	    Research Technical Support Center by mail.  If the	 |
+|	    sample is more than 10 lines long, submit the code	 |
+|	    on diskette.					 |
+|								 |
+|				Page 4				 |
+|								 |
+------------------------------------------------------------------
+

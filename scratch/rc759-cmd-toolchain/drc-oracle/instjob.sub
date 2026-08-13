@@ -1,0 +1,26 @@
+; Transfers DR 'C' files to disk $1
+pip $1=drc.cmd
+pip $1=drc860.cmd
+pip $1=drc861.cmd
+pip $1=drc862.cmd
+pip $1=drc.err
+pip $1=r.cmd
+pip $1=stdio.h
+pip $1=portab.h
+pip $1=ctype.h
+pip $1=clears.l86
+pip $1=link86.cmd
+; Marking transferred files with SYSTEM attribute
+set $1drc.cmd    [sys]
+set $1drc860.cmd [sys]
+set $1drc861.cmd [sys]
+set $1drc862.cmd [sys]
+set $1drc.err    [sys]
+set $1r.cmd      [sys]
+set $1stdio.h    [sys]
+set $1portab.h   [sys]
+set $1ctype.h    [sys]
+set $1clears.l86 [sys]
+set $1link86.cmd [sys]
+; Transfer of DR 'C' to disk $1 complete
+

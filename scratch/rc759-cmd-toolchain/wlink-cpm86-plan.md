@@ -1,0 +1,485 @@
+# Plan: native CP/M-86 `.CMD` output in `wlink` (ravn/open-watcom-v2#10)
+
+Status: investigation + design. No code written yet. All citations are into
+`bld/wl/` of the freshly-built `ravn/open-watcom-v2` fork
+(`/Users/ravn/z80/scratch/open-watcom-v2`).
+
+Related: issue ravn/open-watcom-v2#10; RC759 CMD toolchain in
+`scratch/rc759-cmd-toolchain/` (working `mkcmd.py` interim wrapper).
+
+---
+
+## 1. How wlink emits an output format (verified from source)
+
+The output pipeline is format-dispatched in one place and each format owns a
+`Fini<Fmt>LoadFile()` (and, for raw, a `BinOutput()`):
+
+- **Format enum / bit flags** — `bld/wl/h/_formats.h:36` `FORMATS()` macro, one
+  `pick_format(bit, MK_NAME, index, "desc", "jp-desc")` per format. Highest bit
+  currently used is `MK_RDOS_16 = 0x00100000` (`_formats.h:57`). Next free bit is
+  **`0x00200000`**. The enum is materialised in `bld/wl/h/formats.h:37` and there
+  is a *parallel* message table in `msg.c` (the enum comment says "there is a
+  corresp. table in MSG.C").
+- **Format attribute groups** — `bld/wl/h/formats.h:45-66` (`MK_16BIT`,
+  `MK_REAL_MODE`, `MK_SEGMENTED`, `MK_ALLOW_16`, `MK_END_PAD`, ...). CP/M-86 is
+  16-bit real-mode segmented, so a new `MK_CPM` must join `MK_16BIT`,
+  `MK_REAL_MODE`, `MK_SEGMENTED`, `MK_ALLOW_16` (and probably `MK_END_PAD`).
+- **Feature gate** — `bld/wl/h/wlinkcfg.h:34-42` defines one macro per built-in
+  format (`#define _EXE 0`, `#define _RAW 7`, `#define _RDOS 8`, ...). They are
+  all defined, so `#ifdef _RAW` compiles that format into the full linker. Add
+  **`#define _CPM 9`**.
+- **The dispatch** — `bld/wl/c/loadfile.c:254` `finiLoad()` is a chain of
+  `if( FmtData.type & MK_xxx ) { Fini<xxx>LoadFile(); return; }`, each wrapped in
+  `#ifdef _xxx`. This is where a `#ifdef _CPM ... FiniCPMLoadFile()` clause goes.
+  Note raw/hex short-circuit at the very top (`loadfile.c:260-270`), so CMD output
+  is only reached when `-b`/`format raw` are *not* in effect.
+- **Command parsing** — the `format <kw>` sub-keyword table lives at
+  `bld/wl/c/cmdall.c:2066` (`"Dos", ProcDosFormat, MK_DOS`; `"Raw", ProcRawFormat,
+  MK_RAW`; ...). Sub-format keywords like `COM` are in per-format tables, e.g.
+  `bld/wl/c/cmddos.c:525` `"COM", ProcCom, MK_COM`, and `ProcCom` just sets
+  `FmtData.def_ext = E_COM` + the flag (`cmddos.c:517`).
+- **Group image writers (reusable)** — `bld/wl/c/loadfile.c:1179`
+  `WriteGroupLoad(group, repos)` writes one group's bytes; `CalcGroupSize(group)`
+  gives its size; `PadLoad()` / `SeekLoad()` / `WriteLoad()` are the primitives.
+  `bld/wl/c/loadraw.c:98` `BinOutput()` shows the canonical "iterate `Groups`
+  linked list, position each group, `WriteGroupLoad`" loop. **This is 90% of what
+  a CMD group-image writer needs.**
+- **Header + relocations model** — `bld/wl/c/loaddos.c:288` `FiniDOSLoadFile()`
+  builds a `dos_exe_header`, and `WriteDOSRootRelocs`/`DumpRelocList`
+  (`loaddos.c:55-130`) walk `Root->reloclist` / `sect->reloclist` and emit
+  `dos_addr` (seg:off) relocation records, sizing the header with
+  `__ROUND_UP_SIZE_PARA(...)`. **This is the model for the CMD fixup table.**
+
+Take-away: wlink already has (a) a group-iterating raw image writer and (b) a
+relocation-dumping DOS writer. A CMD loader is essentially "DOS-header shape +
+raw group images", with the DRI 8-descriptor header instead of the MZ header.
+
+---
+
+## 2. The CMD container to emit (verified against real CMDs + RC759 loader)
+
+128-byte header = up to 8 × 9-byte group descriptors:
+`db type` (1=CODE, 2=DATA, 3=EXTRA, 4=STACK, 9=pure code) · `dw length` ·
+`dw base` · `dw min` · `dw max` — sizes in 16-byte **paragraphs**, `base=0` =
+relocatable. Group images follow, **each padded to a 128-byte record**. Header
+offset `0x7F` = flag byte; **bit 7 = "fixup records present"**, in which case a
+fixup table trails the group images.
+
+Memory models map onto linker groups:
+- **8080**: single group; loader sets `CS=DS=SS=ES` equal.
+- **Small**: `CODE` (type 1) + `DATA` (type 2); loader sets `CS`=code,
+  `DS=ES=SS`=data.
+- **Compact**: CODE/DATA/EXTRA/STACK.
+
+Verified RC759 / CCP/M-86 3.1 loader contract (measured 2026-08-12): small-model
+loader sets `CS`=code group and `DS=SS`=data group with **`DS = CS + code-group
+paragraphs`**; `DS:0000-00FF` is the base page; BDOS entry is `INT 0E0h`
+(function in `CL`, arg in `DX`). Entry is `CS:0000`.
+
+---
+
+## 3. Concrete change set (6 edits + 2 new files)
+
+| # | File | Change |
+|---|------|--------|
+| 1 | `bld/wl/h/_formats.h:57` | add `pick_format( 0x00200000, MK_CPM, 21, "CP/M-86", "CP/M-86" )` |
+| 2 | `bld/wl/h/formats.h:45-66` | add `MK_CPM` to `MK_16BIT`, `MK_REAL_MODE`, `MK_SEGMENTED`, `MK_ALLOW_16`, `MK_END_PAD` |
+| 3 | `bld/wl/h/wlinkcfg.h:42` | add `#define _CPM 9` |
+| 4 | `bld/wl/c/cmdall.c:2066` | add `"CPm", ProcCPMFormat, MK_CPM, 0,` to the format table |
+| 5 | `bld/wl/c/loadfile.c:~275` | add `#ifdef _CPM if( FmtData.type & MK_CPM ){ FiniCPMLoadFile(); return; } #endif` |
+| 6 | `bld/wl/wlobjs.mif:~68` | add `$(_subdir_)loadcmd.obj &` and `$(_subdir_)cmdcpm.obj &` to the object list (`loaddos.obj` at line 58, `loadraw.obj` at line 68) |
+| A | **new** `bld/wl/c/cmdcpm.c` + `bld/wl/h/loadcmd.h` | `ProcCPMFormat` (set `FmtData.def_ext=".cmd"`, model flags) + optional sub-keywords `SMall`/`COMpact`/`8080` |
+| B | **new** `bld/wl/c/loadcmd.c` | `FiniCPMLoadFile()`: build 8-descriptor header from `Groups`, write group images (reuse `WriteGroupLoad`), pad each to 128-byte record, optional fixups |
+| C | `msg.c` / usage tables | add the parallel format-name entry the enum comment warns about; add `format cpm` help in `cmdhelp.c:200` region |
+
+`FiniCPMLoadFile()` sketch:
+1. Walk `Groups` (`loadfile.c` global) once to classify each `group_entry` by
+   `group->leaders->class->flags` (CODE vs DATA/BSS vs STACK) and compute
+   `__ROUND_UP_SIZE_PARA(CalcGroupSize(group))`.
+2. Emit up to 8 group descriptors (type from classification, `length`/`min`/`max`
+   in paragraphs, `base=0` for relocatable).
+3. `WriteLoad` the 128-byte header (pad to 128).
+4. For each group: position with `PadLoad`/`SeekLoad` and `WriteGroupLoad(group,
+   repos)`, then pad to the next 128-byte record.
+5. If relocatable-with-fixups: set header `0x7F` bit 7 and dump a fixup table
+   modeled on `WriteDOSRootRelocs` (`loaddos.c:55`).
+
+---
+
+## 4. Phasing
+
+- **Phase 1 (MVP, matches today's `mkcmd.py`):** 8080 + small model, `base=0`,
+  **no fixups**. Reuses the raw group-writer path entirely. Deliverable: `wcc
+  hello.c && wlink format cpm file hello` produces a `.CMD` that runs on RC759.
+- **Phase 2:** compact model (EXTRA/STACK groups) + full fixup table (bit-7 flag),
+  modeled on the DOS reloc dumper. Enables real relocatable multi-segment C.
+- **Phase 3:** wire `wcl`/`owcc` so `-bcpm` / `system cpm` selects the format and
+  the right startup/clib (needs a CP/M-86 crt0 + BDOS glue — separate from wlink).
+
+---
+
+## 5. Open questions / risks (unverified — must test)
+
+1. **OMF input compatibility.** wlink reads OMF via `objomf.c`; DR C's `.L86`
+   objects/libraries must parse cleanly. *Untested* — we may keep the DR C clib
+   but link it through wlink; needs a real link attempt.
+2. **Fixup source.** Whether wlink's `Root->reloclist` for a 16-bit real-mode
+   group gives exactly the seg-relative fixups the CMD format expects. Verify by
+   comparing wlink's DOS-EXE relocs for the same objects.
+3. **Entry point.** CMD small model entry is `CS:0000`; confirm wlink's default
+   start-address handling puts the entry first in the CODE group (DOS EXE uses a
+   `start` symbol; CMD ignores CS:IP from a symbol and just enters CS:0000).
+4. **Runtime (not wlink's job).** A compiled C program still needs a crt0 that
+   sets `DS=SS` per the measured loader contract and a BDOS (`INT 0E0h`) glue
+   layer. wlink support is necessary but not sufficient.
+
+---
+
+## 6. Test plan (oracle already exists)
+
+- Unit: `wlink format cpm` on a hand-`wcc`'d trivial `.obj`; byte-compare the
+  128-byte header against a known-good `dir.cmd` (extracted, in `/tmp`) and against
+  `mkcmd.py` output for the same code/data sizes.
+- End-to-end: drop the produced `.CMD` as `menu.cmd` on a copy of `mandel.img` via
+  `cpmcp -f drc-rc759`, boot the DMA-fixed RC759 in MAME, snapshot — reuse the
+  exact flow proven in `scratch/rc759-cmd-toolchain/` (NASM→mkcmd→RC759).
+- Regression: `format raw bin` must still work unchanged (CMD path is only taken
+  when raw/hex are off — `loadfile.c:260`).
+
+---
+
+## Empirical finding (2026-08-13): real CMD files on RC759 disks use base=0, no fixups
+
+Parsed the 128-byte headers of six shipping `.CMD` programs from the RC759 disks
+(disk1/disk4) with a group-descriptor decoder:
+
+| Program | Groups | CODE | DATA/other | Total image | fixups (0x7F bit7) |
+|---------|--------|------|-----------|-------------|--------------------|
+| dir     | 2 (CODE+DATA)        | 1520 B  | 592 B          | 2112 B  | no |
+| ddt86   | 1 (CODE)             | 14112 B | 0              | 14112 B | no |
+| rctekst | 1 (CODE)             | 19456 B | 0              | 19456 B | no |
+| asm86   | 2 (CODE+DATA)        | 19152 B | 6960 B         | 26112 B | no |
+| ed      | 2 (CODE+DATA)        | 7904 B  | 1472 B         | 9376 B  | no |
+| comal80 | 3 (CODE+DATA+STACK)  | 32928 B | 11952+4096 B   | 48976 B | no |
+
+Key observations:
+- **No shipping program sets the fixups flag (0x7F bit7).** All are `base=0`,
+  relocated purely by the loader placing each group at a segment base — no
+  explicit in-file fixup/reloc table. This includes the 3-group compact program
+  (comal80).
+- **Each single group stays <= 64 KB** (e.g. rctekst CODE `min=4096 para =
+  65536 B` = exactly one 64 KB segment; ed DATA `max=4095`). The 64 KB ceiling
+  is per-segment (16-bit offset), not a linker limit.
+- **>64 KB total is reached by multiple groups**, not a flat segment (comal80 =
+  49 KB across 3 groups; two full groups would give ~128 KB).
+- The `min` field can exceed `length` (asm86 DATA len=435 para but min=1102 =
+  BSS growth request); the loader zero-fills the difference.
+
+**Impact on phasing:** Phase 1 (raw group images, base=0, no fixup table) is
+sufficient for *every* program observed on these disks, including multi-group
+compact (comal80). The full fixup machinery (Phase 2) is only needed for
+programs carrying absolute inter-segment references — none of the sampled
+programs do. This widens Phase 1's real-world coverage considerably and means an
+MVP `FiniCPMLoadFile()` that classifies groups + writes base=0 images is a
+faithful LINK-86 substitute for the common case.
+
+---
+
+## LINK 86 reference version (verified 2026-08-13 from primary source)
+
+**LINK 86 Version 1.5** — Digital Research, documented in *FlexOS 286
+Programmer's Utilities Guide* (1073-2043-001, 1986), Section 7.
+Verbatim (Section 7.1): "...that LINK 86, Version 1.5, combines relocatable
+object files into a command file that runs under any Digital Research operating
+system..." Re-confirmed in Section 7.5 ("LINK 86, version 1.5, supports
+shareable runtime libraries.").
+Source PDF: https://bitsavers.org/pdf/digitalResearch/flexos/flexos_286/1073-2043-001_FlexOS_286_Programmers_Utilities_Guide_1986.pdf
+Local copy saved in-project: `docs/1073-2043-001_FlexOS_286_Programmers_Utilities_Guide_1986.pdf`
+
+Context for versions seen in this project:
+- RC759 system disks ship the older DRI toolchain: **ASM86 1.1 / DDT86 1.2**
+  (Digital Research 1981; verified from the .CMD version strings on disk1).
+- The `cpm86-crossdev` environment (session 74a9b612, repo tsupplis/cpm86-crossdev,
+  at /Users/ravn/git/open-watcom-v2 — outside this workspace) bundles DR C 1.11
+  and a LINK-86 used to build DHRY.CMD via
+  `link86 DHRY=DHRY_1,DHRY_2,CLEARS.L86[S]`; that binary's exact banner was not
+  captured.
+- **1.5 is the newest LINK 86 documented**, and is the best spec reference for
+  wlink CMD-output parity.
+
+### Features in LINK 86 1.5 relevant to wlink #10 (verified in the guide)
+
+- **Still emits CMD** — Section 3.3 Table 3-3: "LINK-86 command segments into the
+  CMD file it creates." Confirms the group/segment->CMD-descriptor mapping the
+  plan targets.
+- **Overlays (Section 8)** — `link86 rootfile, parta, partb (overl, over2)`. This
+  is DRI's official mechanism for exceeding 64 KB of code: multiple overlaid code
+  segments, NOT a flat >64 KB segment. (Answers "can LINK86 make >64 KB
+  programs?" — total >64 KB via multiple groups/overlays; each segment still
+  <=64 KB.) Overlays are OUT OF SCOPE for Phase 1/2; note as a possible Phase 4.
+- **Shareable Runtime Libraries (SRTL, `.186`/`.L86[S]`)** —
+  `link86 suprprog,init,term,suprutil.186`. Explains the `CLEARS.L86[S]` seen in
+  the DHRY build. Out of scope for a first wlink CMD writer.
+- **Dual CMD/286 output** — "a version of LINK 86 that generates CMD and 286
+  files cannot generate an EXE file and vice versa." CMD (CP/M-86 family) and 286
+  (FlexOS) share the linker family; wlink only needs the CMD side.
+- **cinit. segment ordering** — (from cpm86-crossdev observation) LINK-86 places
+  the `cinit.` segment first so the initializer `m.init` runs at CS offset 0;
+  a wlink CMD writer targeting DR C objects must preserve this segment ordering,
+  not just classify by CODE/DATA.
+
+---
+
+## Overlays in LINK 86 — detailed (verified: FlexOS 286 Guide §7.14 + Section 8)
+
+**Purpose.** Overlays run programs larger than available RAM / larger than 64 KB
+of code by keeping only the currently-used branch resident. Guide §8.1: "The top
+of the highest overlay determines the total amount of memory required ... much
+less memory than would be required if all the functions and subfunctions had to
+reside in memory simultaneously." This is DRI's answer to ">64 KB programs": not
+one flat segment, but a root .CMD plus swapped-in .OVR files.
+
+**Tree structure, max depth 5.** Overlays nest as a tree (Fig 8-2: Menu ->
+func1/func2/func3 -> sub1..sub4); "You can nest overlays to a maximum depth of 5
+levels." Only one leaf need be resident at a time.
+
+**Link syntax (parentheses define overlays):**
+- `link86 root (overlay1)`                    -> ROOT.CMD + OVERLAY1.OVR
+- `link86 root (overlay1=part1,part2,part3)`  -> one overlay fused from several .OBJ
+- `link86 menu(func1(sub1)(sub2))(func2)(func3(sub3)(sub4))` -> nested tree
+- `link86 rootfile, parta, partb (overl, over2)` -> non-overlay files first, overlays last
+- RASM-86 code needs a HLL runtime lib on the line to supply the Overlay
+  Manager: `link86 root,clears.l86 (part1,part2)` (same CLEARS.L86 seen in the
+  DHRY build). Output = one .CMD (root) + one .OVR per overlay.
+
+**Runtime mechanics (two methods):**
+- Method 1 (implicit): `extrn overlay1:near` + `call overlay1`; the Overlay
+  Manager loads OVERLAY1.OVR from the default drive and returns via RET. No
+  special coding, but overlays must be on the default drive and names are fixed
+  at link time.
+- Method 2 (explicit): `extrn ?ovlay:near` + `call ?ovlay` followed in the code
+  segment by `dw <overlay_name_offset>` and `db <load_flag>`. Allows a drive
+  code and a run-time-chosen overlay name (e.g. from the console). Load Flag 1 =
+  always load; 0 = load only if not already resident.
+
+**Constraints (§8.4):**
+- Each overlay has exactly one entry point, assumed at the overlay's load address.
+- Only "downward" references allowed (root/higher -> lower in the tree); you
+  cannot reference arbitrary routines "upward" except via an overlay's main entry.
+- CUMULATIVE / NOCUMULATIVE (§7.14): CUM overlays both code AND data; NOCUM
+  overlays code only (data stays resident).
+
+**CMD header confirmation (§7.7.1)** — directly corroborates the descriptor model
+this plan targets: "A command file consists of a 128-byte header record followed
+by up to eight sections ... CODE, DATA, STACK, EXTRA, X1, X2, X3, and X4." Note
+FlexOS/286 allows each section up to 1 MB; classic CP/M-86 keeps each <=64 KB.
+
+**Impact on this plan.** Overlays are a distinct file type (.OVR) plus an Overlay
+Manager runtime (supplied by DR C's CLEARS.L86), NOT just a CMD-header variant.
+Therefore overlays are OUT OF SCOPE for Phase 1-2 (single .CMD). If ever needed,
+they become Phase 4, and even then wlink can only LINK the Overlay Manager in
+(from the DR C runtime), not synthesize it. Phase 1-2 CMD parity is unaffected.
+
+---
+
+## Binary size envelope on the RC759 (computed 2026-08-13)
+
+Physical memory (verified `mame/src/mame/regnecentralen/rc759.cpp:179-182`):
+384 KB RAM (0x00000-0x5FFFF), VRAM 0xD0000 (separate), BIOS ROM 0xE8000.
+Measured program load base: CS=0x2150 -> phys 0x21500 (133 KB in).
+
+Two ceilings; the architectural one always wins:
+- **Per-segment cap = 64 KB** (16-bit offset on 8086/80186) -> each CMD group
+  is effectively <= 64 KB, regardless of the descriptor's 16-bit paragraph
+  field (which could express up to ~1 MB).
+- CMD header holds max 8 group descriptors.
+- Gross physical window load-base -> top-of-RAM = 0x60000-0x21500 = 0x3EB00 =
+  **250.8 KB**; realistic single-program TPA ~150-250 KB after CCP/M-86 3.1
+  resident OS + other virtual-console TPAs + disk/dir buffers (exact top needs
+  a RAM dump).
+
+What works for ONE binary (no overlays):
+| Model   | Groups                    | Max image | Fits TPA |
+|---------|---------------------------|-----------|----------|
+| 8080    | 1 (CS=DS=SS)              | 64 KB     | yes |
+| small   | 2 (CODE+DATA)             | 128 KB    | yes (typical C) |
+| compact | 4 (CODE+DATA+EXTRA+STACK) | 256 KB    | partial (>250 KB gross) |
+| >64 KB code | -                     | -         | NO -> overlays only |
+
+File-size vs memory-footprint: the .CMD FILE = header(128B) + group images
+(each padded to 128B); BSS is NOT stored — descriptor `min` > `length` tells the
+loader to zero-fill at load (e.g. asm86 DATA len=435 para but min=1102 para). So
+a big-array program has a small file but a large footprint. BOTH must fit: each
+image <= 64 KB (offset); sum of all groups' `min` paragraphs <= available TPA.
+
+Phase 1 (small model, 128 KB) covers realistic C programs. >64 KB code is
+overlays-only (Section 8), outside wlink's scope.
+
+### TPA measurement note (RAM dump, 2026-08-13)
+Booted the DMA-fixed RC759 in MAME and dumped all 384 KB RAM (0x00000-0x5FFFF)
+via Lua at emulated t~175 s (past OS init). Finding: at the A> idle state the OS
+has already touched most of RAM (buffers, multiple virtual consoles), so free TPA
+is NOT identifiable by scanning for zero-filled regions. Pinning the exact TPA
+top requires parsing CCP/M-86 SYSDAT memory-allocation tables or a BDOS memory
+query (functions 53-58) — deferred; it does not change which memory models work.
+The computed bounded envelope (single-program TPA ~150-250 KB, small model 128 KB
+always safe) stands. MAME gotcha recorded: keep the frame-notifier subscription
+in a global or it is GC'd and stops firing (cost several boot cycles here).
+
+---
+
+## SCOPE DECISION (user, 2026-08-13): small model only, for now
+
+Target right now = **small model**: one 64 KB CODE segment + one 64 KB DATA
+segment (2 CMD groups: CODE type 1 + DATA type 2, base=0, no fixups). User: "målet
+lige nu er small-modellen, 64 kb kodesegment og 64 kb ram segment. Rammer vi
+grænsen på et tidspunkt, så kigger vi på hvad vi så gør."
+
+Consequences for this plan:
+- **In scope now:** Phase 1 = 8080 + small model, base=0, no fixup table. This is
+  the whole deliverable for the foreseeable future and covers realistic C programs
+  (<=128 KB total). Matches what mkcmd.py already does and what LINK-86 emits for
+  the common case.
+- **Deferred until we actually hit the 64 KB/segment wall:** Phase 2 (compact +
+  fixups), Phase 4 (overlays). Do NOT build these pre-emptively. When a real
+  program exceeds 64 KB code or 64 KB data, revisit then and choose (compact vs
+  overlays) based on whether it's a data or code overflow.
+- The exact-TPA question is likewise moot at this scope: 64 KB+64 KB = 128 KB
+  fits the RC759 TPA comfortably (bounded 150-250 KB), so no dump/SYSDAT parsing
+  needed for the small-model target.
+
+---
+
+## VERIFIED: what bwcc emits for small model, and the real compiled-C gap (2026-08-13)
+
+Compiled a trivial C program with the freshly-built `bwcc -0 -ms` (16-bit small
+model) and disassembled the OMF with `bwdis`. Verified output structure:
+
+```
+DGROUP  GROUP  CONST, CONST2, _DATA          ; all class 'DATA'
+_TEXT   SEGMENT BYTE PUBLIC USE16 'CODE'      ; the code segment
+        ASSUME CS:_TEXT, DS:DGROUP, SS:DGROUP ; classic small model
+_start_:  ...                                 ; PUBLIC entry, cdecl frame
+        EXTRN _small_code_:BYTE               ; Watcom runtime marker symbol
+```
+OMF records: LNAMES {CODE,DATA,BSS,TLS,DGROUP,_TEXT,CONST,CONST2,_DATA};
+SEGDEF _TEXT(CODE,46B), CONST(DATA,0), CONST2(DATA,0), _DATA(DATA,11B);
+GRPDEF DGROUP; EXTDEF _small_code_; MODEND.
+
+### Consequence (CORRECTION to an earlier assumption)
+mkcmd.py wraps ONE raw blob, which was fine only because the hand-asm HELLO laid
+out code+data together. Real compiler output has SEPARATE code (`_TEXT`/CGROUP)
+and data (`DGROUP`) groups that must become SEPARATE CMD descriptors (CODE type 1
++ DATA type 2) with independently-correct sizes and the loader placing DS=SS=data
+group. A flat `wlink format raw` blob cannot express that split. Therefore a
+native CMD writer that emits per-group images (wlink `format cpm`, or LINK-86) IS
+on the critical path for compiled C small-model — it is NOT merely a nicer
+mkcmd.py. This re-confirms Phase 1 as the right build target.
+
+### The crt0/runtime contract a compiled-C CMD needs (small model)
+1. A CP/M-86 crt0 placed FIRST in _TEXT (entry at CS:0000): the RC759 loader sets
+   CS=code group and DS=SS=data group (measured: DS=CS+codesize para), so crt0
+   mainly needs to establish SP in DGROUP, call `_start_`/main, then exit via
+   BDOS func 0 (INT 0E0h, CL=0).
+2. A BDOS bridge callable from C: `bdos(func, param)` -> `INT 0E0h` (func in CL,
+   param in DX) — the only OS entry needed for console/file I/O.
+3. Provide the `_small_code_` runtime symbol bwcc references (stack-check/model
+   marker); a trivial absolute EXTDEF stub satisfies it.
+
+Net: full compiled-C small-model path = wlink `format cpm` (Phase 1) + crt0.obj +
+bdos glue + _small_code_ stub. Each is small; together they make `bwcc x.c ->
+link -> x.cmd` boot on the RC759. Build+boot verification is the remaining work.
+
+---
+
+## 2026-08-13 — DR C + LINK-86 oracle disks found & cached (DDHF archive)
+
+User: "dr c er oraklet på at lave c programmer" + "de disketter du henter fra
+ddhf caches lokalt i repoet". Both hints converged on the DDHF archive.
+
+### Found (by sweeping cached RC759 analysis pages for LINK/L86)
+Three artifacts carry the COMPLETE Digital Research C + LINK-86 dev toolchain:
+`30002664`, `30002725`, `30005869`. Contents (mounted with cpmtools):
+- **link86.cmd** — LINK-86 Linkage Editor, **19 March 1984, Version 1.4**
+  (Serial 3049-0261-000000, DRI 1982-1984). Supports overlays
+  ("LINKING OVERLAY", "Overlay Name") and flags `GROUP OVER 64K`,
+  `VERSION 2 REQUIRED` (CMD vs 286 output).
+- **drc.cmd + drc860/861/862.cmd + drcrpp.cmd + drc.err** — DR C compiler passes.
+- **clears.l86 / clearl.l86** — DR C small/large-model C runtime startups (crt0).
+  These are the AUTHORITATIVE crt0 contract (entry, SP setup, BDOS exit,
+  argv setup) to mirror in our bwcc-based crt0.
+- **lib86.cmd** (librarian), **rasm86.cmd** (relocatable assembler),
+  **xref86.cmd** (cross-reference).
+
+### Cached locally (per user's caching directive)
+- Blobs: `ddhf-cache/bits/{30002664,30002725,30005869}.bin` (fetch-if-missing via
+  `fetch-ddhf.sh`). Byte-format = same `RC759 ` header as local disk1-4.img;
+  mount with `cpmls -f drc-rc759` (needs diskdefs in rc759-pce/images).
+- Analysis pages (dir listings): `ddhf-cache/aa/rc759/analysis-*.html`
+  (all 188 RC759 analysis pages now cached from the LINK-86 sweep).
+- Extracted tools: `drc-toolchain/{link86.cmd,clears.l86,clearl.l86,drc.cmd,
+  lib86.cmd,rasm86.cmd}`.
+
+### Impact on the plan — DR C becomes the verification oracle
+The pipeline gains an independent ground truth (does NOT share bwcc's failure
+modes), exactly per the user's oracle discipline:
+1. **crt0**: read `clears.l86` to get the exact small-model entry/exit contract,
+   instead of reverse-engineering it. Mirror it for the bwcc path.
+2. **Correctness oracle**: compile the same C source with DR C (drc.cmd) +
+   LINK-86 in-emulator -> reference CMD; diff structure/behaviour against our
+   `bwcc -> bwlink -> CMD` output. Divergence = our bug.
+3. **Canonical linker available**: LINK-86 v1.4 can build CMDs the DRI way
+   in-emulator, as a cross-check on our host-side bwlink packaging.
+
+Note LINK-86 here is **v1.4** (1984); the FlexOS 286 guide documents **v1.5**.
+Both emit CMD; v1.4 is what actually shipped on RC759-era media.
+
+---
+
+## 2026-08-13 — VERIFIED: Open Watcom C -> DR C LINK-86 -> running CMD (emu2 + RC759)
+
+**Headline result (proven end-to-end):** an Open Watcom-compiled C program runs on the
+real RC759 (Concurrent CP/M-86 3.1) in MAME, linked by DR C's own LINK-86 v1.4.
+Screen output confirmed: `HELLO-FROM-COMPILED-C` then clean return to `A>`.
+Also verified headless under emu2-cpm86.
+
+### Toolchain decision (user's hypothesis (a) confirmed)
+Watcom `.obj` **is** linkable by DR C's LINK-86 after a small deterministic OMF
+normalization. No need to write our own CMD linker (hypothesis (b) not required).
+
+### The two OMF incompatibilities (both fixed by `omf_classicize.py`)
+1. Watcom emits **`LPUBDEF (0xB6)` / `LEXTDEF (0xB4)`** (local publics/externals) for
+   static symbols. The 1984 LINK-86 v1.4 predates these -> `OBJECT FILE ERROR 05`.
+   Their record bodies are byte-identical to `PUBDEF (0x90)` / `EXTDEF (0x8C)`, so we
+   swap the type byte and recompute the OMF checksum. Record order preserved ->
+   FIXUPP external indices stay valid.
+2. Watcom writes the **full source path in `THEADR`**; a long path -> `OBJECT FILE
+   ERROR 10`. Normalizer shortens THEADR to an 8-char uppercase basename.
+
+### Headless CP/M-86 host: emu2-cpm86 (johnsonjh fork of dmsc/emu2)
+- Runs `.CMD` directly; runs DR C LINK-86 v1.4 itself. Built with plain `make`.
+- Write-back to host needs explicit drive map:
+  `EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A emu2 LINK86.CMD "OUT=CRT0C,APPC"`.
+- Filenames: keep inputs to short 8.3; a 6-char base once hit a "NO FILE" quirk.
+
+### LINK-86 auto-builds the CMD
+Given the OMF groups, LINK-86 emits a proper 2-group CMD by itself
+(CODE type1 + DATA type2, DATA `max`=4096 paras heap). No hand-rolled header.
+
+### crt0 status (the one non-oracle piece)
+`crt0.asm` still uses the `DS=CS`/`SP=0x600` convention. It works and is UNDERSTOOD:
+LINK-86 places CONST2 (the string) inside the CODE group (offset 0x54), so `DS=CS`
+reaches it. NOT yet the DR C way. Next: derive crt0 from DR C `startup.a86` /
+`CLEARS.L86` and (for libc reuse) resolve the watcall-vs-DR-C-cdecl ABI.
+
+### One-command build
+`./ccrc759.sh prog.c [out.cmd]` : bwasm crt0 + bwcc -0 -ms -s -> classicize both
+objs -> LINK-86 under emu2 -> `OUT.CMD`. Entry point must be `cmain()`.
+
+### Key paths
+- emu2:      scratch/cpm86-tools/emu2-cpm86/emu2
+- normalizer: scratch/rc759-cmd-toolchain/omf_classicize.py
+- build:     scratch/rc759-cmd-toolchain/ccrc759.sh
+- LINK-86:   scratch/rc759-cmd-toolchain/drc-toolchain/link86.cmd (+ clears.l86)
+- DR C oracle src: scratch/rc759-cmd-toolchain/drc-oracle/ (startup.a86, read.me, ...)
+- DR C 1.11 archive: scratch/rc759-cmd-toolchain/drc86111/ (PCBIOS.A86, headers, BATs)
