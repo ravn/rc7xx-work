@@ -107,3 +107,57 @@ HEADER (`#include` or force-include `-fi=compat.h`). A caller TU missing the
 pragma silently generates wrong call/return code; the link still SUCCEEDS
 (names match) but the runtime ABI is broken. You cannot bake the convention into
 a prebuilt library and rely on the OMF to carry it forward.
+
+## Return-register classes -- COMPLETE table (verified 2026-08-13, bwdis)
+
+DR C's return register is a COMPILER-WIDE convention, uniform by return TYPE (not
+per function). Proven by disassembling CLEARL/CLEARS modules with `bwdis -a`:
+
+| return type            | registers         | Watcom default | alias    |
+|------------------------|-------------------|----------------|----------|
+| int / char / near ptr  | AX                | AX (match)     | DRC      |
+| far ptr (LARGE model)  | **BX:AX** seg:off | DX:AX (WRONG)  | DRC_PTR  |
+| long / float           | **BX:AX**         | DX:AX (WRONG)  | DRC_LONG |
+| double                 | **DX:CX:BX:AX**   | AX:BX:CX:DX(W) | DRC_DBL  |
+
+Evidence: `0INDEX`/`0STRN` epilogues end `lea ax,-1[..]; mov bx,es; retf`
+(far ptr seg in BX, off in AX). CLEARS `0INDEX` ends `lea ax,..; ret` (near ptr
+AX only, small model -> DRC_PTR == plain DRC there).
+
+### BUG FOUND + FIXED (2026-08-13): far-ptr return was mis-mapped
+`_preincl.h` previously claimed "large-model far ptr -> DX:AX (Watcom default:
+matches)" and used the plain DRC alias for pointer returns. That is WRONG: DR C
+returns far pointers in BX:AX. Every pointer-returning routine (malloc, calloc,
+realloc, strchr, strcpy-family, fopen, gets/fgets, ...) returned a corrupt far
+pointer whose segment (DX, read by Watcom) was garbage -> crash the moment the
+result was dereferenced. It "worked" before only because no test had USED a
+returned pointer (strcpy tests printed the dest buffer, not the return value).
+Fix: DRC_PTR alias (`value [bx ax] far` large / plain AX small), applied to all
+pointer-returning routines. Classified from DR C's own STDIO.H return types.
+
+Also completed the DRC_LONG set (added lseek/tell/putl) and DRC_DBL set (added
+sqrt/sin/cos/exp/fabs/tan/atan/log/log10) -- previously only atol/ftell/getl and
+atof were tagged, so any program calling e.g. sqrt() across the bridge got a
+mis-returned double.
+
+### Co-location of prototype + pragma (design, 2026-08-13)
+The value-register override only takes effect if the compiler also knows the
+return WIDTH, so `install-cpm86-target.sh` now emits, in `_preincl.h`, a matching
+prototype right before each PTR/LONG/DBL pragma (`extern char *malloc(); #pragma
+aux (DRC_PTR) malloc;` etc.). This makes `_preincl.h` the single source of truth
+for BOTH the return type and its register mapping -- they can never drift apart
+(the exact bug class above). A far ptr is 4 bytes regardless of pointee, so
+`char*` stands in for `FILE*`. These prototypes are Watcom-only (`_preincl.h` is
+auto-included via `bwcc -i`); genuine DR C uses its own headers and never sees
+them. The original DR C files (rc759-drc-official/, drc86111/) are NEVER modified
+-- all Watcom-side glue lives in the generated `_preincl.h`.
+
+## Library conformance suite (drc-libtest/, 2026-08-13)
+`drc-libtest.sh` = differential-oracle suite: each portable K&R test built by
+genuine DR C (ground truth) + bridge large + small, run under emu2, outputs
+diffed. 7 tests PASS both models (string/mem, conv, mem-alloc, qsort/rand,
+setjmp, sprintf/sscanf, file I/O). Float/math BLOCKED by DR C's nofloat stubs in
+CLEARL (transcendentals return garbage even in the pure genuine build) + software
+-double-vs-8087 representation gap. File I/O uses a committed `.expect` oracle
+because genuine DR C's read path is confounded under emu2 (bridge is
+independently correct). Full per-routine status: drc-libtest/COVERAGE.md.

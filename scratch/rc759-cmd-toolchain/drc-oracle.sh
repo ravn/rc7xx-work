@@ -57,6 +57,12 @@ for f in DRC.CMD DRC860.CMD DRC861.CMD DRC862.CMD DRCRPP.CMD LINK86.CMD \
     elif [ -f "$DRC_FALLBACK/$f" ]; then cp "$DRC_FALLBACK/$f" "$WORK/$f"; fi
 done
 
+# Copy any sibling headers next to the source so DR C's `#include "x.h"` (which
+# searches the compile CWD = WORK) resolves them. Names must fit CP/M 8.3.
+for h in "$(dirname "$SRC")"/*.h; do
+    [ -f "$h" ] && cp "$h" "$WORK/$(basename "$h")"
+done
+
 # DR C needs the source EOF-padded with esc bytes (its batch files do this via an
 # intermediate file); replicate by appending CPMEOF.ASC.
 cp "$SRC" "$WORK/srcfile.c"

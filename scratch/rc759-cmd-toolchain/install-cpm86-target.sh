@@ -53,23 +53,29 @@ SYMS=$( { strings -n 3 "$DRC/CLEARL.L86"; [ -f "$DRC/CLEARS.L86" ] && strings -n
   echo ""
   echo "/* DR C cdecl: args pushed right-to-left, caller cleans.  The RETURN"
   echo " * register differs by type and MUST match DR C (verified by disassembling"
-  echo " * CLEARL modules):"
-  echo " *   int / near ptr        -> AX            (Watcom default: matches)"
-  echo " *   large-model far ptr   -> DX:AX         (Watcom default: matches)"
-  echo " *   long / float          -> BX:AX         (Watcom default DX:AX: MISMATCH)"
-  echo " *   double                -> DX:CX:BX:AX   (Watcom default AX:BX:CX:DX: MISMATCH)"
-  echo " * So the plain DRC alias (no value clause) is correct ONLY for int/ptr"
-  echo " * returns; long/double-returning routines use the DRC_LONG / DRC_DBL"
-  echo " * aliases below, which pin DR C's value registers. (Forcing value [ax] on"
-  echo " * the generic alias broke pointer-return malloc/realloc with E1121, so we"
-  echo " * split the convention by return width instead.)  Call is FAR in large,"
+  echo " * CLEARL/CLEARS modules -- this is a COMPILER-WIDE convention, uniform by"
+  echo " * return type, NOT per function):"
+  echo " *   int / char / near ptr -> AX            (Watcom default: matches)"
+  echo " *   large-model far ptr    -> BX:AX        (seg=BX off=AX; Watcom DX:AX: MISMATCH)"
+  echo " *   long / float           -> BX:AX        (Watcom default DX:AX: MISMATCH)"
+  echo " *   double                 -> DX:CX:BX:AX  (Watcom default AX:BX:CX:DX: MISMATCH)"
+  echo " * So the plain DRC alias (no value clause) is correct ONLY for int and"
+  echo " * near-ptr (small-model) returns; far-ptr / long / double returns use the"
+  echo " * DRC_PTR / DRC_LONG / DRC_DBL aliases below, which pin DR C's value"
+  echo " * registers. Far pointers need TWO registers (value [bx ax]); a single"
+  echo " * value [ax] on a far-ptr return is rejected E1121 -- so we split by return"
+  echo " * type, never force value [ax] on the generic alias. Return REGISTERS are"
+  echo " * proven by bwdis (0INDEX/0STRN: 'mov bx,es; mov ax,..; retf' => far ptr"
+  echo " * BX:AX); return TYPES come from DR C's own STDIO.H. Call is FAR in large,"
   echo " * NEAR in small; \"*\" alias -> bare DR C symbol name. */"
   echo "#ifdef __LARGE__"
   echo "#pragma aux DRC      \"*\" parm caller [] far;"
+  echo "#pragma aux DRC_PTR  \"*\" parm caller [] value [bx ax] far;"
   echo "#pragma aux DRC_LONG \"*\" parm caller [] value [bx ax] far;"
   echo "#pragma aux DRC_DBL  \"*\" parm caller [] value [dx cx bx ax] far;"
   echo "#else"
   echo "#pragma aux DRC      \"*\" parm caller [];"
+  echo "#pragma aux DRC_PTR  \"*\" parm caller [];"
   echo "#pragma aux DRC_LONG \"*\" parm caller [] value [bx ax];"
   echo "#pragma aux DRC_DBL  \"*\" parm caller [] value [dx cx bx ax];"
   echo "#endif"
@@ -86,18 +92,38 @@ SYMS=$( { strings -n 3 "$DRC/CLEARL.L86"; [ -f "$DRC/CLEARS.L86" ] && strings -n
   echo "#define DRC_MAIN void drc_main(void)"
   echo ""
   echo "/* DRC convention applied to each public DR C stdlib routine (from CLEARL)."
-  echo " * Return-register override by type: long/float via DRC_LONG (BX:AX),"
-  echo " * double via DRC_DBL (DX:CX:BX:AX); all others use the plain DRC alias."
-  echo " * The LONG/DBL sets below are VERIFIED by disassembling CLEARL modules"
-  echo " * (epilogue register order); extend them only after the same check. */"
-  # Verified long-returning (BX:AX): ATOL/FTELL/GETL modules end `pop ax;pop bx;retf`.
-  DRC_LONG_FNS=" atol ftell getl "
-  # Verified double-returning (DX:CX:BX:AX): ATOF module ends `pop ax;bx;cx;dx;..retf`.
-  DRC_DBL_FNS=" atof "
+  echo " * Return-register override by type: far ptr via DRC_PTR (BX:AX large /"
+  echo " * AX small), long/float via DRC_LONG (BX:AX), double via DRC_DBL"
+  echo " * (DX:CX:BX:AX); all others use the plain DRC alias. Return TYPES are read"
+  echo " * from DR C's STDIO.H; the register mapping is the compiler-wide convention"
+  echo " * proven by disassembling CLEARL modules. Extend a set only after confirming"
+  echo " * the routine's return type in DR C's header (or by disassembly)."
+  echo " *"
+  echo " * Each PTR/LONG/DBL routine gets a matching PROTOTYPE emitted right next to"
+  echo " * its pragma: the value-register override (value [bx ax] etc.) only takes"
+  echo " * effect if the compiler also knows the return WIDTH. Co-locating prototype"
+  echo " * + pragma here makes this file the single source of truth for BOTH, so the"
+  echo " * return type and its register mapping can never drift apart (the class of"
+  echo " * bug that hid the far-ptr BX:AX / long BX:AX / double DX:CX:BX:AX mismatch)."
+  echo " * A far ptr is 4 bytes regardless of pointee, so char* stands in for FILE*."
+  echo " * These prototypes are seen only by Watcom (this file is auto-included via"
+  echo " * bwcc -i); genuine DR C uses its own headers and never sees them. */"
+  # Pointer-returning (char*/FILE*/void*) -> far ptr BX:AX (large) / AX (small).
+  # Types from DR C STDIO.H: calloc/malloc/realloc/zalloc/sbrk/gets/fgets/index/
+  # rindex/strchr/strrchr/strcat/strncat/strcpy/strncpy (char*); fopen/fopena/
+  # fopenb (FILE*). fdopen/freop*/fopen-variants are the same family; mktemp/
+  # getpass/ttyname* return char*.
+  DRC_PTR_FNS=" calloc malloc realloc zalloc sbrk gets fgets index rindex strchr strrchr strcat strncat strcpy strncpy fopen fopena fopenb fopenax fopend fdopen freopen freopa freopb freopbb freopen4 mktemp getpass ttyname ttynamez "
+  # Long-returning (BX:AX). Types from STDIO.H: atol/lseek/ftell/tell/getl/putl.
+  DRC_LONG_FNS=" atol ftell tell lseek getl putl "
+  # Double-returning (DX:CX:BX:AX). Types from STDIO.H:
+  # atof/sqrt/cos/sin/exp/fabs/tan/atan; log/log10 by convention.
+  DRC_DBL_FNS=" atof sqrt cos sin exp fabs tan atan log log10 "
   for s in $SYMS; do
     case "$BLOCK" in *" $s "*) continue;; esac
-    case "$DRC_DBL_FNS"  in *" $s "*) echo "#pragma aux (DRC_DBL)  $s;"; continue;; esac
-    case "$DRC_LONG_FNS" in *" $s "*) echo "#pragma aux (DRC_LONG) $s;"; continue;; esac
+    case "$DRC_DBL_FNS"  in *" $s "*) printf 'extern double %s();\n#pragma aux (DRC_DBL)  %s;\n' "$s" "$s"; continue;; esac
+    case "$DRC_LONG_FNS" in *" $s "*) printf 'extern long   %s();\n#pragma aux (DRC_LONG) %s;\n' "$s" "$s"; continue;; esac
+    case "$DRC_PTR_FNS"  in *" $s "*) printf 'extern char  *%s();\n#pragma aux (DRC_PTR)  %s;\n' "$s" "$s"; continue;; esac
     echo "#pragma aux (DRC) $s;"
   done
   echo ""
