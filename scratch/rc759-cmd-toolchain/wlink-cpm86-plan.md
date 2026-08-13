@@ -483,3 +483,82 @@ objs -> LINK-86 under emu2 -> `OUT.CMD`. Entry point must be `cmain()`.
 - LINK-86:   scratch/rc759-cmd-toolchain/drc-toolchain/link86.cmd (+ clears.l86)
 - DR C oracle src: scratch/rc759-cmd-toolchain/drc-oracle/ (startup.a86, read.me, ...)
 - DR C 1.11 archive: scratch/rc759-cmd-toolchain/drc86111/ (PCBIOS.A86, headers, BATs)
+
+---
+
+## STATE SNAPSHOT — 2026-08-13
+
+**Where we are:** Open Watcom C -> CP/M-86 `.CMD` for RC759 (CCP/M-86, 8086) is
+**working and verified end-to-end**. A compiled C program prints
+`HELLO-FROM-COMPILED-C` on both the headless emu2-cpm86 host AND the real RC759 in
+MAME, booting to `A>`. Committed on `main` (`c7ac377`).
+
+**Verified pipeline:**
+`bwcc` (Open Watcom, `-0 -ms -s`) -> OMF `.obj` -> `omf_classicize.py` (normalize OMF:
+LPUBDEF/LEXTDEF -> classic PUBDEF/EXTDEF, shorten THEADR) -> DR C **LINK-86 v1.4**
+(headless under **emu2-cpm86**) -> 2-group `.CMD`. One command: `./ccrc759.sh prog.c`.
+
+**Confirmed facts (this segment):**
+- Watcom emits `LPUBDEF/LEXTDEF` ONLY for `static` (file-scope) symbols; no bwcc flag
+  toggles it (`-d0` doesn't; not debug records). Dropping `static` yields pure classic
+  OMF that raw LINK-86 links without the normalizer — but that doesn't scale (real
+  code/libc use static) and doesn't fix the independent THEADR long-path `ERROR 10`.
+  => `omf_classicize.py` stays the robust general fix.
+- DR C is the correctness oracle. DR C tools (LINK-86, and now DRC/RASM86) run headless
+  under emu2 with host write-back via `EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A`.
+
+**Open (pending todos):**
+- `test-cmd`: compile the SAME source with DR C's own `DRC` under emu2 -> native DR C
+  reference `.CMD`; diff vs our Watcom output as a correctness oracle. (next up)
+- `write-loadcmd`: replace the `DS=CS` crt0 with a crt0 derived from DR C `startup.a86`
+  / `CLEARS.L86` (true oracle startup/ABI).
+- `write-cmdcpm`: real small-model 2-group CMD with DS!=CS (deferred until >64KB).
+- (bigger) reuse DR C `CLEARS.L86` libc from Watcom code -> resolve watcall-vs-cdecl ABI.
+
+---
+
+## STATE SNAPSHOT — 2026-08-13 (b): DR C runs headless + oracle diff PASS
+
+**Two milestones since snapshot (a):**
+
+### 1. DR C's own compiler now runs FULLY HEADLESS under emu2-cpm86
+Compile + link + run a C program with no interactive input, so DR C is now a
+*live* diff oracle (not just a reference binary). Recipe (in `drc-build/`):
+```
+DRC.CMD  "srcfile -b"              # DR C compile -> srcfile.obj (real DR C OMF)
+LINK86.CMD "SAMPLE,CLEARL.L86[S]"  # DR C link    -> SAMPLE.CMD  (runs)
+```
+DR C defaults to the **LARGE** model → link with **CLEARL.L86** (small-model
+CLEARS.L86 gives `__BDOS TARGET OUT OF RANGE` + a dead CMD).
+
+This required **three emu2-cpm86 fixes** (forked to `ravn/emu2-cpm86`, branch
+`cpm86-drc-headless`, pushed; PR prepared but NOT opened — see
+`emu2-patches/PR_DESCRIPTION.md` + the 3 `*.patch` files):
+- **FCB bit-7 masking** — CP/M-86 interface attributes in bit 7 of the 11 FCB
+  name/type bytes truncated `SRCFILE`→`SRCFI`; mask 0x7F when `cpm86_active`.
+- **Auxiliary-group loading** — relocatable CMDs (DR C's passes) keep a
+  self-relocation buffer in aux group 4; loader must allocate/load aux groups
+  (CMD types 5-8 → base-page descriptor slots 4-7 at 0x18/0x1E/0x24/0x2A) or the
+  pass aborts "You must link with LINK86 V1.2 or later."
+- **BDOS 47 (P_CHAIN)** — DR C driver chains passes; without it only the banner
+  runs. Also strips a leading `R` run-loader token (avoids unimplemented BDOS 59).
+
+emu2 source lives in `scratch/cpm86-tools/emu2-cpm86/` (nested git clone of the
+fork). Workspace captures the change as the `emu2-patches/*.patch` series.
+
+### 2. `test-cmd` oracle diff — PASS (byte-identical)
+The SAME source (`oracle_common.c`, a BDOS-only console program buildable by
+BOTH toolchains — DR C via `__BDOS(2,ch)`, Watcom via `int 0E0h`) produces
+**byte-identical** 66-byte runtime output when built by DR C (oracle) vs the
+Watcom `ccrc759.sh` pipeline. Validates the Watcom→CMD path against the DR C
+oracle on common ground.
+- Note: `SAMPLE.C` (printf/libc) can't yet build on the Watcom path — the DR C
+  libc watcall-vs-cdecl ABI bridge is the remaining bigger item. The common
+  BDOS-only program is the fair current oracle.
+
+**Still open (unchanged, plan-first):**
+- `write-loadcmd`: derive a crt0 from DR C `startup.a86`/`CLEARL` (true oracle
+  startup/ABI) for the Watcom path. startup.a86 now well-understood.
+- `write-cmdcpm`: real small-model 2-group CMD with DS!=CS (>64KB).
+- (bigger) reuse DR C `CLEARL.L86` libc from Watcom code → resolve the
+  watcall-vs-cdecl ABI so printf-class programs build on the Watcom path.
