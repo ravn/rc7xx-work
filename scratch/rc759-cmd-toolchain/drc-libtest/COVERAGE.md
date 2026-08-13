@@ -131,8 +131,9 @@ m0_ su7 vload line lineseek uldiv uldivr rewindj
 - **PASS: 8 tests** (string/mem 16 routines, conv 2, mem-alloc 4, stdlib 3,
   setjmp 2, fmt 3, fileio 6, official §2.5 TEST.C -- int/long/float/double math).
   Basic float/double arithmetic + printf formatting VERIFIED compatible.
-- **BLOCKED: transcendentals** (sqrt/sin/cos/exp/log/tan/atan + atof/ftoa) --
-  DR C's are nofloat stubs; route to Watcom's math (register mapping verified).
+- **BLOCKED (bridge only): transcendentals** (sqrt/sin/cos/exp/log/tan/atan +
+  fabs) -- REAL software routines, CORRECT in genuine DR C; the bridge loses the
+  double return under -fpi87 (fld [bx] vs DX:CX:BX:AX). See DRC_FLOAT_ANALYSIS.md.
 - **CATALOG: ~60** (file-stream family, console-input, CP/M syscalls -- bridge
   classes assigned; representative members PASS; full coverage needs I/O fixtures).
 - **INTERNAL: ~12** (helpers, excluded by design).
