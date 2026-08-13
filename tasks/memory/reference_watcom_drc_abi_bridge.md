@@ -53,3 +53,27 @@ long/float/double across the Watcom<->DR boundary.
 - DR C return regs / float ABI: reference_drc_float_8087_abi.md
 - wlink reads DR OMF, .L86 repackage: reference_wlink_drc_omf_l86.md
 - DR C manual: cpm86-crossdev/docs/manuals/DRI_C_Programming_86.txt §5.3-5.5
+
+## How aux pragma is stored (VERIFIED 2026-08-13, empirical)
+
+`#pragma aux` is a COMPILE-TIME directive; it is NOT a linkable attribute. There
+is no "calling convention" record in OMF. Its effects surface in the object only
+as two things, demonstrated by compiling the same `long caller(void){return
+foo(42)+1;}` two ways:
+
+1. **Symbol NAME** — visible in EXTDEF(0x8C)/PUBDEF(0x90) strings. `-ecc` alone
+   emits `_foo`/`_caller`; adding `#pragma aux default "*"` emits `foo`/`caller`
+   (no underscore). This IS the linkable contract.
+2. **Generated CODE bytes** — the register/stack convention is baked into the
+   instruction stream, NOT stored as metadata. With `#pragma aux foo value
+   [bx ax]` (DR C long-return) the caller emits `... call _foo / add ax,1 /
+   mov dx,bx / adc dx,0` — the extra `mov dx,bx` because the high word comes back
+   in BX. Without the pragma (Watcom default DX:AX) it is just `add ax,1 /
+   adc dx,0`. The linker never sees "returns in BX:AX"; only the bytes.
+
+Consequence: the aux definition MUST be in scope at compile time for EVERY
+translation unit that defines OR calls the function — i.e. put it in a shared
+HEADER (`#include` or force-include `-fi=compat.h`). A caller TU missing the
+pragma silently generates wrong call/return code; the link still SUCCEEDS
+(names match) but the runtime ABI is broken. You cannot bake the convention into
+a prebuilt library and rely on the OMF to carry it forward.
