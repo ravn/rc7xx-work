@@ -139,3 +139,39 @@ m0_ su7 vload line lineseek uldiv uldivr rewindj
 - **INTERNAL: ~12** (helpers, excluded by design).
 The computational + pointer + memory + control-flow + basic-float core of the DR C
 library (the part whose ABI the bridge must get right) is fully exercised and green.
+
+---
+
+## Known bridge codegen limitation: `long` accumulated across a loop (2026-08-13)
+
+Discovered while building the RC759/MAME acceptance test (`../mame-tests/mtest.c`).
+
+**Symptom:** a `long` variable updated on each iteration of a `for`/`while` loop
+keeps its INITIAL value -- the per-iteration update is not written back.
+
+```c
+long r = 1; int i;
+for (i = 0; i < 4; i++) r = r * 10;   /* expected 10000; bridge yields 1 */
+```
+
+**Scope (bisected, `-ecc -0 -ml`, run under emu2):**
+- SAFE: a *single* runtime `long` op outside a loop -- `a = a*7`, `b = b/13`,
+  `c = c%13`, `s = s<<20` are all correct (probe8 A/B/C).
+- SAFE: `int` accumulated in a loop (sieve, gcd, popcount, `for` sums).
+- BROKEN: `long` accumulated in a loop (probe8 D/E: `r = r*10L` and `r = r*10`
+  both yield 1). Sometimes manifests as a hang instead of a wrong value
+  (probe5/probe6 with a long-returning factorial).
+
+**Likely cause:** the long lives in a register pair across the loop; the
+`__I4M`/`__I4D` helper call clobbers it and the result is not stored back (a
+writeback/register-allocation bug in the Watcom `-ecc` cdecl path for this
+target, NOT an emu2 artifact -- the result is deterministically the *initial*
+value, which is a store-back failure, not CPU-emulation noise).
+
+**Workaround (used by mtest.c):** keep loop-carried arithmetic in `int`; do each
+`long` computation as a single op outside any loop. Factorials/powers computed by
+loop accumulation must be restructured or precomputed.
+
+**TODO:** confirm whether MAME reproduces it (emu2 is not authoritative), then
+disassemble the loop body (bwdis) to pin the missing store and file it against
+the bridge/omf_classicize path.

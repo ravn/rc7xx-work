@@ -1,0 +1,8 @@
+# regenerable build artifacts (rebuild via run-mame.sh)
+*.CMD
+*.img
+*.tmp
+*.obj
+*.map
+*.sym
+drctest.h
