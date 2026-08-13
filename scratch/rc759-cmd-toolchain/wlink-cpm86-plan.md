@@ -1264,3 +1264,78 @@ DR C fits CP/M-86 because it was designed as small multi-pass 16-bit passes
 (peak ~107 KB, 64 KB segment ceiling). Watcom was never hosted on CP/M-86 and
 doesn't fit the model. Correct architecture (already ours): Watcom cross-compiles
 on a modern host; its OMF output is what runs under CP/M-86.
+
+## Finding (p): float vs fixed-point Mandelbrot, DR C vs Watcom, real runtime (2026-08-13)
+
+Goal (user): four small-model-ish Mandelbrot binaries — {fixed-point int, float}
+x {DR C 1.11, Open Watcom} — run in the RC759 emulator to measure **real
+runtime** (ms at the RC759's 6 MHz), on a platform with **NO 8087**.
+
+Sources: `owc-drc/mandel.c` (existing fixed-point 8.8) and NEW `owc-drc/mandelf.c`
+(the float twin, same sample points, K&R/C89-clean so both compilers accept it,
+putchar-only output). Correctness oracle = an INDEPENDENT host-`double` Python
+reimplementation of mandelf.c (`/tmp/mref.py`); both float binaries are
+byte-identical to it (and to each other), so the picture is verified, not just
+"all builds agree".
+
+### THE BUG that ate the afternoon: DR C large model needs a FAR putchar
+DR C float produced garbage (`:99`, no newlines; a 2-putchar minimal repro
+emitted 3 wrong bytes) under BOTH emu2 and Unicorn. Root cause was NOT the
+emulator and NOT the float math — it was the link glue:
+- DR C 1.11 defaults to the **LARGE model** and calls externals with a **FAR
+  call** (pushes CS:IP). The shared `putchar.asm` is assembled `-ms` (small,
+  NEAR `ret`) — so a far call returned near, corrupting the stack -> "Stack
+  Overflow" + garbage.
+- Fix: `owc-drc/putchar-far.asm` — a FAR proc (`retf`, arg at `[bp+6]`),
+  assembled `-ml`. A control program (`putchar('7')`) confirmed: small/near
+  putchar in a large-model link = garbage; large/far putchar = correct `7\n`.
+- DR C float is FORCED into large model: its float runtime lives only in
+  `CLEARL.L86`; the small `CLEARS.L86` lacks the float symbols (a small link
+  chases a `CLEARL` default-lib request or throws TARGET OUT OF RANGE). The
+  working DR C *int* oracle is small model, which is why it never hit this.
+
+### DR C float mechanism: software, NO inline 8087
+Disassembly of the DR C float CMD shows **0 x87/ESC opcodes** — DR C float is
+CALL-based **software** double, running as ordinary 8086 integer code (far calls
+into runtime routines inside the CODE group). That makes it RC759-FAITHFUL (no
+8087 needed) AND correctly modelled by cycles186 (which only knows integer
+timing). Watcom `-fpi87`, by contrast, emits inline 8087 ESC.
+
+### Measured (cpm86run_unicorn.py --ticks; ms = clocks / 6000 @ 6 MHz)
+| binary                         | model | float impl     | insns       | ~80186 clocks | ms @6MHz | RC759-faithful? |
+|--------------------------------|-------|----------------|-------------|---------------|----------|-----------------|
+| DR C **int** (fixed-point 8.8) | small | integer        |  5,538,255  |  49,957,263   |  8,326   | yes             |
+| Watcom **int** `-ox`           | small | integer        |  3,725,230  |  28,033,978   |  4,672   | yes             |
+| DR C **float**                 | large | **software**   | 53,354,065  | 466,826,602   | 77,804   | **yes**         |
+| Watcom **float** `-fpi87`      | small | inline **8087**|  1,443,489  |   8,717,054   |  1,453   | **NO** (see below)|
+
+### Reading the numbers
+- **DR C: float costs ~9.3x fixed-point** (77,804 vs 8,326 ms). This is the
+  honest RC759 cost of real double arithmetic in software — ~78 seconds for one
+  80x25 frame. cycles186 is accurate here (pure integer emulator code).
+- **The Watcom `-fpi87` 1,453 ms is NOT a valid RC759 number**, twice over:
+  (1) cycles186 charges a flat 4 clocks per unknown/ESC opcode, but a real 8087
+  FMUL is ~130+ clocks, so the count is grossly understated; and (2) the binary
+  REQUIRES an 8087 — on a real RC759 (none) the ESC opcodes are NOPs and the
+  result would be wrong. It only ran correctly here because Unicorn/QEMU always
+  has an x87. Keep it only as an "IF the RC759 had a coprocessor" curiosity.
+- To get a RC759-faithful **Watcom** float number we need `-fpc` (software
+  calls) or `-fpi` (inline+emulator). BOTH pull Watcom's full 8087 EMULATOR
+  closure (`FISRQQ/FIDRQQ/FJSRQQ/FIWRQQ`, `__fdiv_m64r`, `__real87`, ...). The
+  cgsupp double ops (`__FDM/__FDA/__FDS/__FDC` in `fdmth086.asm`, `__FDC` in
+  `fdc086.asm`, `__I4FD` in `i4fd086.asm`) are small, but `fdmth086` depends on
+  that emulator core, which is a large generated component — a separate sourcing
+  task, not done here. FOLLOW-UP.
+
+### "Turn off the 8087" mechanism (verified, for the follow-up)
+Unicorn real-mode CR0 is read/writable; setting **CR0.EM=1** makes x87 ESC trap
+as **INT 7** (verified: EM=0 -> runs on FPU, EM=1 -> INT 7). The runner's INTR
+hook currently ERRORS on any INT except 0xE0/0x28, so driving a `-fpi`/DR-style
+emulator via INT7 would need the runner to real-mode-vector INT7 to the guest
+IVT handler. Not needed for the numbers above (DR C float is already pure
+software), but it's the lever for a faithful Watcom `-fpi` measurement.
+
+### Artifacts
+`owc-drc/mandelf.c`, `owc-drc/putchar-far.asm`, and the four CMDs
+`owc-drc/MANDEL-DRC.CMD` (int/DRC), `MANDEL-O3.CMD` (int/OW),
+`MANDELF-DRC.CMD` (float/DRC software), `MANDELF-OW.CMD` (float/OW 8087).
