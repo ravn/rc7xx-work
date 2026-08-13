@@ -591,3 +591,86 @@ for that ABI bridge (plan-first). They cannot show independent, verifiable value
 until the bridge approach is chosen. Recommend scoping the ABI bridge next as its
 own planned task; the oracle harness (`drc-oracle.sh` + `oracle_common.c` +
 byte-diff) is ready to validate it.
+
+---
+
+## FINDING — 2026-08-13 (d): ABI bridge — scalar HOLE THROUGH; pointers blocked
+
+The ABI bridge that snapshot (c) called "blocked on a design decision" is now
+**solved for scalar arguments/returns** and its pointer limitation is
+**root-caused (verified, not hypothesized)**.
+
+### What works (verified, reproducible: `./bridge-scalar.sh` -> PASS)
+
+Watcom-compiled code calls a **genuine DR C 1.11-compiled** routine across the
+compiler boundary and gets the right answer, with CLEARL's own startup driving
+the program (no hand-written crt0):
+
+- Callee `bridge_add_lib.c`: `add(a,b) int a,b; { return a+b; }` compiled by DR C
+  (default LARGE model) -> FAR routine, args at `[bp+6]/[bp+8]`, returns AX, `retf`.
+- Caller `bridge_scalar.c`: Watcom `-ml`, bridge expressed purely as an aux pragma
+  `#pragma aux drc_add "add" parm caller [] value [ax] far;`. Watcom then emits
+  EXACTLY the DR C convention: `push` args right-to-left, `call far add` (bare
+  name), `add sp,N` (caller cleans), return in AX.
+- Entry exposed as bare far `main` via `#pragma aux drc_main "main" far;` so
+  CLEARL's `_main` startup calls us directly.
+- Link `APPC,ADDC,WMARKSC,CLEARL.L86` -> 52 KB relocatable large-model CMD.
+  Run under patched emu2 -> prints **16** (== add(7,9)), clean exit.
+
+### Two build details that mattered
+
+1. **Must link via CLEARL startup, NOT a hand-written crt0.** A single-group crt0
+   collapses to the CP/M-86 "8080 model", which does **not** relocate the
+   far-call *segment* operand -> the `call far add` jumped to garbage (emu2:
+   `unimplemented opcode 0x63`, i.e. ARPL, at a bogus CS). Linking against CLEARL
+   yields a proper multi-group **relocatable** CMD whose loader fixes up far-call
+   segments, exactly like a native DR C large-model program (e.g. SAMPLE.CMD).
+
+2. **Watcom model-marker stubs.** Linking a Watcom object against CLEARL leaves
+   `_big_code_` / `_small_code_` unresolved (Watcom memory-model markers, not DR C
+   startup gaps). Stubbed with `equ 0` in `wmarks.asm`. Also one expected-undefined
+   `clear_error` in CLEARL's 8087-emulator path — dead for integer programs.
+
+### What is still blocked: POINTER arguments (root cause VERIFIED)
+
+Passing a string literal to DR C `strlen` returns **0** (should be 5). The Watcom
+`-ml` disassembly is the smoking gun — for DGROUP data it pushes **SS** as the
+segment:
+
+```
+push ss                      ; <- Watcom uses SS as the data segment
+mov  ax,offset DGROUP:L$1
+push ax
+call far strlen
+```
+
+Watcom large model assumes **SS == DS == DGROUP** (a guarantee its *own* startup
+provides). But DR C's CLEARL startup runs with **SS != DS**, so `strlen` reads the
+string from the wrong segment, sees an immediate NUL, and returns 0. An explicit
+`(char __far *)` cast does **not** help — Watcom still binds DGROUP data to SS.
+(No hang; the earlier "exit hang" was just `strlen` scanning off into garbage.)
+
+**Scope of the bridge today:** scalar in/out (int, long via DX:AX) ✅ ;
+pointer args ❌ (SS/DS split).
+
+### Path to unblock pointers (next planned task, one of)
+
+1. **Cleanest:** a small large-model startup shim that sets `SS = DS = DGROUP`
+   before calling our far entry, while still producing a multi-group *relocatable*
+   CMD (so far-call segments to DR C routines are fixed up). Then Watcom's
+   `push ss` == DGROUP and DR C routines read the right segment.
+2. Force Watcom to load the real DGROUP segment (segment fixup) instead of `push
+   ss` for data pointers — investigate Watcom `-zu`/SS!=DS options.
+3. Workaround: copy data into a stack buffer (which genuinely lives in SS) before
+   the call.
+
+### Files (tracked)
+- `bridge_add_lib.c` — DR C-compiled scalar callee (`add`).
+- `bridge_scalar.c`  — Watcom caller; the `#pragma aux` bridge, documented inline.
+- `bridge-scalar.sh` — reproducible build+run proof (asserts output == "16").
+- `bridge_ml.c`      — earlier strlen/pointer probe (kept; demonstrates the SS/DS
+  blocker).
+
+Todos: `abi-large` scalar case DONE (this finding); pointer case is the remaining
+open item. `abi-small` still blocked (near-call segment merge / TARGET OUT OF
+RANGE); large model is the working direction.
