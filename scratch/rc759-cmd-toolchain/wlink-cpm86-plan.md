@@ -562,3 +562,32 @@ oracle on common ground.
 - `write-cmdcpm`: real small-model 2-group CMD with DS!=CS (>64KB).
 - (bigger) reuse DR C `CLEARL.L86` libc from Watcom code → resolve the
   watcall-vs-cdecl ABI so printf-class programs build on the Watcom path.
+
+---
+
+## FINDING — 2026-08-13 (c): write-loadcmd re-framed (crt0 is NOT the gap)
+
+Corrects the earlier framing of `write-loadcmd` ("replace the DS=CS crt0 with one
+derived from DR C `startup.a86`"). Verified empirically:
+
+- **CLEARL.L86 already contains DR C's startup** (`m.init`/`_main`). We link
+  `srcfile.obj + CLEARL.L86` alone and get a working entry — no hand-written crt0
+  needed. LINK-86 makes the FIRST module's start the CMD entry point.
+- Linking a **Watcom**-compiled object (`oracle_common.c`, no libc calls) against
+  CLEARL leaves exactly **one** unresolved symbol: `_small_code_` — a Watcom
+  small-model runtime marker, NOT a DR C startup gap. A CMD is still produced.
+
+**Conclusion:** a crt0 is not the blocker. The real work to use DR C libc
+(printf-class) from Watcom code is the **symbol/ABI bridge**, which is the bigger,
+still-unscoped item:
+  1. Provide/stub Watcom marker symbols (`_small_code_`, etc.).
+  2. Bridge the calling convention: Watcom `watcall` (args in AX/DX/...) vs DR C
+     `cdecl`-style (args on stack); plus entry naming `cmain` (Watcom) vs `main`
+     (what CLEARL's `_main` calls). Needs per-function thunks or a Watcom aux
+     pragma forcing stack-based calls to the DR C libc symbols.
+
+`write-loadcmd` and `write-cmdcpm` are therefore **blocked on a design decision**
+for that ABI bridge (plan-first). They cannot show independent, verifiable value
+until the bridge approach is chosen. Recommend scoping the ABI bridge next as its
+own planned task; the oracle harness (`drc-oracle.sh` + `oracle_common.c` +
+byte-diff) is ready to validate it.
