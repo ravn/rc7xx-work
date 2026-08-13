@@ -83,24 +83,28 @@ genuine DR C byte-for-byte (float 1.235, double 4567) -- so basic float/double
 ARITHMETIC + printf formatting is compatible across the Watcom(-fpi87 IEEE 8087)
 -> DR C CLEARL bridge.
 
-## math library: compatibility summary
+## math library: compatibility summary  (corrected 2026-08-13, see ../DRC_FLOAT_ANALYSIS.md)
 - **Basic float/double arithmetic (+ - * /) and printf/scanf %g/%f/%e/%ld: COMPATIBLE**
   (verified by t_testc). DR C's printf reads Watcom's IEEE-8087 doubles correctly.
   So for value-level float I/O you use DR C's CLEARL runtime unchanged.
-- **Transcendentals (sqrt sin cos tan atan exp log log10 pow): use WATCOM'S, not
-  DR C's.** DR C's default CLEARL provides only *nofloat stubs* for these (they
-  return garbage even in a pure genuine build; real DR C math needs a separate FP
-  library not present on the v1.11 disk). Watcom -fpi87 supplies them, but only as
-  external helpers: with proper ANSI prototypes + `#pragma intrinsic`, fabs/sqrt
-  inline to 8087 ops while sin/cos/exp/log/tan/atan/pow emit calls to Watcom's
-  8087 helper library (EXTRN `IF@DSQRT`/`IF@DSIN`/... + `__8087`, `_fltused_`).
-  Those helpers would need to be linked into the CMD (Watcom-OMF -> classicize, or
-  provide equivalents) -- not yet wired up. Tracked in blocked_float.c.
+- **DR C's transcendentals (sqrt sin cos tan atan exp log log10 fabs) are REAL
+  software routines and CORRECT in genuine DR C** -- NOT stubs (earlier claim
+  retracted). CLEARL module FPTRAN -> DPFNCS, 0 8087 opcodes; genuine runtime:
+  sqrt2=1.4142, sin1=0.8415, cos1=0.5403, exp1=2.7183, atan1=0.7854. The former
+  "garbage" was a K&R declaration bug (undeclared math fn defaults to int-return,
+  truncating the 8-byte double) -- reproducible in genuine too; declare `double`.
+- **BLOCKED on the BRIDGE only:** double-*returning* DR C calls do not bridge under
+  Watcom -fpi87. Watcom's double-return ABI is `fld qword ptr [bx]` (pointer-in-BX
+  / 8087 ST0); the `value [dx cx bx ax]` DRC_DBL pragma is ignored for 8-byte
+  doubles, so DR C's DX:CX:BX:AX result is lost (prints 0 / denormal). Fix = asm
+  thunk (repackage DX:CX:BX:AX -> memory, return ptr in BX) or a non-8087 float
+  model; alternatively wire Watcom's own 8087 helpers (EXTRN `IF@DSQRT`/`IF@DSIN`
+  + `__8087`/`_fltused_`, classicize `math87*.lib`). Not a pragma tweak.
 
-## math transcendentals (double)   -> blocked_float.c   (BLOCKED)
+## math transcendentals (double)   -> blocked_math.c   (BRIDGE-BLOCKED, GENUINE-OK)
 atof sqrt sin cos tan atan exp log log10 fabs
-  DRC_DBL register mapping disassembly-verified; runtime BLOCKED (nofloat stubs,
-  see above). Route these to Watcom's math, not DR C's.
+  Genuine DR C: correct (real software routines). Bridge: BLOCKED by the -fpi87
+  double-return ABI mismatch (see above / DRC_FLOAT_ANALYSIS.md).
 - expv sqrtb sqrtz : INTERNAL (double-valued helpers behind exp/sqrt).
 
 ## console input (needs stdin)   (CATALOG)

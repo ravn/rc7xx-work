@@ -39,3 +39,24 @@ So a returned `double` lands in **DX:CX:BX:AX** — use this when single-steppin
 or bridging a Watcom↔DR C float oracle. (Args are pushed on the stack; DR C
 defaults to LARGE model and calls externals FAR — see
 [[reference_dri_cpm86_manuals_location]].)
+
+**CLEARL transcendentals are REAL software routines, not stubs (bwdis-verified
+2026-08-13).** Retracts an earlier wrong "nofloat stub / garbage" claim. CLEARL
+module `FPTRAN` publishes `sqrt sin cos tan exp log log10 atan` as thin wrappers
+that `call _DP*` (impl in module `DPFNCS`, which uses software primitives
+`_DPADD/_DPMUL/_DPDIV`); **zero 8087 opcodes**. Genuine DR C computes them
+correctly at runtime (sqrt2=1.4142, sin1=0.8415, cos1=0.5403, exp1=2.7183,
+atan1=0.7854). The earlier "garbage" was a **K&R declaration bug**: an undeclared
+math fn defaults to `int` return, truncating the 8-byte double to AX and
+corrupting the `%f` vararg — reproducible in genuine DR C too. Declare them
+`double`.
+
+**Bridge (Watcom `-fpi87`) carries basic float/double arithmetic + printf
+`%f`/`%g` correctly (t_testc), but NOT double-*returning* library calls.** Under
+`-fpi87` Watcom's double-return ABI is `fld qword ptr [bx]` (pointer-to-result in
+BX / 8087 ST0); the `value [dx cx bx ax]` DRC_DBL pragma is ignored for 8-byte
+doubles, so DR C's DX:CX:BX:AX result is lost (prints 0 / denormal). Fix needs an
+asm thunk (repackage DX:CX:BX:AX → memory, return ptr in BX) or a non-8087 float
+model — NOT a pragma tweak. Full write-up:
+`scratch/rc759-cmd-toolchain/DRC_FLOAT_ANALYSIS.md`; repro
+`.../drc-libtest/blocked_math.c`.
