@@ -41,11 +41,19 @@ done
 [ -n "$SB" ] || SB="$HERE/../open-watcom-v2/contrib/ravn/owc-drc/stdcbench"
 SRC="$SB/src/stdcbench-0.8"
 
+# Default = SMALL model.  SMALL is the verified working path (score 7/5/12,
+# byte-identical on both the Unicorn runner and emu2).  The LARGE model is known
+# broken for stdcbench: it hangs inside a compute module after ~3 clock reads --
+# see wlink-cpm86-plan.md finding (l) (two large-model bugs fixed in owmath.asm +
+# portme.c, but a residual large-model defect remains). "-m l" is left available
+# for debugging that residual; it will NOT produce a score yet.
 MODEL="s"
 while [ $# -gt 0 ]; do case "$1" in -m) MODEL="$2"; shift 2;; *) echo "usage: $0 [-m s|l]"; exit 2;; esac; done
 case "$MODEL" in
   s) MFLAGS="-ms -nt=CODE"; CLEAR="CLEARS.L86"; MNAME="small"; ZU="";;
-  l) MFLAGS="-ml";          CLEAR="CLEARL.L86"; MNAME="large"; ZU="-zu";;
+  l) MFLAGS="-ml";          CLEAR="CLEARL.L86"; MNAME="large"; ZU="-zu"
+     echo "WARNING: stdcbench LARGE model is known broken (hangs in a compute" >&2
+     echo "         module) -- see wlink-cpm86-plan.md finding (l). Use -m s." >&2;;
   *) echo "unknown model '$MODEL'"; exit 2;;
 esac
 

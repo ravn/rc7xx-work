@@ -1021,7 +1021,7 @@ against the DR C oracle and an independent host computation.
 |----------------|----------------|----------------|-----------------------------------------------|
 | mandel         | byte-identical | byte-identical | == DR C `MANDEL-DRC.CMD`, on Unicorn + emu2   |
 | far-demo       | 51662 / 353    | 51662 / 353    | == independent host (Python), Unicorn + emu2  |
-| stdcbench      | 7 / 5 / 12     | early-exit *   | 7/5/12 identical on Unicorn AND emu2          |
+| stdcbench      | 7 / 5 / 12     | hangs (see (l)) | 7/5/12 identical on Unicorn AND emu2          |
 
 **Two fixes landed:**
 1. **Unicorn runner large-model loader** (finding (j),
@@ -1039,14 +1039,86 @@ instruction stream in both emulators), so stdcbench scores 7/5/12 EXACTLY on bot
 QEMU's core and emu2's hand-written decoder — a non-circular cross-check of both
 the score and the clock model.
 
-**\* Open (deferred, not the loader/clock):** stdcbench **large** terminates early
-(banner only, ~204K insns) on BOTH emulators. Since mandel/far-demo large are
-byte-perfect and stdcbench large reproduces the early-exit under emu2's independent
-proven large loader, the cause is in the stdcbench-large BUILD/program (deep
-recursion or a specific lib call), not any runner. No reference score for stdcbench
-large exists on any path yet. Next dig: bisect which stdcbench module/call triggers
-the early BDOS-0 in large model.
+**\* Open — see finding (l) for the full bisection.** The earlier "early-exit
+~204K insns / BDOS-0" framing was WRONG (the runner's `try/except: pass` swallowed
+a CPU fault that looked like a clean exit). Bisected to **two large-model bugs, now
+fixed**: (1) `owmath.asm` helpers used near `ret` but are far-called in large →
+stack leak → wild-CS fault; fixed with an `@CodeSize` `retf`/`ret` macro. (2) the
+XIOS clock pragma stored DS-relative into an SS stack local (DS!=SS in large) →
+clock never advanced → infinite timed loop; fixed by making the tick struct
+`static` (DGROUP/DS). A **residual** large-model bug remains (large now enters the
+loop but hangs inside a compute module); **deferred by user** — ship SMALL as the
+working default (7/5/12 on both emulators).
 
 **Commits:** workspace `main` (`72d5ccf` demo+large-test, `3f6a655` clock-test);
 `open-watcom-v2` (`2c6b3e60`, local — contribution repo); emu2 fork
 `cpm86-drc-headless` (`5aa05dd`, local).
+
+## FINDING — 2026-08-13 (l): stdcbench-large "early-exit" BISECTED — two large-model bugs (one class remains)
+
+**Correction to snapshot (c)'s "early-exit ~204K insns, BDOS-0":** that framing was
+WRONG. The runner's `emu_start(...)` is wrapped in `try/except: pass`, so a CPU
+**fault** was being silently swallowed and *looked* like a clean exit after the
+banner. It was never a deliberate BDOS func 0. Two distinct large-model bugs were
+found by instrumenting the runner (dump fault CS:IP + a ring of far-transfers +
+DS/SS at the XIOS clock). Method note for future: to observe a large-model crash,
+temporarily make the runner re-raise the `UcError` instead of `except: pass`.
+
+### Bug 1 — owmath.asm helpers near-`ret` but are FAR-called in large model (FIXED, VERIFIED)
+- **Symptom:** after the banner, CS marched linearly through unmapped memory
+  (RING dump: CS=ACB8 constant, IP +0x102/block) until a `UcError` fault at
+  ACB8:3474. The far-transfer ring pinpointed the origin: `portme` (CS 0428) far-
+  called into segment `CODE` (CS 0039) which then far-jumped to garbage.
+- **Root cause (VERIFIED via disasm of the CMD):** `owmath.asm` (`__U4M/__I4M/__U4D`,
+  the 32-bit long mul/div helpers DR C lacks) ended in a **near `ret` (C3)** — it
+  was written "reached by near calls (small model)". In the LARGE model every
+  inter-module call is FAR, so the Watcom code generator far-calls these helpers
+  too (pushes CS:IP = 4 bytes); a near `ret` pops only 2 → **2-byte stack leak per
+  call** → the stack unwinds into garbage and CS eventually far-jumps to an
+  unmapped segment and faults. Small model matched (near call + near ret), so the
+  bug was large-only.
+- **Fix (`owc-drc/stdcbench/owmath.asm`):** model-conditional return via WASM's
+  `@CodeSize` predefine (`1` under `-ml`, `0` under `-ms`): a `RET_` macro emits
+  `retf` in the large model, `ret` in the small. Same source, both models.
+  Verified: the CMD now has `CB` (retf) at the helper's return; the ACB8 fault is
+  gone; small still assembles to `C3` and still scores 7/5/12.
+
+### Bug 2 — XIOS clock pragma stores DS-relative but struct was an SS stack local (FIXED, VERIFIED)
+- **Symptom (after Bug 1 fixed):** large no longer crashes but never finishes —
+  `c90base()`'s timed `do { … } while((end=clock()) - start < 8s)` loop spins.
+  Instrumenting INT 28h fn 19: in 120M insns large made **0** clock reads that
+  advanced (small needs only 4 total), i.e. the loop never saw time pass.
+- **Root cause (VERIFIED via a DS/SS probe at the clock call):** the `xios_tick16`
+  inline-asm pragma copies the counter with `mov [bx],ax` etc. — **DS-relative**.
+  The struct was a **stack local** (`struct xios_tick t;`), i.e. at SS:BX. In the
+  large model **DS != SS** (measured: DS=1EA9, SS=36A9 → store@269FA vs struct@3E9FA,
+  MISMATCH); the write landed in the wrong segment and `t.lo/hi/per` read back stale
+  stack bytes → elapsed time never grew → infinite loop. Small model: DS==SS==DGROUP
+  → MATCH → fine.
+- **Fix (`owc-drc/stdcbench/portme.c`):** make the tick struct `static` so it lives
+  in DGROUP/DS; the DS-relative store then hits it in BOTH models. Verified: with
+  the fix the C-visible clock advances in large (Cclock 0 → 13384 ms) and BX at the
+  call is now a low DGROUP offset (6888), not a stack address; small unchanged (7/5/12).
+
+### Residual — at least one MORE large-model bug (NOT fixed; DEFERRED per user)
+With Bugs 1+2 fixed, large now *enters* the benchmark loop and the clock advances,
+but after ~3 clock reads it **hangs inside a benchmark module** (CS:IP wanders
+1438/1475/1C81/19C2 = the compute modules) and never reads the clock again — i.e.
+an infinite loop *inside* `c90base_compression()`/`isort()`/`immul()`, almost
+certainly a further large-model near/far pointer or long-math defect in one of
+those modules. Uncharacterised. **Decision (user, 2026-08-13): stop chasing the
+large model for now; ship the small model as the working default.** stdcbench LARGE
+has no reference score on any path anyway.
+
+### Kept fixes vs. working default
+- Bugs 1+2 fixes are correct, verified, and safe for the small model, so they stay
+  in the tree (prerequisites for any future large-model work). They do NOT make
+  large complete on their own — the residual remains.
+- **Working default = SMALL model** (`stdcbench-cpm86.sh` default `-m s`): 7/5/12,
+  verified byte-for-byte identical on Unicorn AND emu2. Use small for all
+  benchmarking until the residual large-model compute-loop bug is found.
+
+### Files (tracked)
+- `open-watcom-v2/contrib/ravn/owc-drc/stdcbench/owmath.asm` — `@CodeSize` `RET_` macro.
+- `open-watcom-v2/contrib/ravn/owc-drc/stdcbench/portme.c` — `static` tick struct + why.
+- Both changes carry the root-cause explanation inline as comments.
