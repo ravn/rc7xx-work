@@ -78,3 +78,13 @@ forward: use only BDOS (INT 0E0h) calls in this glue, no XIOS calls.**
 TOD struct is `{unsigned day; unsigned char hour, min, sec;}` (hour/min/sec are 2
 BCD digits); must be a **static** (DGROUP/DS) struct, not a stack local, so the
 BDOS write lands where we read (DS != SS in large model).
+
+**stdcbench covers NO math (verified):** the `c90float`/`c90double` modules are
+upstream stubs returning 0 ("NOT YET IMPLEMENTED" in stdcbench 0.8), and no
+`<math.h>`/libm is used anywhere — c90base is integer, c90lib is string/hashtable
+work. So score 13 measures only integer + standard-library performance and says
+nothing about DR C float/double/transcendental correctness. The DR C math bridge
+status is analysed separately in `../DRC_FLOAT_ANALYSIS.md` (transcendentals are
+real software routines & correct in genuine DR C; only *double-returning* library
+calls fail to bridge under Watcom `-fpi87`). Tracked as ravn/rc7xx-work#3.
+Large-model stdcbench on MAME is unverified (small-model only) — tracked as #4.
