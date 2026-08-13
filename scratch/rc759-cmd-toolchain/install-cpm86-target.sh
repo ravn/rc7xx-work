@@ -36,7 +36,7 @@ BLOCK=" main errno sys_nerr nostart nofloat clear_error "
 # Extract public (no leading underscore) libc-looking symbols from the real
 # stdlib. Take the UNION of both models' libraries (CLEARS small + CLEARL large)
 # so the generated glue serves either model; the names are identical libc names.
-SYMS=$( { strings "$DRC/CLEARL.L86"; [ -f "$DRC/CLEARS.L86" ] && strings "$DRC/CLEARS.L86"; } \
+SYMS=$( { strings -n 3 "$DRC/CLEARL.L86"; [ -f "$DRC/CLEARS.L86" ] && strings -n 3 "$DRC/CLEARS.L86"; } \
         | grep -oE '^[a-z][a-z0-9_]{1,10}$' | grep -vE '^_' | sort -u)
 
 {
@@ -51,14 +51,17 @@ SYMS=$( { strings "$DRC/CLEARL.L86"; [ -f "$DRC/CLEARS.L86" ] && strings "$DRC/C
   echo "#ifndef _CPM86_PREINCL_H"
   echo "#define _CPM86_PREINCL_H"
   echo ""
-  echo "/* DR C cdecl: args pushed right-to-left, caller cleans, return in AX"
-  echo " * (DX:AX for long). The call is FAR in the large model, NEAR in the small"
-  echo " * model -- pick it from Watcom's predefined __LARGE__/__SMALL__ so this one"
-  echo " * file serves both. \"*\" alias -> bare DR C symbol name. */"
+  echo "/* DR C cdecl: args pushed right-to-left, caller cleans.  We do NOT force"
+  echo " * a return register: Watcom picks it from each routine's declared return"
+  echo " * type -- AX for int, DX:AX for long and for the large-model far pointer"
+  echo " * -- which matches DR C exactly.  (Forcing value [ax] made pointer-return"
+  echo " * routines like malloc/realloc fail E1121 in the large model.)  The call"
+  echo " * is FAR in large, NEAR in small; pick it from __LARGE__/__SMALL__ so this"
+  echo " * one file serves both. \"*\" alias -> bare DR C symbol name. */"
   echo "#ifdef __LARGE__"
-  echo "#pragma aux DRC \"*\" parm caller [] value [ax] far;"
+  echo "#pragma aux DRC \"*\" parm caller [] far;"
   echo "#else"
-  echo "#pragma aux DRC \"*\" parm caller [] value [ax];"
+  echo "#pragma aux DRC \"*\" parm caller [];"
   echo "#endif"
   echo ""
   echo "/* Entry point: define your program with  DRC_MAIN { ... }. Exported as the"

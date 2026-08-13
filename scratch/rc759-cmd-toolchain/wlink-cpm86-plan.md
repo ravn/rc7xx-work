@@ -921,3 +921,48 @@ CLEARL. The same mandel_cpm86.c / hello_cpm86.c build unchanged for both.
 - large (CLEARL): 25 rows, width 78, **byte-identical to the DR C oracle**.
 - small output == large output, byte-for-byte; both exit cleanly (exit 0, no
   opcode-63). hello: `strlen("HELLO")` -> 5 in both models.
+
+## FINDING — 2026-08-13 (j): Unicorn runner large-model loader FIXED + regression test
+
+`cpm86run_unicorn.py`'s `_load` used to place only the CODE and DATA group
+images and describe just those two in the base page. Small/8080 CMDs have only
+those groups, so they worked; but a large ("compact") model CMD also carries
+EXTRA (3), STACK (4) and auxiliary (5..8) groups — DR C large model puts its
+startup (CLEARL) and a second far-code group (observed as **AUX4**) there. With
+those groups neither loaded nor described, CLEARL's base-page walk failed and it
+aborted **"You must link with LINK86 V1.2 or later."** — this, not our CMD or
+`-ecc`, was the true cause of the large-model blocker.
+
+### The fix (mirrors emu2's proven CP/M-86 loader)
+`_load` now, for the non-8080 model:
+- gives the DATA group a full 64K segment by default (so the bootstrap stack at
+  `data_seg:0xFFFE` fits; the large data descriptor carries G_MAX=0);
+- allocates a **successive segment for every remaining group** (extra/stack/
+  aux 1..4), loads each group's image (zero-filling the BSS tail), and
+- writes the full **6-byte base-page descriptor** for each at offsets
+  0x0C (extra) / 0x12 (stack) / 0x18,0x1E,0x24,0x2A (aux 1..4):
+  length-in-bytes (24-bit) + segment (word) + model flag.
+Small/8080 have none of these groups, so their path is byte-for-byte unchanged.
+
+### Verified
+- **mandel large** (CODE+DATA+EXTRA+STACK+AUX4) under the Unicorn runner is now
+  **byte-identical to the DR C oracle**, and identical to mandel small.
+- New minimal two-module large program (`far_main.c` + `far_lib.c`) exercising a
+  FAR inter-module call + FAR data pointer prints `fold=51662 pick=353` under
+  BOTH the Unicorn runner and emu2, matching an **independent host computation**.
+- Regression test `large-model-runner.sh`: builds the demo in both models, runs
+  under the Unicorn runner, cross-checks emu2, and guards the small model.
+  Confirmed it **FAILS** (large -> "LINK86 V1.2") when the `_load` fix is
+  reverted and **PASSES** with it. Files: `open-watcom-v2/contrib/ravn/
+  cpm86run_unicorn.py` (fix), `scratch/rc759-cmd-toolchain/{far_main,far_lib}.c`,
+  `large-model-runner.sh`.
+
+### Still open (separate from the loader)
+- **stdcbench large** reaches its benchmark loop under emu2 (spins there — emu2
+  has no XIOS clock) but terminates early (~204K insns, banner only) under the
+  Unicorn runner despite the same group set as mandel large. mandel large is
+  byte-perfect, so this is NOT the generic aux/far-code path; it is specific to
+  stdcbench large (deep recursion / a particular lib call) and there is no
+  reference score for stdcbench large anywhere yet. Deferred.
+- emu2 XIOS Int 28h fn 19 clock still unimplemented (would let emu2 score
+  stdcbench for an independent cross-check of the Unicorn 7/5/12).

@@ -32,9 +32,18 @@ done
 [ ${#SRCS[@]} -gt 0 ] || { echo "usage: cc-cpm86.sh [-m s|l] -o OUT.CMD file.c [...]"; exit 1; }
 
 # Model -> Watcom code-gen flags + DR C runtime library.
+#   -ecc  : default calling convention = cdecl (args on stack, caller cleans) --
+#           MUST match DR C, and stdcbench proved it is required for the program's
+#           OWN inter-module + recursive calls too: with Watcom's default (watcall,
+#           register-based) deep recursion corrupts the return linkage and the
+#           program terminates mid-run instead of returning (small model: no scores
+#           without -ecc, 7/5/12 with it).
+#   -fpi87: inline 8087 float (DR C's library provides no Watcom float helpers).
+#   -zu   : SS != DGROUP -- correct only for the LARGE model (DR C small has
+#           SS == DS == DGROUP, where -zu wrongly introduces far pointers, W112).
 case "$MODEL" in
-  l) MFLAGS="-ml";           CLEAR="CLEARL.L86";;
-  s) MFLAGS="-ms -nt=CODE";  CLEAR="CLEARS.L86";;  # -nt=CODE: merge text into CLEARS's CODE group
+  l) MFLAGS="-ml";           CLEAR="CLEARL.L86"; ZU="-zu";;
+  s) MFLAGS="-ms -nt=CODE";  CLEAR="CLEARS.L86"; ZU="";;  # -nt=CODE: merge text into CLEARS's CODE group
   *) echo "unknown model '$MODEL' (use s or l)"; exit 1;;
 esac
 
@@ -45,9 +54,8 @@ OBJLIST=""
 i=0
 for src in "${SRCS[@]}"; do
   i=$((i+1)); OBJ="M$i"
-  # -zu: pointer args need a real DGROUP fixup (DR C runs SS!=DS).
   # -i=<target>: auto-includes _preincl.h (the glue).
-  "$OW/bwcc" -0 $MFLAGS -s -q -zu -i="$CPM86_TARGET_DIR" "$src" -fo="$WORK/$OBJ.OBJ"
+  "$OW/bwcc" -0 $MFLAGS -s -q $ZU -ecc -fpi87 -i="$CPM86_TARGET_DIR" "$src" -fo="$WORK/$OBJ.OBJ"
   python3 "$HERE/omf_classicize.py" "$WORK/$OBJ.OBJ" "$WORK/${OBJ}C.OBJ" >/dev/null
   OBJLIST="${OBJLIST:+$OBJLIST,}${OBJ}C"
 done
