@@ -1,0 +1,5 @@
+# DR C library-derived artifacts — proprietary (Digital Research), do NOT commit.
+# Regenerate locally with ./build_drclib.sh <path-to>/clears.l86 drclib.lib
+drclib.lib
+drclib.lst
+objs/
