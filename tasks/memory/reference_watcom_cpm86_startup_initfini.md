@@ -61,3 +61,24 @@ real initfile.obj + call it once at startup (we call it from main(); a fuller
 crt0 runs it via __InitRtns). stubs needed: errno, flushall, __lseek, fsync,
 __full_io_exit (all unused on the console write path). emu2 appends a trailing
 \r\n at program exit (not our output). Fork commit dd3f048e.
+
+## Milestone 4 PROVEN (2026-08-14): stdcbench 0.8 on Watcom clib beats DR C
+`build-stdcbench.sh` links the BYTE-IDENTICAL upstream stdcbench 0.8 integer
+suite (c90base+c90lib, the SAME tree owc-drc built on DR C) against Watcom's
+OWN, UNCHANGED clib + our seams — no DR C runtime / clears.l86. Only glue is
+`test/scbport.c` (clock, __InitFiles, main). Full library surface exercised:
+printf/sprintf, string (strcmp/ncmp/chr/rchr/cpy/ncpy/str/len + strtol),
+ctype (isdigit/isspace macros need istable.obj `_IsTable`; tolower is a fn),
+mem (cpy/set/move/cmp/chr), malloc/free/realloc/calloc, qsort, i4m/i4d.
+- CLOCK: DR C portme read BDOS T_SECONDS (fn 155); emu2 does NOT implement 155
+  (spins forever). scbport.c reads T_GET (fn 105) instead — emu2 (host clock)
+  AND the RC759 XIOS both maintain it, so the SAME binary times on both.
+- emu2 run = FUNCTIONAL only (host-speed score, proves execution). The
+  RC759-COMPARABLE score needs cycle-accurate MAME rc759 (`run-stdcbench-mame.sh`
+  builds -DMAME_DONE + OUT 0x2FE done-signal, reuses scb_mame.lua).
+- RESULT on MAME rc759 (CCP/M 3.1, XIOS 2.3), Watcom full-opt `-otexan`:
+  **c90base 12 · c90lib 8 · final 20** vs DR C **8 · 5 · 13** — Watcom ~1.5x
+  faster on the same machine. (-zl unoptimised gave 10/5/15.)
+- stdcbench c90base/c90lib exercise NO float (c90float/c90double are upstream
+  0.8 stubs) → does NOT retire the #3 double ABI seam.
+Fork commit (this milestone): see rc7xx-work#6 milestone 4.
