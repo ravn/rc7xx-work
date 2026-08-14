@@ -30,3 +30,18 @@ submodules (`cpm86-crossdev/`, `llvm-z80/`, `rc700-gensmedet/`), so a search
 scoped to the current subtree will miss them. Only after that empty result do
 you fetch from the network. Canonical home for CP/M-86 / DRI reference manuals:
 `cpm86-crossdev/docs/manuals/` (see [[reference_dri_cpm86_manuals_location]]).
+
+**Trigger also fires on AUTHORING, not just downloading.** 2026-08-14 — asked to
+add an integer-Mandelbrot milestone test, I started *writing a new* `mandel.c`
+(and had already re-fetched `az8634b.zip`) instead of searching first. The
+project already had the canonical fixed-point 8.8 Mandelbrot in several forms:
+`scratch/rc759-cmd-toolchain/mame-tests/mandel-mame.c` (+ `MANDEL-MAME.CMD` and
+the reference screenshot `MANDEL_mame_rc759.png`), `scratch/.../mandel_cpm86.c`
+(emu2 path), and the DR C oracle `open-watcom-v2/contrib/ravn/owc-drc/mandel-ow.c`.
+The user caught it ("vi har allerede mandelbrot heltal i projektet",
+"hvorfor kiggede du ikke selv først"). Root cause: I skipped the task-start
+MEMORY.md scan (see [[feedback_check_memory_before_coding]]), so this rule never
+loaded. **Before creating ANY new program, test, example, asset, or reference
+file, first search the whole workspace for an existing one** — reuse/adapt it
+rather than re-authoring. Existing test harnesses + their oracle screenshots are
+especially costly to duplicate.
