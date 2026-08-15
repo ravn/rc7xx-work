@@ -89,7 +89,8 @@ Two gotchas worth remembering:
   (float02) behind a `__STDC_VERSION__>=199901` guard in `hdr/dos/h/math.h`.
 - **The driver must call `__InitFiles()` before any printf** — our minimal crt0
   does not walk the init table, so without it `stdout` has no buffer and printf
-  silently emits nothing (this produced empty output until fixed).
+  silently emits nothing (this produced empty output until fixed). Tracked as a
+  self-init enhancement: ravn/open-watcom-v2#16.
 - `port/abortcpm.c` supplies a lightweight `abort()` (BDOS-0 warm boot) so
   `fail.h`'s abort reference links without pulling Watcom's signal/raise machinery.
 Runner: `scratch/rc759-cmd-toolchain/mame-tests/owt-mame.sh`.
