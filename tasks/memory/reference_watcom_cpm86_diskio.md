@@ -376,3 +376,46 @@ that differs between emu2 and real CP/M, so `test/disktest.c` asserts only the
 seam (both transitions return 0, missing file -> -1, data preserved), not
 enforcement. Verified under emu2 (diskio 661, fscanf 672, streamio, INT21h=0)
 AND on the real RC759 under MAME: `DISKIO: PASS (661 tests, 0 failures)`.
+
+## access / stat / utime — status probe via SEARCH FIRST (2026-08-15, MAME-verified)
+
+`port/diskio.c` implements `access`, `stat`, `utime` (the `file` clibtest group).
+The status primitive is **SEARCH FIRST (BDOS fn 17, F_SFIRST)**, deliberately
+NOT F_OPEN.
+
+**Lock-leak lesson (why not F_OPEN):** on Concurrent CP/M-86, F_OPEN (fn 15)
+allocates a system open-file *lock*-list entry that only F_CLOSE releases. A
+status probe that opens-without-closing leaks a lock each call; after a handful
+the small, system-wide lock list overflows and the BDOS **aborts the running
+program to the CCP** (observed live: an F_OPEN-based probe exited disktest to
+`A>` on the real RC759). emu2 models no lock list, so it never showed this — a
+classic "emu2 passes, real hardware aborts" divergence. F_SFIRST scans the
+directory and copies the matched 32-byte entry to the current DMA (at
+`dma[(AL&3)*32]`) with NO lock and no close.
+
+From the 32-byte dir entry: `access` answers W_OK via the R/O bit (byte 9 bit 7)
+-> EACCES, else ENOENT; `stat` fills st_size (F_SIZE fn 35, record-rounded),
+st_mode (S_IFREG + R/O->S_IWRITE + `.CMD`->S_IEXEC, owner bits replicated),
+st_dev=0; `utime` is a no-op success (ENOENT on a missing file). Test counts:
+emu2 diskio **686**, fscanf **672**, streamio PASS (all INT21h=0); real RC759
+MAME **686/0**. The access/stat/utime test block in `test/disktest.c` is gated
+`#ifndef FSCANF_TEST` (the memory-tighter fscanf build links the scanf engine +
+math286 and the extra stack locals tip it over TPA; the seam is fully exercised
+by the diskio harness anyway).
+
+**Timestamp gap (tracked enhancement, NOT yet done):** st_atime/st_mtime/st_ctime
+are 0 for now. The RC759 medium IS genuinely CP/M 3 — disk label `PIC 2-3.1-31`,
+flag byte 0x31 = create+update datestamps enabled — and carries real SFCB
+datestamps (raw-decoded to 1985-03-26 12:54, days=2642 since 1978-01-01, BCD
+time). Reading them needs **F_TIMEDATE (fn 102)**, runtime-GATED off on emu2
+(which has no fn 102; max BDOS case 105). The version discriminator (real RC759
+fn 12 return vs emu2's 0x0031) is UNVERIFIED — must be probed empirically on MAME
+before coding, do not guess. Independent oracle for the eventual assertion is the
+**raw SFCB byte-decode** (independent of both cpmtools and guest BDOS).
+
+**cpmtools diskdef note:** `scratch/rc759-cmd-toolchain/diskdefs` (name
+`rc759-drc`) declares `os 2.2`, which under-describes the CP/M-3 medium but is
+kept deliberately: os-2.2 cpmtools is datestamp-blind, so `cpmcp` preserves the
+authentic 1985 SFCB stamps byte-for-byte instead of rewriting them. Switching to
+`os 3` did NOT surface stamps in `cpmls -D` (still blank) so it is not a free
+win — tracked as a "check later" todo, not a bug to fix now.
