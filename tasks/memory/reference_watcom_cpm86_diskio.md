@@ -280,3 +280,15 @@ Set/clear via BDOS fn 30 (Set File Attributes). So chmod/stat can map:
 CAVEAT: emu2 masks bit 7 (0001-cpm86-mask-bit-7 patch), so the emulator will
 not REJECT a write to an R/O file -- the seam may honor bits internally only.
 
+
+### What actually PERSISTS on the disk under emu2 (oracle-verifiable attributes)
+Verified in emu2-cpm86 src/cpm86.c (fn30 @1190, dir read-back @857) + dos.c dos_chmod_fcb:
+  - R/O (t1', FCB byte 9 bit 7): PERSISTS. fn30 -> host chmod u-w/u+w; dir search
+    maps host-not-writable back to t1'. Round-trips -> chmod/stat R/O IS testable.
+  - SYS (t2') + ARCHIVE (t3'): NO host analog (emu2 comment) -> not persisted;
+    set/get is effectively a no-op round-trip. API may carry them; can't be proven.
+  - f1'..f4' user bits: masked off by patch 0001 -> never reach the disk.
+  - F6' (FCB byte 6 bit 7): NOT an attribute -- it's the CP/M-3 LRBC exact-size
+    trigger (truncate closed file to exact byte count in FCB+0x20). Ties to #1.
+BOTTOM LINE for the file-group oracle: only R/O is write-and-read-back verifiable
+under emu2. Build chmod/stat tests around R/O; treat SYS/archive as best-effort.
