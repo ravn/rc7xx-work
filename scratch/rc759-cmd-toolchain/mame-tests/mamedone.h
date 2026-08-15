@@ -25,4 +25,25 @@ extern void mame_done(unsigned status);
     parm [ax]               \
     modify [dx];
 
+/* mame_out(word): stream ONE 16-bit word to the host on the same undecoded port
+ * 0x2FE. Where mame_done squeezes a whole result into one byte-packed word, a
+ * test with richer output (e.g. a 16-bit test count > 255) instead sends a SMALL
+ * RECORD as a sequence of words -- a tag, then payload fields, then an end
+ * sentinel -- in program order. The Lua tap (done_signal.lua / disk_done.lua)
+ * collects the words and interprets the record when the sentinel arrives. This
+ * carries full 16-bit fields with no guest-memory or mid-instruction register
+ * reads, so it is deterministic on real rc759 hardware. Must run after all
+ * console output is flushed. Example (disktest.c):
+ *     mame_out(0xD15C);            // tag: disk result
+ *     mame_out(tests);            // full 16-bit count (e.g. 511)
+ *     mame_out(failures);         // 0 == PASS
+ *     mame_out(0xE0F0);            // end sentinel -> host snapshots + exits
+ */
+extern void mame_out(unsigned word);
+#pragma aux mame_out =      \
+    "mov dx,02FEh"          \
+    "out dx,ax"             \
+    parm [ax]               \
+    modify [dx];
+
 #endif /* MAMEDONE_H */

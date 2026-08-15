@@ -81,3 +81,36 @@ the recommended follow-up.
   to 0 after capture for the random-record I/O that follows.
 - `KNOWN_ISSUES.md` (new) is the requested honest bug/gap/limit/UNVERIFIED list.
 - Oracle now 511 self-checks, purity `INT21h=0 · BDOS=15` (fn 12 added).
+
+## MAME-verified on real RC759 / Concurrent CP/M-86 3.1 (2026-08-15)
+
+`mame-tests/disk-mame.sh` runs `disktest.cmd` on the REAL rc759 under MAME —
+the authoritative oracle (emu2 is only a smoke test). **All 511 checks PASS on
+the metal**; the screen boots **Concurrent CP/M-86 3.1** and shows `DISKIO:
+PASS (511 tests, 0 failures)`. Since the OS reports 3.1, `os_has_lrbc()` is
+TRUE there, so the LRBC/version-gated path executes on the real target.
+
+**How the result crosses the emulator boundary — new `mame_out()` primitive**
+(added to `mame-tests/mamedone.h`, additive; the old byte-packed `mame_done()`
+is untouched): the old convention squeezes pass+fail into one byte each, which
+cannot hold a 511 test count. Instead the guest STREAMS a small record as a
+sequence of 16-bit words on the undecoded port 0x2FE — tag `0xD15C`, full
+`tests`, `failures`, end sentinel `0xE0F0`. `disk_done.lua` collects the words
+in program order (single CPU = deterministic) and interprets them on the
+sentinel. This carries full 16-bit fields with NO guest-memory or
+mid-instruction register reads (which may be unsynced), so it is robust on real
+hardware. Verified: `DISK-DONE tag=0xD15C tests=511 failures=0 words=4`.
+Files: `disktest.c` `#ifdef MAME_DONE` block; `build-diskio.sh` gains
+`DISKIO_EXTRA`/`DISKIO_NORUN` (build the -DMAME_DONE .cmd, skip emu2 run).
+STILL emu2-only: the foreign-LRBC decode value (KNOWN_ISSUES #1).
+
+**Fallback branch (plain CP/M-86, no LRBC) — how to verify.** The record-rounded
+fallback (`os_has_lrbc()` false, version < 0x30) is NOT exercised on rc759 (it
+reports 3.1). **Do NOT modify rc759 to downgrade its version** (user directive
+2026-08-15). To test it on a real oracle, use a *different* 8086 MAME machine
+that boots plain CP/M-86: DEC Rainbow 100 (`rainbow`), Apricot PC/Xi/F
+(`apricot`/`apricotf`), Victor 9000 / Sirius 1 (`victor9k`), or IBM PC
+(`ibm5150`). Caveats: our `regnecentralend` build has ONLY rc702/rc703/rc759
+compiled in (none of those others), so a full upstream MAME build + that
+machine's ROMs + a bootable CP/M-86 floppy image are needed. NOTE: Olivetti M20
+is Z8000-based, NOT 8086 — our code will not run there.
