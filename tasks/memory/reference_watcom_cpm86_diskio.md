@@ -104,6 +104,36 @@ Files: `disktest.c` `#ifdef MAME_DONE` block; `build-diskio.sh` gains
 `DISKIO_EXTRA`/`DISKIO_NORUN` (build the -DMAME_DONE .cmd, skip emu2 run).
 STILL emu2-only: the foreign-LRBC decode value (KNOWN_ISSUES #1).
 
+## Write-side LRBC exact size — DONE + MAME-verified (2026-08-15, later)
+
+Closes KNOWN_ISSUES #2 (was "no write-side LRBC on close"). Now a BINARY file WE
+wrote to a non-128 length reopens BYTE-EXACT on CCP/M-86, not record-rounded.
+
+- **Protocol (in `__close`, `port/diskio.c`):** after `_bdos(BD_CLOSE,…)`, for a
+  file we actually WROTE (`fp->wrote`), binary only (`!fp->text`), gated on
+  `os_has_lrbc()`, if `len & 0x7F != 0` re-issue **F_ATTRIB (BDOS fn 30)** with
+  **F6'** = bit 7 of FCB byte 6 set and the byte count (`len & 0x7F`) in FCB+32;
+  clear F6' again after. On CP/M 3+ the OS records that count in the directory.
+- **Why NOT FCB+32-at-F_CLOSE (my first, WRONG attempt):** the close path treats
+  FCB+32 as the sequential current-record byte, so it will not honour a byte
+  count there for a handle that WROTE. Confirmed against emu2's close handler:
+  `dos_truncate_fcb()` deliberately returns -1 when `handle_written[h]` — FCB+32
+  is CR-contaminated on a writer. The documented CP/M 3 / DOS-Plus path is the
+  post-close **F_ATTRIB/F6'** call (emu2 `dos_truncate_fcb_name`, resolves the
+  closed file by name). No CP/M 3 programmer's guide is in the workspace, so the
+  protocol shape came from emu2's implementation; the AUTHORITATIVE confirmation
+  is the MAME run below (it works on the real OS).
+- **Verified:** `test/disktest.c` gated on `os_reports_lrbc()` writes 100 bytes,
+  closes, reopens COLD, asserts `SEEK_END == 100` (not 128). PASS under emu2 AND
+  — the authority — **PASS on real RC759 under MAME (Concurrent CP/M-86 3.1):
+  `DISK-DONE tag=0xD15C tests=650 failures=0` / `DISKIO: PASS (650 tests, 0
+  failures)`** via `mame-tests/disk-mame.sh`. Snapshot `mame/snap/rc759/0000.png`.
+- Oracle count 511 → **650** (the 100-byte write loop adds VERIFYs). All three
+  emu2 harnesses still green, INT21h=0: diskio 650, fscanf 661, streamio.
+- **Supersedes** the earlier HONEST GAP (b) above ("write path does NOT persist
+  an LRBC") — that gap is CLOSED. Read-side foreign-LRBC decode (gap a / #1) is
+  still emu2-only.
+
 **Fallback branch (plain CP/M-86, no LRBC) — how to verify.** The record-rounded
 fallback (`os_has_lrbc()` false, version < 0x30) is NOT exercised on rc759 (it
 reports 3.1). **Do NOT modify rc759 to downgrade its version** (user directive
