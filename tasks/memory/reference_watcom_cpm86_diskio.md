@@ -208,3 +208,29 @@ Still open in GAP #3 (larger / DOS-semantic-heavy):
   needs handle->dfile refcount indirection), umask/chmod R/O enforcement,
   _hdopen/_os_handle.
 - file group: access, chmod, stat, utime.
+
+## GAP #3: fscanf now proven (Watcom's UNCHANGED scnf.c) — same session
+
+Key finding: streamio/c/scnf.c compiles scan_float() UNCONDITIONALLY (no
+float-off switch), so fscanf/scnf drag the soft-float+ctype+mbyte stack even for
+%d/%s-only scanning — the LINKER must resolve FIDRQQ/FIERQQ/FIWRQQ + __U8M
+(double fixups), __Bits/isdigit/isspace (ctype), mbtowc (mbyte), strtod. So
+fscanf is NOT a small add; it needs the whole -fpc soft-float apparatus.
+
+Resolution: dedicated build-fscanf.sh (NOT in build-diskio, which stays
+float-free for crisp purity). Reuses build-whetstone.sh's proven 8087-free
+recipe: -fpc __FDxemu objs (fdmth086/fdi4086/chipd16/emustub + port/
+fpsupport.asm + fpsoftstub.asm with __real87=0), support modules
+(seterrno/rtcntrl/iobaddr + char/c/istable.c __IsTable), math286.lib archived
+from mathlib/library/msdos.286/ms, and LIB-searched msdos.086 clibs.lib for
+cgsupp/fpu/math/convert/char/mbyte/string. __Bits specifically lives in
+clib/(top)/ and string/ msdos.086 clibs.lib — added string lib to resolve it;
+purity held (INT21h=0), so no INT21h module got dragged.
+
+Test: test/disktest.c fscanf block gated behind -DFSCANF_TEST (build-diskio
+unaffected, still 543 PASS). build-fscanf: DISKIO: PASS (554 tests, 0 failures),
+INT21h=0. Commit (LOCAL): 4fa2fd8e41.
+
+Still open GAP #3: fopen("CON"); hard handleio (chsize/dup/umask/_hdopen); file
+group (access/chmod/stat/utime). Watcom's clibtest iotest.c still not run
+verbatim, but the seam surface it needs is now largely present.
