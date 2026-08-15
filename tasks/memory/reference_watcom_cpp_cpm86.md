@@ -73,8 +73,19 @@ so cpm86 C++ inherits a mature, maintained runtime, not an experiment:
 - Caveat: it is Watcom's OWN older C++ dialect (~early/mid-90s: partial templates,
   own class/iostream lib, NOT modern C++/STL).
 
-Structural limit: small model = 64 KB code + 64 KB data, and FORMAT CPM86 is
-phase-1 (small only). Non-trivial C++ (templates/iostreams) bloats past 64 KB →
-would need large-model support (phase-2 wlink). So "freestanding/embedded C++"
-(classes/templates/virtuals/new-delete) is usable now; full standard C++ is a
-larger runtime-port effort like the clib retarget was.
+Structural limit: ONLY small model (-ms) works right now (user-confirmed
+2026-08-16: "large virker ikke lige nu på cp/m-86"). Small model = 64 KB code +
+64 KB data → ~128 KB total program ceiling, of which ~100 KB is free after the
+fixed runtime. LARGE/compact model does NOT currently work, so the full RC759
+TPA (~293 KB reported on-screen) is NOT reachable; do not propose -ml as a
+working build path until phase-2 wlink support lands.
+
+Verified CMD sizes (segment descriptors from the CMD header, 2026-08-16):
+plain-C setjmp test 11.4 KB; iostreams 15.6 KB; full C++ (cppfeat: polymorphism
++ templates + operator<< + EH) 25.3 KB (12.5 KB code + 12.6 KB data). The bulk
+is FIXED C++/iostream/EH runtime overhead (~13 KB over the ~11 KB C baseline);
+app logic itself is a few hundred bytes, so a much larger program grows the
+image only by its own added code, well within the 64 KB/segment small-model
+wall. So "freestanding/embedded C++" (classes/templates/virtuals/new-delete) is
+usable now; full standard C++ is a larger runtime-port effort like the clib
+retarget was.
