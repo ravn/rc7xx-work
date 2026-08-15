@@ -77,8 +77,19 @@ Take-aways:
   Watcom's unmodified `initemu.asm` (its xchg_vects INT 21h would be present even
   if never executed). Carry a CP/M-86 variant in `port/` (startup glue = the
   layer we own; the clib proper stays unchanged). DR C solves the identical
-  problem the same way (per @xthra) — install an 8087 emulator on CP/M-86 by
-  setting the vectors directly when no coprocessor is present.
+  problem the same way — **verified in DR C source**, not just claimed:
+  `scratch/rc759-cmd-toolchain/rc759-drc-official/startup.a86` installs the
+  integer zero-divide vector via `m.init.hardware.error` (~L1339–1347) with the
+  identical segment-0 poke — `sub bx,bx / mov ds,bx / mov [bx],offset zerodiv /
+  mov 2[bx],cs` — no INT 21h. And DR C's own `m.init.8087` is `if 0`-compiled out
+  of the C startup (~L483–486, *"for Fortran 77 only, not for DRC"*), so DR C's C
+  float sets the emulator up library-driven/self-registering via the math lib —
+  matching Watcom's `xinit`/`xfinin` init-table mechanism that our `port/
+  emu87cpm.asm` keeps. This is an INDEPENDENT oracle (DR C shares no Watcom code).
+- **Implemented + assembled**: `port/emu87cpm.asm` (copy of `initemu.asm`, only
+  `xchg_vects` replaced by the segment-0 swap) assembles clean under `wasm
+  -bt=dos -0 -ms -fpi87`; `wdis` confirms 0× INT 21h, `ES=0`, `DI=0x00D0`,
+  `CX=0x14` (20 words), swap loop over `i34off`.
 
 ## Ultimate oracle
 
