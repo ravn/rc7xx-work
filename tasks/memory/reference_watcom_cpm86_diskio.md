@@ -114,3 +114,68 @@ that boots plain CP/M-86: DEC Rainbow 100 (`rainbow`), Apricot PC/Xi/F
 compiled in (none of those others), so a full upstream MAME build + that
 machine's ROMs + a bootable CP/M-86 floppy image are needed. NOTE: Olivetti M20
 is Z8000-based, NOT 8086 — our code will not run there.
+
+**ibm5150 CP/M-86 1.0 oracle — WORKING (2026-08-15).** The plain-CP/M-86
+fallback branch (`os_has_lrbc()` false) now has a real MAME oracle: IBM PC 5150
+booting DRI CP/M-86 **Version 1.0** (pre-CP/M-3, so LRBC genuinely absent — no
+need to force any flag). Added to our `regnecentralend` build (SOURCES gained
+`pc/ibmpc.cpp`). Assets under `mame/roms/ibm5150/` (BIOS rev3 1501476.u33 +
+CGA font 5788005.u33 + BASIC 5000019-23) and `mame/roms/kb_pcxt83/4584751.m1`;
+boot disk = MAME softlist `cpm8610` (raw cpm86.img sha1 f4074a4b…, installed as
+`mame/roms/ibm5150/cpm8610.zip`).
+
+Fast-boot recipe (~12 emulated s / ~2 s wall, vs ~110 s with stock 640K RAM —
+the 5150 POST memory test is the whole delay, only a blinking cursor until it
+finishes):
+```
+cd mame
+./regnecentralend ibm5150 cpm8610 -kbd pcxt -isa4 "" -ramsize 128K \
+  -skip_gameinfo -window -nomaximize \
+  -autoboot_script <mame-tests>/ram128_boot.lua -nothrottle
+```
+Gotchas learned: default keyboard `keytronic_pc3270` needs undumped 14166.bin →
+use `-kbd pcxt` (good dump). Default `-isa4` hdc needs wdbios.rom → drop with
+`-isa4 ""`. `-skip_gameinfo` removes ONE of the two startup screens (the red
+warning screen still needs a click unless auto-dismissed). ALWAYS run
+`-window` (never headless/-video none) — user watches live. `ram128_boot.lua`
+sets motherboard DSW1 "Extra RAM size" DIP to 0x02 (64K expansion → 128K total)
+so POST tests only 128K and matches `-ramsize 128K` (else 201 memory error).
+CP/M-86 reports "Memory (Kb): 064" TPA which is plenty for disktest.
+
+TODO (harness port, not yet done): disktest needs (a) disktest.cmd on a WRITABLE
+CP/M-86 disk (softlist A: is read-only) — needs a cpmtools diskdef for the 160K
+IBM-PC CP/M-86 format, and (b) autorun — CP/M-86 1.0 has no turnkey/AUTOEXEC, so
+inject keystrokes via lua after `A>` appears. Port 0x2FE io-write-tap in
+disk_done.lua should work unchanged on ibm5150 (tap sees the bus cycle even if
+COM2 also decodes it; use `-isa2 ""` to be safe).
+
+## ibm5150 CP/M-86 1.0 oracle — PARKED 2026-08-15 (ravn/open-watcom-v2#17)
+
+Goal: verify the `os_has_lrbc()==false` fallback (KNOWN_ISSUES #1) on a genuinely
+pre-CP/M-3 target, which RC759/Concurrent CP/M-86 3.1 cannot reach. Harness is
+complete and reproducible; BLOCKED on program load. Full writeup + repro in
+issue #17. Key corrections to the fast-boot note above:
+
+- DO NOT use the 128K fast-boot DIP recipe for disktest — it gives a 64K TPA and
+  `MEMORY NOT AVAILABLE`. Boot at full 640K (default DIPs already = 64K base +
+  576K extra); accept the ~110 emulated-second POST.
+- ROOT CAUSE of `MEMORY NOT AVAILABLE`: CP/M-86 1.0 self-caps its TPA at 128 KB
+  regardless of installed RAM. MAME provides 640K and the IBM POST records it
+  correctly (BIOS word `0040:0013` phys 0x413 = 640 => 0x0280, verified via lua),
+  but the CP/M-86 1.0 sign-on always reports "Memory (Kb): 128" — the cap is in
+  this image's BIOS memory map, not MAME, not fixable via -ramsize/DIPs.
+- disktest.cmd CMD header decoded: grp0 CODE 923 para (14768B), grp1 DATA 1460
+  para (23360B), fixed min==max (compact/large model, no elasticity), ~37KB
+  total. Suspected the two-group fixed-size layout is what CP/M-86 1.0's simple
+  loader can't place in its 128K managed region. NEXT: try `wcl86 -ms` small
+  single-group model, or run stock STAT.CMD through the harness to prove it.
+- WARNING-CLICK FIX: put `skip_warnings 1` + `skip_gameinfo 1` in `mame/ui.ini`
+  (skip_warnings is a UI option, NOT a CLI flag; `-skip_warnings` errors out).
+  This removes the imperfect-emulation click entirely.
+- Verified known-good boot image = MAME softlist `cpm8610` sha1
+  f4074a4b2f5826faa893869b163461a8808d13ef (NOT the WinWorld IMD fb070e9f…).
+- cpmtools file *removal* corrupts the cpm8610 boot (breaks CPM.SYS contiguous
+  load); add-only is safe → pristine A: + separate stripped B: layout.
+- CP/M-86 source (if BIOS memory-table patch ever needed): https://www.cpm.z80.de/source.html
+- Harness drivers: scratch/rc759-cmd-toolchain/mame-tests/{run_and_dump,ibm_disk_inject,dump_screen}.lua
+  Disks: scratch/cpm86-ibm5150/harness/{diskA,diskB}.img + diskdefs.
