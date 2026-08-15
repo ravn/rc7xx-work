@@ -4,8 +4,8 @@
 landed as milestone #3). `build-diskio.sh` + `test/disktest.c` run Open Watcom's
 **UNCHANGED** buffered FILE\* layer — `fopen`/`fclose`/`fwrite`/`fputs`/`fprintf`/
 `fread`/`fgets`/`fgetc`/`fseek`/`ftell`/`remove` — against **real CP/M-86 disk
-files** under emu2. Self-checking oracle: 28 `VERIFY`s → `DISKIO: PASS`, purity
-`INT21h=0 · BDOS=14`. All 8 build scripts stay green (no regression).
+files** under emu2. Self-checking oracle: 511 `VERIFY`s → `DISKIO: PASS`, purity
+`INT21h=0 · BDOS=15`. All 8 build scripts stay green (no regression).
 
 ## The one seam: `port/diskio.c`
 
@@ -19,8 +19,11 @@ and adds the five low-level primitives `fopen` bottoms out into — `_sopen` /
   pos>>7`, `offset = pos&127`. An unwritten record reads back as EOF (BDOS AL=1
   unwritten / 4 past-EOF) → fill the work buffer with `Ctrl-Z` (0x1A); a
   partial last record keeps a `Ctrl-Z` tail on disk = CP/M text-EOF **for free**.
-  Text read stops at first `Ctrl-Z`; binary does not (binary length only known to
-  nearest 128 B — inherent CP/M limit). SEEK_END rounds up to a sector.
+  Text read stops at first `Ctrl-Z`; binary does not. **Byte-exact length is
+  tracked LOCALLY** in `dfile_t.len` (seeded at open, extended by every
+  `__qwrite`), so `SEEK_END`/`ftell` are byte-exact for the whole life of an
+  open handle on any CP/M — a 200-byte binary write reports 200, not 256.
+  The old bug: `SEEK_END` used FILESIZE (fn 35) and rounded up to a record.
 - **DMA:** set BOTH fn 51 SETDMASEG (DX=DS via `mov ax,ds`) and fn 26 SETDMA
   (DX=&dma) before each random op; don't trust the load-time default DMA base.
 - **FCB (36 B):** [0]drive(0=default,1=A) [1..8]name [9..11]type [12]ex [13]s1
@@ -59,3 +62,22 @@ v1 round-trip before it can run byte-for-byte unchanged: streamio/iotest uses
 `filelength`/`eof`; filetest uses `rename`/`access`/`chmod`/`stat`/`utime`.
 `test/disktest.c` is the focused v1 gate; graduating to Watcom's own iotest.c is
 the recommended follow-up.
+
+## SEEK_END byte-exact length + runtime LRBC (fork 5e2e3509bd, 2026-08-15)
+
+- **Within-session `SEEK_END` is byte-exact everywhere** via local `dfile_t.len`
+  tracking. Fixed the record-rounding bug (200-byte binary → 256).
+- **Runtime OS-capability probe:** `os_has_lrbc()` caches BDOS fn 12 (S_BDOSVER);
+  version low byte ≥ 0x30 = CP/M 3+ / **CCP/M-86** (the RC759's OS) exposes the
+  **Last Record Byte Count (LRBC)** for exact binary length; plain CP/M-86 (2.2)
+  does not. Decided AT RUNTIME — same binary, right path per OS. `_sopen`
+  pre-sets FCB+32=0xFF before OPEN, captures the LRBC the OS writes back
+  (`dfile_t.open_lrbc`), decodes exact len = `(records-1)*128 + (lrbc?lrbc:128)`.
+- **HONEST GAPS (see `KNOWN_ISSUES.md`):** (a) LRBC read path is smoke-tested
+  under emu2 ONLY — **emu2 is NOT authoritative for LRBC; MAME/RC759 is** — no
+  MAME confirmation yet. (b) Our write path does NOT persist an LRBC on close,
+  so a binary file WE wrote reopens record-rounded even on CCP/M-86; a write-side
+  LRBC protocol is unimplemented. (c) FCB+32 is shared by CR and LRBC — cleared
+  to 0 after capture for the random-record I/O that follows.
+- `KNOWN_ISSUES.md` (new) is the requested honest bug/gap/limit/UNVERIFIED list.
+- Oracle now 511 self-checks, purity `INT21h=0 · BDOS=15` (fn 12 added).
