@@ -62,6 +62,27 @@ words). The genuine x87 in `fdmth086`/`chipd16` is the DEAD hardware branch
 (ESC bytes D8–DF selected out at runtime by `__real87==0`), not `CD 3x`.
 Replace with a disassembly-based code-vs-data check (like `assert_no_8087`).
 
+## Independent third-party oracle: Watcom's OWN float regression suite (2026-08-15)
+`contrib/ravn/watcom-cpm86-libc/build-owtests.sh` + `test/owtdrv.c` run Open
+Watcom's OWN `ctest/positive/source/float01..float04.c` **byte-for-byte unchanged**
+(only `-Dmain=owtest_main` so `owtdrv.c` supplies `main()` + a machine-checkable
+`OWTEST: PASS/FAIL` verdict). These are upstream's self-checking float tests
+(each `fail(__LINE__)`s on a wrong result), so a PASS is an INDEPENDENT oracle on
+our `-fpc` no-8087 soft-float — no host-cc reference needed. **Result: 4/4 PASS
+under emu2** (purity `INT21h=0 · BDOS>0` each) **+ MAME rc759 cross-check**:
+`float01` renders `OWTEST: PASS` on the real screen (i80186 @ 6 MHz, no 8087).
+
+Two gotchas worth remembering:
+- **`-zastd=c99` is required on the TEST compile** — the default Watcom C dialect
+  rejects float04's C99 hex-float constant (`0x1p…`) and hides `fpclassify`
+  (float02) behind a `__STDC_VERSION__>=199901` guard in `hdr/dos/h/math.h`.
+- **The driver must call `__InitFiles()` before any printf** — our minimal crt0
+  does not walk the init table, so without it `stdout` has no buffer and printf
+  silently emits nothing (this produced empty output until fixed).
+- `port/abortcpm.c` supplies a lightweight `abort()` (BDOS-0 warm boot) so
+  `fail.h`'s abort reference links without pulling Watcom's signal/raise machinery.
+Runner: `scratch/rc759-cmd-toolchain/mame-tests/owt-mame.sh`.
+
 ## MAME rc759 timing — first real no-8087 data point (2026-08-15)
 Ran the `-fpc`/libm Whetstone on cycle-accurate **MAME rc759** (the authoritative
 no-8087 oracle). rc759 CPU = **i80186 @ 6.000 MHz** (`mame .../rc759.cpp:618`,
