@@ -9,9 +9,9 @@ WLIB="$OW/bld/nwlib/osxa64/wlib.exe"
 INC="$OW/bld/hdr/dos/h"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
-for c in cpmio fileio printf stdlib string; do
+for c in cpmio fileio printf stdlib string cpprt; do
     "$WCC" -0 -ms -zq -i="$INC" "$c.c" -fo="$c.o"
 done
 rm -f clibs.lib
-"$WLIB" -q -b -n clibs.lib +cpmio.o +fileio.o +printf.o +stdlib.o +string.o +i4m.obj +i4d.obj
+"$WLIB" -q -b -n clibs.lib +cpmio.o +fileio.o +printf.o +stdlib.o +string.o +cpprt.o +i4m.obj +i4d.obj
 echo "built clibs.lib ($(wc -c < clibs.lib) bytes)"
