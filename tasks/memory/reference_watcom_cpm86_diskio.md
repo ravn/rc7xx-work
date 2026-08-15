@@ -267,3 +267,16 @@ two bits in the FCB filename high-bits: t1' (byte 9, 0x80) = READ-ONLY, t2'
   - Set/clear attribute via BDOS SET FILE ATTRIBUTES (fn 30), which writes the
     directory entry's t1'/t2' high bits.
 This bounds the file-group work: don't try to emulate full POSIX permissions.
+### Full FCB bit-7 attribute map (verified: CP/M-86 System Ref Guide + emu2 patch 0001)
+Bit 7 of ALL 11 FCB name+type bytes = "interface attribute" (NOT part of name;
+emu2 masks them off -> host-file backend does NOT enforce them at runtime):
+  - f1'..f4' (name bytes 1-4): USER-DEFINABLE (BDOS ignores; apps free to use)
+  - f5'..f8' (name bytes 5-8): reserved for CP/M system use
+  - t1' (type byte 9, 0x80):  R/O      read-only
+  - t2' (type byte 10, 0x80): SYS      system/hidden (user-0 SYS visible to all)
+  - t3' (type byte 11, 0x80): ARCHIVE  set = unchanged since last backup
+Set/clear via BDOS fn 30 (Set File Attributes). So chmod/stat can map:
+  R/O <-> S_IWRITE; plus expose SYS + ARCHIVE + 4 user bits via custom flags.
+CAVEAT: emu2 masks bit 7 (0001-cpm86-mask-bit-7 patch), so the emulator will
+not REJECT a write to an R/O file -- the seam may honor bits internally only.
+
