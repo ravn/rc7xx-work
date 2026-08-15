@@ -1,5 +1,25 @@
 # Plan: enable C++ iostreams + exceptions on native cpm86 (Watcom `wcl -l=cpm86`)
 
+## STATUS 2026-08-15: BOTH TRACKS DONE (emu2-verified) — MAME rc759 pending
+- **Track A (iostreams): WORKING.** `std::cout << str << int << hex << long << endl`
+  prints correctly; global ctor→main→dtor ordering with streams verified
+  (hello_ios.cpp, ios_types.cpp).
+- **Track B (exceptions): WORKING.** `throw` across 3 function frames unwinds both
+  local objects' dtors (LIFO) and lands in `catch(int)` (eh_test.cpp).
+- **setjmp/longjmp: WORKING + thoroughly tested** (setjmp_test.c, 5 phases: value
+  pass-through, longjmp(0)→1, cross-function, re-entrant loop, volatile persist).
+- Drivers: `wpp-cpm86.sh` (C++, `--eh` selects the EH lib set); clib seams in
+  `cpm86-clib/{cpprt.c,ehsupp.c}` + `setjmp86.obj` (from Watcom stjmp086.asm).
+- **LESSON (setjmp handler ABI):** `__longjmp_handler` is a NEAR fn pointer with
+  arg convention `[__ax __dx]` (ljmphdl.h), NOT far. A `__far` no-op did `retf`
+  against longjmp's near `call`, unbalancing the stack → C setjmp silently broke
+  while C++ EH still worked (EH's ljmpinit replaces the handler). The direct
+  setjmp test caught it; the EH test masked it. Fixed in ehsupp.c.
+- Remaining: MAME rc759 authoritative run; large-model headroom if programs grow.
+
+---
+# (original plan below)
+
 Status baseline (2026-08-15): native Watcom C++ on cpm86 already works for
 classes, templates, virtuals, `new`/`delete`, and global ctors/dtors (see
 `tasks/memory/reference_watcom_cpp_cpm86.md`). The two remaining standard-C++

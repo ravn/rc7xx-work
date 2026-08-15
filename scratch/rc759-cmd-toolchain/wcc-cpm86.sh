@@ -54,5 +54,5 @@ export PATH="$BINX:$PATH"
 export WLINK_LNK="$WLINK_LNK_SRC"
 
 # 3) the normal Watcom build: 8086 small model, cpm86 system -> .CMD
-"$WCL" -l=cpm86 -0 -ms "${EXTRA[@]}" -fe="$OUT" "$SRC"
+"$WCL" -l=cpm86 -0 -ms ${EXTRA[@]+"${EXTRA[@]}"} -fe="$OUT" "$SRC"
 echo "built $OUT ($(wc -c < "$OUT") bytes) -- native Watcom CP/M-86"
