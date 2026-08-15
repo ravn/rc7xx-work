@@ -62,6 +62,17 @@ words). The genuine x87 in `fdmth086`/`chipd16` is the DEAD hardware branch
 (ESC bytes D8–DF selected out at runtime by `__real87==0`), not `CD 3x`.
 Replace with a disassembly-based code-vs-data check (like `assert_no_8087`).
 
+## Standing convention: -zastd=c99 on CP/M-86 Watcom builds (user, 2026-08-15)
+User directive "brug c99 flaget fremover": ALL CP/M-86 Watcom `wcc` compiles in
+`contrib/ravn/watcom-cpm86-libc/` pass **`-zastd=c99`** on the `USER=` compile
+line. The default dialect rejects C99 hex-float constants (`0x1p…`) and hides
+`fpclassify`/`isnan`/… behind a `__STDC_VERSION__>=199901` guard in
+`hdr/dos/h/math.h`. Applied to all seven build scripts. Verified green with the
+flag: `build-float.sh`, `build-whetstone.sh`, `build-owtests.sh`. (The four older
+demo scripts `build.sh`/`build-heap.sh`/`build-stdio.sh`/`build-stdcbench.sh` have
+a SEPARATE pre-existing `stddef.h` include breakage that is unrelated to the flag
+— they fail identically with or without `-zastd=c99`.)
+
 ## Independent third-party oracle: Watcom's OWN float regression suite (2026-08-15)
 `contrib/ravn/watcom-cpm86-libc/build-owtests.sh` + `test/owtdrv.c` run Open
 Watcom's OWN `ctest/positive/source/float01..float04.c` **byte-for-byte unchanged**
