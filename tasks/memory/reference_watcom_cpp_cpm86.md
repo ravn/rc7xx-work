@@ -35,8 +35,17 @@ Boundary map:
   rebuilt reproducibly by `cpm86-clib/build-clib.sh` (wcc .c→.o + wlib archive;
   headers from `<OW>/bld/hdr/dos/h`), not a hand-made artifact.
 - **iostreams + exceptions: DONE 2026-08-15 (emu2-verified), issue #9.** Both work
-  on the native cpm86 target. Build with `scratch/rc759-cmd-toolchain/wpp-cpm86.sh`
-  (`--eh` selects the exception lib set). Key findings:
+  on the native cpm86 target. **Consolidated onto the Open Watcom clib port under
+  issue #12 (MAME rc759-verified: cppfeat 8/0, mame_cpptest 6/0):** the layer now
+  builds with `open-watcom-v2/contrib/ravn/watcom-cpm86-libc/build-cpp.sh`
+  (`--eh` selects the exception lib set), NOT the retired scratch driver. The
+  scratch mini-clib + `wpp-cpm86.sh`/`wcc-cpm86.sh` were removed (breadcrumb:
+  `scratch/rc759-cmd-toolchain/CLIB_RETIRED.md`); seams now live in the port as
+  `port/crt0cpp.asm` (XI/YI ctor/dtor walk), `port/cpprt.c` (`__clib_malloc`/
+  `__clib_free`), `port/ehsupp.c` (near `__longjmp_handler`, overlay-stack nulls,
+  `__clib_exit`/`__clib_fatal`). Everything else (`__get_std_stream` via the
+  __iob FILE layer, `ltoa`/`ultoa`, `strupr` aliased `strupr_=_strupr_`, buffered
+  flush) is genuine unchanged Watcom clib. Key findings (original, on scratch):
   - iostream is NOT prebuilt for generic.086 (only windows.086), but the
     from-scratch OW build compiled the generic.086/ms iostream OBJECTS
     (`iostream/generic.086/ms/*.obj` no-EH, `.../xobjs/*.obj` EH) — just archive
@@ -89,3 +98,12 @@ image only by its own added code, well within the 64 KB/segment small-model
 wall. So "freestanding/embedded C++" (classes/templates/virtuals/new-delete) is
 usable now; full standard C++ is a larger runtime-port effort like the clib
 retarget was.
+
+**Large memory model (DR C) — TO ANALYSE LATER (deferred task, not #12).** For the
+large memory model, DR C supports multiple code segments plus a heap that fills
+the rest of the TPA. Details: the DR C manual §2.4.2 (multi-code-segment large
+model) and `test.c` in §2.5. Action when unblocked: once a `.cmd` with multiple
+code segments has actually been produced, disassemble/analyse its segment layout
+to understand how the multiple code segments + TPA-filling heap are arranged.
+This is a path toward reaching the full RC759 TPA (~293 KB) that the small-model
+64 KB/segment wall cannot. Not part of the #12 clib consolidation.
