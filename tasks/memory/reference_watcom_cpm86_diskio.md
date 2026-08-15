@@ -292,3 +292,40 @@ Verified in emu2-cpm86 src/cpm86.c (fn30 @1190, dir read-back @857) + dos.c dos_
     trigger (truncate closed file to exact byte count in FCB+0x20). Ties to #1.
 BOTTOM LINE for the file-group oracle: only R/O is write-and-read-back verifiable
 under emu2. Build chmod/stat tests around R/O; treat SYS/archive as best-effort.
+
+
+### streamio clibtest oracle — PASSES unchanged (GAP #3 milestone, 2026)
+`bld/clibtest/streamio/c/iotest.c` runs UNCHANGED under emu2 and prints
+"Tests completed (iotest)." with purity INT21h=0. Harness: `build-streamio.sh`.
+Seam work that made it pass (all in `port/diskio.c` unless noted):
+  - `fopen("CON")`/CONIN$/CONOUT$ as a console DEVICE (is_con): writes->BDOS
+    C_WRITE, reads->EOF (test redirects stdin onto a real file first).
+  - Per-handle iomode registration (`__SetIOMode_grow`/`__GetIOMode`, pure C) so
+    fdopen/freopen/dup learn a handle's flags. GATED behind `-DDISKIO_IOMODE`
+    (only build-streamio.sh defines it): OMF resolves EVERY extern in a linked
+    object incl. unreferenced fns (dup), so the leaner diskio/fscanf harnesses
+    would otherwise fail to link the shared diskio.obj. Lesson: gate optional
+    lib-object dependencies behind a per-harness -D, don't force all harnesses
+    to link them.
+  - `dup()` (console handle) + `exit()` (flush via __full_io_exit + BDOS fn0)
+    seams; crt0sm.asm wires argc/argv (__argc/__argv/__argname).
+  - `TMPFILE_MAX` raised 4->16 (test opens NUM_FILES=10 tmpfiles at once);
+    `DISK_MAX` 8->16 (keep DISK_FIRST_FD+DISK_MAX <= __NFiles=20).
+  - Byte-exact EOF: __qread uses fp->len for a handle that WROTE (new `wrote`
+    flag) so a past-logical-EOF fgetc returns EOF instead of Ctrl-Z padding; a
+    PURE READER re-derives length from disk (disk_len) on each call so it sees
+    data another handle flushed. Do NOT latch fp->ateof on the reader early-
+    return: Watcom fgetc re-calls __qread after a 0-byte read (gates on _cnt,
+    not a sticky EOF), and the "flushes" test needs that retry to see growth.
+  - C append semantics: new `append` flag; __qwrite repositions to fp->len
+    before every write so a preceding fseek/rewind can't divert an append.
+
+### emu2 fidelity fix — random write must be write-through (src/dos.c)
+emu2 backs each CP/M handle with a buffered stdio FILE*. Its random write
+(BDOS fn 0x22 -> dos_rw_record_fcb `fwrite`) left bytes in that handle's buffer,
+so fn 0x23 GET FILE SIZE (which `stat()`s the host file by NAME) and a SECOND
+open FCB's read could not see a just-written record. Real CP/M-86 random writes
+are write-through to disk sectors. Fix: `if(write && n) fflush(f);` right after
+the fwrite in dos_rw_record_fcb. Without it the streamio cross-handle read-
+after-fflush test (one "w" + one "r" handle) fails at iotest.c line 577.
+Rebuild: `cd scratch/cpm86-tools/emu2-cpm86 && make`.
