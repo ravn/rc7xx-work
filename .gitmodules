@@ -33,7 +33,7 @@
 	url = https://github.com/z88dk/z88dk.wiki.git
 [submodule "open-watcom-v2"]
 	path = open-watcom-v2
-	url = git@github.com:ravn/open-watcom-v2.git
+	url = git@github.com:ravn/open-watcom-v2-ccpm86.git
 	branch = master
 	shallow = true
 [submodule "cpm86-crossdev"]
