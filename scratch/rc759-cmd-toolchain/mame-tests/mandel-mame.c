@@ -45,6 +45,7 @@ static void emit(param) unsigned param;       /* BDOS C_WRITE (func 2) */
 DRC_MAIN
 {
     int py, px;
+    mame_done(0xB000);                         /* START edge: begin render timing */
     for (py = 0; py < 25; py++) {
         if (py > 0) { emit(13); emit(10); } /* newline BEFORE each row but row 0 */
         for (px = 0; px < WIDTH; px++) {

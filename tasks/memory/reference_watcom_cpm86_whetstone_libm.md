@@ -62,8 +62,28 @@ words). The genuine x87 in `fdmth086`/`chipd16` is the DEAD hardware branch
 (ESC bytes D8–DF selected out at runtime by `__real87==0`), not `CD 3x`.
 Replace with a disassembly-based code-vs-data check (like `assert_no_8087`).
 
+## MAME rc759 timing — first real no-8087 data point (2026-08-15)
+Ran the `-fpc`/libm Whetstone on cycle-accurate **MAME rc759** (the authoritative
+no-8087 oracle). rc759 CPU = **i80186 @ 6.000 MHz** (`mame .../rc759.cpp:618`,
+6e6 cycles/s). External timing via an I/O-port-0x2FE write-tap (undecoded by the
+HW → side-effect-free): guest emits a START edge (word 0xB000) and an END edge
+(0xE000) through `mame_done()`; `whet_time.lua` records `emu.time()` at each edge
+(deterministic emulated seconds, load-independent). Runner: `whet-mame.sh`.
+
+- **Whetstone (LOOP=10): 72.45 emulated s** = ~435 M cycles. Screen output
+  matched the host `cc -lm` oracle in `%12.4e` for all 10 check values.
+- **Mandelbrot (78x25, <=30 iter, 8.8 fixed-point): 3.57 emulated s** = ~21 M
+  cycles. ASCII fractal rendered correctly on the RC759 screen.
+
+Both are physically plausible and internally consistent for a 6 MHz 80186:
+Whetstone is dominated by ~3500 software transcendental calls through Watcom's
+80-bit long-double libm (~4e4 cycles each) plus ~1e5 64-bit `__FDx` double ops
+(~2e3 cycles each) -> ~3.5-4e8 cycles, bracketing the measured 435 M. Mandelbrot
+is ~1/3 integer-IMUL compute + ~2/3 BDOS console rendering (~21 M cycles total).
+Do NOT quote an exact MWIPS/KWIPS — Whetstone's LOOP=10 instruction-count
+calibration constant is unverified; only the cycle figures above are verified.
+
 ## Still open
-`-fpc`/libm cross-check on cycle-accurate **MAME rc759** — the authoritative
-no-8087 oracle; emu2 is green but may not faithfully model a no-8087 machine.
-Also queued: build with `-1` (80186 integer set) to exploit the extra
-instructions for compute-heavy code (Mandelbrot) — see tasks/todo.md.
+Build with `-1` (80186 integer set) to exploit the extra instructions for
+compute-heavy code (Mandelbrot) — see tasks/todo.md. Also: replace the disabled
+`INT34-3D` byte scan with a disassembly-based code-vs-data check.
