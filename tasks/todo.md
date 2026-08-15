@@ -1098,3 +1098,70 @@ See: rcbios-in-c/tasks/26-line-status.md
     debug I/O (currently SIO-B doubles as the debug/console channel; a real printer sink
     frees it and lets us verify programs that print)
   - Likely a printer/paper-tape device wired to the printer port, with a `-bitbN file` sink
+
+## Plan: rc7xx-work#8 — Watcom-native float/double on CP/M-86 (RC759, no 8087)
+
+### Goal & oracle (first priority = Watcom's OWN tests)
+Prove Open Watcom's UNCHANGED float/double path runs on CP/M-86 through our thin
+Layer-2 seam, using **Watcom's own float regression tests** (bld/ctest/positive/
+source/float01–04.c, self-checking via fail.h/_PASS — an independent, Watcom-
+authored oracle) as the primary proof. Whetstone is bonus only.
+
+### Verified findings (KNOWN, this session)
+- Watcom 8086 float == the 8087 EMULATOR. `-fpi`/`-fpc` both emit real 8087 ESC
+  opcodes (fld/fadd/fmul/fstp, FWAIT-prefixed 0x9B). There is NO pure-integer
+  softfloat in the 8086 clib. `fpuemu/i86/asm/emu8087.asm` is the pure-software
+  interpreter (0 native 8087 opcodes) that executes the trapped ops.
+- Dispatch: the ESC opcodes carry emulator FIXUP records. wlink (with emulation)
+  rewrites FWAIT+ESC → INT 0x38–0x3D targeting emulator entries (FIARQQ/FISRQQ/
+  FIDRQQ/FIWRQQ/FICRQQ/FIERQQ/FJ*RQQ, published by initemu.asm).
+- Vector install is DOS-coupled: initemu.asm `xchg_vects` uses INT 21h (fn 35h/25h
+  get/set-vector). **INT 21h is fatal here** — must be reseamed to a direct IVT
+  poke (INT n vector lives at physical 0x0000:n*4; 0x38→0x00E0 … 0x3D→0x00F4; no
+  clash with BDOS INT 0xE0 whose vector is at 0xE0*4=0x380).
+- %f/%g needs the REAL formatter (setefg.c/dsetefg + mathlib efgfmt.c/ldcvt.c),
+  pulled by the `_fltused` reference; the integer-only builds used the noefgfmt stub.
+- Transcendentals (sqrt/sin/cos/exp/log/atan) live in mathlib/{a,c}; the -fpc
+  interface symbols are IF@DSIN/IF@DSQRT/… .
+
+### Make-or-break spike (do FIRST, cheap)
+S0. Link a minimal `-fpi` float program as `format cpm86` with emu8087 + initemu
+    (minus DOS init) and confirm the linked .CMD contains INT 0x38–0x3D (i.e. wlink
+    cpm86 actually performs the emulator FWAIT→INT conversion) and NOT raw ESC.
+    - If wlink cpm86 IGNORES emulator fixups → fall back: force `-fpc` calls +
+      provide a non-ESC software FD library, OR patch fixups post-link. Re-plan.
+    - Also confirm INT 0x38–0x3D vectors are free/writable under emu2 AND MAME
+      rc759 (Concurrent CP/M-86) — spike a tiny vector-poke+trigger.
+
+### Implementation steps (after spike is green)
+1. **Emulator link closure** (fp-emu-link): compile fpuemu/i86 emu8087 + support
+   (flda/fldd/fsld/normdw/… as pulled) for 8086; resolve the FIARQQ/FI*RQQ entry
+   symbols. Empirical undefined-symbol loop (as in the stdio milestone).
+2. **CP/M-86 emulator-init seam** (fp-vec-seam): new `port/emu87cpm.asm` (or .c)
+   that installs the INT 0x38–0x3D vectors by writing the IVT directly (segment
+   0, offset n*4 = emu entry), replacing initemu's INT-21h xchg_vects. Called from
+   crt0/`__InitFiles`-analogue before first float op. Zero INT 21h.
+3. **mathlib closure** (fp-mathlib): sqrt/sin/cos/exp/log/atan + real %f path
+   (setefg/efgfmt/ldcvt + _uatof/_ustrtod if scanf-side needed). Resolve IF@DSIN
+   etc. Keep -fpi so they route through the emulator too.
+4. **Relink Watcom's own tests** (fp-owtests): compile float01–04.c with
+   `-Dmain=owfloat_main` + a scbport-style driver that calls each, prints a single
+   `FLOATtest: PASS`/`FAIL line N` marker (via the proven printf), returns count.
+   Build script mirrors build-stdio.sh; purity gate asserts INT21h==0, INTE0h>0.
+5. **Run-verify**: emu2 (expect zero `failure on line` output → PASS) + MAME rc759
+   cross-check (mame_done score = error count, expect 0). Byte-oracle = the tests'
+   own self-checks; independent of our seam by construction.
+6. **Bonus** (fp-whet): double Whetstone driver with known-value oracle (T=0.499975
+   etc.) for an RC759-comparable float score vs DR C.
+7. **Docs**: README float section + memory note; mark #3 "retired on the Watcom
+   route" and update #8 acceptance boxes when green.
+
+### Risks
+- R1 (highest): wlink cpm86 may not emulate fixups → spike S0 gates everything.
+- R2: INT 0x38–0x3D may be reserved by Concurrent CP/M-86 XIOS → may need a
+  different free vector range; the emulator INT numbers are compiler/linker-fixed,
+  so a clash forces a post-link fixup remap. Verify in S0.
+- R3: emulator may reference a DOS control-word/init symbol beyond xchg_vects
+  (__dos87emucall/__8087cw) — audit initemu/dosinit; provide CP/M stubs.
+- R4: emu2's own float handling — must confirm emu2 does NOT silently provide an
+  8087 (would make emu2 PASS while real HW fails). MAME rc759 is the true oracle.
