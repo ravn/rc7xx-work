@@ -7,7 +7,7 @@ and writing their crt0.
 
 **Siemens Concurrent CP/M-86 Programmer's Reference Guide** (= Digital Research
 *Concurrent CP/M-86 Programmer's Guide*), in-project at
-`scratch/rc759-cmd-toolchain/docs/Siemens_Concurrent_CPM-86_Programmers_Reference_Guide.{pdf,txt}`.
+`open-watcom-v2/contrib/ravn/Siemens_Concurrent_CPM-86_Programmers_Reference_Guide.{pdf,txt}`.
 Relevant sections: **§3.2 Command File Format**, **§3.3 Base Page Initialization**,
 **§4.1 Transient Execution Models** (§4.1.1 8080, §4.1.2 Small, Table 4-1).
 Also: FlexOS 286 Programmer's Utilities Guide §7.7.1 (same 8-descriptor header).

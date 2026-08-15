@@ -42,7 +42,7 @@ the canonical way an 8086 program sets an interrupt vector — there is NO BDOS
 ## Concurrent CP/M-86 (the actual RC759 OS) confirms transients set their own vectors
 
 Source: **Siemens Concurrent CP/M-86 Programmer's Reference Guide** (in-workspace
-`scratch/rc759-cmd-toolchain/docs/Siemens_Concurrent_CPM-86_Programmers_Reference_Guide.txt`),
+`open-watcom-v2/contrib/ravn/Siemens_Concurrent_CPM-86_Programmers_Reference_Guide.txt`),
 §3.4 Parent/Child Relationships:
 
 > "The child process also inherits interrupt vectors 0, 1, 3, 4, 224, and 225,
