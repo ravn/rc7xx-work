@@ -34,10 +34,27 @@ Boundary map:
   Verified: ctors first/second, main, dtors second/first. The cpm86 clib is now
   rebuilt reproducibly by `cpm86-clib/build-clib.sh` (wcc .c→.o + wlib archive;
   headers from `<OW>/bld/hdr/dos/h`), not a hand-made artifact.
-- **Needs real porting:** iostreams (`#include <iostream>` → "unable to open
-  'iostream'": C++ headers not on include path + streams lib must be retargeted to
-  BDOS console) and **exceptions** (`-xs` → needs `plbxs.lib` + `_setjmp_` +
-  `__wint_thread_data` + `__wcpp_4_throw__/catch_done__` — the heaviest part).
+- **iostreams + exceptions: DONE 2026-08-15 (emu2-verified), issue #9.** Both work
+  on the native cpm86 target. Build with `scratch/rc759-cmd-toolchain/wpp-cpm86.sh`
+  (`--eh` selects the exception lib set). Key findings:
+  - iostream is NOT prebuilt for generic.086 (only windows.086), but the
+    from-scratch OW build compiled the generic.086/ms iostream OBJECTS
+    (`iostream/generic.086/ms/*.obj` no-EH, `.../xobjs/*.obj` EH) — just archive
+    them (`cpm86-clib/build-ioslibs.sh` → iost_s.lib / iosx_s.lib), no porting.
+  - No raw fd write/read shim needed: cout/cin/cerr route through the __iob FILE
+    layer. The only iostream seams (in `cpm86-clib/cpprt.c`): `__get_std_stream`
+    → &__iob[h]; `__clib_flush` no-op; `__clib_malloc/free` → heap;
+    `ltoa/ultoa/strupr`.
+  - Exceptions (`-xs`) link `iosx_s.lib`+`plbxs.lib`; `__wint_thread_data`/
+    `__wcpp_4_throw__/catch_done__` come from plbxs.lib. Missing clib seams
+    (`cpm86-clib/ehsupp.c` + `setjmp86.obj` from Watcom's stjmp086.asm assembled
+    `-d__SMALL__`): `_setjmp_/longjmp_`, `___longjmp_handler`,
+    `__get_ovl_stack/__restore_ovl_stack` (null), `__clib_exit`.
+  - PITFALL: `__longjmp_handler` is a NEAR fn pointer w/ arg convention
+    `[__ax __dx]` (ljmphdl.h), NOT far. A __far no-op `retf`s against longjmp's
+    near `call`, unbalancing the stack → plain C setjmp/longjmp silently breaks
+    while C++ EH still works (EH's ljmpinit replaces the handler). A direct
+    setjmp/longjmp test catches it; the EH test masks it.
 
 **16-bit DOS C++ is OFFICIALLY supported by Open Watcom** (verified 2026-08-15) —
 so cpm86 C++ inherits a mature, maintained runtime, not an experiment:
@@ -56,8 +73,19 @@ so cpm86 C++ inherits a mature, maintained runtime, not an experiment:
 - Caveat: it is Watcom's OWN older C++ dialect (~early/mid-90s: partial templates,
   own class/iostream lib, NOT modern C++/STL).
 
-Structural limit: small model = 64 KB code + 64 KB data, and FORMAT CPM86 is
-phase-1 (small only). Non-trivial C++ (templates/iostreams) bloats past 64 KB →
-would need large-model support (phase-2 wlink). So "freestanding/embedded C++"
-(classes/templates/virtuals/new-delete) is usable now; full standard C++ is a
-larger runtime-port effort like the clib retarget was.
+Structural limit: ONLY small model (-ms) works right now (user-confirmed
+2026-08-16: "large virker ikke lige nu på cp/m-86"). Small model = 64 KB code +
+64 KB data → ~128 KB total program ceiling, of which ~100 KB is free after the
+fixed runtime. LARGE/compact model does NOT currently work, so the full RC759
+TPA (~293 KB reported on-screen) is NOT reachable; do not propose -ml as a
+working build path until phase-2 wlink support lands.
+
+Verified CMD sizes (segment descriptors from the CMD header, 2026-08-16):
+plain-C setjmp test 11.4 KB; iostreams 15.6 KB; full C++ (cppfeat: polymorphism
++ templates + operator<< + EH) 25.3 KB (12.5 KB code + 12.6 KB data). The bulk
+is FIXED C++/iostream/EH runtime overhead (~13 KB over the ~11 KB C baseline);
+app logic itself is a few hundred bytes, so a much larger program grows the
+image only by its own added code, well within the 64 KB/segment small-model
+wall. So "freestanding/embedded C++" (classes/templates/virtuals/new-delete) is
+usable now; full standard C++ is a larger runtime-port effort like the clib
+retarget was.

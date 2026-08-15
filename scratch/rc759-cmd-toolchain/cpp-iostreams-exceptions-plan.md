@@ -1,5 +1,25 @@
 # Plan: enable C++ iostreams + exceptions on native cpm86 (Watcom `wcl -l=cpm86`)
 
+## STATUS 2026-08-15: BOTH TRACKS DONE (emu2-verified) — MAME rc759 pending
+- **Track A (iostreams): WORKING.** `std::cout << str << int << hex << long << endl`
+  prints correctly; global ctor→main→dtor ordering with streams verified
+  (hello_ios.cpp, ios_types.cpp).
+- **Track B (exceptions): WORKING.** `throw` across 3 function frames unwinds both
+  local objects' dtors (LIFO) and lands in `catch(int)` (eh_test.cpp).
+- **setjmp/longjmp: WORKING + thoroughly tested** (setjmp_test.c, 5 phases: value
+  pass-through, longjmp(0)→1, cross-function, re-entrant loop, volatile persist).
+- Drivers: `wpp-cpm86.sh` (C++, `--eh` selects the EH lib set); clib seams in
+  `cpm86-clib/{cpprt.c,ehsupp.c}` + `setjmp86.obj` (from Watcom stjmp086.asm).
+- **LESSON (setjmp handler ABI):** `__longjmp_handler` is a NEAR fn pointer with
+  arg convention `[__ax __dx]` (ljmphdl.h), NOT far. A `__far` no-op did `retf`
+  against longjmp's near `call`, unbalancing the stack → C setjmp silently broke
+  while C++ EH still worked (EH's ljmpinit replaces the handler). The direct
+  setjmp test caught it; the EH test masked it. Fixed in ehsupp.c.
+- Remaining: MAME rc759 authoritative run; large-model headroom if programs grow.
+
+---
+# (original plan below)
+
 Status baseline (2026-08-15): native Watcom C++ on cpm86 already works for
 classes, templates, virtuals, `new`/`delete`, and global ctors/dtors (see
 `tasks/memory/reference_watcom_cpp_cpm86.md`). The two remaining standard-C++
@@ -7,14 +27,36 @@ features are **iostreams** and **exceptions**. Both are *officially supported*
 16-bit-DOS Watcom features — the libraries exist prebuilt for `generic.086` (all
 5 memory models); only the cpm86 *setup/seams* are missing.
 
+## VERIFIED 2026-08-15 (build-tree audit — corrects the "Key facts" below)
+Audited the from-scratch OW build tree; three premises changed, net = *cheaper*:
+
+1. **iostream is NOT prebuilt for the DOS/cpm86 target.** The only prebuilt
+   16-bit iostream `.lib`s are under `iostream/windows.086/` (`iosts/iosxs.lib`).
+   There is NO `generic.086` iostream `.lib`. (The earlier note claiming "generic.086,
+   all 5 models" and the `runxs/strxs/conxs.lib` names were wrong — `conxs.lib`
+   is the *containers* lib under `contain/`, not console.)
+2. **But the generic.086/ms iostream OBJECTS are already compiled** by the
+   from-scratch build: `iostream/generic.086/ms/*.obj` (no-EH) **and**
+   `iostream/generic.086/ms/xobjs/*.obj` (EH) — 2175 objs total. So we do NOT
+   port or recompile iostream; we just **archive** the right obj set into a lib
+   with `wlib`, exactly like `cpm86-clib/build-clib.sh` builds `clibs.lib`.
+3. **The base runtimes ARE prebuilt for generic.086/ms:** `plibs.lib` (no-EH,
+   used today) and `plbxs.lib` (**EH**) both present. `plbxs.lib` references
+   `__wint_thread_data` (confirmed via strings) → that seam is real for `-xs`.
+4. **The fd seam symbol is `write` (mangled `write_` in flfoverf.obj)**, matching
+   the clib POSIX `_write` in `dos/h/io.h`. Provide `write`/`read` in cpm86 clib.
+
+Net effect: Track A shrinks to "archive an existing obj set + add a `write` shim
++ include path". No iostream source porting.
+
 ## What already exists (no porting needed)
 - Compiler: `wpp` (16-bit C++), links via `wlink FORMAT CPM86`.
 - Headers: `<OW>/bld/hdr/dos/h/` has `iostream`, `iostream.h`, `iomanip`,
   `setjmp.h`, `stdlib.h`, … — just need to be on the include path.
-- Libraries (`generic.086/ms`, small model):
-  - `plibs.lib` (base rt, no-EH) — already used today.
-  - `iosts.lib` (iostreams, no-EH) / `iosxs.lib` (iostreams, **EH**).
-  - `plbxs.lib` (base rt, **EH**), `runxs.lib`, `strxs.lib`, `conxs.lib` (EH variants).
+- Libraries / objects (`generic.086/ms`, small model):
+  - `plibs.lib` (base rt, no-EH) — already used today. `plbxs.lib` (base rt, **EH**).
+  - iostream: compiled OBJs present (`iostream/generic.086/ms/*.obj` no-EH,
+    `.../xobjs/*.obj` EH) — archive to `iost_s.lib` / `iosx_s.lib` ourselves.
 
 ## Track A — iostreams (cout/cin/cerr), no exceptions
 1. **Include path**: stage `bld/hdr/dos/h` as `$WATCOM/h` (or pass `-i=`), so
@@ -60,13 +102,35 @@ features are **iostreams** and **exceptions**. Both are *officially supported*
 4. Test: `try { throw 5; } catch(int e){ … }` → expect "caught 5"; then a throw
    across a function boundary + an object with a dtor (stack unwinding runs it).
 
-## Deliverables / order
-1. Add the fd shim (`write`/`read`/`isatty`/`lseek`/`close`) + setjmp/longjmp +
-   `__wint_thread_data` to the cpm86 clib (`cpm86-clib/`, via `build-clib.sh`).
-2. Extend `wcc-cpm86.sh` (or a variant) to: stage `h/` include dir, and select
-   the EH vs no-EH library set based on a flag, auto-adding `iosts/iosxs.lib`.
-3. Verify Track A (iostreams) first (only needs the fd shim), then Track B
-   (exceptions). emu2 as the fast oracle, MAME rc759 as the authoritative check.
+## Deliverables / order (verified concrete steps)
+0. **Baseline first** (AGENTS.md): confirm the current C++ subset still links —
+   `wcc-cpm86.sh` path with a `.cpp` + `plibs.lib` — and run one known-good
+   ctor/dtor test under emu2 so we have a "before" endpoint before touching libs.
+1. **Archive the iostream libs** (new step in `cpm86-clib/`, mirror
+   `build-clib.sh`): `wlib -q -b -n iost_s.lib +iostream/generic.086/ms/*.obj`
+   (no-EH) and `iosx_s.lib` from `.../xobjs/*.obj` (EH). Sanity-check for any
+   Windows-only externals with `wlib -l` / undefined-symbol scan before trusting.
+2. **fd shim in cpm86 clib** (`cpm86-clib/`, add to `build-clib.sh` obj set):
+   `int write(int fd, const void *buf, unsigned len)` → fd 1/2 → BDOS C_WRITE
+   per byte (reuse `_conout`); `int read(int fd, void *buf, unsigned len)` → fd 0
+   → BDOS console in (stub to 0/EOF initially); `isatty`/`lseek`/`close` console
+   stubs. Match the clib name (`_write`/`write_` — confirm which the objs import).
+3. **Driver**: add a C++/iostreams mode to `wcc-cpm86.sh` (or a `wpp-cpm86.sh`):
+   stage `bld/hdr/dos/h` on `-i`, compile with `wpp`, and select the lib set:
+   no-EH = `iost_s.lib + plibs.lib + clibs.lib`; EH (`-xs`) =
+   `iosx_s.lib + plbxs.lib + clibs.lib` + the setjmp/`__wint_thread_data` seams.
+4. **Verify Track A** (iostreams, needs only steps 1-3 no-EH):
+   `std::cout << "hi" << N << std::endl;` → text on RC759 console. emu2 first,
+   then MAME rc759. Confirm cout/cin/cerr ctors run via the existing XI walk.
+5. **Track B** (exceptions, `-xs`): add `_setjmp_`/`longjmp` (hand-write the
+   ~15-instr 8086 small-model version or assemble Watcom's) + a single static
+   `__wint_thread_data` block/accessor. `__wcpp_4_throw__/catch_done__/fs_handler`
+   come from `plbxs.lib` (already present). Test `try/throw/catch` + a dtor across
+   an unwind. emu2 → MAME.
+
+**Test discipline (AGENTS.md):** each Track ships a failing-first runtime oracle
+(emu2 expected-output check) committed before the fix, plus MAME rc759 as the
+authoritative second oracle. "Builds/links" is NOT "works" for either track.
 
 ## Open questions to resolve during implementation
 - Exact `__wint_thread_data` layout/accessor for 16-bit (single-thread stub).
