@@ -179,3 +179,32 @@ issue #17. Key corrections to the fast-boot note above:
 - CP/M-86 source (if BIOS memory-table patch ever needed): https://www.cpm.z80.de/source.html
 - Harness drivers: scratch/rc759-cmd-toolchain/mame-tests/{run_and_dump,ibm_disk_inject,dump_screen}.lua
   Disks: scratch/cpm86-ibm5150/harness/{diskA,diskB}.img + diskdefs.
+
+## GAP #3 progress (clibtest oracle seam) — 2026 session
+
+Landed in port/diskio.c, all emu2-verified via test/disktest.c (DISKIO: PASS
+543 tests, 0 failures; purity INT21h=0):
+- Low-level POSIX handleio subset: open/creat/read/write/close/lseek/tell/
+  filelength/eof. Thin wrappers over the existing _sopen/__qread/__qwrite/
+  __close/__lseek seam; byte-exact WITHIN a single open handle (a reopened
+  binary file still inherits the record-rounded len — KNOWN_ISSUES #1).
+  Single-handle tests MUST open O_RDWR (read+write gates on readable+writable).
+- rename(old,new): BDOS RENAME fn 23; old in FCB bytes 0..15, new in 16..31
+  (drive byte at +16 = 0). Returns 0xFF -> ENOENT if old not found.
+- tmpnam/tmpfile: "TMPnnnnn.$$$" names, uniqueness by open()-probe, auto-remove
+  on fclose via Watcom's OWN _TMPFIL flag + __RmTmpFileFn hook (set the flag on
+  fp and point the hook at a tiny registry-backed remover; fclose calls it
+  AFTER __close). 16-bit unsigned: bound the name search by TMP_MAX (26^3), not
+  a 32-bit literal, or wcc warns "comparison always 1" + risks a runaway loop.
+- Build add-ons: memcmp.obj, rewind.obj, strcpy.obj now linked in build-diskio.sh.
+
+Commits (LOCAL, open-watcom-v2): f6d09797c1 (low-level I/O + rename),
+c06e12c0e1 (tmpnam/tmpfile).
+
+Still open in GAP #3 (larger / DOS-semantic-heavy):
+- streamio: fscanf (linkable — DOS-free scnf.c FILE* engine, just larger),
+  fopen("CON") console-as-named-file.
+- handleio faithfulness: chsize (sparse zero-fill), dup/dup2 (SHARED position ->
+  needs handle->dfile refcount indirection), umask/chmod R/O enforcement,
+  _hdopen/_os_handle.
+- file group: access, chmod, stat, utime.
