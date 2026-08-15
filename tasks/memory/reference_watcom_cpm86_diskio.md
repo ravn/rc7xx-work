@@ -234,3 +234,20 @@ INT21h=0. Commit (LOCAL): 4fa2fd8e41.
 Still open GAP #3: fopen("CON"); hard handleio (chsize/dup/umask/_hdopen); file
 group (access/chmod/stat/utime). Watcom's clibtest iotest.c still not run
 verbatim, but the seam surface it needs is now largely present.
+
+## FUTURE IDEA (user 2026-08-15): decouple fscanf from float
+
+User's point: "fscanf burde ikke trække float med ind, hvis der ikke bruges e og
+f" — fscanf should NOT drag the soft-float stack when a program only scans
+%d/%s/%c and never %e/%f/%g. Today scnf.c compiles scan_float() UNCONDITIONALLY,
+so the linker cannot drop it, and it pulls FIDRQQ/FIERQQ/FIWRQQ + strtod + the
+ctype/mbyte tables. The current build-fscanf.sh WORKS AROUND this by linking the
+proven 8087-free -fpc stack, but the cleaner fix is to make float-scan
+lazily-linked. Candidate approaches to try later:
+  (a) route the parse call through a data pointer (like the existing
+      __EFG_scanf FORMATTER indirection, but for the whole scan_float path) that
+      stays NULL/stub unless a float-using TU sets it -> linker drops
+      scan_float + strtod when unreferenced;
+  (b) a compile-time NO_FLOAT scnf.c variant;
+  (c) split scan_float into its own object pulled only by a float sentinel.
+Tracked as session todo `fscanf-float-decouple`.
