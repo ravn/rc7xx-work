@@ -88,3 +88,23 @@ PR. Open follow-ups (out of the core retarget): rc7xx-work#7 = disk FILE* path
 (open/close/read/lseek, CP/M 128-byte/Ctrl-Z record model; console-write part
 DONE), rc7xx-work#8 = prove Watcom-native float/double on CP/M-86 (retires the
 #3 DR C float-ABI seam by construction; stdcbench exercises no float).
+
+## ow#16 RESOLVED (2026-08-15) — crt0 now self-initializes via `__CommonInit`
+Took the pragmatic branch of ow#16 (the "or add `__CommonInit`" option), NOT the
+full XI/YI-table walk documented above (that remains the eventual upstream-clean
+upgrade). New `port/cominit.c` defines `void __CommonInit(void)`; `crt0sm.asm`
+calls it AFTER `wc_heap_init_` (so `__InitFiles`' arena malloc is live) and
+BEFORE `main_`. Result: no program's `main()` calls `__InitFiles`/`__setEFGfmt`
+by hand anymore — the silent-empty-output papercut (a forgotten `__InitFiles`
+left `printf` emitting nothing) can no longer recur.
+- `crt0sm.asm` is assembled ONCE and shared by all 7 build targets, so the
+  per-build variation lives in `cominit.c`, gated by two macros on its compile:
+  * `-DCOMMONINIT_NOSTDIO` → empty body (cprintf-only demos build.sh/main.c,
+    build-heap.sh/heaptest.c never touch FILE* stdio → don't drag in __InitFiles).
+  * `-DCOMMONINIT_EFG` → also call `__setEFGfmt` (float-printing whetstone).
+  * default → `__InitFiles` only (floattest/stdiotest/scbport/owtdrv).
+- wcc 16-bit mangles C `__CommonInit` → asm `__CommonInit_` (trailing `_`, like
+  `main_`/`wc_heap_init_`); it references `__STK` (crt0's no-op ret stub).
+- Verified: all 7 build*.sh green (build.sh, build-heap, build-float, build-stdio,
+  build-stdcbench, build-owtests float01-04 ALL-PASS, build-whetstone with real
+  %e output). Manual `__InitFiles`/`__setEFGfmt` calls removed from all 5 drivers.
