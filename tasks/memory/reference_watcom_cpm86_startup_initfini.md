@@ -81,4 +81,10 @@ mem (cpy/set/move/cmp/chr), malloc/free/realloc/calloc, qsort, i4m/i4d.
   faster on the same machine. (-zl unoptimised gave 10/5/15.)
 - stdcbench c90base/c90lib exercise NO float (c90float/c90double are upstream
   0.8 stubs) → does NOT retire the #3 double ABI seam.
-Fork commit (this milestone): see rc7xx-work#6 milestone 4.
+DONE + PUSHED + TAGGED (2026-08-15): all 5 retarget milestones complete;
+annotated tag `milestone-watcom-cpm86-libc-2026-08-15` on workspace f993460,
+fork branch `ravn/aztec-libc-cpm86` HEAD d2981616 -- all pushed to origin, no
+PR. Open follow-ups (out of the core retarget): rc7xx-work#7 = disk FILE* path
+(open/close/read/lseek, CP/M 128-byte/Ctrl-Z record model; console-write part
+DONE), rc7xx-work#8 = prove Watcom-native float/double on CP/M-86 (retires the
+#3 DR C float-ABI seam by construction; stdcbench exercises no float).
