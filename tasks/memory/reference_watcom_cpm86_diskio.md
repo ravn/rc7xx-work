@@ -251,3 +251,19 @@ lazily-linked. Candidate approaches to try later:
   (b) a compile-time NO_FLOAT scnf.c variant;
   (c) split scan_float into its own object pulled only by a float sentinel.
 Tracked as session todo `fscanf-float-decouple`.
+
+## DESIGN CONSTRAINT (user 2026-08-15): chmod/stat on CP/M = only R/O + SYS bits
+
+CP/M does NOT support POSIX chmod/permissions. When we get to the `file` group
+(filetest.c: chmod/stat/access/utime), the ONLY file attributes CP/M stores are
+two bits in the FCB filename high-bits: t1' (byte 9, 0x80) = READ-ONLY, t2'
+(byte 10, 0x80) = SYSTEM (SYS/hidden). So:
+  - chmod(): map S_IWRITE off -> set R/O bit; S_IWRITE on -> clear R/O bit. The
+    SYS bit can be exposed too, but there is no POSIX mode for it (custom flag).
+    Everything else (owner/group/exec bits) is a no-op / ignored.
+  - stat(): st_mode reports R/O -> clear S_IWRITE; regular files only; size from
+    the FCB record count (record-rounded on cold reopen, per #1). No real
+    uid/gid/times beyond CP/M's optional datestamps.
+  - Set/clear attribute via BDOS SET FILE ATTRIBUTES (fn 30), which writes the
+    directory entry's t1'/t2' high bits.
+This bounds the file-group work: don't try to emulate full POSIX permissions.
