@@ -359,3 +359,20 @@ are write-through to disk sectors. Fix: `if(write && n) fflush(f);` right after
 the fwrite in dos_rw_record_fcb. Without it the streamio cross-handle read-
 after-fflush test (one "w" + one "r" handle) fails at iotest.c line 577.
 Rebuild: `cd scratch/cpm86-tools/emu2-cpm86 && make`.
+
+## chmod — W-bit only -> CP/M R/O attribute (2026-08-15, MAME-verified)
+
+`port/diskio.c` now implements `chmod(const char *, mode_t)`. CP/M-86 has NO
+POSIX permission bits; its sole writability attribute is the read-only (R/O)
+bit **t1' = bit 7 of the first file-type byte (FCB byte 9)**. So by explicit
+user directive ("kun understøtter w-bitten") chmod maps ONLY `S_IWRITE`:
+- `S_IWRITE` set  -> clear R/O (`fcb[9] &= 0x7F`)  = make writable
+- `S_IWRITE` clear -> set   R/O (`fcb[9] |= 0x80`) = make read-only
+
+Every other mode bit (read, execute, and the CP/M system/archive attributes) is
+IGNORED by design. Applied via **F_ATTRIB (BDOS fn 30)**, matched by name;
+0xFF return => ENOENT/-1. R/O *enforcement* (blocked write/delete) is OS policy
+that differs between emu2 and real CP/M, so `test/disktest.c` asserts only the
+seam (both transitions return 0, missing file -> -1, data preserved), not
+enforcement. Verified under emu2 (diskio 661, fscanf 672, streamio, INT21h=0)
+AND on the real RC759 under MAME: `DISKIO: PASS (661 tests, 0 failures)`.
