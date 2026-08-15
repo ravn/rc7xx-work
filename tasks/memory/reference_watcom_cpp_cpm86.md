@@ -1,0 +1,63 @@
+---
+name: Watcom C++ to CP/M-86 — freestanding subset works today; iostreams/exceptions need porting
+description: Empirical assessment (emu2-verified 2026-08-15) of how much C++ Watcom compiles to CP/M-86 via the native cpm86 target.
+metadata:
+  type: reference
+---
+
+**Assessment (5 emu2-verified tests, 2026-08-15):** Watcom's 16-bit C++ frontend
+`wpp` (bld/plusplus/i86/osxa64/wpp.exe) compiles C++ to CP/M-86 with NO errors,
+and `wlink FORMAT CPM86` links it — the ONLY missing piece for a large subset is
+the C++ runtime, which **already exists prebuilt for 8086**:
+`bld/cpplib/library/generic.086/ms/plibs.lib`. Drop that on the cpm86 libpath
+(`$WATCOM/lib286/cpm86/plibs.lib`) and it links. Build via `wcl -l=cpm86 x.cpp`
+(same env as `[[reference_watcom_wlink_cpm86_format]]`; add a `wpp` PATH symlink).
+
+Boundary map:
+- **WORKS today** (plibs.lib on libpath): classes, methods, virtuals/vtables,
+  **templates**, `operator new`/`delete` (runs over our clib malloc/free), local
+  objects. (Tests: `Counter` local → n=3; `Box<int>` new/delete → r=42.)
+- **Global/static object constructors: FIXED 2026-08-15.** Previously a global
+  `G g; g.v` came back 0 — the ctor never ran because the crt0 didn't walk the
+  C++ static-init (XI) table. Fixed in `wlink-cmd-test/crt0sm.asm` (→ cstartcpm.obj):
+  the compiler places each global ctor's 6-byte `rt_init` record (type/priority/
+  near-rtn/pad) into segment **XI** ('DATA'), bracketed by XIB/XIE. crt0 now
+  defines the XIB/XI/XIE(+YIB/YI/YIE) brackets in DGROUP and a small `__init_rtns`
+  that replicates Watcom `__InitRtns(255)` — runs every XI entry in ascending-
+  priority order before `main` (no-op when XI empty, so pure-C is unaffected).
+  Verified: `G g`→v=77; 7 globals with an order-dependent ctor → total=60,
+  counter=4.
+- **Global destructors: FIXED 2026-08-15 too.** crt0 now also runs `__fini_rtns`
+  after main (replicates `__FiniRtns(0,255)` — walks YI in DESCENDING priority =
+  reverse of ctors = LIFO). The dtor-registration path pulls `__clib_fatal` from
+  plibs.lib, so a terminating stub was added to the cpm86 clib (`stdlib.c`).
+  Verified: ctors first/second, main, dtors second/first. The cpm86 clib is now
+  rebuilt reproducibly by `cpm86-clib/build-clib.sh` (wcc .c→.o + wlib archive;
+  headers from `<OW>/bld/hdr/dos/h`), not a hand-made artifact.
+- **Needs real porting:** iostreams (`#include <iostream>` → "unable to open
+  'iostream'": C++ headers not on include path + streams lib must be retargeted to
+  BDOS console) and **exceptions** (`-xs` → needs `plbxs.lib` + `_setjmp_` +
+  `__wint_thread_data` + `__wcpp_4_throw__/catch_done__` — the heaviest part).
+
+**16-bit DOS C++ is OFFICIALLY supported by Open Watcom** (verified 2026-08-15) —
+so cpm86 C++ inherits a mature, maintained runtime, not an experiment:
+- `wpp` = the C++ compiler "for 16-bit Intel platforms" (docs cpwcc.gml); docs:
+  "compilers support both 16-bit and 32-bit application development"; `MSDOS`
+  macro defined for "16-bit DOS" target.
+- The official release installs the FULL 16-bit C++ runtime into `lib286/` from
+  `generic.086`, all 5 memory models (s/c/m/l/h): `plib{s,c,m,l,h}.lib` (runtime),
+  `plbx{s,c,m,l,h}.lib` (**exception-handling** variants), `cplx*.lib` (complex).
+  iostream headers ship too (`bld/hdr/dos/h/iostream`, `iostream.h`, `iomanip`).
+- This is the SAME `generic.086` lib borrowed for cpm86. So the earlier iostreams
+  and exception "failures" were MISSING SETUP, not missing support: `<iostream>`
+  failed only because no `h/` include path was staged; `-xs` failed only because
+  `plbxs.lib`+`setjmp` weren't installed on the cpm86 side. Both could work on
+  cpm86 by copying the official DOS 16-bit headers/libs + a console/setjmp seam.
+- Caveat: it is Watcom's OWN older C++ dialect (~early/mid-90s: partial templates,
+  own class/iostream lib, NOT modern C++/STL).
+
+Structural limit: small model = 64 KB code + 64 KB data, and FORMAT CPM86 is
+phase-1 (small only). Non-trivial C++ (templates/iostreams) bloats past 64 KB →
+would need large-model support (phase-2 wlink). So "freestanding/embedded C++"
+(classes/templates/virtuals/new-delete) is usable now; full standard C++ is a
+larger runtime-port effort like the clib retarget was.

@@ -12,6 +12,10 @@ int abs( int n ) { return n < 0 ? -n : n; }
 void exit( int code ) { (void)code; (void)_bdos( _BDOS_EXIT, 0 ); for( ;; ) ; }
 void abort( void ) { exit( 1 ); }
 
+/* Watcom C++ runtime fatal-error hook (fatalerr.cpp -> __clib_fatal). Pulled in
+   by the C++ static-destructor registration path; we just terminate. */
+void __clib_fatal( char __far *msg, int ret_code ) { (void)msg; exit( ret_code ); }
+
 /* simple first-fit heap over a static arena */
 #define _HEAP_SIZE 8192
 static char _arena[_HEAP_SIZE];

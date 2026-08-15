@@ -3,6 +3,7 @@ __I4M.......................................................................i4m
 __U4D.......................................................................i4d
 __U4M.......................................................................i4m
 ___iob........../Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/fileio.c
+__clib_fatal_.../Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/stdlib.c
 _conout_........./Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/cpmio.c
 abort_........../Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/stdlib.c
 abs_............/Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/stdlib.c
@@ -32,12 +33,28 @@ strncpy_......../Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/string.c
 /Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/cpmio.c Offset=00000200H
     _conout_
  
-/Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/printf.c Offset=00000400H
+/Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/fileio.c Offset=00000400H
+    ___iob
+    fgetc_
+    fputc_
+    fputs_
+    fwrite_
+ 
+/Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/printf.c Offset=00000800H
     printf_
     puts_
     sprintf_
  
-/Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/string.c Offset=00000c00H
+/Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/stdlib.c Offset=00001000H
+    __clib_fatal_
+    abort_
+    abs_
+    atoi_
+    exit_
+    free_
+    malloc_
+ 
+/Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/string.c Offset=00001400H
     memcmp_
     memcpy_
     memmove_
@@ -50,26 +67,11 @@ strncpy_......../Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/string.c
     strncmp_
     strncpy_
  
-/Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/stdlib.c Offset=00001000H
-    abort_
-    abs_
-    atoi_
-    exit_
-    free_
-    malloc_
- 
-/Users/ravn/z80/scratch/rc759-cmd-toolchain/cpm86-clib/fileio.c Offset=00001400H
-    ___iob
-    fgetc_
-    fputc_
-    fputs_
-    fwrite_
- 
-i4d Offset=00001800H
-    __I4D
-    __U4D
- 
-i4m Offset=00001c00H
+i4m Offset=00001800H
     __I4M
     __U4M
+ 
+i4d Offset=00001a00H
+    __I4D
+    __U4D
  
