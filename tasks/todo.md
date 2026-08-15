@@ -1165,3 +1165,13 @@ S0. Link a minimal `-fpi` float program as `format cpm86` with emu8087 + initemu
   (__dos87emucall/__8087cw) — audit initemu/dosinit; provide CP/M stubs.
 - R4: emu2's own float handling — must confirm emu2 does NOT silently provide an
   8087 (would make emu2 PASS while real HW fails). MAME rc759 is the true oracle.
+
+## TODO (later): exploit 80186 instructions for codegen (rc7xx-work, Watcom CP/M-86)
+The RC759 CPU is an 80186, so the whole toolchain currently building with `-0`
+(pure 8086) leaves the 80186's extra real-mode instructions on the table. Build
+the retargeted Watcom clib + user code with `-1` (186/286 integer set: shift/rotate
+by immediate, IMUL r,imm, PUSH imm, PUSHA/POPA, ENTER/LEAVE, BOUND, INS/OUTS) to
+improve density/speed on compute-heavy code — e.g. the Mandelbrot / fixed-point
+inner loops. Verify on cycle-accurate MAME rc759 and confirm the purity gate stays
+green. (Raised 2026-08-15 while confirming that Watcom's prebuilt msdos.286 math
+objects use 0 286-protected-mode opcodes and thus already run on the 80186.)
