@@ -866,3 +866,10 @@ Outcomes: graphics.h HL-return fix (commit b284cd5b14) + time.h clock() 32-bit f
 filed; benchmark in rc700-gensmedet/scratch/sine-demo (BENCHMARK.md, baseline
 llvmz80 50.30s vs sccz80 57.22s). Draw-optimization (#1 arithmetic reverse-decode
 in shared pixel6.inc) documented + baselined, DEFERRED (genuine fork, awaits go-ahead).
+
+## 2026-08-16 (session cont.)
+- "1+2" — retire scratch/open-watcom-v2 + rebase watcom-imul-widening-wip, resume ccpm86 #9.
+- "er du nødt til at træde tilbage og undersøge mere?" — yes: verify hypothesis with data + runtime oracle.
+- "hvorfor er dette svært?" (x2) — answered with the measured layered-failure map (OP_EXT_MUL is unfinished i86 scaffolding).
+- "færdiggør undersøgelsen ... og præsenter resultatet" — done; presented the 3-layer map + A-vs-B revision.
+- "analysér, opsummér og opdater issues, commit" — updated ccpm86 #9 (layered-failure analysis) + rc7xx-work #11 (scratch retired, ready to close).

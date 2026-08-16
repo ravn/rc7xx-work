@@ -18,9 +18,23 @@ Three independent layers, each verified:
    `__I4M` runtime call, unconditionally. The `(long)` cast makes the multiply
    node `I4`, so `__I4M` is always selected. (386 table: `I4→MUL4` hardware — so
    this is a 16-bit-only gap.)
-2. **Front end never emits the widening multiply.** `OP_EXT_MUL`/`emul`
-   (16×16→32) exists in the cg optab, but `bld/cc`/`bld/plusplus` never request
-   it for `(long)(int)a*(int)b` — machinery present, not wired to the idiom.
+2. **Front end never emits the widening multiply, AND the Intel back end for
+   it is incomplete.** `OP_EXT_MUL`/`emul` (16×16→32) has an optab row (`EMUL`)
+   in `bld/cg/intel/i86/c/i86optab.c:54`, but (a) `bld/cc`/`bld/plusplus` never
+   request it for `(long)(int)a*(int)b`, AND (b) — verified 2026-08-16 by a spike
+   — the i86 `ExtMul[]` selection table was **dead scaffolding**: a single
+   self-looping `R_MAKECYPMUL`→`HalfType` entry with no terminal encoder, so it
+   would infinitely re-reduce (I4→I2→I1→BAD). `OP_EXT_MUL` is only implemented
+   end-to-end on the RISC targets (MIPS/PPC/Alpha); it is `__X__` (invalid) on
+   386. So "machinery present, just unwired" (the earlier framing) is WRONG:
+   emitting `OP_EXT_MUL` on Intel is a back-end feature that must be threaded
+   through selection → regalloc → scoreboard → scheduler → encoder. A spike got
+   **selection** working (a real `imul` is generated after fixing `ExtMul[]`),
+   but wcc then crashes downstream in the register scoreboard (`scins.c:221`,
+   `TryRegOp`) because `OP_EXT_MUL` is absent from several Intel opcode-dispatch
+   lists that special-case `OP_MUL`/`OP_EXT_ADD` (e.g. `regalloc.c:471` has
+   `OP_EXT_ADD` but not `OP_EXT_MUL`). See
+   `tasks/plan-watcom-imul-widening-v2-2026-08-16.md`.
 3. **The only multiply optimizer is out of scope.** `bld/cg/c/multiply.c`
    (`MulToShiftAdd`/`CheckMul`) strength-reduces multiply-**by-constant** only,
    and only for `type_class == WD/SW` = the **native machine word**

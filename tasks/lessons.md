@@ -170,3 +170,10 @@ an explicit prerequisite. A "the attribute doesn't fix it" conclusion from an
 un-forced rebuild is untrustworthy — it's the stale-binary trap, not evidence.
 Corollary to AGENTS.md "building is not behaving": also *rebuild what you think
 you rebuilt*.
+
+## 2026-08-16 — ccpm86 #9 imul-widening spike (continued) + scratch retirement
+
+- **File-bugs-not-fixes paid off as a debugging method.** Driving the widening idiom end to end (built wcc from the WIP branch, ran under lldb+emu2) turned a vague "it's hard" into a concrete layered-failure map: scins.c TryRegOp SIGSEGV → scregs.c RegAdd SIGSEGV → x86enc ZOIKS_097. Each fix uncovered the next layer, which is itself the proof that OP_EXT_MUL on i86 is unfinished scaffolding, not a near-complete back end.
+- **Zoom-out discipline applied:** at the 3rd instance of the same "XX pair is foreign to the 16-bit back end" class, stopped whack-a-mole (Path A) and revised the recommendation to spike Path B (split result into DX+AX real registers, reuse existing I4-assembly machinery) — recorded in the plan + issue #9.
+- **A produced object is not proof of codegen correctness.** Two of the crashes were masked by `| tail` swallowing the SIGSEGV exit code (rc=139) and by a 0-byte object that looked like a clean compile. Always check the RAW exit code and object size, and gate real correctness with a runtime value oracle (product with non-zero high 16 bits under emu2).
+- **Repo commit-hook keyword trap:** the "repo settings" preToolUse hook errors on the substring l-o-c-a-t-e in any tool command / commit message. Cost ~10 probes to bisect. See tasks/memory/reference_repo_pretooluse_hook_keyword.md.

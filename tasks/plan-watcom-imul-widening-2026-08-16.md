@@ -1,6 +1,19 @@
 # Plan: teach the Open Watcom 16-bit cg to emit a single IMUL/MUL for widened multiplies (ccpm86 #9)
 
-Status: PLAN (no code yet). Target: `open-watcom-v2` fork, i86 (16-bit) backend.
+> **⚠️ SUPERSEDED 2026-08-16 — see `plan-watcom-imul-widening-v2-2026-08-16.md`.**
+> A spike disproved this plan's central premise (the "back end is already
+> complete" section below). `OP_EXT_MUL` is **not** wired end-to-end on Intel —
+> it is only implemented on the RISC targets (MIPS/PPC/Alpha) and is `__X__`
+> (invalid) on 386. On i86 it existed only as dead scaffolding (a single
+> self-looping `ExtMul[]` table entry with no terminal encoder). Making it work
+> is a **back-end feature** threaded through selection → regalloc → scoreboard →
+> scheduler → encoder, not a recognizer/peephole. The recognizer, sign-uniformity
+> rules, test strategy, and sibling-optimization sections below **remain valid**;
+> only the "tractable / back-end complete" framing is wrong. Read v2 for the
+> corrected approach and the empirical findings (selection now works; the crash
+> is downstream in the register scoreboard).
+
+Status: SUPERSEDED (see banner). Target: `open-watcom-v2` fork, i86 (16-bit) backend.
 Tracking issue: ravn/open-watcom-v2-ccpm86#9. Related: #18 (80186 shifts, separate).
 Date: 2026-08-16.
 
