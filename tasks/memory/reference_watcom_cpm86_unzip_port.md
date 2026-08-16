@@ -79,3 +79,34 @@ The old 4-module proof-of-concept `contrib/ravn/cpm86-clib/build.sh`
 (putchar/i4m/i4d/strlen) is **DEPRECATED/superseded** by build-lib.sh.
 `lib286/cpm86/` is a `.gitignored` install dir — rerun build-lib.sh after clean.
 (open-watcom-v2 master commit `0c95ddfb33`.)
+
+## BDOS directory API: opendir/readdir/closedir/rewinddir (2026-08, follow-up)
+
+`port/dirent.c` (in `contrib/ravn/watcom-cpm86-libc/`) implements the POSIX
+directory-scan API for `-bcpm86`, backed by BDOS Search First/Next (fn 17/18).
+It fills Watcom's own `<dirent.h>` `struct dirent` — on DOS/CP/M `DIR` and
+`struct dirent` are the SAME type (`typedef struct dirent DIR;`), so the private
+handle puts `struct dirent` FIRST (DIR* == malloc block => closedir frees it).
+
+**Key gotcha (CP/M FCB has no `*`):** BDOS matches only with `?` per name(8)/
+type(3) position; a literal `*` in an FCB is byte 0x2A, not a wildcard. So the
+DOS/Unix `*` is expanded in `pattern_to_fcb()` — within a field `*` fills the
+REST of that field with `?`: `*.C`→name"????????" type"C  "; `FOO*.?`→
+name"FOO?????" type"?  ". A field with no `*` that ends early is SPACE-padded =
+exact-length match (correct CP/M semantics). `"."`/`""`/bare drive/trailing sep
+⇒ match-all (`????????`+`???`).
+
+Other design points: single global BDOS search cursor (F_SNEXT continues the
+last F_SFIRST) — a DIR is only valid for a tight opendir→readdir*→closedir loop
+with no intervening file I/O. Multi-extent files (>16 KB) reported once by
+skipping entries whose EX(byte12)/S2(byte14) are non-zero. d_attr set from the
+high bits of the 3 type bytes (R/O=_A_RDONLY, SYS=_A_SYSTEM, ARCH=_A_ARCH);
+size/time stay 0 (plain CP/M 2.2 dir entry has none — use stat()).
+
+Verified under emu2 (`scratch/cpm86-tools/emu2-cpm86/emu2`, NOT a PATH emu2):
+`*.*`→all, `*.C`→only .C (.OBJ excluded), `*.TXT`→1, `FOO.*`→both FOO.*, exact
+`FOO.C`→1, and a 20 KB multi-extent `BIG.DAT` listed exactly once. Wired into
+build-lib.sh (compile + `wlib` archive list) so the canonical `clibs.lib` now
+exports opendir/readdir/closedir/rewinddir. This closes the ONLY real stdlib gap
+for a future store-only Zip 3.0 port (unix/unix.c OS layer needs opendir/readdir).
+(open-watcom-v2 commit `c7e23e2ddc`.)
