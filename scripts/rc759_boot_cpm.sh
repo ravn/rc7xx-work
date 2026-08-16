@@ -36,7 +36,17 @@ WORKSPACE="$(cd "$(dirname "$0")/.." && pwd)"
 MAME_DIR="$WORKSPACE/mame"
 DISKDIR="$MAME_DIR/rc759_sw"
 A_DISK="${A_DISK:-$WORKSPACE/scratch/rc759-pce/images/mandel.img}"
-B_DISK="$DISKDIR/B_blank.mfi"
+# B: defaults to the mandel disk if present (both the Watcom/owcc build
+# MANDEL.CMD and the Digital Research C build MANDELDR.CMD -- run as `b:mandel`
+# / `b:mandeldr`), else a blank scratch disk.  Author it with
+# scripts/rc759_make_mandel_b.sh.  Override with B_DISK=/path/to/disk.mfi.
+if [ -n "$B_DISK" ]; then
+    :
+elif [ -f "$DISKDIR/B_mandel.mfi" ]; then
+    B_DISK="$DISKDIR/B_mandel.mfi"
+else
+    B_DISK="$DISKDIR/B_blank.mfi"
+fi
 # rc759 lives in the scoped regnecentralen SUBTARGET; the debug (regnecentralend)
 # and release (regnecentralen) binaries carry it, the plain "mame" may not.
 # Pick the NEWEST validating binary, not the first: a stale binary built BEFORE
