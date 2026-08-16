@@ -60,3 +60,22 @@ not worked around. STORED remains the proven, correct deliverable.
 - UnZip takes zip length from `stat().st_size` (`process.c` `G.ziplen`), so the
   clib `stat()` must return the **exact** byte length (see the LRBC diskio note),
   not the record-rounded size, or the EOCD scan derails.
+
+## Canonical cpm86 stdlib (2026-08, follow-up)
+
+`clibcpm.lib` (183 modules) is now the **canonical** `-bcpm86` C library, not
+just an UnZip link-time input. `contrib/ravn/watcom-cpm86-libc/build-lib.sh`
+installs it as `lib286/cpm86/clibs.lib` and `crt0.obj` as `cstartcpm.obj` —
+the two files wlink's `system begin cpm86` block auto-links (`libfile
+cstartcpm.obj` + auto-fetch of `clibs.lib` from `%WATCOM%/lib286/cpm86`). So a
+bare `owcc -bcpm86 prog.c -o PROG.CMD` (after `. contrib/ravn/cpm86-clib/env.sh`)
+links the whole library + real startup with **no explicit `library`/`file` on
+the link line**. `env.sh` now also exports `INCLUDE` (clib/watcom/lib_misc
+headers) so `<stdio.h>` etc. resolve with no manual `-I`.
+
+Verified under emu2: `printf`, `malloc`/`free`, `strcpy`, and `time()`
+returning a real Unix epoch via the `__getctime` BDOS seam (`gtctmcpm.c`).
+The old 4-module proof-of-concept `contrib/ravn/cpm86-clib/build.sh`
+(putchar/i4m/i4d/strlen) is **DEPRECATED/superseded** by build-lib.sh.
+`lib286/cpm86/` is a `.gitignored` install dir — rerun build-lib.sh after clean.
+(open-watcom-v2 master commit `0c95ddfb33`.)
