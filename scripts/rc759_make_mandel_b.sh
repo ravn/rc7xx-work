@@ -36,8 +36,10 @@ fi
 echo "==> build Watcom mandel -> MANDEL.CMD"
 # shellcheck disable=SC1091
 . "$OW/contrib/ravn/cpm86-clib/env.sh" >/dev/null 2>&1
-# mandel.c hits wcc ICE 97 at -O1+ on its ternary/string-index line, so -O0.
-owcc -bcpm86 -mcmodel=s -O0 "$OW/contrib/ravn/owc-drc/mandel.c" -o "$STAGE/MANDEL.CMD"
+# RC759 target: -march=i186 (80186, the Piccoline CPU).  The former wcc ICE 97
+# at -O1+ on mandel.c's ternary/string-index line was a stale incremental binary,
+# not a stock bug -- gone after a clean rebuild (2026-08-16) -- so build -O2.
+owcc -bcpm86 -march=i186 -mcmodel=s -O2 "$OW/contrib/ravn/owc-drc/mandel.c" -o "$STAGE/MANDEL.CMD"
 
 echo "==> take DR C mandel -> MANDELDR.CMD"
 cp "$OW/contrib/ravn/owc-drc/MANDEL-DRC.CMD" "$STAGE/MANDELDR.CMD"

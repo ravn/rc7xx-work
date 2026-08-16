@@ -99,6 +99,48 @@ if [ ! -f "$B_DISK" ]; then
     rm -f "$TMP_IMG"
 fi
 
+# Stale-binary guard for the mandel B: disk.  B_mandel.mfi is a *build product*
+# of scripts/rc759_make_mandel_b.sh: edit mandel.c, rebuild the Watcom compiler
+# (wcc.exe) or the cpm86 runtime, or bump MANDEL-DRC.CMD, and the .mfi silently
+# goes stale -- MAME would then boot yesterday's program with none the wiser.
+# So before launching, verify the .mfi is newer than every input that feeds it;
+# if not, refuse and print the exact rebuild command.  This mirrors the
+# newest-mtime MAME_BIN rule above: freshness is an mtime comparison, not trust.
+# Override (boot the stale disk anyway) with RC759_ALLOW_STALE=1.
+mtime_of() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0; }
+
+if [ "$B_DISK" = "$DISKDIR/B_mandel.mfi" ] && [ "${RC759_ALLOW_STALE:-0}" != 1 ]; then
+    OW="$WORKSPACE/open-watcom-v2"
+    # Inputs to B_mandel.mfi (only those present are checked):
+    #   mandel.c        Watcom source        -> MANDEL.CMD
+    #   MANDEL-DRC.CMD  DR C prebuilt         -> MANDELDR.CMD
+    #   wcc.exe         the Watcom compiler   (recompiled today to clear ICE 97)
+    #   clibs.lib/cstartcpm.obj  cpm86 runtime linked into MANDEL.CMD
+    #   rc759_make_mandel_b.sh   the authoring recipe itself
+    disk_mtime=$(mtime_of "$B_DISK")
+    stale=""
+    for input in \
+        "$OW/contrib/ravn/owc-drc/mandel.c" \
+        "$OW/contrib/ravn/owc-drc/MANDEL-DRC.CMD" \
+        "$OW/bld/cc/i86/osxa64/binbuild/wcc.exe" \
+        "$OW/lib286/cpm86/clibs.lib" \
+        "$OW/lib286/cpm86/cstartcpm.obj" \
+        "$WORKSPACE/scripts/rc759_make_mandel_b.sh"; do
+        [ -f "$input" ] || continue
+        if [ "$(mtime_of "$input")" -gt "$disk_mtime" ]; then
+            stale="$stale  $input\n"
+        fi
+    done
+    if [ -n "$stale" ]; then
+        echo "ERROR: B: disk is STALE -- $B_DISK is older than its build inputs:" >&2
+        printf "$stale" >&2
+        echo "Rebuild it before booting:" >&2
+        echo "  sh $WORKSPACE/scripts/rc759_make_mandel_b.sh" >&2
+        echo "Or boot the stale disk anyway with RC759_ALLOW_STALE=1." >&2
+        exit 1
+    fi
+fi
+
 exec "$MAME_BIN" rc759 \
     -rompath "$MAME_DIR/roms" \
     -flop1 "$A_DISK" \
