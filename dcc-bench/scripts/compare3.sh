@@ -11,27 +11,49 @@
 #                                            default /tmp/compare3.html, and
 #                                            auto-opens it when `open` exists)
 #
-# Environment:
-#   DCC_DIR       root of dcc repo (default: parent of this script's dir)
-#   TICKS         z88dk-ticks binary (default: /Users/ravn/z80/z88dk/bin/z88dk-ticks)
-#   VCPM_JAR      path to VirtualCpm.jar
-#   Z88DK_BIN     z88dk bin dir (default: /Users/ravn/z80/z88dk/bin)
+# All compilers and tools are discovered from the rc7xx-work superproject's
+# submodules relative to this script (no hardcoded /Users/... paths), so the
+# top-level workspace can compare compilers straight from its submodules on
+# any host.  Layout expected under the workspace root:
+#   dcc/          davidly dcc compiler + m80.com/l80.com/DCCRTL.MAC (submodule)
+#   llvm-z80/     clang (llvm-z80 backend)                          (submodule)
+#   z88dk/        zsdcc (zcc) + z88dk-ticks                         (submodule)
+#   cpnet-z80/    VirtualCpm.jar                                    (submodule)
+#   dcc-bench/    this harness (tests/, runcpm.sh, build/)
+#
+# Environment overrides (all optional; sensible workspace-relative defaults):
+#   WORKSPACE     rc7xx-work root (default: parent of dcc-bench/)
+#   DCC_DIR       dcc submodule root (default: $WORKSPACE/dcc)
+#   LLVM_Z80      llvm-z80 submodule root (default: $WORKSPACE/llvm-z80)
+#   Z88DK_BIN     z88dk bin dir (default: $WORKSPACE/z88dk/bin)
+#   TICKS         z88dk-ticks binary (default: $Z88DK_BIN/z88dk-ticks)
+#   VCPM_JAR      VirtualCpm.jar (default: $WORKSPACE/cpnet-z80/tools/VirtualCpm.jar)
 #   Z88DK_CFG     z88dk config dir (default: Z88DK_BIN/../lib/config)
+#   CLANG_BUILD   llvm-z80 build bin dir (default: first of build-macos/
+#                 build-linux/build under $LLVM_Z80)
 #   MAX_TSTATES   T-state counter ceiling (default: 2000000000 = 2B)
 #   HTML_OUT      output path for --html (default: /tmp/compare3.html)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DCC_DIR="${DCC_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
-TICKS="${TICKS:-/Users/ravn/z80/z88dk/bin/z88dk-ticks}"
-VCPM_JAR="${VCPM_JAR:-/Users/ravn/z80/cpnet-z80/tools/VirtualCpm.jar}"
-Z88DK_BIN="${Z88DK_BIN:-/Users/ravn/z80/z88dk/bin}"
+# BENCH_DIR = dcc-bench/ (this harness: tests/, runcpm.sh, build/).
+BENCH_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# WORKSPACE = rc7xx-work root; the compiler submodules are its children.
+WORKSPACE="${WORKSPACE:-$(cd "$BENCH_DIR/.." && pwd)}"
+
+# DCC_DIR is the dcc *submodule* (compiler binaries on PATH + the m80.com/
+# l80.com/DCCRTL.MAC assets build_dcc copies).  It is NOT the harness dir any
+# more — test sources are resolved separately (see find_test_src).
+DCC_DIR="${DCC_DIR:-$WORKSPACE/dcc}"
+LLVM_Z80="${LLVM_Z80:-$WORKSPACE/llvm-z80}"
+Z88DK_BIN="${Z88DK_BIN:-$WORKSPACE/z88dk/bin}"
+TICKS="${TICKS:-$Z88DK_BIN/z88dk-ticks}"
+VCPM_JAR="${VCPM_JAR:-$WORKSPACE/cpnet-z80/tools/VirtualCpm.jar}"
 Z88DK_CFG="${Z88DK_CFG:-$Z88DK_BIN/../lib/config}"
-RUNCPM="${DCC_DIR}/runcpm.sh"
+RUNCPM="${BENCH_DIR}/runcpm.sh"
 MAX_TSTATES="${MAX_TSTATES:-2000000000}"
 
-LLVM_Z80="${LLVM_Z80:-/Users/ravn/z80/llvm-z80}"
 if [ -z "${CLANG_BUILD:-}" ]; then
     for _d in "$LLVM_Z80/build-macos/bin" "$LLVM_Z80/build-linux/bin" "$LLVM_Z80/build/bin"; do
         [ -d "$_d" ] && { CLANG_BUILD="$_d"; break; }
@@ -43,8 +65,11 @@ Z80_RT="${CLANG_BUILD%/bin}/lib/z80/z80_rt.a"
 
 export PATH="$Z88DK_BIN:$DCC_DIR:$PATH"
 export ZCCCFG="$Z88DK_CFG"
+# Export VCPM_JAR so the child runcpm.sh (invoked by build_dcc for M80/L80)
+# uses the same workspace jar rather than its own hardcoded fallback.
+export VCPM_JAR
 
-BUILD_DIR="${DCC_DIR}/build/compare3"
+BUILD_DIR="${BENCH_DIR}/build/compare3"
 
 # Pure-compute C89 tests portable between dcc and zsdcc (no file I/O, no
 # CP/M-specific calls, no floating-point, no long-specific args).
@@ -192,10 +217,26 @@ EOF
 
 # ---------- build functions ----------
 
+# Resolve a test's C source across the two post-relocation locations:
+#   $BENCH_DIR/tests/  — RC7xx firmware benchmarks (fw*.c, ackerman, hanoi,
+#                        tak, whetston), added by this project.
+#   $DCC_DIR/tests/    — davidly's canonical dcc suite (sieve, e, nqueens,
+#                        fact, triangle, ttt, tstring, ...), in the submodule.
+# Prefer the local benchmark dir; fall back to the dcc submodule.  Prints the
+# resolved path, or nothing (empty) when the test exists in neither.
+find_test_src() {
+    local name="$1"
+    if [ -f "$BENCH_DIR/tests/${name}.c" ]; then
+        echo "$BENCH_DIR/tests/${name}.c"
+    elif [ -f "$DCC_DIR/tests/${name}.c" ]; then
+        echo "$DCC_DIR/tests/${name}.c"
+    fi
+}
+
 build_dcc() {
     local name="$1"
-    local src="$DCC_DIR/tests/${name}.c"
-    [ -f "$src" ] || return 1
+    local src; src=$(find_test_src "$name")
+    [ -n "$src" ] && [ -f "$src" ] || return 1
     local upper
     upper="$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
     local out="$BUILD_DIR/dcc_${upper}.COM"
@@ -219,8 +260,8 @@ build_dcc() {
 
 build_clang() {
     local name="$1"
-    local src="$DCC_DIR/tests/${name}.c"
-    [ -f "$src" ] || return 1
+    local src; src=$(find_test_src "$name")
+    [ -n "$src" ] && [ -f "$src" ] || return 1
     local upper
     upper="$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
     local out="$BUILD_DIR/clang_${upper}.COM"
@@ -248,8 +289,8 @@ build_clang() {
 
 build_zsdcc() {
     local name="$1"
-    local src="$DCC_DIR/tests/${name}.c"
-    [ -f "$src" ] || return 1
+    local src; src=$(find_test_src "$name")
+    [ -n "$src" ] && [ -f "$src" ] || return 1
     local upper
     upper="$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
     local out="$BUILD_DIR/zsdcc_${upper}.COM"
@@ -268,8 +309,8 @@ build_zsdcc() {
 #   DIFF   — built+ran but disagrees with every peer (the outlier — suspect)
 run_test() {
     local test="$1"
-    local src="$DCC_DIR/tests/${test}.c"
-    if [ ! -f "$src" ]; then
+    local src; src=$(find_test_src "$test")
+    if [ -z "$src" ] || [ ! -f "$src" ]; then
         echo "SKIP $test: no source" >&2
         return
     fi

@@ -24,12 +24,14 @@
 #   runticks.sh [-m|--measure] COM_FILE arg1 arg2 ...
 #
 # Environment:
-#   TICKS   path to z88dk-ticks (default: /Users/ravn/z80/z88dk/bin/z88dk-ticks)
+#   TICKS   path to z88dk-ticks (default: <workspace>/z88dk/bin/z88dk-ticks,
+#           where <workspace> is this script's parent dir, dcc-bench/..)
 #   RUNTICKS_TIMEOUT  max T-states before forced exit (default: 4000000000)
 
 set -euo pipefail
 
-TICKS="${TICKS:-/Users/ravn/z80/z88dk/bin/z88dk-ticks}"
+_RUNTICKS_DIR="$(cd "$(dirname "$0")" && pwd)"
+TICKS="${TICKS:-$(cd "$_RUNTICKS_DIR/.." && pwd)/z88dk/bin/z88dk-ticks}"
 RUNTICKS_TIMEOUT="${RUNTICKS_TIMEOUT:-4000000000}"
 
 # Parse flags

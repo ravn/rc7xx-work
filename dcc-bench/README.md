@@ -23,11 +23,36 @@ from the fork's `main` (the 18 files that were added on top of upstream
   (`fw*.c`), classics (`whetston.c`, `ackerman.c`, `hanoi.c`, `tak.c`)
 - `compare3_results.csv` — a sample results snapshot
 
-## Path caveat
+## Running from the superproject
 
-The scripts were written to run **inside the dcc source tree** and reference
-the `dcc` compiler and emulator relative to that layout. After this
-relocation the `dcc` submodule sits at `../dcc` (superproject root); the
-run/build paths likely need adjusting before the harness runs as-is here.
-This directory captures the sources faithfully — wiring the paths to the
-`rc7xx-work` layout is a follow-up.
+The harness is wired to discover every compiler and tool from the
+`rc7xx-work` submodules relative to its own location — no hardcoded
+`/Users/...` paths — so it runs straight from the workspace root:
+
+```sh
+dcc-bench/scripts/compare3.sh --csv fwdelay sieve   # CSV for two tests
+dcc-bench/scripts/compare3.sh --all                 # whole TEST_LIST
+dcc-bench/scripts/compare3.sh --html                # HTML report
+```
+
+Discovered from the workspace root (`dcc-bench/..`), each overridable by an
+env var of the same name:
+
+| Tool                    | Default location                          |
+|-------------------------|-------------------------------------------|
+| dcc + m80/l80/DCCRTL    | `dcc/` submodule (`DCC_DIR`)              |
+| clang (llvm-z80)        | `llvm-z80/build-macos\|linux\|build/bin` (`CLANG_BUILD`) |
+| zsdcc (`zcc`) + ticks   | `z88dk/bin` (`Z88DK_BIN`, `TICKS`)       |
+| `VirtualCpm.jar`        | `cpnet-z80/tools` (`VCPM_JAR`)           |
+
+## Test sources — two locations
+
+`compare3.sh` resolves each test via `find_test_src`, checking:
+
+1. `dcc-bench/tests/` — the RC7xx firmware micro-benchmarks (`fw*.c`,
+   `whetston.c`, `ackerman.c`, `hanoi.c`, `tak.c`) added by this project.
+2. `dcc/tests/` (submodule) — davidly's canonical dcc suite (`sieve`, `e`,
+   `nqueens`, `fact`, `triangle`, `ttt`, `tstring`, …).
+
+The local benchmark dir wins on a name clash. This split lets the default
+`TEST_LIST` mix both without copying davidly's tests out of the submodule.

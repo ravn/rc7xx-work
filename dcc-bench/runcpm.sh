@@ -19,14 +19,17 @@
 #
 # Environment:
 #   VCPM_JAR          path to VirtualCpm.jar
-#                     default: /Users/ravn/z80/cpnet-z80/tools/VirtualCpm.jar
+#                     default: <workspace>/cpnet-z80/tools/VirtualCpm.jar,
+#                     where <workspace> is the parent of this script's dir
+#                     (dcc-bench/..) — the rc7xx-work superproject root.
 #   RUNCPM_TIMEOUT    hard wall-clock limit in seconds (default 60).  A CP/M
 #                     program that reads console input, or a bad command line,
 #                     can otherwise hang vcpm forever.
 
 set -euo pipefail
 
-VCPM_JAR="${VCPM_JAR:-/Users/ravn/z80/cpnet-z80/tools/VirtualCpm.jar}"
+_RUNCPM_DIR="$(cd "$(dirname "$0")" && pwd)"
+VCPM_JAR="${VCPM_JAR:-$(cd "$_RUNCPM_DIR/.." && pwd)/cpnet-z80/tools/VirtualCpm.jar}"
 RUNCPM_TIMEOUT="${RUNCPM_TIMEOUT:-60}"
 
 if [ $# -lt 1 ]; then
