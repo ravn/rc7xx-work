@@ -41,3 +41,25 @@ writable B: drive to the rc702 launcher.
   change persists in the MFI. (floptool ships with a TOOLS=1 build.)
 - Launcher: `scripts/rc702_boot_cpm.sh` (top-level repo) mounts A: SW1711 IMD +
   an empty MFI B:.
+
+## rc759 boot: separate release/debug binaries -> stale-binary trap
+- MAME builds two independent binaries with separate object trees:
+  `mame/regnecentralen` (release) and `mame/regnecentralend` (debug, `d`
+  suffix = DEBUG=1). `make`-ing one does NOT rebuild the other.
+- The WD2797 "LOST DATA blocking program load" fix is commit 59b21dc:
+  `src/devices/cpu/i86/i186.h` services DREQ immediately in `drq0_w` (the
+  i80186 internal DMA was servicing bytes one CPU-step deferred, missing the
+  ~16us/byte WD2797 window -> S_LOST poisons the whole sector), plus rc759.cpp
+  seeds a known-good NVRAM (boot medium 'A') + 384K RAM map.
+- TRAP: a `regnecentralen` built BEFORE the fix still passes `-validate rc759`
+  (validation only checks machine-config validity, not codegen), so a launcher
+  that picks the *first* validating binary silently runs the stale one and
+  reproduces LOST DATA. `scripts/rc759_boot_cpm.sh` now picks the NEWEST
+  validating binary by mtime. When in doubt, rebuild.
+- Boot oracle: with the fix, `mame/regnecentralen rc759 -flop1 <native-rc759
+  .img>` boots mandel.img to the "PICCOLINE Installations- og
+  konfigureringsmenu Version 2.3" with 0 LOST / 0 RNF.
+- rc759 disks are 5.25" DS-HD in the `rc759` wd177x format (77 cyl x 2 x 8 x
+  1024 = 1,261,568 B). Watcom boot image: scratch/rc759-pce/images/mandel.img
+  (native rc759, NOT PCE .pfdc). DDHF catalogue of native rc759 disks:
+  rc700-gensmedet/docs/DATAMUSEUM_RC759_ARTIFACTS.md.
