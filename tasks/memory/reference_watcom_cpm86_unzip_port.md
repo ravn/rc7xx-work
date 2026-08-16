@@ -110,3 +110,38 @@ build-lib.sh (compile + `wlib` archive list) so the canonical `clibs.lib` now
 exports opendir/readdir/closedir/rewinddir. This closes the ONLY real stdlib gap
 for a future store-only Zip 3.0 port (unix/unix.c OS layer needs opendir/readdir).
 (open-watcom-v2 commit `c7e23e2ddc`.)
+
+## Zip 3.0 store-only: STILL blocked after opendir/readdir (2026-08, measured)
+
+opendir/readdir was NECESSARY but NOT SUFFICIENT for a Zip port. Measured a real
+`-DUNIX` small-model build attempt (crypt on, `-DNO_EF_UT_TIME`, skip timezone.c;
+core = crc32/globals/util/zbz2err/ttyio/trees/deflate/crypt/fileio/zipfile/
+zipup/zip). Findings:
+
+- **Core C compiles cleanly** under owcc -bcpm86 -mcmodel=s once configured:
+  `-DNO_OFF_T -DNO_LARGE_FILE_SUPPORT -DNO_ZIP64_SUPPORT -DSMALL_MEM
+  -DNO_BZIP2_SUPPORT -DNO_EF_UT_TIME`. Gotchas: keep CRYPT (do NOT `-DNO_CRYPT`
+  or zip.c:3455 IZ_PWLEN is undeclared); `-DNO_EF_UT_TIME` so timezone.c (POSIX
+  `timezone`/`daylight`/`tzname`) isn't needed.
+- **HARD ceiling — both 64 KB segments overflow, even STORE-only (deflate.c +
+  trees.c excluded):**
+  - `_TEXT` = 69231 B → **3695 B over** the 64 KB code segment.
+  - DGROUP ≈ 95 KB → **~28.7 KB over** the 64 KB near data group, dominated by
+    `CONST` = 38074 B (Zip's help/message strings live near in small model) and
+    `_BSS` = 50912 B (static buffers: `_errbuf` ~5 KB, upper/lower tables, CRC
+    table, globals...). With deflate+trees IN, _BSS is +64 KB worse (static
+    window[2*WSIZE]+prev[WSIZE]) — that's the separate DEFLATE ceiling.
+- **Missing OS layer (~15 fns)**: procname, filetime, in2ex/ex2in, stamp,
+  version_local, deletedir, set_extra_field, getp/Echon (crypt TTY needs
+  termios — ttyio.c fails under UNIX), plus POSIX stubs lstat, readlink,
+  mkstemp, fdopen, getpid, system, setvbuf.
+
+**Verdict: Zip store does NOT fit 16-bit small model.** Unlike UnZip (whose
+extract path just squeaks in for STORED), Zip's command/zipfile/extra-field/
+crypt code is bigger and blows BOTH the code segment (69 KB) and DGROUP (95 KB).
+Making it run would need either a **compact/large memory model** (multi code
+segment + far data → requires a compact-model CP/M-86 clib; current clib is
+small-model near-only) or **heavy feature stripping** (drop the 38 KB message
+strings, move buffers to a far heap) which touches generic sources (breaks the
+zero-edit rule) and still must close a 69 KB + 95 KB gap. Not a quick win;
+parked pending a compact-model clib. (Measurements: /tmp trial build, this date.)
