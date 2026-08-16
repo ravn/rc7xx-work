@@ -40,3 +40,6 @@
 	path = cpm86-crossdev
 	url = git@github.com:ravn/cpm86-crossdev.git
 	branch = main
+[submodule "emu2-cpm86"]
+	path = emu2-cpm86
+	url = https://github.com/ravn/emu2-cpm86
