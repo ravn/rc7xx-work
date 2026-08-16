@@ -62,6 +62,55 @@ is the commit source-of-record (cg sources byte-identical between the trees).
 - **`OP_EXT_MUL` keeping I4** (current WIP): correct in principle (DX:AX kept,
   sign by type_class); selection works; blocked by the scoreboard crash above.
 
+## UPDATE 2026-08-16 (continued) — layered-failure map, measured end to end
+
+Rebuilt wcc from the WIP branch inside the freshly-bootstrapped submodule and
+drove the widening idiom `(unsigned long)a*b` through the back end with lldb +
+emu2. Each fix uncovered the next layer — this is the concrete evidence for
+"why it's hard": `OP_EXT_MUL` on i86 is unfinished scaffolding, and the whole
+16-bit back end assumes no value wider than 16 bits ever lives in ONE register
+name. The DX:AX pair result (type_class XX) violates that invariant, so every
+machine-level pass that touches register operands breaks in turn:
+
+1. **`scins.c:221` `TryRegOp` — SIGSEGV (addr 0x1a).** Scoreboard operand-
+   renaming indexed `scoreboard[op->r.reg_index]` for the XX pair, which
+   `ScoreCalcList` (scutil.c) never gave a slot (reg_index stays NO_INDEX).
+   FIXED: guard the register branch with `ScRealRegister(op)`.
+2. **`scregs.c:224` `RegAdd` — SIGSEGV (`ScoreList[-1]`, addr 0x421).** A MOV of
+   the pair reached `ScoreMove`/`ScoreMakeEqual` → `RegAdd(dst=17, src=-1)`.
+   FIXED: NO_INDEX backstop, matching the existing guard at scregs.c:202.
+   (Both fixes committed on the WIP branch, `99d789bc98`. They are defensively
+   correct for ANY untracked register, not just #9.)
+3. **`x86enc.c:2474` `ZOIKS_097` "instruction with G_UNKNOWN encoding".** No more
+   crash — now a *controlled* internal error. The `ExtMul[]` reduction table
+   (i86table.c:561) has correct terminals (`_Bin(R,R,R)→G_R2/FU_IMUL`,
+   `_Bin(R,M,R)→G_M2/FU_IMUL`) but the operand shape at reduction time matched an
+   unfinished **`G_UNKNOWN` placeholder** reduction entry instead (e.g. the
+   `_Bin(R,U,R)→G_UNKNOWN` row). The reduction chain that simplifies arbitrary
+   operands down to the (R,R)/(R,M) terminal was never completed.
+
+So the earlier v1/v2 premise "back end already complete, just thread the opcode
+through ~5 dispatch switches" is **empirically wrong**. Two of those switches
+(regalloc.c:471, x86ver/enc constant sign-extend) were NOT the crash root; the
+real work is (a) the two scoreboard NULL-deref guards [DONE], then (b) finishing
+the reduction table + verifying `RG_WORD_MUL` forces op1→AX / result→DX:AX in
+regalloc, then (c) the `G_R2`/`G_M2` emission of one-operand `imul`/`mul r/m16`,
+then (d) — still unverified — how the DX:AX pair result is split/consumed by the
+caller (return, store, further arithmetic). Layers (c)/(d) are new emitter/
+regalloc surface, not one-line dispatch additions.
+
+### Revised recommendation: investigate Path B FIRST
+Given (3) and the recurring-pattern discipline (this is the 3rd instance of the
+same "XX pair is foreign to the 16-bit back end" class), Path A is now assessed
+as an open-ended *implementation* effort across selection→reduction→emission→
+split, not a bug-fix. Path B (represent the result so it splits into DX + AX
+*real* registers before these passes run, reusing the existing I4-assembly
+machinery) would let all the existing 16-bit passes handle it unchanged and
+eliminate the whole class at once. Before sinking more days into Path A's
+emitter/regalloc surface, spend a bounded spike confirming whether the existing
+`OP_MUL(I2)`→AX + bind-DX-as-high machinery (how I4 ADD/shift already assemble
+DX:AX) can be reused — see Path B below. Decide A-vs-B from that spike's result.
+
 ## Decision: two viable paths — recommend Path A, keep B as fallback
 
 ### Path A (recommended): finish wiring `OP_EXT_MUL` through the i86 back end
@@ -118,10 +167,14 @@ This avoids the systemic opcode gap at the cost of a more intricate recognizer.
   compose with #18. Follow-up.
 
 ## WIP location
-The spike code (recognizer + ExtMul table + wiring) is preserved on submodule
-branch `watcom-imul-widening-wip` (NOT on master; NOT pushed). Four files:
-`bld/cg/c/multiply.c`, `bld/cg/h/multiply.h`, `bld/cg/c/generate.c`,
-`bld/cg/intel/i86/c/i86table.c`. Resume from Path A step 1.
+The spike code (recognizer + ExtMul table + wiring) plus this session's two
+scoreboard NULL-deref fixes are preserved on submodule branch
+`watcom-imul-widening-wip` (NOT on master; NOT pushed), tip `99d789bc98` (rebased
+onto the freshly-built master `79fc5eb2d5`). Files: `bld/cg/c/multiply.c`,
+`bld/cg/h/multiply.h`, `bld/cg/c/generate.c`, `bld/cg/intel/i86/c/i86table.c`
+(spike), `bld/cg/c/scins.c`, `bld/cg/c/scregs.c` (crash guards). Current wall:
+`ZOIKS_097` at emission — resume from the "Revised recommendation" above (spike
+Path B, or finish the reduction table for Path A).
 
 ## Risks
 - Silent miscompile (dropped high half / wrong sign) — mitigated only by the
