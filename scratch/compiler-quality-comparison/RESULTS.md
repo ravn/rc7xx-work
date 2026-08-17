@@ -121,6 +121,41 @@ the shared FP runtime, which is not counted here). NB: Watcom's DEFAULT (8087
 inline) would show 1740/1651 B — smaller, but assumes an FPU RC759 lacks, so it is
 excluded. Aztec 3.40 again beats 4.2; DR C large is the outlier (far FP calls).
 
+### AES-256 — code size (VERIFIED 2026-08-17)
+
+Whole-module machine-code bytes of `aes256.c` — the literatecode tableless
+byte-oriented AES-256 (GF math computed on the fly, no S-box tables), small model.
+Reproduce with `./measure.sh aes256.c`.
+
+| Compiler | opt/model | code bytes |
+|----------|-----------|-----------:|
+| **Open Watcom** | `-otexan` (speed) | **1675** |
+| Open Watcom | `-os` (size) | 1754 |
+| Aztec C86 3.40a | default | 3092 |
+| Aztec C86 4.2 | default | 3254 |
+| DR C 1.11 | small (default) | 3817 |
+| DR C 1.11 | large (`-b`) | 4523 |
+
+**Correctness (independent oracle):** the source is validated against the FIPS-197
+AES-256 ECB known-answer vector (key `000102..1f`, pt `00112233..eeff`), whose true
+ciphertext is `8ea2b7ca516745bfeafc49904b496089` — **confirmed by `openssl enc
+-aes-256-ecb`**, NOT from memory. The DR C build (K&R + `char` shim) matches host
+clang byte-for-byte, and decrypt round-trips to the plaintext, so the K&R
+conversion and the DR C `unsigned char`->`char` shim are faithful.
+
+**Finding:** the widest integer spread in the suite — Watcom is **~2.3x denser**
+than DR C. AES is heavy on 8-bit array indexing, rotates and GF multiplies;
+Watcom's register allocator and 8-bit codegen pull far ahead, while DR C's fixed
+1984 codegen (every 8-bit op through memory) trails badly. Aztec sits in between,
+3.40 again beating 4.2.
+
+**Portability notes:** the corpus source uses ANSI prototypes (for z88dk SDCC);
+converted back to K&R here because DR C 1.11 AND Aztec 3.40 reject ANSI prototypes
+(ANSI compilers accept K&R). DR C 1.11 has no `unsigned char` type (Error 13) but
+its `char` is unsigned by default (verified: `0x80` rotate -> 1, not 255), so
+`measure.sh` maps `unsigned char`->`char` on the DR C path only — identical 8-bit
+unsigned semantics there.
+
 ### Status matrix
 
 | Benchmark | size | speed |
@@ -129,7 +164,7 @@ excluded. Aztec 3.40 again beats 4.2; DR C large is the outlier (far FP calls).
 | Dhrystone | ✅ done (above) | ⬜ (Watcom runnable ref = contrib/ravn/dhry.c) |
 | Whetstone | ✅ done (above) | ⬜ (Watcom baseline exists) |
 | stdcbench | ⬜ | 🟡 DR C=13, Watcom=20 measured earlier; Aztec pending |
-| AES-256 | ⬜ (port kernel to CP/M-86) | ⬜ |
+| AES-256 | ✅ done (above) | ⬜ (KAT verified vs openssl) |
 
 Refinements to add: a genuine DR C stdcbench column (not the owc-drc hybrid);
 AES-256 kernel ported to the K&R/C89 subset. (Aztec `sqz` is a compressor, not an

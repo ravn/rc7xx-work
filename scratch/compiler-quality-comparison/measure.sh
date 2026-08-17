@@ -53,7 +53,11 @@ drc() {
     for f in DRC.CMD DRC860.CMD DRC861.CMD DRC862.CMD DRCRPP.CMD CPMEOF.ASC STDIO.H CTYPE.H PORTAB.H; do
         if [ -f "$DRC_OFF/$f" ]; then cp "$DRC_OFF/$f" "$W/$f"; elif [ -f "$DRC_FB/$f" ]; then cp "$DRC_FB/$f" "$W/$f"; fi
     done
-    cp "$SRC" "$W/srcfile.c"; cat "$W/CPMEOF.ASC" >> "$W/srcfile.c" 2>/dev/null
+    # DR C 1.11 lacks the `unsigned char` type (Error 13), but its plain `char`
+    # is UNSIGNED by default (verified: 0x80 rotate -> 1, not 255). So map the
+    # canonical `unsigned char` typedef to `char` -- identical 8-bit-unsigned
+    # semantics on DR C, no algorithm change. Harmless to sources without it.
+    sed 's/unsigned char/char/g' "$SRC" > "$W/srcfile.c"; cat "$W/CPMEOF.ASC" >> "$W/srcfile.c" 2>/dev/null
     ( cd "$W" && EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A "$EMU2_DRC" DRC.CMD "srcfile $1" ) 2>/dev/null \
         | awk -F'code:' '/code:/{split($2,a," ");print a[1];exit}'
     rm -rf "$W"
