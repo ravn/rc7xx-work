@@ -36,8 +36,15 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
   benchmarks. Verified FP models: Watcom default = inline 8087 (`fld/fmul`);
   Aztec 3.40/4.2 = software calls (`$dldp/$dml/$dst`); DR C = software (per
   `reference_drc_float_8087_abi`).
-- **Speed**: cycle-accurate on **MAME rc759** (CP/M-86), via the done-signal
-  harness. Requires each compiler to emit a runnable `.CMD`. (Pending per cell.)
+- **Speed**: cycle count from the **Unicorn/QEMU 8086 executor**
+  (`cpm86run_unicorn.py --ticks`), which runs the real 8086 instruction stream
+  and costs it with the `cycles186.py` 80186 model. It is an 80186 cost model
+  (RC759 is an 8086), so treat the numbers as **relative**, not wall-clock. To
+  cancel fixed crt0/printf/libc overhead we use a **differential** method: build
+  the same kernel at N=10 and N=20 iterations and report
+  `(clocks(N20) − clocks(N10)) / 10` = clocks per kernel iteration. Requires each
+  compiler to emit a runnable CP/M-86 `.CMD` (Watcom via the hand-built port
+  seam; Aztec via `-lc86`; DR C via the emu2 oracle).
 
 ---
 
@@ -62,6 +69,26 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
 2 B. DR C small is the largest of the small-model set; its large model adds 30 B
 (far data addressing of `flags[]`). Watcom's size vs speed tuning barely moves
 this kernel (72 vs 74 B).
+
+### Sieve — speed (VERIFIED 2026-08-17)
+
+80186 clocks per sieve iteration (SZ=8190), differential method (N=20 minus
+N=10, divided by 10), overhead-free. Lower is faster.
+
+| Compiler | opt | clocks / iteration |
+|----------|-----|-------------------:|
+| **Open Watcom** | `-os` (size) | **1,023,461** |
+| Open Watcom | `-otexan` (speed) | 1,024,185 |
+| Aztec C86 3.40a | default | 2,118,049 |
+| Aztec C86 4.2 | default | 2,197,314 |
+| DR C 1.11 | small (default) | 3,688,187 |
+
+**Finding (speed):** the speed ranking mirrors the size ranking — Watcom is both
+the smallest and the fastest (~2.1× faster than Aztec, ~3.6× faster than DR C),
+DR C both the largest and the slowest. Watcom's `-otexan` speed tuning does not
+help this tight byte-array loop (essentially identical to `-os`). Aztec 3.40
+edges 4.2 slightly. The 3.6× Watcom-vs-DR-C gap tracks DR C's less efficient
+array-index addressing.
 
 ### Dhrystone 2.1 — code size (VERIFIED 2026-08-17)
 
@@ -160,9 +187,9 @@ unsigned semantics there.
 
 | Benchmark | size | speed |
 |-----------|------|-------|
-| Sieve | ✅ done (above) | ⬜ MAME rc759 (all four → .CMD) |
+| Sieve | ✅ done (above) | ✅ done (above, all four) |
 | Dhrystone | ✅ done (above) | ⬜ (Watcom runnable ref = contrib/ravn/dhry.c) |
-| Whetstone | ✅ done (above) | ⬜ (Watcom baseline exists) |
+| Whetstone | ✅ done (above) | 🟡 Watcom baseline ~200.6M clocks (whole run) |
 | stdcbench | 🔴 blocked (see note) | 🔴 blocked (tracked #5) |
 | AES-256 | ✅ done (above) | ⬜ (KAT verified vs openssl) |
 
