@@ -5,6 +5,37 @@ available in this workspace, optimized for both size and speed where the compile
 supports it. Era-authenticity is explicitly **not** a goal — this measures code
 quality only.
 
+## Headline results
+
+Consolidated from the verified per-benchmark sections below. **stdcbench is still
+blocked (#5)** and omitted. Lower is better in both tables.
+
+**Code size** (bytes of emitted benchmark code; Watcom `-os`/`-otexan`, Aztec
+3.40/4.2, DR C small/large model):
+
+| Benchmark | Watcom -os | Watcom -otexan | Aztec 3.40 | Aztec 4.2 | DR C small | DR C large |
+|-----------|-----------:|---------------:|-----------:|----------:|-----------:|-----------:|
+| Sieve | **72** | 74 | 112 | 110 | 121 | 151 |
+| Dhrystone | 897 | **874** | 1168 | 1179 | 1297 | 1615 |
+| Whetstone (sw-float) | 2401 | **2217** | 2254 | 2425 | 2271 | 3318 |
+| AES-256 | 1754 | **1675** | 3092 | 3254 | 3817 | 4523 |
+
+**Speed** (80186 clocks per unit, Unicorn oracle + differential method; best
+variant per compiler):
+
+| Benchmark | Watcom | Aztec 3.40 | Aztec 4.2 | DR C |
+|-----------|-------:|-----------:|----------:|-----:|
+| Sieve (clk/iter) | **1,023,461** | 2,118,049 | 2,197,314 | 3,688,187 |
+| Dhrystone (clk/run) | **5,639** | 10,964 | 10,964 | 47,819 |
+| AES-256 (clk/encrypt) | **3,453,717** | 9,848,615 | 10,173,935 | 11,286,622 |
+| Whetstone (clk/pass) | **19,864,674** | 62,528,360 | 60,358,162 | 39,468,291 |
+
+**Takeaways:** Open Watcom wins every size and speed cell. Below Watcom the
+integer/FP rankings **invert**: on integer work (Sieve, Dhrystone, AES) Aztec
+beats DR C, but on floating point (Whetstone) DR C beats both Aztec — its
+soft-float/transcendental library is tighter. Aztec 4.2 edges 3.40 on FP;
+3.40 edges 4.2 on integer.
+
 ## Compilers under test
 
 | # | Compiler | Dialect | Driver | Notes |
