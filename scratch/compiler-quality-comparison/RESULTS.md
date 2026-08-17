@@ -38,7 +38,7 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
 ### Sieve — code size (VERIFIED 2026-08-17)
 
 `sieve()` machine-code bytes, small memory model unless noted. Reproduce with
-`./measure-sieve.sh`.
+`./measure.sh sieve.c`.
 
 | Compiler | opt | code bytes |
 |----------|-----|-----------:|
@@ -55,6 +55,32 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
 (far data addressing of `flags[]`). Watcom's size vs speed tuning barely moves
 this kernel (72 vs 74 B).
 
+### Dhrystone 2.1 — code size (VERIFIED 2026-08-17)
+
+Whole-module machine-code bytes of `dhry.c` (Proc_1..8, Func_1..3, string
+helpers, driver), small model unless noted. Reproduce with `./measure.sh dhry.c`.
+
+| Compiler | opt | code bytes |
+|----------|-----|-----------:|
+| **Open Watcom** | `-otexan` (speed) | **874** |
+| Open Watcom | `-os` (size) | 897 |
+| Aztec C86 3.40a | default | 1168 |
+| Aztec C86 4.2 | default | 1179 |
+| DR C 1.11 | small (default) | 1297 |
+| DR C 1.11 | large (`-b`) | 1615 |
+
+**Finding:** same ordering as Sieve — Open Watcom densest (~25% smaller than
+Aztec, ~31% smaller than DR C small), DR C largest. Interestingly Watcom's speed
+tuning (`-otexan`) is here 23 B *smaller* than `-os` on this control-flow-heavy
+code. Aztec 3.40 edges 4.2 by 11 B on the larger program (reverse of Sieve).
+`dhry.c` is the K&R/C89 port that compiles unchanged on all four; a whole-struct
+copy through a pointer (`*p = *q`) was replaced by a field-copy helper because
+DR C 1.11 rejects it (Error 66 "Unknown pointer size") — the same case the stock
+Dhrystone guards with its `structassign` macro. A separate, Watcom-only, runnable
+Dhrystone that *verifies* the published final values lives at
+`open-watcom-v2/contrib/ravn/dhry.c` (uses `enum` + `#pragma aux`, so it is the
+Watcom speed/correctness reference, not a portable four-way source).
+
 Caveats: DR C 1.11 has no optimizer switch (single fixed code-gen). Aztec C86
 3.40/4.2 likewise have **no code-size optimizer flag** — verified: the `sqz` tool
 is an *object-file squeezer* (compresses the `.o` encoding, e.g. 309→178 B, and
@@ -68,7 +94,7 @@ versions emit one fixed code sequence. Models are each compiler's natural defaul
 | Benchmark | size | speed |
 |-----------|------|-------|
 | Sieve | ✅ done (above) | ⬜ MAME rc759 (all four → .CMD) |
-| Dhrystone | ⬜ | ⬜ |
+| Dhrystone | ✅ done (above) | ⬜ (Watcom runnable ref = contrib/ravn/dhry.c) |
 | Whetstone | ⬜ (float libs per compiler) | ⬜ (Watcom baseline exists) |
 | stdcbench | ⬜ | 🟡 DR C=13, Watcom=20 measured earlier; Aztec pending |
 | AES-256 | ⬜ (port kernel to CP/M-86) | ⬜ |
@@ -80,5 +106,7 @@ optimizer, so there is no extra Aztec size-opt variant to add.)
 ## Files
 
 - `sieve.c` — the portable K&R/C89 Byte sieve (one source, all four compilers).
+- `dhry.c`  — portable K&R/C89 Dhrystone 2.1 (one source, all four compilers).
 - `omfsize.py` — Intel OMF CODE-segment byte counter (Watcom & DR C).
-- `measure-sieve.sh` — compiles sieve.c with all four and prints the size table.
+- `measure.sh <bench.c>` — compiles the benchmark with all four and prints the
+  code-size table (Watcom OMF, DR C `code:`, Aztec max cumulative obd block-end).
