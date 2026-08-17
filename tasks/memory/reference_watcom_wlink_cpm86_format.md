@@ -14,9 +14,14 @@ pipeline — `wcc → wlink FORMAT CPM86 → .CMD` — with no foreign linker an
 
 **Native `FORMAT CPM86` writer — MAME-verified on RC759 (copilot, 2026-08-15).**
 
-Implementation in `scratch/open-watcom-v2` (⚠ two OW trees exist — root
-`open-watcom-v2/` and `scratch/open-watcom-v2/`; the wlink work was uncommitted
-in the scratch tree as of 2026-08-15, confirm which is canonical before building):
+**Implementation in the canonical `open-watcom-v2` tree.** (⚠ HISTORICAL NOTE:
+during development 2026-08-15 the work lived UNCOMMITTED in a throwaway
+`scratch/open-watcom-v2` copy alongside the clean main tree — "two trees". As of
+2026-08-17 that is RESOLVED: on macbook there is a SINGLE tree
+`/Users/ravn/z80/open-watcom-v2` which already contains the patch — verified:
+`bld/wl/c/{cmdcpm86.c,loadcpm86.c}` present, `_formats.h` mentions cpm86, and the
+built `build/binbuild/bwlink` links CP/M-86 `.CMD` directly. No scratch copy
+exists here anymore.):
 - New files: `bld/wl/c/{cmdcpm86.c,loadcpm86.c}` + `bld/wl/h/{cmdcpm86.h,loadcpm86.h}` (~301 lines).
 - Hooks into existing linker: `cmdall.c`, `cmdline.c`, `loadfile.c`, `msg.c`,
   `_formats.h`, `formats.h`, `ldefext.h`, `wlinkcfg.h`, `lnk/specs.sp`,
