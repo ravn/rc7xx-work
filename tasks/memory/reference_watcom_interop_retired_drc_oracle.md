@@ -22,6 +22,15 @@ The goal is to make **standalone Watcom produce the SAME behaviour** (byte-forma
 interoperate / link together**. Use DR C to check correctness/size/format; never
 as a link-time runtime for Watcom output.
 
+## HARD RULE: never use owc-drc unless explicitly asked (user, 2026-08-17)
+User input: "jeg vil aldrig mere have owc-drc med mindre der bliver bedt om det."
+owc-drc (the Watcom-obj + DR C `clears.l86` hybrid) must NOT appear in any build,
+benchmark, comparison, or oracle **unless the user explicitly asks for it by
+name**. When a task needs "DR C", use the GENUINE DR C 1.11 compiler
+`scratch/rc759-cmd-toolchain/drc86111/DRC.CMD` (run under cpm86/emu2), NOT the
+owc-drc hybrid. Do not reach for owc-drc as a convenience even when it would be
+faster.
+
 ## Implications for future work
 - Do NOT invest in Watcom+DR C or Watcom+Aztec bridging/linking. The legacy
   bridge notes (reference_watcom_drc_abi_bridge, reference_wlink_drc_omf_l86,
