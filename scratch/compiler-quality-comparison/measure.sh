@@ -33,9 +33,11 @@ azmax() { python3 -c "import sys,re;v=[int(x,16) for x in re.findall(r'ends @ *(
 echo "=== $NAME -- module code size (bytes), small model unless noted ==="
 printf "%-20s %-12s %s\n" "compiler" "opt/model" "code bytes"
 
-# Open Watcom (small model): -os size, -otexan speed
-"$WCC" "$SRC" -ms -os     -fo="$TMP/w_os.o" >/dev/null 2>&1 && printf "%-20s %-12s %s\n" "Open Watcom" "-os"     "$(omfcode "$TMP/w_os.o")"
-"$WCC" "$SRC" -ms -otexan -fo="$TMP/w_ot.o" >/dev/null 2>&1 && printf "%-20s %-12s %s\n" "Open Watcom" "-otexan" "$(omfcode "$TMP/w_ot.o")"
+# Open Watcom (small model): -os size, -otexan speed. -fpc = software float
+# (calls, no 8087) -- matches RC759 (no 8087) and the DR C / Aztec default FP
+# model, so float benchmarks are apples-to-apples; no effect on integer code.
+"$WCC" "$SRC" -ms -fpc -os     -fo="$TMP/w_os.o" >/dev/null 2>&1 && printf "%-20s %-12s %s\n" "Open Watcom" "-os"     "$(omfcode "$TMP/w_os.o")"
+"$WCC" "$SRC" -ms -fpc -otexan -fo="$TMP/w_ot.o" >/dev/null 2>&1 && printf "%-20s %-12s %s\n" "Open Watcom" "-otexan" "$(omfcode "$TMP/w_ot.o")"
 
 # Aztec C86 3.40a (K&R) and 4.2 (ANSI), fixed code-gen
 export PATH="$CROSS/bin:$PATH"

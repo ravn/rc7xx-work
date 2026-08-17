@@ -28,6 +28,14 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
   segment length (`omfsize.py`) for Watcom & DR C (DR C also self-reports
   `code: N` from its code-gen pass); Manx object "Block start, ends @ NNNN"
   extent (`aztecNN_obd`) for Aztec. Compilation only, no link/run.
+- **Floating-point model**: RC759 has **no 8087**, so float benchmarks use
+  **software floating point** for all four (calls, not inline 8087) — this is the
+  default for DR C 1.11 and Aztec C86, and is forced on Open Watcom with `-fpc`
+  (its default `-fpi` inlines 8087, which is ~28% smaller but not RC759-valid and
+  not comparable to the software-FP compilers). `-fpc` has no effect on integer
+  benchmarks. Verified FP models: Watcom default = inline 8087 (`fld/fmul`);
+  Aztec 3.40/4.2 = software calls (`$dldp/$dml/$dst`); DR C = software (per
+  `reference_drc_float_8087_abi`).
 - **Speed**: cycle-accurate on **MAME rc759** (CP/M-86), via the done-signal
   harness. Requires each compiler to emit a runnable `.CMD`. (Pending per cell.)
 
@@ -89,13 +97,37 @@ has tunable size/speed optimization** (`-os`/`-otexan`); DR C and both Aztec
 versions emit one fixed code sequence. Models are each compiler's natural default
 (Watcom/Aztec small, DR C reported for both) — noted rather than forced identical.
 
-### Pending cells
+### Whetstone — code size (VERIFIED 2026-08-17, software float)
+
+Whole-module machine-code bytes of `whet.c` (Whetstone modules 1..11 + pa/p0/p3),
+small model, **software floating point** (no 8087; see FP-model note above).
+Reproduce with `./measure.sh whet.c`.
+
+| Compiler | opt | code bytes |
+|----------|-----|-----------:|
+| **Open Watcom** | `-otexan` (speed) | **2217** |
+| Aztec C86 3.40a | default | 2254 |
+| DR C 1.11 | small (default) | 2271 |
+| Open Watcom | `-os` (size) | 2401 |
+| Aztec C86 4.2 | default | 2425 |
+| DR C 1.11 | large (`-b`) | 3318 |
+
+**Finding:** software float **reshuffles the ranking** — the field is tight
+(Watcom `-otexan` 2217, Aztec 3.40 2254, DR C small 2271 within ~2.5%), unlike the
+integer benchmarks where Watcom led by 25-40%. Watcom's big integer lead came
+partly from tighter integer codegen; once every compiler routes doubles through
+software-FP library calls the emitted *module* code converges (the bulk moves into
+the shared FP runtime, which is not counted here). NB: Watcom's DEFAULT (8087
+inline) would show 1740/1651 B — smaller, but assumes an FPU RC759 lacks, so it is
+excluded. Aztec 3.40 again beats 4.2; DR C large is the outlier (far FP calls).
+
+### Status matrix
 
 | Benchmark | size | speed |
 |-----------|------|-------|
 | Sieve | ✅ done (above) | ⬜ MAME rc759 (all four → .CMD) |
 | Dhrystone | ✅ done (above) | ⬜ (Watcom runnable ref = contrib/ravn/dhry.c) |
-| Whetstone | ⬜ (float libs per compiler) | ⬜ (Watcom baseline exists) |
+| Whetstone | ✅ done (above) | ⬜ (Watcom baseline exists) |
 | stdcbench | ⬜ | 🟡 DR C=13, Watcom=20 measured earlier; Aztec pending |
 | AES-256 | ⬜ (port kernel to CP/M-86) | ⬜ |
 
