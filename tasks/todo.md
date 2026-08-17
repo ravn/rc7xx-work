@@ -1,5 +1,19 @@
 # Z80 Code Density Optimization Todo
 
+## NEXT SESSION START HERE (2026-08-17)
+
+- [ ] **Build the FULL Open Watcom toolchain** (not just bootstrap). Session
+  2026-08-16 only ran `OWBUILD_STAGE=boot` (`ci/buildx.sh`), producing the
+  "b"-prefixed bootstrap cross-tools (`bwcc`/`bwasm`/`bwlink`/... in
+  `open-watcom-v2/build/binbuild/`) — sufficient for the CP/M-86 `contrib/ravn`
+  work but NOT a full build. Full build = `./build.sh` with no stage
+  restriction (or `builder build` after the boot stage), the self-hosted
+  second pass that produces the real (non-"b") `wcc`/`wasm`/`wlink`/`wpp`/IDE
+  etc. across all OW target archs. User explicit request (2026-08-16 EOD): do
+  this FIRST when the next session starts, before anything else. See
+  `tasks/memory/reference_cpm86_toolchain_linux_build.md` for the bootstrap
+  recipe already verified on this host (sonnyboy) as the starting point.
+
 ## Current (2026-06-24, dcc-corpus three-compiler oracle)
 
 - [x] **CP/M three-compiler oracle built** — `llvm-z80/z80-utils/compiler-zoo/cpm_zoo.py`

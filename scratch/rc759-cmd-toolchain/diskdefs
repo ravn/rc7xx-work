@@ -12,3 +12,18 @@ diskdef rc759-drc
   boottrk 4
   os 2.2
 end
+
+# SW1400 CCP/M-86 r3.1 system distribution disk (datamuseum.dk 30004107,
+# disk1.imd). Same geometry as rc759-drc but 160 directory entries (per the
+# datamuseum auto-analysis signature "1024_2048_0x0_*1+1_2:0_76:1_160") --
+# using rc759-drc's maxdir=96 against this disk falsely reports "directory
+# full" once >96 files exist even though free blocks remain.
+diskdef sw1400-sys
+  seclen 1024
+  tracks 154
+  sectrk 8
+  blocksize 2048
+  maxdir 160
+  boottrk 4
+  os 3
+end
