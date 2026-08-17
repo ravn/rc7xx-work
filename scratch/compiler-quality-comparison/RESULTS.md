@@ -163,12 +163,25 @@ unsigned semantics there.
 | Sieve | ✅ done (above) | ⬜ MAME rc759 (all four → .CMD) |
 | Dhrystone | ✅ done (above) | ⬜ (Watcom runnable ref = contrib/ravn/dhry.c) |
 | Whetstone | ✅ done (above) | ⬜ (Watcom baseline exists) |
-| stdcbench | ⬜ | 🟡 DR C=13, Watcom=20 measured earlier; Aztec pending |
+| stdcbench | 🔴 blocked (see note) | 🔴 blocked (tracked #5) |
 | AES-256 | ✅ done (above) | ⬜ (KAT verified vs openssl) |
 
-Refinements to add: a genuine DR C stdcbench column (not the owc-drc hybrid);
-AES-256 kernel ported to the K&R/C89 subset. (Aztec `sqz` is a compressor, not an
-optimizer, so there is no extra Aztec size-opt variant to add.)
+**stdcbench blocker (honest status, not fabricated):** unlike the other four
+benchmarks (each a single small portable K&R source), stdcbench 0.8 is a 14-module
+ANSI/C90 suite. The two full-ANSI compilers (Open Watcom, Aztec 4.2) could compile
+it, but the two K&R compilers (DR C 1.11, Aztec 3.40) need the whole ANSI->K&R
+`unproto`+transform pipeline in `open-watcom-v2/contrib/ravn/pure-drc/stdcbench/`,
+and per that dir's verified `FINDINGS.md` only **11 of 14 modules** compile — the
+remaining 3 (compression, isort, lnlc) need per-file source rewrites that ALTER the
+benchmark (an `unproto` func-ptr-param bug + DR C's missing pointer-to-array type),
+which are not yet written. A fair 4-way cell would therefore require either those
+benchmark-altering rewrites or restricting to an 11-module subset (and re-hosting the
+glue off the retired `owc-drc` tree). Deferred and tracked as ravn/rc7xx-work#5;
+no number is reported rather than an unfair or fabricated one.
+
+Refinements to add: complete stdcbench (either the 11-module subset or the three
+per-file rewrites, tracked #5). (Aztec `sqz` is a compressor, not an optimizer, so
+there is no extra Aztec size-opt variant to add.)
 
 ## Files
 
