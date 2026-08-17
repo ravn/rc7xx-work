@@ -103,14 +103,32 @@ never touches MAME) agree the difference is on-disk content, so the garbage is
 NOT an i82730 rendering/emulation defect. Verdict + before/after screenshots
 posted to ravn/mame#25.
 
-RETRACTED a premature "un-zeroed directory" cause: dumping the 8 KB dir area of
-BOTH images shows an identical 65 status-0x20/0x21 entries (normal CCP/M disk
-label + timestamp/SFCB records, not garbage) and all user-0..15 file entries
-decode clean in both. Open sub-question: cpmls (drc-rc759 diskdef) lists 64/68
-files but the emulated BDOS SDIR reports Files Found = 99 (levee) / 70 (orig) —
-the ~35 extra gibberish "files" are entries the real BDOS walks but the host
-diskdef doesn't, i.e. a likely geometry/maxdir/dir-offset mismatch in the levee
-image's actual format. That is an image/filesystem question, tracked in #25.
+RETRACTED a premature "un-zeroed directory" cause: dumping the FIRST 8 KB dir
+block of BOTH images shows an identical 65 status-0x20/0x21 entries (normal CCP/M
+disk label + timestamp/SFCB records) and clean user-0..15 file entries in both.
+
+## SDIR #25 ROOT CAUSE CONFIRMED — wrong cpmtools diskdef (maxdir 256 vs 512)
+
+The RC759 CCP/M-86 directory holds **512 entries**, not 256 (SDIR trailer:
+"Used/Max Dir Entries For Drive A: nnn/512"). 512×32 = 16 KB = TWO 8 KB dir
+blocks (8 blocks of 2048); CP/M-3 style, so every 4th slot is a datestamp SFCB
+(0x21) in BOTH blocks. The cpmtools diskdef `drc-rc759` had **maxdir 256** (only
+block 0). Two consequences, both reproduced byte-for-byte:
+1. cpmtools is BLIND to entries 256-511 → `cpmls` reported a clean 64-file list
+   while the real BDOS/SDIR walks all 512 and shows the garbage in block 1
+   (the 64-vs-99 discrepancy).
+2. maxdir 256 reserves only 4 dir blocks instead of 8, so `cpmcp` writes file
+   DATA over the real directory's 2nd block. A/B proof on a pristine copy: one
+   `cpmcp` with maxdir 256 turned block1 from {E5:192, SFCB:64} into
+   {file:62, E5:144, SFCB:48, other:2} (SFCBs destroyed); the SAME cpmcp with
+   **maxdir 512** left block1 byte-identical to the untouched original.
+Original DDHF disks (SW1400 CCP/M + raw DR C 30002664/30002725) all carry a
+clean 512-entry dir with SFCBs in block1; levee.img/mandel.img were built with
+the maxdir-256 tooling and have corrupt block1 garbage. **FIX: maxdir 512** in
+the diskdef — applied to scratch/rc759-pce/images/diskdefs AND the Open Watcom
+submodule contrib/ravn/owc-drc/diskdefs. Already-built dev images (levee/mandel)
+are corrupt; rebuild from a pristine original with the fixed diskdef. NOT a MAME
+bug (i82730 rendered the on-disk garbage faithfully); #25 CLOSED not-a-MAME-bug.
 
 ### Reaching the CCP/M console past the turnkey PICCOLINE menu (KEY technique)
 The SW1400 originals boot to a turnkey "Installations- og Konfigureringsmenu"

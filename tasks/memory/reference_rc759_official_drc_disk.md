@@ -35,6 +35,15 @@ the raw directory landing at 0x8000):
   `./diskdefs` from the CWD. There is also a stale system `rc759` format that does
   NOT match — always run cpmls/cpmcp from a dir containing this `diskdefs` and use
   `-f rc759-drc`.
+  **WRONG maxdir (2026-08-17):** the real RC759 CCP/M-86 directory is **512
+  entries, os 3** (CP/M-3 datestamp SFCBs in every 4th slot, across TWO 8 KB
+  dir blocks) — verified on the raw DDHF disks. maxdir 96 under-reads (misses
+  files/SFCBs past slot 96) and, worse, WRITING (cpmcp) with too-small maxdir
+  reserves too few dir blocks and scribbles file data over the real 2nd dir
+  block, corrupting the disk (this is the root cause of the levee SDIR garbage,
+  ravn/mame#25). Use **maxdir 512** for any RC759 CCP/M / DR C floppy. The
+  canonical fixed diskdef is scratch/rc759-pce/images/diskdefs (format
+  `drc-rc759`, maxdir 512, os 3); mirror in contrib/ravn/owc-drc/diskdefs.
 
 Extract recipe:
 ```
