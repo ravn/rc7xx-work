@@ -62,4 +62,5 @@ printf "%-22s %-10s %s\n" "DR C 1.11" "small"        "${dsm:-?}"
 printf "%-22s %-10s %s\n" "DR C 1.11" "large (-b)"   "${dlg:-?}"
 
 echo
-echo "Note: DR C 1.11 has no optimizer switch; Aztec optimizer (sqz) not yet wired."
+echo "Note: only Open Watcom has size/speed opt levels; DR C 1.11 and Aztec 3.40/4.2"
+echo "      emit fixed code-gen (Aztec sqz is an object squeezer, not an optimizer)."

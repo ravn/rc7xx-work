@@ -55,10 +55,13 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
 (far data addressing of `flags[]`). Watcom's size vs speed tuning barely moves
 this kernel (72 vs 74 B).
 
-Caveats: DR C 1.11 has no optimizer switch (single fixed code-gen). Aztec's `sqz`
-optimizer is not yet wired into the measurement (numbers are default code-gen).
-Models are each compiler's natural default (Watcom/Aztec small, DR C reported for
-both) — noted rather than forced identical.
+Caveats: DR C 1.11 has no optimizer switch (single fixed code-gen). Aztec C86
+3.40/4.2 likewise have **no code-size optimizer flag** — verified: the `sqz` tool
+is an *object-file squeezer* (compresses the `.o` encoding, e.g. 309→178 B, and
+leaves the machine code unchanged), NOT a code optimizer. So **only Open Watcom
+has tunable size/speed optimization** (`-os`/`-otexan`); DR C and both Aztec
+versions emit one fixed code sequence. Models are each compiler's natural default
+(Watcom/Aztec small, DR C reported for both) — noted rather than forced identical.
 
 ### Pending cells
 
@@ -70,8 +73,9 @@ both) — noted rather than forced identical.
 | stdcbench | ⬜ | 🟡 DR C=13, Watcom=20 measured earlier; Aztec pending |
 | AES-256 | ⬜ (port kernel to CP/M-86) | ⬜ |
 
-Refinements to add: Aztec `sqz` optimizer variant; a genuine DR C stdcbench
-column (not the owc-drc hybrid); AES-256 kernel ported to the K&R/C89 subset.
+Refinements to add: a genuine DR C stdcbench column (not the owc-drc hybrid);
+AES-256 kernel ported to the K&R/C89 subset. (Aztec `sqz` is a compressor, not an
+optimizer, so there is no extra Aztec size-opt variant to add.)
 
 ## Files
 
