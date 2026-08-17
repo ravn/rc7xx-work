@@ -124,6 +124,26 @@ has tunable size/speed optimization** (`-os`/`-otexan`); DR C and both Aztec
 versions emit one fixed code sequence. Models are each compiler's natural default
 (Watcom/Aztec small, DR C reported for both) — noted rather than forced identical.
 
+### Dhrystone 2.1 — speed (VERIFIED 2026-08-17)
+
+80186 clocks per Dhrystone loop iteration (the Proc_1..Proc_8 / Func_2 measured
+region), differential method (N=20 minus N=10, divided by 10). Lower is faster.
+
+| Compiler | opt | clocks / run |
+|----------|-----|-------------:|
+| **Open Watcom** | `-otexan` (speed) | **5,639** |
+| Open Watcom | `-os` (size) | 6,956 |
+| Aztec C86 3.40a | default | 10,964 |
+| Aztec C86 4.2 | default | 10,964 |
+| DR C 1.11 | small (default) | 47,819 |
+
+**Finding (speed):** Watcom again leads. Unlike the tight Sieve loop, `-otexan`
+speed tuning DOES help here (5,639 vs 6,956, ~19% faster) — Dhrystone's mix of
+calls, struct copies and pointer chasing gives the optimizer room. Both Aztec
+versions produce identical timing (10,964). DR C is the clear outlier at 47,819
+clocks — ~8.5× slower than Watcom `-otexan` and ~4.4× slower than Aztec — tracking
+its heavier struct/pointer codegen and lack of any optimizer.
+
 ### Whetstone — code size (VERIFIED 2026-08-17, software float)
 
 Whole-module machine-code bytes of `whet.c` (Whetstone modules 1..11 + pa/p0/p3),
@@ -188,7 +208,7 @@ unsigned semantics there.
 | Benchmark | size | speed |
 |-----------|------|-------|
 | Sieve | ✅ done (above) | ✅ done (above, all four) |
-| Dhrystone | ✅ done (above) | ⬜ (Watcom runnable ref = contrib/ravn/dhry.c) |
+| Dhrystone | ✅ done (above) | ✅ done (above, all four) |
 | Whetstone | ✅ done (above) | 🟡 Watcom baseline ~200.6M clocks (whole run) |
 | stdcbench | 🔴 blocked (see note) | 🔴 blocked (tracked #5) |
 | AES-256 | ✅ done (above) | ⬜ (KAT verified vs openssl) |
