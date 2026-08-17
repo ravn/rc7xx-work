@@ -203,6 +203,27 @@ its `char` is unsigned by default (verified: `0x80` rotate -> 1, not 255), so
 `measure.sh` maps `unsigned char`->`char` on the DR C path only — identical 8-bit
 unsigned semantics there.
 
+### AES-256 — speed (VERIFIED 2026-08-17)
+
+80186 clocks per `aes256_encrypt_ecb` call (one 16-byte block, 14 rounds),
+differential method (N=20 minus N=10, divided by 10). Lower is faster.
+
+| Compiler | opt | clocks / encrypt |
+|----------|-----|-----------------:|
+| **Open Watcom** | `-os` (size) | **3,453,717** |
+| Open Watcom | `-otexan` (speed) | 3,565,310 |
+| Aztec C86 3.40a | default | 9,848,615 |
+| Aztec C86 4.2 | default | 10,173,935 |
+| DR C 1.11 | small (default) | 11,286,622 |
+
+**Finding (speed):** Watcom leads by ~2.85× over Aztec 3.40 and ~3.3× over DR C.
+Notably `-os` is marginally FASTER than `-otexan` here (3.45M vs 3.57M) — the
+byte-array/GF-multiply inner loops favour the tighter size-tuned code, so speed
+tuning does not pay off on this kernel. Aztec 3.40 again edges 4.2. Unlike
+Dhrystone (where DR C was a 4× outlier), AES's byte/array-heavy work keeps DR C
+and Aztec within ~15% of each other — DR C's unsigned-`char` default handles the
+8-bit workload comparatively well.
+
 ### Status matrix
 
 | Benchmark | size | speed |
@@ -211,7 +232,7 @@ unsigned semantics there.
 | Dhrystone | ✅ done (above) | ✅ done (above, all four) |
 | Whetstone | ✅ done (above) | 🟡 Watcom baseline ~200.6M clocks (whole run) |
 | stdcbench | 🔴 blocked (see note) | 🔴 blocked (tracked #5) |
-| AES-256 | ✅ done (above) | ⬜ (KAT verified vs openssl) |
+| AES-256 | ✅ done (above) | ✅ done (above, all four) |
 
 **stdcbench blocker (honest status, not fabricated):** unlike the other four
 benchmarks (each a single small portable K&R source), stdcbench 0.8 is a 14-module
