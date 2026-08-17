@@ -168,6 +168,30 @@ the shared FP runtime, which is not counted here). NB: Watcom's DEFAULT (8087
 inline) would show 1740/1651 B — smaller, but assumes an FPU RC759 lacks, so it is
 excluded. Aztec 3.40 again beats 4.2; DR C large is the outlier (far FP calls).
 
+### Whetstone — speed (VERIFIED 2026-08-17, software float)
+
+80186 clocks per full Whetstone pass (all modules; software float + `sin/cos/
+atan/sqrt/exp/log`), differential method (N=20 minus N=10, divided by 10). Lower
+is faster. Runs are ~200M-1.25B clocks each — the whole cell took ~30 min of
+oracle time (run in parallel across cores).
+
+| Compiler | opt | clocks / pass |
+|----------|-----|--------------:|
+| **Open Watcom** | `-os` (size, `-fpc`) | **19,864,674** |
+| DR C 1.11 | small (default) | 39,468,291 |
+| Aztec C86 4.2 | default | 60,358,162 |
+| Aztec C86 3.40a | default | 62,528,360 |
+
+**Finding (speed):** Watcom leads again (~2× faster than DR C, ~3× faster than
+Aztec) — its `__FDx` soft-float runtime + math library are the most efficient.
+But the *rest* of the ranking **inverts** relative to the integer benchmarks: on
+floating point DR C **beats both Aztec versions** (39.5M vs ~60M) — the reverse of
+Sieve/Dhrystone/AES where DR C was slowest — because DR C's transcendental/
+soft-float library is tighter than Aztec's. And here Aztec **4.2 edges 3.40**
+(60.4M vs 62.5M), also the reverse of the integer pattern. So "which compiler is
+faster" is workload-dependent below the Watcom top spot: DR C is weak on integer
+codegen but competitive on FP library quality.
+
 ### AES-256 — code size (VERIFIED 2026-08-17)
 
 Whole-module machine-code bytes of `aes256.c` — the literatecode tableless
@@ -230,7 +254,7 @@ and Aztec within ~15% of each other — DR C's unsigned-`char` default handles t
 |-----------|------|-------|
 | Sieve | ✅ done (above) | ✅ done (above, all four) |
 | Dhrystone | ✅ done (above) | ✅ done (above, all four) |
-| Whetstone | ✅ done (above) | 🟡 Watcom baseline ~200.6M clocks (whole run) |
+| Whetstone | ✅ done (above) | ✅ done (above, all four) |
 | stdcbench | 🔴 blocked (see note) | 🔴 blocked (tracked #5) |
 | AES-256 | ✅ done (above) | ✅ done (above, all four) |
 
