@@ -1,18 +1,129 @@
 # Z80 Code Density Optimization Todo
 
-## NEXT SESSION START HERE (2026-08-17)
+## NEXT SESSION TODO — complete CP/M-86 test coverage (user directive 2026-08-18)
 
-- [ ] **Build the FULL Open Watcom toolchain** (not just bootstrap). Session
-  2026-08-16 only ran `OWBUILD_STAGE=boot` (`ci/buildx.sh`), producing the
-  "b"-prefixed bootstrap cross-tools (`bwcc`/`bwasm`/`bwlink`/... in
-  `open-watcom-v2/build/binbuild/`) — sufficient for the CP/M-86 `contrib/ravn`
-  work but NOT a full build. Full build = `./build.sh` with no stage
-  restriction (or `builder build` after the boot stage), the self-hosted
-  second pass that produces the real (non-"b") `wcc`/`wasm`/`wlink`/`wpp`/IDE
-  etc. across all OW target archs. User explicit request (2026-08-16 EOD): do
-  this FIRST when the next session starts, before anything else. See
-  `tasks/memory/reference_cpm86_toolchain_linux_build.md` for the bootstrap
-  recipe already verified on this host (sonnyboy) as the starting point.
+- [ ] **Complete test coverage for the CP/M-86 port.** Current state (see
+  the 2026-08-18 entries below): `build-owtests.sh` (Watcom's own
+  `float01-04`) and `build-streamio.sh` (Watcom's own `iotest.c`) both
+  PASS, on both emu2 and real MAME rc759. Still not run/covered this
+  session: `build-diskio.sh` (661 round-trip checks, referenced as
+  passing in `KNOWN_ISSUES.md` but not re-verified this session),
+  `build-fscanf.sh` (672 checks), `build-cpp.sh` (C++ layer), the
+  `handleio`/`file` clibtest groups (`chsize`/`dup2`/`umask` gaps listed
+  in `KNOWN_ISSUES.md` #3 as still-blocked), `build-stdcbench.sh`,
+  `build-whetstone.sh`. Re-verify all of these on sonnyboy (host-agnostic
+  path patterns now established — see `build-owtests.sh`/
+  `build-streamio.sh`'s `uname`-derived `PLAT` detection) and, where
+  feasible, cross-check on real MAME rc759 using the harness in
+  `reference_rc759_mame_sonnyboy_headless.md`. Then revisit whether/how
+  to wire a `t_runcpm86` platform into Watcom's own `bld/clibtest/
+  master.mif` (deferred this session — full clibtest coverage needs BDOS
+  disk I/O the `cpm86run_unicorn.py` runner still doesn't implement, so
+  MAME-only execution is the realistic path).
+
+## NEXT SESSION START HERE (2026-08-18)
+
+- [x] **Build the FULL Open Watcom toolchain** (not just bootstrap) — DONE
+  2026-08-18. `./build.sh` (with real `dosbox` installed + `OWDOSBOX=dosbox`,
+  needed for the WGML doc/browser-help stage) succeeded completely; the
+  install/consolidation stage is `./build.sh rel` (separate from `build`),
+  populating `rel/binl/` with the real `wcc`/`wcc386`/`wasm`/`wlink`/`wpp`/
+  `wlib` and `rel/lib286/cpm86/` with the CP/M-86 clib. Verified by building
+  `HELLO.CMD` with `PATH=rel/binl:$PATH`. Full details + gotchas:
+  `tasks/memory/reference_openwatcom_full_build_linux.md`.
+- [x] **Run Watcom's own correctness test suite against linux386** — DONE
+  2026-08-18 with fixed `PATH`/`WATCOM`/`INCLUDE` (all pointing at
+  `rel/binl`, `rel/h`). `wasmtest` + `ctest` fully PASS. CI's own recipe
+  (`ci/buildx.sh` `"tests")`) runs each suite dir with `builder -i test`
+  (ignore-errors, unlike my first plain `builder test` which aborted the
+  whole run at the first `f77test` failure) — matches; f77test itself has
+  a few pre-existing Fortran-frontend failures (1 `wfc` segfault + 2 real
+  "branch outside control structure" diagnostics), unrelated to our work.
+  `plustest`/`clibtest`/`mathtest` not run standalone (would need the
+  same `-i` treatment); not pursued further — not relevant to CP/M-86.
+- [x] **cpm86 as a tested platform: investigated + real progress** —
+  2026-08-18. `cpm86` is absent from every Watcom test-suite platform
+  table (`master.mif`s) and from `.github`/`ci/` entirely — genuinely
+  needs new work, not something to "find and run". BUT: confirmed via git
+  log that the rich CP/M-86 clib port (`contrib/ravn/watcom-cpm86-libc/`)
+  is NOT lost — it's fully in git history/working tree AND was promoted
+  to `bld/clib/_cpm/` as a first-class standard-build target
+  (`bld/clib/builder.ctl` lines 45-50); today's `./build.sh rel` already
+  produced a genuine 1123-module `rel/lib286/cpm86/clibs.lib` from it.
+  Host-agnostic-ized (osxa64->uname-derived PLAT, matching
+  `cpm86-clib/env.sh`'s pattern) two of the `watcom-cpm86-libc/*.sh`
+  scripts:
+    - `build-owtests.sh` — runs Watcom's OWN unmodified `float01..04.c`
+      regression tests (`bld/ctest/positive/source/`) on CP/M-86.
+      **ALL 4 PASS on Linux** via `contrib/ravn/cpm86run_unicorn.py`
+      (needed a venv: `contrib/ravn/.venv-cpm86run`, `pip install
+      unicorn` — system Python is externally-managed, see
+      `reference_host_sonnyboy.md`).
+    - `build-streamio.sh` — runs Watcom's OWN unmodified
+      `bld/clibtest/streamio/c/iotest.c` (disk FILE* + console). Needs
+      real disk I/O, which `cpm86run_unicorn.py`'s BDOS layer does NOT
+      implement (console-only) — uses `emu2`
+      (`/home/ravn/z80/emu2-cpm86/emu2`) instead. Compiles+links clean,
+      but **FAILS at runtime**: `fgetc(fpr) != EOF` at iotest.c:577
+      (a flush-related case), "Bad file number". Per
+      `tasks/memory/MEMORY.md` this test passed before (commit
+      `53aa9d29de`, macOS) — since `emu2` is under active development
+      by the user to match the MAME CCP/M-86 oracle, this could be an
+      `emu2` regression rather than a real clib bug; **needs a MAME
+      cross-check to disambiguate**, not yet done.
+  **MAME cross-check DONE 2026-08-18: CONFIRMED REAL BUG, not an emu2
+  regression.** Stood up the full rc759 MAME harness from scratch on
+  sonnyboy (none of it existed here before):
+    - MAME's `rc759` driver + ROMs were ALREADY present/verified
+      (`./mame -rompath roms -verifyroms rc759` -> good) — no rebuild
+      needed. ROM source already documented at
+      `mame/src/mame/regnecentralen/README.md:68-98`
+      (`http://www.hampa.ch/pce/rom/rc759/`, URLs re-verified live).
+    - No turnkey autostart disk existed on this host; booted a plain DDHF
+      CCP/M-86 system disk instead (Bits:30002654 "CDOS systemdisk",
+      `scratch/rc759-cmd-toolchain/ddhf-cache/`) via natkeyboard-injected
+      `A` + `IOTEST`, headless (`SDL_VIDEODRIVER=dummy`, `-video soft` —
+      `-video bgfx` fails under the dummy driver).
+    - **Diskdef bug avoided while doing this**: `scratch/rc759-cmd-toolchain/
+      diskdefs`'s `rc759-drc` entry still had the WRONG `maxdir 96/os 2.2`
+      (the 2026-08-17 bug documented in
+      `reference_rc759_official_drc_disk.md` — a `cpmcp` write with that
+      geometry corrupts the real 512-entry directory, root cause of the
+      ravn/mame#25 disk corruption). Used the canonical fixed `drc-rc759`
+      (`maxdir 512, os 3`, `open-watcom-v2/contrib/ravn/owc-drc/diskdefs`)
+      for the actual write instead, then FIXED `rc759-drc`'s content
+      in-place in `scratch/rc759-cmd-toolchain/diskdefs` to match (same
+      name, correct geometry) so other callers of that name are no longer
+      a corruption risk. `scripts/rc759_make_mandel_b.sh` still uses the
+      old name against a freshly-`mkfs`'d (not pre-populated) image — lower
+      risk but not yet fixed; flagged, not yet done.
+    - Result: `IOTEST.CMD` on real MAME rc759 hits the IDENTICAL failure at
+      the identical line: `***WARNING*** Condition failed in (flushes) /
+      fgetc(fpr) != EOF, line 577. / strerror(errno): Bad file number`.
+      Same on both emu2 and cycle-accurate MAME -> genuine bug in
+      `contrib/ravn/watcom-cpm86-libc/port/diskio.c`'s flush/reopen
+      handling (or a real gap the streamio oracle catches), not an
+      emulator fidelity gap.
+  **FIXED 2026-08-18** (commit `3f815e6c53`, open-watcom-v2): root cause
+  was that a pure-reader handle's OWN `BD_READRAND` is unreliable once a
+  DIFFERENT still-open handle on the same file has written past what the
+  CP/M directory (only synced at `F_CLOSE`) reflects — it can report
+  "unwritten" OR, worse, SUCCEED but return STALE data, silently
+  clobbering the correct copy already cached in the shared `dma[]` buffer
+  from the writer's own write (this was the actual trap: an earlier
+  in-session fix attempt routed the reader through the writer's FCB but
+  then let a LATER read fall back to the reader's own FCB again, which is
+  what produced the stale-clobber). `load_record()` in `port/diskio.c` now
+  routes a pure reader ENTIRELY through the writer's FCB/cache, never its
+  own, whenever an open writer exists for the same file. Verified PASS
+  under BOTH `emu2` (`Tests completed (unzip).`) AND real MAME rc759
+  (`A>IOTEST` -> `Tests completed (unzip).`, no warnings) — confirms it's
+  a genuine fix, not an emulator-specific workaround. `float01-04`
+  (`build-owtests.sh`) re-verified still green after the change.
+  Next: consider wiring `t_runcpm86` into `bld/clibtest/master.mif` proper
+  (scope TBD — full clibtest needs BDOS disk coverage the unicorn runner
+  still lacks; MAME-only path now proven viable via the natkeyboard-
+  injection harness in `reference_rc759_mame_sonnyboy_headless.md`).
 
 ## Current (2026-06-24, dcc-corpus three-compiler oracle)
 
