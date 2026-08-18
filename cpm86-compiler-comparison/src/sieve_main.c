@@ -9,8 +9,14 @@
 
 extern int sieve();
 
+#ifndef REPS
+#define REPS 1
+#endif
+
 int main()
 {
-    printf("sieve primes=%d\n", sieve());
+    int r, last;
+    for (r = 0; r < REPS; r++) last = sieve();
+    printf("sieve primes=%d\n", last);
     return 0;
 }

@@ -316,6 +316,7 @@ oracles; Watcom is one-step `owcc -bcpm86`).
 
 ```
 make compare   # per-benchmark code-size table across all four compilers
+make speed     # per-benchmark 80186-clock runtime table (differential)
 make dis       # emit every compiler's disassembly of every source
 make clean
 ```
@@ -334,6 +335,16 @@ Debug-enrichment: Watcom compiles with `-d1` so `-os` optimization is preserved
 measurement and rich disassembly. DR C's OMF disassembles mnemonically via the same
 `wdis`. Aztec's native `obd` dump is byte-level but the richest annotated (source
 line numbers, auto-var names/types, relocations).
+
+### Runtime (`make speed`)
+
+`make speed` measures **80186 execution clocks per kernel iteration** using a
+*differential* method: each benchmark is built twice (REPS=10 and REPS=20), run under
+`cpm86run_unicorn.py --ticks`, and `(clocks₂₀ − clocks₁₀) / 10` cancels crt0/printf/BDOS
+overhead to isolate the kernel. Lower is faster. The clock estimate comes from the
+iAPX 186 cost model in `cycles186.py` (execution clocks only — no prefetch/bus/wait
+states). emu2 usage in this harness points at the canonical git-tracked
+`emu2-cpm86/` submodule binary.
 
 ## Files
 

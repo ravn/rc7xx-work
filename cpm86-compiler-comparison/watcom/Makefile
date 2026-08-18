@@ -20,4 +20,5 @@ all:   $(BENCHES:=.dis) $(BENCHES:=.CMD)
 %.CMD: $(SRCDIR)/%.c ; -$(CC) -o $@ $< $(MAIN)
 sizes: $(BENCHES:=.o)
 	@for b in $(BENCHES); do echo "$$b|Open Watcom|-os|`$(SIZE) $$b.o`"; done
+speed: ; @for b in $(SPEEDBENCHES); do sh $(TOOLS)/speed.sh watcom $$b; done
 clean: ; @rm -f *.o *.dis *.CMD *.err *.lst

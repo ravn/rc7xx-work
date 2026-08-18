@@ -10,3 +10,6 @@ OWROOT  := $(ROOT)/open-watcom-v2
 CROSS   := $(OWROOT)/contrib/ravn/cpm86-crossdev
 BENCHES := sieve dhry whet aes256
 SIZE     = python3 $(TOOLS)/omfsize.py --code   # OMF CODE bytes -> one integer
+# Runtime (differential 80186-clock) comparison covers the two bare kernels that
+# ship a driver (sieve_main.c / aes256_main.c); dhry/whet carry their own main.
+SPEEDBENCHES := sieve aes256
