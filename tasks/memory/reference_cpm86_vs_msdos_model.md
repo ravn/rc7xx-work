@@ -132,3 +132,20 @@ Toolchain realization:
   `SetFinalTargetSystem()` (target macro predefinition).
 - `tasks/memory/reference_watcom_submodule_build_apple_silicon.md` — macOS
   build + cpm86 codegen facts.
+
+## Usage + validation (how to drive this correctly)
+
+- **How-to guide:** `scratch/rc759-cmd-toolchain/USING_OWCC_CPM86.md` — activate
+  (`source scratch/cpm86-tools/ow-macos-env.sh`), build
+  (`owcc -bcpm86 -mcmodel=s -O2 -o FOO.CMD foo.c`), run
+  (`scratch/cpm86-tools/emu2-cpm86/emu2 FOO.CMD`), and rebuild/re-stage the
+  compiler.
+- **Validate the production build (the remembered procedure):**
+  `./scratch/rc759-cmd-toolchain/validate-cpm86-build.sh` — 8 checks: host tools
+  + emu2 present; the `__CPM86__`/DOS-family macro gate (`test_cpm86_target.c`,
+  pass under `-bt=cpm86` / fail under `-bt=dos`); and full
+  `owcc -bcpm86` → clib → `wlink format cpm86` builds of `validate_prog.c`
+  (fixed marker on emu2) and `mandel_watcom.c` (rendering). Prints
+  `RESULT: PASS`/`FAIL`, exits non-zero on failure. **Run it after every
+  compiler rebuild/re-stage.** Last run 2026-08-18: PASS (8/8) against the
+  release-staged `rel/armo64/wcc`.
