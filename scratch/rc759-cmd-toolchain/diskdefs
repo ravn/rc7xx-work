@@ -1,16 +1,29 @@
 # cpmtools diskdef for the official Regnecentralen RC759 "Piccoline" DR C
 # diskettes (datamuseum.dk IMD blobs). Verified against bits 30005869
 # ("DR C v.1.11"): 77 cyl x 2 heads, 8x1024 B/track, CP/M-86 filesystem,
-# block 2048, 96 dir entries, 2 reserved cylinders (boottrk 4 -> dir @ 0x8000).
+# block 2048, 2 reserved cylinders (boottrk 4 -> dir @ 0x8000).
 # NB: this cpmtools build reads ./diskdefs from the CWD (DISKDEFS env ignored).
+#
+# FIXED 2026-08-18 (bug found 2026-08-17): maxdir was WRONGLY 96/os 2.2. The
+# real RC759 CCP/M-86 / DR C floppy directory is 512 entries, os 3 (CP/M-3
+# datestamp SFCBs in every 4th slot, across TWO 8 KB dir blocks) -- verified on
+# raw DDHF disks 30002664/30002725. maxdir 96 under-reads (misses entries past
+# slot 96) and, worse, a cpmcp WRITE with too-small maxdir reserves too few
+# directory blocks and scribbles file data over the real 2nd dir block,
+# corrupting the disk (root cause of the levee SDIR garbage, ravn/mame#25).
+# Canonical copy of this corrected diskdef (name swapped for clarity):
+# open-watcom-v2/contrib/ravn/owc-drc/diskdefs, diskdef `drc-rc759`. Kept the
+# NAME `rc759-drc` here (content only fixed) so existing `-f rc759-drc`
+# callers in this tree keep working but now get the correct geometry.
 diskdef rc759-drc
   seclen 1024
   tracks 154
   sectrk 8
   blocksize 2048
-  maxdir 96
+  maxdir 512
+  skew 1
   boottrk 4
-  os 2.2
+  os 3
 end
 
 # SW1400 CCP/M-86 r3.1 system distribution disk (datamuseum.dk 30004107,

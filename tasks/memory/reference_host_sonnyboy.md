@@ -35,6 +35,11 @@ reached remotely from the macbook).
   all ravn/* remotes use SSH (a pre-existing opposite ssh->https
   rewrite was removed the same day).  `gh` CLI logged in as ravn
   (PAT, git protocol ssh) since 2026-06-06.
+* **All Python packages must be installed in a venv** — the system Python
+  is externally-managed (PEP 668); a bare `pip install` fails/refuses.
+  Always `python3 -m venv <dir>` (or reuse an existing project venv) before
+  installing anything, e.g. for `contrib/ravn/cpm86run_unicorn.py`'s
+  `unicorn` dependency.
 * macOS-only memory entries don't apply here (e.g.
   [[reference_macos_timeout]] — GNU timeout exists on sonnyboy;
   CLion-bundle tool paths in [[reference_build_binaries]] are
