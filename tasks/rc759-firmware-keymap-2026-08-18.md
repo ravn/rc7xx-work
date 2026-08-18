@@ -172,6 +172,28 @@ pos driver key     normal  shift   ctrl   note
 - **Ctrl-kolonnen** for bogstaver følger den klassiske Ctrl-A..Ctrl-Z =
   0x01..0x1a-mapping (pos 30=A→0x01, 44=Z→0x1a).
 
+## Krydstjek: er andre mapninger forkerte? (2026-08-18)
+
+Efter ESC-fixet blev alle 99 positioner krydstjekket (host-tast i
+`rc759_kbd.cpp` mod firmwarens funktion). Resultat: **ingen andre ESC-klasse-fejl.**
+
+- **Firmware-døde positioner** (0xff i normal+shift+ctrl): `0, 29, 40, 42, 54, 55, 76`.
+  - 0 og 55 → `IPT_UNUSED` (korrekt; 55 rettet).
+  - 29/40/42/54 → modifiers (Ctrl, Caps Lock, venstre/højre Shift) — korrekt at de
+    ikke giver en kode; de håndteres i matricen, ikke via keymap.
+  - **76 → `KEYCODE_SCRLOCK` "(((O)))"**: eneste rigtige host-tast på en død position.
+    Harmløs — positionen er reelt død på denne disk (bell/højttaler-tast firmwaren
+    ikke bruger), så ingen funktion mistes (modsat ESC, hvor pos 15 var *levende*
+    men fejl-labeled "Alt"). Kan evt. gøres til `IPT_UNUSED` for konsistens, men det
+    er ikke en fejl.
+- **Alle firmware-levende positioner** har en semantisk korrekt host-tast:
+  bogstaver, tal og tegnsætning matcher firmwaren; funktions-, pile- og
+  keypad-taster giver deres interne firmware-koder.
+- **æ/ø/å/ü**: driverens `PORT_CHAR` (0xe6/0xf8/0xe5/0xfc) afspejler de fysiske
+  danske keycaps, men *denne* disks normal/shift-tabel giver `{ } | ~` (US/programmør-
+  layout) på pos 26/27/43/56. Det er en national-keymap-forskel bundet til
+  bootdisken — ikke en driver-fejl. Positionerne (host-tasterne) er korrekte.
+
 ## Reproduktion
 
 ```
