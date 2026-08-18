@@ -9,14 +9,26 @@
 #
 # A: boot disk.  The RC759 uses 5.25" DS-HD floppies in the "rc759" format
 # (FLOPPY_RC759_FORMAT: FF_525 / DSHD / MFM, 8 sectors x 1024 B, 77 cyl, 2
-# heads = 1,261,568 bytes raw).  The default A: disk is the CCP/M-86 turnkey
-# image used by the Watcom cross-toolchain work:
-#   scratch/rc759-pce/images/mandel.img
+# heads = 1,261,568 bytes raw).  The default A: disk is a genuine CCP/M-86
+# disk (NOT CDOS, a later/different successor OS) -- disk1 of "SW1400
+# CCP/M-86 Distributionsdiskette 3.1a" (Bits:30004229, BAGIT-wrapped IMD;
+# converted to raw with imd2raw.py, cached at
+# scratch/rc759-cmd-toolchain/ddhf-cache/derived/sw1400-r3.1a-disk1.img).
+# Boots to the real "Installations- og Konfigureringsmenu, PICCOLINE Version
+# 3.1" -- verified working under PCE 2026-08-18 (same shared ROMs/geometry,
+# should load identically here). Same disk used by scripts/rc759_boot_pce.sh
+# for a consistent A: across both emulators.
 # Any 1,261,568-byte "BINARY" disk from the DDHF/Datamuseum RC759 archive is
-# also directly loadable -- e.g. the "CDOS systemdisk" (Bits:30002654) or
-# "Digital Research C" (Bits:30002664).  See
+# also directly loadable -- e.g. "Digital Research C" (Bits:30002664). See
 # rc700-gensmedet/docs/DATAMUSEUM_RC759_ARTIFACTS.md for the full catalogue.
 # Override with:  A_DISK=/path/to/disk.img sh scripts/rc759_boot_cpm.sh
+#
+# TODO (2026-08-18, deferred): this distribution disk's installer supports
+# building either a 1-console or 4-console system ("Installer normal
+# systemdiskette - 1 konsol" / "- 4 konsoller") -- disk1.img above is the
+# un-installed distribution (boots to the installer menu itself), not a
+# ready 4-console system. No pre-built 4-console CCP/M-86 disk exists in the
+# cached archives yet.
 #
 # B: an empty, writable scratch disk in the *same* rc759 5.25"-HD geometry.
 # It is a MAME floppy image (.mfi), built by converting an E5-filled raw
@@ -35,7 +47,7 @@ set -e
 WORKSPACE="$(cd "$(dirname "$0")/.." && pwd)"
 MAME_DIR="$WORKSPACE/mame"
 DISKDIR="$MAME_DIR/rc759_sw"
-A_DISK="${A_DISK:-$WORKSPACE/scratch/rc759-pce/images/mandel.img}"
+A_DISK="${A_DISK:-$WORKSPACE/scratch/rc759-cmd-toolchain/ddhf-cache/derived/sw1400-r3.1a-disk1.img}"
 # B: defaults to the mandel disk if present (both the Watcom/owcc build
 # MANDEL.CMD and the Digital Research C build MANDELDR.CMD -- run as `b:mandel`
 # / `b:mandeldr`), else a blank scratch disk.  Author it with
