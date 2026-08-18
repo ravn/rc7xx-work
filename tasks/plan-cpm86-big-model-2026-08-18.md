@@ -235,6 +235,21 @@ coincidence.
       bytes in 79 blocks (far heap exhausted)` / `PASS (0 blocks
       corrupted)` — genuine Concurrent CP/M-86 3.1, 384 K RAM / 261 K
       brugerlager, screen-captured. Commits `d9b1de395b`, `3c79eea897`.
+      **Follow-up investigation (commit `2d809fc6da`):** 261K−181,647 B
+      leaves an unexplained ~33 KB gap vs. our own CODE+DATA footprint.
+      Ruled OUT: Watcom's own `_fmalloc()` has a genuine near-heap
+      fallback (falls back to `_nmalloc()`/DGROUP once the Extra group is
+      exhausted) — added detection (`_getds()` + segment check) and
+      shrank the test's near-heap arena from 36 KB to 32 B; the MAME
+      number was **byte-identical** before and after (181,647 B/79
+      blocks, confirmed "real out-of-memory" both times) — so the
+      fallback was never actually firing, not the explanation. Still
+      open: shrinking our own CODE+DATA by ~36 KB did not grow the Extra
+      grant by a matching amount at all — points to Concurrent CP/M-86's
+      allocator handing the Extra group the largest free CONTIGUOUS
+      block, capped by fragmentation from the 4-console system's other
+      resident state, not by this program's own footprint. Not pursued
+      further (out of scope for Stage A itself).
 - [ ] PCE/rc759 leg — not started. Lower priority now: MAME already
       exercised real hardware-class constraints (RAM budget); PCE would
       mainly cross-check MAME's rc759 driver itself, not the far-heap
