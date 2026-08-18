@@ -82,6 +82,27 @@ scratch/cpm86-tools/emu2-cpm86/emu2 HELLO.CMD  # prints program output, rc=0
 ```
 Valid cpm86 `.CMD` starts with a group-descriptor header `01 ..` (type-1 code group).
 
+**Targeted rebuild + release-stage of ONE tool (after a compiler-source patch).**
+No need for a full `build.sh` + `build.sh rel`. To rebuild and officially stage
+just the 16-bit `wcc` (e.g. after editing `bld/cc/c/cmdlnx86.c`):
+```
+export OWROOT="$(pwd)" OWTOOLS=CLANG OWNOWGML=1 OWDOCBUILD=0
+. ./cmnvars.sh                      # puts build/binbuild {builder,wmake} on PATH
+cd bld/cc/i86
+builder build                       # recompile changed .c -> relink wcc (~seconds)
+builder rel                          # cprel-stage: osxa64 wcc -> rel/armo64/wcc
+```
+`builder rel` uses the official cprel path (better than hand-copying
+`osxa64/binbuild/wcc.exe` → `rel/armo64/wcc`). ⚠ It ALSO re-creates the foreign
+host dirs (`rel/binl,binnt,binp,binw`) since the tool cross-builds all hosts —
+re-prune them afterwards to keep the tree macOS-only (see the `rm -rf` list above).
+NOTE: the embedded banner date (`wcc` "Version 2.0 beta Aug 16 …") is a stale
+bootstrap version-stamp, NOT the compile time — verify a code change took effect by
+behaviour (e.g. `#ifdef __CPM86__` under `-bt=cpm86`), not the banner date.
+The `owcc` DRIVER itself is unchanged by a `wcc` patch (separate binary, no rebuild
+needed); a patched-`wcc` + prod-`owcc`/`wlink` rel/ tree is a valid production
+toolchain.
+
 ## Watcom cpm86 codegen facts (verified 2026-08-18 via wdis)
 
 - **No single-IMUL from portable C.** `wcc -0 -ms` does NOT lower a portable
