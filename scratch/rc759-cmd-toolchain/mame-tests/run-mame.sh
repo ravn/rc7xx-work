@@ -55,10 +55,17 @@ rm -f snap/rc759/*.png nvram/rc759/nvram 2>/dev/null || true
 # the instant the guest writes port 0x2FE, so a passing run stops early (~150s
 # real). If the guest hangs/regresses and never signals, the cap ends it and no
 # "DONE-SIGNAL" line is printed -- which the caller can treat as failure.
-./regnecentralend rc759 -bios 0 -skip_gameinfo -rompath roms \
+SDL_VIDEODRIVER=dummy ./regnecentralend rc759 -bios 0 -skip_gameinfo -rompath roms \
   -flop1 "$IMG" \
   -autoboot_script "$HERE/done_signal.lua" -seconds_to_run 400 \
-  -nothrottle -sound none -video bgfx -window -nomax 2>&1 | tee /tmp/mame_done.log | grep -i "DONE-SIGNAL" || true
+  -nothrottle -sound none -video none 2>&1 | tee /tmp/mame_done.log | grep -i "DONE-SIGNAL" || true
+# NOTE: -video none is a ~3.5x speedup (full mtest boot+run ~6.5s vs ~24s wall).
+# Pass/fail comes from the DONE-SIGNAL line (OUT 0x2FE io-tap), which is
+# video-independent, so dropping rendering is zero-fidelity-risk here.
+# SDL_VIDEODRIVER=dummy is REQUIRED: -video none alone still makes the SDL/Cocoa
+# OSD open a (black, fullscreen without -window) window; the dummy SDL driver
+# creates NO window at all -> truly headless. Use -video bgfx -window only when
+# you need the diagnostic screen snapshot.
 
 echo "== 4. result =="
 if grep -qi "DONE-SIGNAL" /tmp/mame_done.log; then

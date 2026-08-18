@@ -50,11 +50,29 @@ tallies PASS/FAIL; the final `RESULT:` line is drawn last so it survives scroll.
 ```bash
 ./run-mame.sh mtest.c          # build -> disk -> boot MAME -> auto-stop on done
 # prints: DONE-SIGNAL word=0x0013 pass=19 fail=0
-# and snapshots mame/snap/rc759/0000.png (the RESULT line)
 ```
 
 Uses the FDC/DMA-fixed `mame/regnecentralend` (commit 59b21dc1312, rebuilt
 2026-08-13 — the older 75 MB `mame`/pre-fix debug binary do NOT boot CMDs).
+
+## Headless / fast oracle (~3.5x speedup, no window)
+
+`run-mame.sh` and `run-mame-prebuilt.sh` run truly headless:
+
+```bash
+SDL_VIDEODRIVER=dummy ./regnecentralend rc759 ... -nothrottle -sound none -video none
+```
+
+- **`-video none`** stops MAME's *emulated-screen* rendering. This alone is a
+  ~3.5x speedup: a full mtest boot+run drops from ~24 s wall (`-video bgfx`) to
+  **~6.5 s** wall. Pass/fail comes from the `DONE-SIGNAL` line (the OUT 0x2FE
+  io-tap, below), which is video-independent → zero fidelity risk.
+- **`SDL_VIDEODRIVER=dummy`** is REQUIRED: `-video none` alone does NOT suppress
+  the SDL/Cocoa OSD window — MAME still opens a window (black, and *fullscreen*
+  when `-window` is absent). The dummy SDL driver ("Current Videodriver: dummy")
+  creates an off-screen surface and NO on-screen window at all.
+- Trade-off: no screen snapshot is produced. When you need the diagnostic PNG,
+  use the `-video bgfx -window` scripts instead (`disk/owt/scb/whet-mame.sh`).
 
 ## Completion signal (guest → host)
 
@@ -62,9 +80,11 @@ The guest no longer runs against a blind fixed timer. `mtest.c` ends with
 `mame_done((fail<<8)|pass)` (from `mamedone.h`), which executes `OUT 0x2FE,AX`.
 Port `0x2FE` is **undecoded** by the rc759 driver, so the write has no hardware
 effect, but `done_signal.lua` installs a MAME io-space **write-tap** on it: on
-the first write it snapshots the screen, prints
+the first write it snapshots the screen (only under `-video bgfx`; a no-op
+headless), prints
 `DONE-SIGNAL word=0x…  pass=N fail=M`, and calls `machine:exit()`. So a passing
-run stops in ~24 s real (frame ~4028) instead of waiting out the 400 s cap, and
+run stops in ~6.5 s real headless / ~24 s with `-video bgfx` (frame ~4028)
+instead of waiting out the 400 s cap, and
 the host learns pass/fail from the signal word (`0x0013` = 19 pass / 0 fail)
 without OCR. `-seconds_to_run 400` remains only as a safety cap: if the guest
 hangs and never signals, no `DONE-SIGNAL` line is printed → treat as failure.
