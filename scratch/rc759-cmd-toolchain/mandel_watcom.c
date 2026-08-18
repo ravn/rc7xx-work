@@ -27,8 +27,9 @@
 #define MAXITER  30
 
 /* fpmul(a,b) = a*b in 8.8 fixed point = (a*b) >> 8, computed in 32 bits to keep
- * the full 16x16 product before the shift.  Watcom compiles the (long)a*b to a
- * single signed IMUL and the >>8 to a byte pick -- no 32-bit helper needed.
+ * the full 16x16 product before the shift.  See the CODEGEN NOTE above: Watcom
+ * (-0 -ms) compiles this to `call __I4M` + an 8-step sar/rcr loop, NOT a single
+ * IMUL -- the tight `imul cx` needs a hand-written #pragma aux.
  * Worked example: fpmul(0x0180, 0x0180) = (0x0180*0x0180)>>8 = 0x24000>>8
  *   = 0x0240 == 2.25, i.e. 1.5 * 1.5. */
 static int fpmul(int a, int b)
