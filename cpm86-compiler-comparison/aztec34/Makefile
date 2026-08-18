@@ -1,5 +1,5 @@
 include ../common.mk
-export PATH := $(CROSS)/bin:$(PATH)
+export PATH := $(CROSS)/bin:$(ROOT)/emu2-cpm86:$(PATH)
 
 # Aztec C86 3.40a (K&R) stands alone: its own compiler + object dumper. obd is
 # Aztec's native code dump -- the closest thing to a disassembly it offers.

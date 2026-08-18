@@ -7,7 +7,7 @@ ROOT    := $(abspath $(CMPDIR)/..)
 SRCDIR  := $(CMPDIR)/src
 TOOLS   := $(CMPDIR)/tools
 OWROOT  := $(ROOT)/open-watcom-v2
-CROSS   := $(OWROOT)/contrib/ravn/cpm86-crossdev
+CROSS   := $(ROOT)/cpm86-crossdev
 BENCHES := sieve dhry whet aes256
 SIZE     = python3 $(TOOLS)/omfsize.py --code   # OMF CODE bytes -> one integer
 # Runtime (differential 80186-clock) comparison covers the two bare kernels that

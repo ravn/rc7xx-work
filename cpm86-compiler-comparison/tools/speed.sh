@@ -15,7 +15,7 @@ BACKEND="$1"; BENCH="$2"
 HERE=$(cd "$(dirname "$0")" && pwd)
 CMP=$(cd "$HERE/.." && pwd); SRC="$CMP/src"; ROOT=$(cd "$CMP/.." && pwd)
 OW="$ROOT/open-watcom-v2"; RUN="$OW/contrib/ravn/cpm86run_unicorn.py"
-CROSS="$OW/contrib/ravn/cpm86-crossdev/bin"
+CROSS="$ROOT/cpm86-crossdev/bin"
 DRC_ORACLE="$ROOT/scratch/rc759-cmd-toolchain/drc-oracle.sh"
 # Use the canonical, git-tracked emu2 submodule (emu2-cpm86/), not a scratch copy.
 EMU2="$ROOT/emu2-cpm86/emu2"; export EMU2
@@ -37,7 +37,7 @@ build() { # build <N> <out.cmd>
     F="-I. +F -B +0 -D__CPM86__ -DREPS=$N"
     # aztec_link returns non-zero when handed an absolute -o path but works with a
     # relative one; cwd is already $WORK, so link to the basename (== $OUT).
-    ( cd "$WORK"; cp "$K" k.c; cp "$D" d.c; export PATH="$CROSS:$PATH"
+    ( cd "$WORK"; cp "$K" k.c; cp "$D" d.c; export PATH="$CROSS:$ROOT/emu2-cpm86:$PATH"
       "$CROSS/${BACKEND}_cc" $F k.c >/dev/null 2>&1
       "$CROSS/${BACKEND}_cc" $F d.c >/dev/null 2>&1
       "$CROSS/${BACKEND}_link" -o "$(basename "$OUT")" k.o d.o -lc86 >/dev/null 2>&1 ) ;;
