@@ -40,6 +40,18 @@ def parse(fn):
                          seglen))
     return segs
 
+def code_total(fn):
+    return sum(l for _n, cls, l in parse(fn) if cls.upper() == 'CODE')
+
+# `omfsize.py --code file...` prints ONLY the summed CODE bytes (one integer per
+# file, or a single grand total for multiple files) -- the machine-readable form
+# the per-compiler Makefiles consume. Without --code it prints the verbose
+# per-segment breakdown for humans.
+if len(sys.argv) > 1 and sys.argv[1] == '--code':
+    files = sys.argv[2:]
+    print(sum(code_total(f) for f in files))
+    sys.exit(0)
+
 total = 0
 for f in sys.argv[1:]:
     print(f)

@@ -1,4 +1,8 @@
 #!/bin/bash
+# RETIRED 2026-08-18 -- superseded by the per-compiler Makefiles (see RESULTS.md
+# "Reproducing (Makefiles)": run `make compare` / `make dis` from this directory).
+# Kept for reference only; not part of the build.
+#
 # measure.sh <benchmark.c> -- compile one benchmark with all four CP/M-86 C
 # compilers and print the emitted module code size (bytes). CODE-SIZE only.
 #
