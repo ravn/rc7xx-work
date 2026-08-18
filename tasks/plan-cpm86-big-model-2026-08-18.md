@@ -132,20 +132,33 @@ segments instead of growing one static arena):
       convenience wrapper. Lean toward native naming — don't invent new API
       surface for something Watcom already names consistently.
 
-### Phase A3 — crt0: set ES from the Extra group's loaded base
+### Phase A3 — crt0: (mostly) nothing to do, per §2.5 of the System Guide
 
-- [ ] Extend `cstartcpm.asm` (confirm current filename/location — may have
-      moved since the small-model proof) to read the Extra group's loaded
-      segment from the base page (offset per `[[reference_cpm86_cmd_header]]`'s
-      "0x00 code, 0x06 data, 0x0C extra, 0x12 stack" table — **CONFIRM this
-      offset table is exactly right**: it was documented from the
-      2-descriptor small-model case; Stage A adds a 3rd descriptor (Extra)
-      so re-verify against the System Guide's base-page section rather than
-      assuming the table extends trivially) and store it wherever
-      `port/farheap.c`'s `__AllocSeg` reads it from.
-- [ ] Gate this so plain small-model programs (no Extra descriptor
-      requested) are completely unaffected — must not regress the existing
-      MAME-verified small-model boot.
+**Simplified 2026-08-18** from the original scoping (which assumed manual
+base-page parsing would be needed). CP/M-86 System Guide §2.5 "The Compact
+Memory Model" (`[[reference_cpm86_cmd_header]]`'s new section) states
+plainly: *"the CS, DS, and ES registers are set to the base addresses of
+their respective areas"* — **the loader itself sets ES to the Extra group's
+base automatically at program entry**, the same load-time mechanism that
+already sets CS/DS today (matches small model's measured `DS=ES=data group`
+at entry). "Compact Model" is the CP/M-86 loader's OWN name for this
+scenario (code+data plus ≥1 of stack/extra/auxiliary) — independent
+confirmation this is the right model to target, not just a Watcom-side
+coincidence.
+
+- [ ] `port/farheap.c`'s `__AllocSeg` (Phase A2) should read the **current
+      `ES` register directly** (e.g. inline `mov ax, es`) on its first call —
+      NOT walk the base page. crt0 needs no new code for this at all.
+- [ ] Confirm empirically (real RC759 or MAME register dump, same technique
+      as the existing small-model proof in
+      `scratch/rc759-cmd-toolchain/wlink-cmd-test/RC759_ENTRY_REGISTERS.png`)
+      that ES really does land on the Extra group's base once wlink actually
+      emits one (Phase A1) — the System Guide text is authoritative but
+      hasn't been checked against wlink's OWN loader output yet.
+- [ ] SS/SP auto-setup is explicitly NOT part of Stage A (System Guide: SS/SP
+      stay in the CCP's own area even when a Stack group exists — it's the
+      *program's* job to switch, only relevant once Stage B/a Stack group
+      shows up). Don't add stack-group crt0 code prematurely.
 
 ### Phase A4 — verification
 
