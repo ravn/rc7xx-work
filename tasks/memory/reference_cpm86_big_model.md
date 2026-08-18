@@ -1,49 +1,134 @@
 ---
 name: CP/M-86 "big" memory model (DR C §2.4.2) — the target for Watcom large-model cpm86 generation
-description: DR C's big memory model (far code, near data, heap in ES) is the reference structure Watcom FORMAT CPM86 must emit for large-model programs (phase-2); small model works today, large does not.
+description: DR C's big memory model (far code across multiple segments, near DGROUP, far/ES heap) fully documented from primary sources — DR C Language Programmer's Guide + CP/M-86 System Guide + FlexOS Programmer's Utilities Guide (renumbered edition of the same LINK-86 manual DR C's guide cites). Reference for Watcom FORMAT CPM86 phase-2 (large model); small model works today, big does not.
 metadata:
   type: reference
 ---
 
-The DR C Language Programmer's Guide **§2.4.2 "Big Memory Model"** describes the
-CP/M-86 large-model layout we need Watcom to generate (user, 2026-08-16). It is
-the authoritative reference because small model works on the native Watcom cpm86
-target today but **large does not** (`[[reference_watcom_cpp_cpm86]]`), and big
-model is the path past the 64 KB/segment small-model wall toward the full RC759
-TPA (~293 KB). Manual: `cpm86-crossdev/docs/manuals/DRI_C_Programming_86.{pdf,txt}`
-(`[[reference_dri_cpm86_manuals_location]]`).
+Primary source: **DR C Language Programmer's Guide §2.4 "Memory Models"**
+(`cpm86-crossdev/docs/manuals/DRI_C_Programming_86.txt`, lines ~1886-2033;
+`[[reference_dri_cpm86_manuals_location]]`). It is the authoritative reference
+because small model works on the native Watcom cpm86 target today but **big
+does not** (`[[reference_watcom_cpp_cpm86]]`), and big model is the path past
+the 64 KB/segment small-model wall toward the full RC759 TPA (~293 KB).
 
-**KNOWN (verified from §2.4.1/§2.4.2, this session):**
-- Selected with the DR C **`-b`** option; links against **`CLEARL.L86`** (big-model
-  crt0/lib), vs `CLEARS.L86` for small.
-- **Code = far, multiple segments.** Code is NOT grouped into CGROUP. Every code
-  segment is a SEPARATE segment with a unique name; no single code segment > 64 KB;
-  total code limited only by available memory. (Do NOT use RASM-86 GROUP to put
-  code in CGROUP as small model does.) → inter-segment (far) calls.
-- **Data = near, one DGROUP ≤ 64 KB** (DS). All data + common/external segments
-  grouped together, same as small model.
-- **Stack = its own segment ≤ 64 KB** (SS). Initial size set in the runtime
-  start-up; final size adjustable at LINK-86 time.
-- **Heap = the extra segment** (ES), grows up, size limited only by available
-  memory, adjustable at link time.
-- Figure 2-2 layout (low→high): CODE SEGMENT(s) [CS] · DATA/DGROUP ≤64K [DS] ·
-  STACK ≤64K [SS] · HEAP grows-up = max available memory [ES].
+## The product only has two models: small and big
 
-Contrast small model (§2.4.1): single CGROUP (≤64K) + single DGROUP (≤64K), heap
-on top of data growing up toward a stack growing down — all within DGROUP.
+Direct quote (§2.4): *"The C compiler supports two different memory models...
+small [and] big."* No medium/compact/large — unlike some other DRI C products
+(the shared, multi-OS `startup.a86` crt0 source carries a generic C32/D32
+`Small/Medium/Compact/Large` selector table used elsewhere in the DRI
+toolchain family, but the **CP/M-86 C product itself only exposes these two**
+via the compiler's `-b` flag). Don't reach for "compact"/"medium" language
+when describing this — it isn't part of this product's vocabulary and only
+confuses the mapping.
 
-**INFERENCE (not yet verified — my mapping, treat as guess):** DR C "big"
-(far code / near data) maps to Watcom's **medium** model (`-mm`, far code + near
-data), or **large** (`-ml`) if far data is also wanted. The user says "large";
-confirm which Watcom model actually produces the multi-code-segment .CMD before
-relying on it.
+## §2.4.2 Big Memory Model — as stated in the manual
 
-**GAP / next reference to fetch:** the exact .CMD group-descriptor mechanics for
-multiple code segments (how LINK-86 combines segments into groups and positions
-them in the .CMD, and how the CP/M-86 loader relocates >1 code group given only 8
-header descriptors) live in the **Programmer's Utilities Guide §7.5 / §7.5.2
-(CGROUP/DGROUP)** — which the manual cites but which is **NOT cached in the
-workspace** (verified 2026-08-16). Fetch/analyse it before implementing Watcom
-FORMAT CPM86 phase-2 large model. Deferred-task complement in
-`[[reference_watcom_wlink_cpm86_format]]` (FORMAT CPM86 is phase-1 small-only;
-8080 model rejected).
+> Use the big model for programs that use a maximum of 64K bytes of data, a
+> maximum of 64K bytes of stack, but require a large code section and heap.
+> To specify big model compilation, use the `-b` command line compiler
+> option... All program code segments are separate segments with a unique
+> name. No individual code segment can exceed 64K bytes. The total amount of
+> code is limited to the amount of available memory... The stack occupies a
+> separate segment limited to 64K... The heap data occupies the extra
+> segment. The heap size is limited only by the amount of available memory
+> and is adjustable at link time.
+
+So, precisely:
+- **Code**: NOT grouped into CGROUP (unlike small model). Every code segment
+  separate, unique name, each ≤64 KB (8086 hardware limit on any *one*
+  segment — not a DR-C-imposed limit), total code = available memory. Inter-
+  segment calls are far (confirmed elsewhere in the manual, line ~5573:
+  *"Calls to assembly functions under the big model use far calls"*).
+- **Data (DGROUP)**: near, ≤64 KB, same as small model — all data + common/
+  external segments grouped together.
+- **Stack**: its own segment, capped at 64 KB (same cap as small model's
+  stack) — big model does NOT relax the stack limit, only code and heap.
+- **Heap**: the extra segment (ES), grows up, size limited only by available
+  memory (≈1 MB), adjustable at LINK-86 time. This is the ONE thing that
+  grows past 64 KB on the data side.
+- Selected with `-b`; links `CLEARL.L86` (big-model crt0/lib) vs `CLEARS.L86`
+  for small.
+- Figure 2-2 layout (low→high physical memory): CODE SEGMENT(s) [CS] →
+  DGROUP ≤64 KB [DS] → STACK ≤64 KB [SS] → HEAP grows-up, max available
+  memory [ES].
+
+Contrast small model (§2.4.1): single CGROUP ≤64 KB + single DGROUP ≤64 KB,
+heap on top of DGROUP data growing up toward a stack growing down inside the
+*same* DGROUP — no separate stack or heap segment at all.
+
+## Section-number cross-reference — resolved
+
+§2.4's own text says: *"read Section 7 in the Programmer's Utilities Guide on
+LINK-86 first. Section 7.5 in the utilities guide explains how LINK-86
+combines the different program segments into groups and positions them in
+the executable .CMD file. Section 7.5.2... defines... CGROUP... DGROUP."*
+That "Programmer's Utilities Guide" is **not** cached under that exact title,
+but the cached **FlexOS 286 Programmer's Utilities Guide**
+(`scratch/rc759-cmd-toolchain/docs/1073-2043-001_FlexOS_286_Programmers_
+Utilities_Guide_1986.txt`) documents the **same DRI LINK-86 tool**, shared
+verbatim across DRI operating systems — just under different section numbers
+in this later/reorganized edition (its LINK-86 chapter is "§7", command-file
+options are "§7.7" instead of "§7.5"). Content, not numbering, is what
+transfers. This resolves the earlier open "GAP" (2026-08-16 note) about
+whichever numbering — the mechanics below come straight from that chapter.
+
+## How code > 64 KB across multiple segments fits in ONE .CMD header slot
+
+The `.CMD` header's "8 group descriptors" limit (`[[reference_cpm86_cmd_header]]`
+— 128-byte header, 8×9-byte Group Descriptors, G-Type 1=Code/2=Data/3=Extra/
+4=Stack/5-8=Auxiliary) is **not** a limit on segment *count* — it's a limit on
+how many independently-addressed *sections* the file has. A single "Code
+Group" descriptor (G-Type=1) covers a section whose `G-Length` field is a
+16-bit *paragraph* count, so up to ≈0xFFFF×16 ≈ 1 MB — nothing in the header
+caps a section at 64 KB. LINK-86's command-file `CODE[SEGMENT[...],
+CLASS[...], GROUP[...]]` option (FlexOS Utilities Guide §7.7.1/§7.7.2, Table
+7-2) lets you list an arbitrary number of separately-named 8086 code segments
+and have LINK-86 concatenate them all, back-to-back, into that one Code
+section. Since a CP/M-86 `.CMD` loads at a **fixed, non-relocatable base
+address** (no runtime fixup/relocation table in the ordinary case —
+`[[reference_watcom_wlink_cpm86_format]]`), LINK-86 computes each segment's
+absolute paragraph address at *link time* and burns it directly into every
+far-call/far-pointer reference — no loader relocation needed for the
+multi-segment case any more than for the single-segment case. Big model just
+means: don't group the code segments into CGROUP (which would force them to
+share one 64 KB frame, i.e. small model's default); leave them as separate
+segments and they land side-by-side in the same Code Group descriptor,
+addressed via far calls.
+
+## How heap > 64 KB works (the Extra Group, G-Type=3)
+
+Same descriptor mechanism, for data instead of code: G-Min/G-Max on the Extra
+Group descriptor can request up to ≈1 MB, allocated by the CP/M-86 loader as
+ONE contiguous block based at ES. But a *single* 8086 memory access can only
+address 64 KB from a given segment base (offset is 16-bit) — the header
+mechanism doesn't make one pointer magically span the whole heap; that's a
+*compiler/runtime* concern, not a linker/loader one.
+
+**Open sub-question, NOT resolved by the manual text searched so far:**
+whether DR C's compiler under `-b` makes *every* pointer uniformly far
+(4-byte segment:offset, so the same pointer type transparently reaches both
+DGROUP and the heap with no near/far keyword exposed to the C programmer —
+plausible, since 1980s K&R-era DR C has no `near`/`far` type qualifiers and
+the manual's `malloc`/`calloc`/etc. declarations (§3, `char *malloc()` etc.)
+show no model-conditional pointer syntax at all), or whether it does
+something narrower (e.g. only heap-typed pointers are far). The generic,
+multi-OS `startup.a86` crt0 (`scratch/rc759-cmd-toolchain/drc-oracle/
+startup.a86`, `C32`/`D32` flags) shows the codegen-macro layer (`LDX`→`MOV`
+vs `LDS`, `CALLC`→`CALL` vs `CALLF`) is switched by a single global model
+flag pair, consistent with "pointer representation is a whole-program
+setting, not per-variable" — but this is DR-C's *shared* runtime source
+across products, not confirmed CP/M-86-specific. **Verify by compiling and
+disassembling an actual `-b` TEST.C-style program** (per plan below) rather
+than reasoning further from manual text — the manual doesn't state pointer
+width explicitly anywhere searched.
+
+If pointers are uniformly far under `-b`, then a *single* malloc'd allocation
+is still capped at 64 KB (offset is 16-bit; no "huge pointer" normalization
+implied anywhere in the manual), even though the *total* heap can be ≈1 MB
+across many allocations, each living in its own far-addressable slice.
+
+Deferred-task complement: `[[reference_watcom_wlink_cpm86_format]]` (FORMAT
+CPM86 is phase-1 small-model-only today; 8080 model rejected). Implementation
+plan: `tasks/plan-cpm86-big-model-2026-08-18.md`.
