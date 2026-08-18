@@ -8,7 +8,7 @@
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OW=/Users/ravn/z80/scratch/open-watcom-v2/build/binbuild
-EMU2=/Users/ravn/z80/scratch/cpm86-tools/emu2-cpm86/emu2
+EMU2=/Users/ravn/z80/emu2-cpm86/emu2
 DRC="$HERE/drc-toolchain"
 SRC="$1"; [ -z "$SRC" ] && { echo "usage: ccrc759.sh prog.c [out.cmd]"; exit 1; }
 BASE="$(basename "${SRC%.c}")"

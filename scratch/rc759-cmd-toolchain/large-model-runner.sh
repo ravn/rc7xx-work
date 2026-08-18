@@ -24,7 +24,7 @@ set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 CC="$HERE/cc-cpm86.sh"
 RUNNER="$HERE/../../open-watcom-v2/contrib/ravn/cpm86run_unicorn.py"
-EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
+EMU2="${EMU2:-$HERE/../../emu2-cpm86/emu2}"
 SRCS="$HERE/far_main.c $HERE/far_lib.c"
 EXPECT=$'fold=51662\r\npick=353'    # independent host reference (see far_main.c)
 

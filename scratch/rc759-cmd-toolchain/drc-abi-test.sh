@@ -10,7 +10,7 @@
 # 1.11 runtime (CLEARL/CLEARS.L86) under emu2.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
-EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
+EMU2="${EMU2:-$HERE/../../emu2-cpm86/emu2}"
 EXPECT="00011170"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 

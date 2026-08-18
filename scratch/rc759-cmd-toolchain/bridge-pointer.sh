@@ -19,7 +19,7 @@
 # with -zu -> correct length. See wlink-cpm86-plan.md finding (e).
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
-EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
+EMU2="${EMU2:-$HERE/../../emu2-cpm86/emu2}"
 OW="${OW:-$HERE/../open-watcom-v2/build/binbuild}"
 DRC="$HERE/drc86111"
 [ -x "$EMU2" ] || { echo "emu2 not built at $EMU2"; exit 1; }
