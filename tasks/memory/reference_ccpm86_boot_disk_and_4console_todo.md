@@ -1,8 +1,54 @@
 ---
 name: reference_ccpm86_boot_disk_and_4console_todo
-description: Genuine CCP/M-86 boot disk (not CDOS) now cached and wired as the default A: for both rc759_boot_pce.sh and rc759_boot_cpm.sh; a 4-console CCP/M-86 system still needs to be installed from this disk's own installer — not done yet.
+description: Genuine CCP/M-86 boot disk (not CDOS) is the default A: for both rc759_boot_pce.sh and rc759_boot_cpm.sh, AND is already a working 4-console system out of the box — the "needs installing" assumption below was WRONG, corrected 2026-08-18.
 metadata:
   type: project
+---
+
+## CORRECTION 2026-08-18: this disk already boots as a 4-console CCP/M-86 system
+
+The "no 4-console disk exists yet, needs installing" note below is **WRONG**.
+Booting `sw1400-r3.1a-disk1.img` under MAME (`floptool flopconvert rc759 mfi`
+first) and pressing `A` at the PICCOLINE bootloader menu reaches, a few
+seconds later, the real XIOS banner:
+
+```
+PICCOLINE XIOS version 3.1   Januar 1987
+  384 K bytes hovedlager
+  6 Mhz CPU
+  2 Diskettestation(er)
+  2 Databuffer(e)
+  1 Katalogbuffer(e)
+  261 K bytes brugerlager
+Concurrent CP/M-86 3.1
+Copyright (C) 1983, Digital Research
+System med 4 konsoller
+Start Kommando: menu imenu
+```
+
+**"System med 4 konsoller" is already printed at every boot** — this disk
+*is* a ready 4-console CCP/M-86 system, not merely an installer that can
+build one. It just auto-starts an installation/configuration MENU utility
+(`menu imenu`, from `0:startup.0`) instead of dropping to `A>` directly.
+384 K total RAM / 261 K user-available RAM is also visible right here at
+boot, confirmed against MAME driver source (`rc759.cpp`: RAM is hardcoded
+384K, not configurable).
+
+**To boot straight to a command / run a program without touching the
+interactive menu system:** `0:startup.0` on the disk is a **plain text**
+CP/M command file (128-byte record, `"menu imenu\r\n"` + 0x1A padding) —
+overwrite it with cpmtools (`cpmrm` then `cpmcp`, can't overwrite in
+place) to whatever command you actually want, e.g. `"b:prog\r\n"`. Do
+this on a FRESH COPY of the cached image, never the cached original. This
+is far more reliable than trying to time `natkeyboard` keystrokes through
+the interactive installer menu tree (which has confirmation prompts —
+`ESC` then `J` for "ja" — and many nested submenus that are easy to
+mis-navigate blind). `open-watcom-v2/contrib/ravn/watcom-cpm86-libc/
+build-farheap.sh`'s MAME verification pass used exactly this technique.
+
+Everything below this correction (the disk identity, TODO framing) is
+kept for history but the "not done yet" framing is stale.
+
 ---
 
 2026-08-18. User distinguished CDOS from CCP/M-86 (CDOS is a later,

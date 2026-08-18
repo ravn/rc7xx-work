@@ -28,6 +28,23 @@ Specific incidents this rule pins:
     (related — grep existing project infra before deriving from
     first principles).
 
+  - 2026-08-18, MAME `floptool` missing for the far-heap Phase-A4 disk
+    build: hit `make: *** No rule to make target "floptool"` and spent
+    three separate `make TOOLS=1 ...` / `make REGENIE=1 TOOLS=1 ...`
+    guesses (one of them a full untargeted MAME+tools rebuild) before
+    the user pointed out "we've gotten MAME disks working before,
+    search the memory." `tasks/memory/reference_mame_regnecentralen_rc75x_imd.md`
+    already had the exact answer — "floptool ships with a TOOLS=1
+    build" plus the full working command, `make SUBTARGET=regnecentralen
+    REGENIE=1 ... TOOLS=1 SOURCES=... OSD=sdl` — because this MAME
+    build uses a non-default `SUBTARGET`, which a bare top-level `make
+    TOOLS=1` silently doesn't touch. **Trigger to generalize:** an
+    unexpected build/tool-invocation failure mid-task is itself a
+    "new task" for this rule's purposes — grep `tasks/memory/` for the
+    tool/target name (`floptool`, `SUBTARGET`, …) BEFORE trying a
+    second variant of the failing command, not just at the task's
+    start.
+
   - The pre-existing [[feedback_consult_rules_before_acting]] covers
     "before commit/PR/issue" but fires too LATE for many tasks.  By
     the time the commit message is being drafted, the wrong approach

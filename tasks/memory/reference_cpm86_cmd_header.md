@@ -87,6 +87,34 @@ a `BEGDATA` seg).
   (LINK-86 has a stack-size control). wlink's loadcpm86.c currently emits only
   type 1/2, so a loader-allocated stack group is a future extension.
 
+## §2.5 "The Compact Memory Model" (CP/M-86 System Guide) — loader-level register setup
+
+Found 2026-08-18, directly relevant to Stage A of
+`tasks/plan-cpm86-big-model-2026-08-18.md`. **"Compact Model" is the CP/M-86
+loader's own name** for "code+data groups plus one or more of
+stack/extra/auxiliary" — not just a Watcom `-mc` coincidence; both names
+independently mean the same loader-defined thing.
+
+> The Compact Model is assumed when code and data groups are present, along
+> with one or more of the remaining stack, extra, or auxiliary groups. In
+> this case, **the CS, DS, and ES registers are set to the base addresses of
+> their respective areas**... If the transient program intends to use the
+> stack group as a stack area, **the SS and SP registers must be set upon
+> entry** [by the program itself]. The SS and SP registers remain in the CCP
+> area, even if a stack group is defined.
+
+So for Stage A (adds an Extra group, no Stack group): **the loader sets ES
+to the Extra group's base automatically**, same load-time mechanism as
+CS/DS already — crt0 needs to do NOTHING extra to make ES point at the far
+heap; it's correct on entry, exactly like small model's DS/ES already are
+(measured below). This simplifies the crt0 phase considerably from earlier
+scoping (which assumed manual base-page parsing would be needed) — Stage
+A's `__AllocSeg` port likely just reads the CURRENT `ES` register directly
+(e.g. inline `mov ax, es`) rather than walking the base page at all.
+
+SS/SP auto-setup is a Stage-B-and-later concern (only matters once a Stack
+group descriptor exists) — Stage A doesn't touch the stack at all.
+
 ## Proof artifacts
 `scratch/rc759-cmd-toolchain/wlink-cmd-test/`: `RC759_ENTRY_REGISTERS.png` (the
 register dump), `RC759_WLINK_CMD_PROOF.png` (a wlink CMD printing on real RC759),
