@@ -210,6 +210,52 @@ CP/M-86-specific pointer-width scheme.
   this mapping empirically when Stage B starts (Phase B3 in the plan) rather
   than assuming.
 
+## How you actually tell CP/M-86 how much heap you want
+
+The real LINK-86 syntax, found as **live (commented-out but authentic)
+examples in DR C's own build scripts** —
+`scratch/rc759-cmd-toolchain/drc86111/{DRC,BUILD,MAKE}.BAT`:
+
+```
+rem cpm86 link86 %1=srcfile [extra[max[7000]]], %2
+rem cpm86 link86 %1=srcfile, %2 [extra[max[3000]]]
+```
+
+i.e. `LINK86 prog=srcfile [EXTRA[MAXIMUM[hex-paragraphs]]]` — matches the
+FlexOS Utilities Guide §7.7.1 Table 7-2 `EXTRA` file-section option exactly
+(abbreviation `M` for `MAXIMUM`, paragraph units, hex). `7000H` paragraphs =
+0x70000 bytes ≈ 448 KB — a "give me most of the TPA" example value. **This
+is link-time only** — there is no runtime "ask CP/M-86 for more heap" call;
+whatever `MAXIMUM` (and optionally `ADDITIONAL` for a guaranteed *minimum*,
+Table 7-2's other EXTRA-relevant parameter) you link with becomes the fixed
+Extra Group Descriptor's G-Max (and G-Min) in the `.CMD` header — the loader
+allocates that once, at program load, and that's the heap's ceiling for the
+whole run.
+
+**Note DR C's own default is to specify NOTHING** (`cpm86 link86
+%1=srcfile`, no `EXTRA[...]` at all, in the actual non-commented command
+these batch files run) — per FlexOS Utilities Guide Table 7-3's defaults,
+`EXTRA`'s default `MAXIMUM` is **0**. That's consistent with EXTRA being the
+one section with no program *content* driving its size (unlike CODE/DATA,
+whose size the linker can infer from what's actually placed in them) — if
+nothing in the linked program ever references an Extra-group symbol, there's
+nothing to size, so it defaults to nothing. **Our wlink port's new
+heap-size option (Phase A1: working name `OPTION FARHEAP=<size>`) is the
+direct equivalent of this `EXTRA[MAXIMUM[...]]` LINK-86 syntax** — same
+semantics (link-time-fixed ceiling, written into G-Max), possibly worth
+naming/spelling it to visually echo LINK-86's own `EXTRA[MAX[...]]` for
+anyone cross-referencing against DR C's toolchain, rather than inventing
+unrelated terminology.
+
+## "Big model" ↔ Watcom naming — PARKED (user, 2026-08-18)
+
+Explicitly deferred: don't chase whether DR C's "big model" (Stage B) maps
+to Watcom's `large` (`-ml`) or something else until the linker-behavior
+side of Stage A/B is well understood first ("det gemmer vi til du har styr
+på hvordan linkeren skal opføre sig"). The earlier paragraph above floating
+"large" as the likely candidate stands as a *guess*, not a decision — revisit
+only when Stage B actually starts (Phase B3).
+
 Deferred-task complement: `[[reference_watcom_wlink_cpm86_format]]` (FORMAT
 CPM86 is phase-1 small-model-only today; 8080 model rejected). Implementation
 plan: `tasks/plan-cpm86-big-model-2026-08-18.md`.

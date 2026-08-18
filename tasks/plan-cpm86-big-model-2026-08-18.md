@@ -37,7 +37,11 @@ first:
   big model: don't group code into CGROUP, emit many far-addressed segments
   concatenated into one Code Group Descriptor. Deferred until Stage A ships
   (user, 2026-08-18: "dernæst kigge videre på mere-end-64kb kode" — look at
-  this *next*, after Stage A).
+  this *next*, after Stage A). **PARKED, do not chase yet:** which Watcom
+  `-m` flag this should be called/reuse (large `-ml` was floated as a guess,
+  NOT decided) — user, 2026-08-18: settle that only once the linker-side
+  behavior is well understood, not before ("det gemmer vi til du har styr
+  på hvordan linkeren skal opføre sig").
 
 Both still map onto the same `.CMD` Group Descriptor mechanism
 (`[[reference_cpm86_cmd_header]]`) — G-Type 3=Extra for Stage A, G-Type
@@ -63,7 +67,16 @@ first, don't assume).
 - [ ] Add G-Type 3 (Extra) descriptor emission when compiling for `-mc`,
       sized via a new linker option (working name: `OPTION FARHEAP=<size>`)
       written into G-Min/G-Max of the Extra descriptor, per
-      `[[reference_cpm86_cmd_header]]`'s byte layout.
+      `[[reference_cpm86_cmd_header]]`'s byte layout. **Real LINK-86
+      precedent found 2026-08-18** (`[[reference_cpm86_big_model]]`'s "How
+      you actually tell CP/M-86 how much heap you want" section): DR C's own
+      `drc86111/{DRC,BUILD,MAKE}.BAT` show `LINK86 prog=srcfile
+      [EXTRA[MAXIMUM[hex-paragraphs]]]` — link-time only, no runtime
+      "request more heap" call exists; whatever MAXIMUM (and optionally
+      ADDITIONAL for a guaranteed minimum) is linked with becomes the fixed
+      ceiling for the whole run. Our new option is the direct equivalent;
+      worth spelling it to echo `EXTRA[MAX[...]]` rather than inventing
+      unrelated terminology.
 - [ ] Keep the existing "reject unvalidated models" policy
       (`Proc8080()` precedent): any OTHER `-m` flag (medium/large/huge) stays
       rejected until Stage B is implemented — don't silently accept a model
