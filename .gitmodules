@@ -43,3 +43,6 @@
 [submodule "emu2-cpm86"]
 	path = emu2-cpm86
 	url = https://github.com/ravn/emu2-cpm86
+[submodule "pce"]
+	path = pce
+	url = git@github.com:ravn/pce.git
