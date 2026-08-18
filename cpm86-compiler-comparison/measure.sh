@@ -33,7 +33,7 @@ OWROOT="$ROOT/open-watcom-v2"
 OWCC="$OWROOT/rel/armo64/owcc"
 export WATCOM="$OWROOT/rel" INCLUDE="$OWROOT/rel/h" PATH="$OWROOT/rel/armo64:$PATH"
 CROSS="$ROOT/open-watcom-v2/contrib/ravn/cpm86-crossdev"
-EMU2_DRC="$ROOT/scratch/cpm86-tools/emu2-cpm86/emu2"
+EMU2_DRC="$ROOT/emu2-cpm86/emu2"
 DRC_OFF="$ROOT/scratch/rc759-cmd-toolchain/rc759-drc-official"
 DRC_FB="$ROOT/scratch/rc759-cmd-toolchain/drc86111"
 

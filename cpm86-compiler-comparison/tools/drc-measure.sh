@@ -14,7 +14,7 @@ set -u
 SRC="$1"; FLAG="${2:-}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
-EMU2="$ROOT/scratch/cpm86-tools/emu2-cpm86/emu2"
+EMU2="$ROOT/emu2-cpm86/emu2"
 DRC_OFF="$ROOT/scratch/rc759-cmd-toolchain/rc759-drc-official"
 DRC_FB="$ROOT/scratch/rc759-cmd-toolchain/drc86111"
 
