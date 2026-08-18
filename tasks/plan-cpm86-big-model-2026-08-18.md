@@ -52,37 +52,68 @@ changes and should ship as independent, separately-testable increments.
 
 ## Stage A — CP/M-86 compact model (`-mc`)
 
-### Phase A1 — wlink: accept `-mc` for `FORMAT CPM86` + emit the EXTRA group descriptor
+### Phase A1 — wlink: accept `-mc` for `FORMAT CPM86` + emit the EXTRA group descriptor — **DONE 2026-08-18**
 
-Current state (`bld/wl/c/cmdcpm86.c`/`loadcpm86.c`, ~226 lines total):
-small-model-only, emits exactly 2 descriptors (CODE=1, DATA=2), `A-Base=0`,
-no fixup table. Today an `-mc` compile would presumably either be silently
-mishandled or rejected outright (needs checking — audit current behavior
-first, don't assume).
+Audited `bld/wl/c/cmdcpm86.c`/`loadcpm86.c` first (per the checklist
+originally here): confirmed phase-1 was small-model-only, exactly 2
+descriptors (CODE=1, DATA=2), `A-Base=0`, no fixup table.
 
-- [ ] Recognize `-mc` (compact) as a second valid model for `format cpm86`,
-      alongside small (default). CODE/DATA descriptors are emitted exactly
-      as today (no change — compact model's code is still a single ≤64 KB
-      CGROUP, same as small).
-- [ ] Add G-Type 3 (Extra) descriptor emission when compiling for `-mc`,
-      sized via a new linker option (working name: `OPTION FARHEAP=<size>`)
-      written into G-Min/G-Max of the Extra descriptor, per
-      `[[reference_cpm86_cmd_header]]`'s byte layout. **Real LINK-86
-      precedent found 2026-08-18** (`[[reference_cpm86_big_model]]`'s "How
-      you actually tell CP/M-86 how much heap you want" section): DR C's own
-      `drc86111/{DRC,BUILD,MAKE}.BAT` show `LINK86 prog=srcfile
-      [EXTRA[MAXIMUM[hex-paragraphs]]]` — link-time only, no runtime
-      "request more heap" call exists; whatever MAXIMUM (and optionally
-      ADDITIONAL for a guaranteed minimum) is linked with becomes the fixed
-      ceiling for the whole run. Our new option is the direct equivalent;
-      worth spelling it to echo `EXTRA[MAX[...]]` rather than inventing
-      unrelated terminology.
-- [ ] Keep the existing "reject unvalidated models" policy
-      (`Proc8080()` precedent): any OTHER `-m` flag (medium/large/huge) stays
-      rejected until Stage B is implemented — don't silently accept a model
-      this phase doesn't actually support correctly.
+**Resolved during implementation:** the linker can't observe the
+compiler's `-mc` flag at all (it only ever sees OMF segments) — and it
+turns out it doesn't need to. Per the CP/M-86 System Guide, "Compact
+Model" is *defined* as "Code+Data plus ≥1 of Stack/Extra/Auxiliary" — the
+model is implicit in which descriptors exist, not a separate flag anywhere
+in the `.CMD` file or the loader's decision logic. So no new `FORMAT
+CPM86` sub-keyword was added; `SMall`/`8080` are unchanged. Instead:
 
-### Phase A2 — retarget `__AllocSeg`/`__GrowSeg`: the whole seam already exists
+- [x] Added `OPTION FARHEAP=<size>` (byte-sized, same pattern as the
+      existing `STACK` option) — `CPM86FarHeapSize` global in
+      `cmdcpm86.c`/`.h`, registered `MK_CPM86`-gated in `cmdall.c`'s
+      `MainOptions` table. Echoes real LINK-86 `EXTRA[MAXIMUM[...]]`
+      precedent (`[[reference_cpm86_big_model]]`) without inventing new
+      terminology.
+- [x] `FiniCPM86LoadFile()` (`loadcpm86.c`) now appends a type-3 (Extra)
+      group descriptor whenever `CPM86FarHeapSize != 0`: no stored image
+      (G_Length=0), `G_Min == G_Max == paragraphs(size)`. CODE/DATA
+      descriptors emitted exactly as before — verified byte-identical
+      output when the option is omitted (no regression).
+- [x] Verified end-to-end: linked `contrib/ravn/hello.asm` with
+      `op farheap=0x1000` — header grew from 1 to 2 descriptors, second one
+      `03 00 0000 0100 0100` = type Extra, min=max=0x100 paragraphs =
+      0x1000 bytes exactly. Commit `4cd6304d3a`.
+- [ ] (Not applicable) rejecting other `-m` flags is moot here — the
+      linker was never asked to validate compiler model flags in the first
+      place; Stage B's own model-name question stays PARKED as before.
+
+### Phase A2 — retarget `__AllocSeg`/`__GrowSeg`: the whole seam already exists — **DONE 2026-08-18**
+
+Implemented as `open-watcom-v2/contrib/ravn/watcom-cpm86-libc/port/farheap.c`.
+One real design evolution vs. the original scoping below: a single
+`__AllocSeg` call handing out ES once is NOT enough to make a FARHEAP total
+bigger than 64 KB actually usable (every Watcom heap-list slab is capped at
+64 KB by construction, same on every target) — so `__AllocSeg` instead
+**carves successive ≤64 KB slabs** out of the one Extra reservation,
+reading its TRUE size from the CP/M-86 base page (`DS+000C..0010`, System
+Guide Sec.2.6 LE/BE fields) rather than trusting a compiled-in constant.
+`__GrowSeg` stays a no-op (each slab's size is fixed at carve time);
+`__FreeSeg` always fails (nothing is ever handed back to any OS) — see the
+file's own comments for the `_fheapshrink()` caveat this implies.
+
+Verified with a new overlap-detecting stress test (`test/farheaptest.c` +
+`build-farheap.sh`, Phase A4 below): **298,973 bytes across 130 `_fmalloc`
+blocks, 0 corrupted, under emu2** — past one 64 KB slab, proving multi-slab
+carving actually works, not just a single 64 KB allocation. Commit
+`b8cfd0d10e`.
+
+**Real footgun hit and fixed along the way:** wlink/wcc/wasm each read an
+env var NAMED AFTER THEMSELVES for implicit default switches — exporting
+`WCC=<path to wcc.exe>` makes `wcc.exe` itself misparse that path as a
+bogus second source file (`E1139`). Any future script wrapping these
+tools must NOT name its own path-override variables `WCC`/`WASM`/`WLIB`/
+`WLINK` (see `build-farheap.sh`'s `OWCC_BIN`/`OWASM_BIN`/etc. pattern) and
+should defensively `unset` them.
+
+Original scoping (kept for context, now superseded by the above):
 
 **Found 2026-08-18, source-verified:** Watcom's far-heap C API is complete
 and OS-generic — `bld/clib/heap/c/{fmalloc,ffree,frealloc,fcalloc,fmsize,
@@ -162,16 +193,39 @@ coincidence.
 
 ### Phase A4 — verification
 
-- [ ] Test program using ONLY `_fmalloc`/far heap (not regular `malloc`) for
+- [x] Test program using ONLY `_fmalloc`/far heap (not regular `malloc`) for
       an allocation total exceeding 64 KB (many small far allocations, not
       one big one — no huge-pointer normalization exists here, see
       `[[reference_cpm86_big_model]]`'s far-vs-huge explanation, so a single
-      allocation stays ≤64 KB same as DOS far heap always has).
-- [ ] Three-tier verification: emu2 (fast iteration) → MAME rc759
-      (`[[reference_rc759_mame_c_verification]]`-style) → PCE/rc759
-      (`[[reference_pce_rc759_headless_automation]]`) — good first real use
-      of the new PCE oracle for something MAME hasn't been asked to verify
-      before.
+      allocation stays ≤64 KB same as DOS far heap always has). Done as
+      `test/farheaptest.c` — 130 pseudo-random-sized blocks, overlap-
+      detecting fill pattern, verified only after all allocations complete.
+- [x] emu2 leg: **298,973 bytes across 130 blocks, 0 corrupted** (2026-08-18,
+      commit `b8cfd0d10e`).
+- [x] MAME rc759 leg — **DONE 2026-08-18**. `floptool` built via
+      `make SUBTARGET=regnecentralen REGENIE=1 TOOLS=1 SOURCES=...
+      OSD=sdl` (the recipe was already in
+      `[[reference_mame_regnecentralen_rc75x_imd]]`, found only after
+      several blind `make TOOLS=1 ...` guesses failed — see
+      `feedback_check_memory_before_coding`'s new incident entry).
+      **A real hardware constraint found along the way:** the original
+      300 KB FARHEAP request (which emu2 happily ran) was REJECTED by
+      genuine Concurrent CP/M-86 itself — `"Concurrent Fejl: For lidt
+      lager"` (too little memory) — because RC759's 384K RAM minus
+      BDOS/XIOS/console overhead doesn't leave 300 KB free for a
+      transient. Scaled to 96 KB/40 blocks (still > one 64K slab);
+      **passed on real MAME rc759 hardware emulation**, screen-captured:
+      `allocated 94076 bytes in 40 blocks` / `PASS (0 blocks corrupted)`
+      on a genuine Digital Research Concurrent CP/M-86 `A>` prompt
+      (Bits:30002654 boot disk — NOT Bits:30002664, which is an
+      application/toolkit disk that fails to even BOOT, "DISKETTE NOT
+      FORMATTED" — this exact pitfall was already documented in
+      `[[reference_rc759_mame_sonnyboy_headless]]` and re-hit once before
+      being caught). Commit `d9b1de395b`.
+- [ ] PCE/rc759 leg — not started. Lower priority now: MAME already
+      exercised real hardware-class constraints (RAM budget); PCE would
+      mainly cross-check MAME's rc759 driver itself, not the far-heap
+      logic.
 - [ ] Regression script under `open-watcom-v2/contrib/ravn/` (linker/runtime
       work, not backend codegen — no LLVM lit test applies here).
 
