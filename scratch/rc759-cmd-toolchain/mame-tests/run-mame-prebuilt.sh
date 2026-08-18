@@ -31,10 +31,14 @@ for f in menu.cmd comal80.cmd diskvedl.cmd help.hlp; do "$CPMRM" -f "$FMT" "$IMG
 echo "== 2. boot MAME rc759; guest signals completion via OUT 0x2FE (done_signal.lua) =="
 cd "$MAME_DIR"
 rm -f snap/rc759/*.png nvram/rc759/nvram 2>/dev/null || true
-./regnecentralend rc759 -bios 0 -skip_gameinfo -rompath roms \
+SDL_VIDEODRIVER=dummy ./regnecentralend rc759 -bios 0 -skip_gameinfo -rompath roms \
   -flop1 "$IMG" \
   -autoboot_script "$HERE/done_signal.lua" -seconds_to_run 400 \
-  -nothrottle -sound none -video bgfx -window -nomax 2>&1 | tee /tmp/mame_done.log | grep -i "DONE-SIGNAL" || true
+  -nothrottle -sound none -video none 2>&1 | tee /tmp/mame_done.log | grep -i "DONE-SIGNAL" || true
+# NOTE: -video none is a ~3.5x speedup; pass/fail is the DONE-SIGNAL line
+# (OUT 0x2FE io-tap), video-independent. SDL_VIDEODRIVER=dummy is REQUIRED so the
+# SDL/Cocoa OSD opens NO window (-video none alone still opens a black fullscreen
+# window without -window). Use -video bgfx only for diagnostic snapshots.
 
 echo "== 3. result =="
 if grep -qi "DONE-SIGNAL" /tmp/mame_done.log; then

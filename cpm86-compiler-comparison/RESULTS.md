@@ -40,7 +40,7 @@ soft-float/transcendental library is tighter. Aztec 4.2 edges 3.40 on FP;
 
 | # | Compiler | Dialect | Driver | Notes |
 |---|----------|---------|--------|-------|
-| 1 | **Open Watcom** (v2 fork) | ANSI | `open-watcom-v2/rel/armo64/wcc` | `-os` size / `-otexan` speed; links CP/M-86 via `build/binbuild/bwlink` `format cpm86` |
+| 1 | **Open Watcom** (v2 fork) | ANSI | `open-watcom-v2/rel/armo64/owcc -bcpm86` | one-step production driver, first-class CP/M-86 target; `-os` size / `-otexan` speed passed via `-Wc,`; links CP/M-86 (`format cpm86`) in the same command when producing a `.CMD` |
 | 2 | **Aztec C86 3.40a** | K&R | `cpm86-crossdev/bin/aztec34_cc` | DOS-hosted `.exe` under stock `dmsc/emu2` |
 | 3 | **Aztec C86 4.2** (4.10d) | ANSI | `cpm86-crossdev/bin/aztec42_cc` | DOS-hosted `.exe` under stock `dmsc/emu2` |
 | 4 | **DR C 1.11** | K&R/C89 | `scratch/rc759-cmd-toolchain/drc-oracle.sh` | genuine DRC.CMD, headless under forked `emu2-cpm86`; default = small, `-b` = large |
@@ -74,8 +74,9 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
   cancel fixed crt0/printf/libc overhead we use a **differential** method: build
   the same kernel at N=10 and N=20 iterations and report
   `(clocks(N20) − clocks(N10)) / 10` = clocks per kernel iteration. Requires each
-  compiler to emit a runnable CP/M-86 `.CMD` (Watcom via the hand-built port
-  seam; Aztec via `-lc86`; DR C via the emu2 oracle).
+  compiler to emit a runnable CP/M-86 `.CMD` (Watcom via the one-step
+  `owcc -bcpm86` driver, which compiles + links `format cpm86` in a single
+  command; Aztec via `-lc86`; DR C via the emu2 oracle).
 
 ---
 
@@ -306,10 +307,43 @@ Refinements to add: complete stdcbench (either the 11-module subset or the three
 per-file rewrites, tracked #5). (Aztec `sqz` is a compressor, not an optimizer, so
 there is no extra Aztec size-opt variant to add.)
 
+## Reproducing (Makefiles)
+
+The comparison is driven by **short per-compiler Makefiles**, one subdirectory per
+compiler, all consuming the *same* C source from `src/`. No compiler is ever linked
+against another's runtime — each stands alone (DR C and Aztec are standalone
+oracles; Watcom is one-step `owcc -bcpm86`).
+
+```
+make compare   # per-benchmark code-size table across all four compilers
+make dis       # emit every compiler's disassembly of every source
+make clean
+```
+
+Layout:
+
+| Subdir     | Compiler            | Size source                | Disassembly            |
+|------------|---------------------|----------------------------|------------------------|
+| `watcom/`  | one-step `owcc -bcpm86` | OMF CODE (`omfsize.py`) | `wdis -s` (source-interleaved, `-d1`) |
+| `drc/`     | DR C 1.11 (emu2)    | OMF CODE (`omfsize.py`)    | `wdis` (mnemonic)      |
+| `aztec42/` | Aztec C86 4.2       | max obd block-end          | `obd` (bytes + source lines + vars) |
+| `aztec34/` | Aztec C86 3.40a     | max obd block-end          | `obd` (bytes + source lines + vars) |
+
+Debug-enrichment: Watcom compiles with `-d1` so `-os` optimization is preserved
+*and* `wdis -s` interleaves the original source — one object serves both true-size
+measurement and rich disassembly. DR C's OMF disassembles mnemonically via the same
+`wdis`. Aztec's native `obd` dump is byte-level but the richest annotated (source
+line numbers, auto-var names/types, relocations).
+
 ## Files
 
-- `sieve.c` — the portable K&R/C89 Byte sieve (one source, all four compilers).
-- `dhry.c`  — portable K&R/C89 Dhrystone 2.1 (one source, all four compilers).
-- `omfsize.py` — Intel OMF CODE-segment byte counter (Watcom & DR C).
-- `measure.sh <bench.c>` — compiles the benchmark with all four and prints the
-  code-size table (Watcom OMF, DR C `code:`, Aztec max cumulative obd block-end).
+- `Makefile`, `common.mk` — top-level orchestrator + shared config.
+- `<compiler>/Makefile` — short per-compiler build (object, `.dis`, `sizes`).
+- `src/*.c` — one shared source per benchmark (+ `sieve_main.c`, `aes256_main.c`
+  drivers giving `main()` to the bare kernels so they can link to `.CMD`).
+- `tools/omfsize.py` — Intel OMF CODE-segment byte counter (`--code` mode).
+- `tools/azsize.py` — Aztec obd max-block-end sizer; `tools/table.py` — table aggregator.
+- `tools/drc-build.sh` / `drc-measure.sh` — DR C under emu2.
+- `measure.sh` — **RETIRED** legacy all-in-one harness, superseded by the Makefiles
+  above (kept for reference only).
+

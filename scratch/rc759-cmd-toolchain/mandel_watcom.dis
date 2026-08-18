@@ -1,0 +1,228 @@
+Module: /Users/ravn/z80/scratch/rc759-cmd-toolchain/mandel_watcom.c
+GROUP: 'DGROUP' CONST,CONST2,_DATA
+
+Segment: _TEXT PARA USE16 000001D5 bytes
+0000				main_:
+0000  53				push		bx
+0001  51				push		cx
+0002  52				push		dx
+0003  56				push		si
+0004  57				push		di
+0005  55				push		bp
+0006  89 E5				mov		bp,sp
+0008  83 EC 16				sub		sp,0x0016
+000B  C7 46 F2 00 00			mov		word ptr -0xe[bp],0x0000
+0010				L$1:
+0010  8B 46 F2				mov		ax,-0xe[bp]
+0013  BB 19 00				mov		bx,0x0019
+0016  99				cwd
+0017  F7 FB				idiv		bx
+0019  2D 40 01				sub		ax,0x0140
+001C  C7 46 F8 00 FE			mov		word ptr -0x8[bp],0xfe00
+0021  89 46 F4				mov		-0xc[bp],ax
+0024				L$2:
+0024  8B 46 F8				mov		ax,-0x8[bp]
+0027  89 46 FA				mov		-0x6[bp],ax
+002A  8B 46 F4				mov		ax,-0xc[bp]
+002D  89 46 EA				mov		-0x16[bp],ax
+0030  31 C0				xor		ax,ax
+0032  89 46 EC				mov		-0x14[bp],ax
+0035  89 46 EE				mov		-0x12[bp],ax
+0038				L$3:
+0038  99				cwd
+0039  89 46 FC				mov		-0x4[bp],ax
+003C  89 C3				mov		bx,ax
+003E  89 D1				mov		cx,dx
+0040  89 56 FE				mov		-0x2[bp],dx
+0043  E8 00 00				call		__I4M
+0046  89 C6				mov		si,ax
+0048  8B 46 EC				mov		ax,-0x14[bp]
+004B  89 D7				mov		di,dx
+004D  99				cwd
+004E  B9 08 00				mov		cx,0x0008
+0051				L$4:
+0051  D1 FF				sar		di,0x01
+0053  D1 DE				rcr		si,0x01
+0055  E2 FA				loop		L$4
+0057  89 46 F6				mov		-0xa[bp],ax
+005A  89 C3				mov		bx,ax
+005C  89 D1				mov		cx,dx
+005E  89 56 F0				mov		-0x10[bp],dx
+0061  E8 00 00				call		__I4M
+0064  B9 08 00				mov		cx,0x0008
+0067				L$5:
+0067  D1 FA				sar		dx,0x01
+0069  D1 D8				rcr		ax,0x01
+006B  E2 FA				loop		L$5
+006D  89 F3				mov		bx,si
+006F  01 C3				add		bx,ax
+0071  81 FB 00 04			cmp		bx,0x0400
+0075  7E 62				jle		L$19
+0077				L$6:
+0077  F6 06 15 00 04			test		byte ptr ___iob+0x15,0x04
+007C  74 57				je		L$17
+007E				L$7:
+007E  8B 46 EE				mov		ax,-0x12[bp]
+0081  BE 0E 00				mov		si,offset ___iob+0xe
+0084  3D 1E 00				cmp		ax,0x001e
+0087  7C 4E				jl		L$18
+0089  B8 23 00				mov		ax,0x0023
+008C				L$8:
+008C  89 F2				mov		dx,si
+008E				L$9:
+008E  E8 00 00				call		fputc_
+0091				L$10:
+0091  83 46 F8 08			add		word ptr -0x8[bp],0x0008
+0095  83 7E F8 70			cmp		word ptr -0x8[bp],0x0070
+0099  75 89				jne		L$2
+009B  F6 06 15 00 04			test		byte ptr ___iob+0x15,0x04
+00A0  74 6F				je		L$22
+00A2				L$11:
+00A2  BA 0E 00				mov		dx,offset ___iob+0xe
+00A5  B8 0D 00				mov		ax,0x000d
+00A8				L$12:
+00A8  E8 00 00				call		fputc_
+00AB				L$13:
+00AB  F6 06 15 00 04			test		byte ptr ___iob+0x15,0x04
+00B0  74 61				je		L$23
+00B2				L$14:
+00B2  BA 0E 00				mov		dx,offset ___iob+0xe
+00B5  B8 0A 00				mov		ax,0x000a
+00B8  E8 00 00				call		fputc_
+00BB				L$15:
+00BB  81 46 F2 80 02			add		word ptr -0xe[bp],0x0280
+00C0  81 7E F2 80 3E			cmp		word ptr -0xe[bp],0x3e80
+00C5  74 03				je		L$16
+00C7  E9 46 FF				jmp		L$1
+00CA				L$16:
+00CA  31 C0				xor		ax,ax
+00CC  89 EC				mov		sp,bp
+00CE  5D				pop		bp
+00CF  5F				pop		di
+00D0  5E				pop		si
+00D1  5A				pop		dx
+00D2  59				pop		cx
+00D3  5B				pop		bx
+00D4  C3				ret
+00D5				L$17:
+00D5  EB 3F				jmp		L$24
+00D7				L$18:
+00D7  EB 71				jmp		L$27
+00D9				L$19:
+00D9  8B 56 FE				mov		dx,-0x2[bp]
+00DC  8B 5E F6				mov		bx,-0xa[bp]
+00DF  8B 4E F0				mov		cx,-0x10[bp]
+00E2  29 C6				sub		si,ax
+00E4  8B 46 FC				mov		ax,-0x4[bp]
+00E7  E8 00 00				call		__I4M
+00EA  B9 08 00				mov		cx,0x0008
+00ED				L$20:
+00ED  D1 FA				sar		dx,0x01
+00EF  D1 D8				rcr		ax,0x01
+00F1  E2 FA				loop		L$20
+00F3  8B 56 EA				mov		dx,-0x16[bp]
+00F6  D1 E0				shl		ax,0x01
+00F8  FF 46 EE				inc		word ptr -0x12[bp]
+00FB  01 C2				add		dx,ax
+00FD  03 76 FA				add		si,-0x6[bp]
+0100  89 56 EC				mov		-0x14[bp],dx
+0103  89 F0				mov		ax,si
+0105  83 7E EE 1E			cmp		word ptr -0x12[bp],0x001e
+0109  7D 03				jge		L$21
+010B  E9 2A FF				jmp		L$3
+010E				L$21:
+010E  E9 66 FF				jmp		L$6
+0111				L$22:
+0111  EB 61				jmp		L$30
+0113				L$23:
+0113  E9 93 00				jmp		L$33
+0116				L$24:
+0116  A1 18 00				mov		ax,___iob+0x18
+0119  2B 06 10 00			sub		ax,___iob+0x10
+011D  3D 01 00				cmp		ax,0x0001
+0120  77 03				ja		L$25
+0122  E9 59 FF				jmp		L$7
+0125				L$25:
+0125  8B 46 EE				mov		ax,-0x12[bp]
+0128  3D 1E 00				cmp		ax,0x001e
+012B  7C 2E				jl		L$28
+012D  B8 23 00				mov		ax,0x0023
+0130				L$26:
+0130  8B 1E 0E 00			mov		bx,___iob+0xe
+0134  88 07				mov		[bx],al
+0136  3C 0A				cmp		al,0x0a
+0138  74 31				je		L$29
+013A  80 0E 15 00 10			or		byte ptr ___iob+0x15,0x10
+013F  FF 06 10 00			inc		word ptr ___iob+0x10
+0143  FF 06 0E 00			inc		word ptr ___iob+0xe
+0147  E9 47 FF				jmp		L$10
+014A				L$27:
+014A  BB 0A 00				mov		bx,0x000a
+014D  99				cwd
+014E  F7 FB				idiv		bx
+0150  89 D3				mov		bx,dx
+0152  8A 87 00 00			mov		al,DGROUP:L$36[bx]
+0156  30 E4				xor		ah,ah
+0158  E9 31 FF				jmp		L$8
+015B				L$28:
+015B  BB 0A 00				mov		bx,0x000a
+015E  99				cwd
+015F  F7 FB				idiv		bx
+0161  89 D3				mov		bx,dx
+0163  8A 87 00 00			mov		al,DGROUP:L$36[bx]
+0167  30 E4				xor		ah,ah
+0169  EB C5				jmp		L$26
+016B				L$29:
+016B  BA 0E 00				mov		dx,offset ___iob+0xe
+016E  B8 0A 00				mov		ax,0x000a
+0171  E9 1A FF				jmp		L$9
+0174				L$30:
+0174  A1 18 00				mov		ax,___iob+0x18
+0177  2B 06 10 00			sub		ax,___iob+0x10
+017B  3D 01 00				cmp		ax,0x0001
+017E  77 03				ja		L$31
+0180  E9 1F FF				jmp		L$11
+0183				L$31:
+0183  8B 1E 0E 00			mov		bx,___iob+0xe
+0187  C6 07 0D				mov		byte ptr [bx],0x0d
+018A  8A 07				mov		al,[bx]
+018C  3C 0A				cmp		al,0x0a
+018E  74 10				je		L$32
+0190  80 0E 15 00 10			or		byte ptr ___iob+0x15,0x10
+0195  FF 06 10 00			inc		word ptr ___iob+0x10
+0199  FF 06 0E 00			inc		word ptr ___iob+0xe
+019D  E9 0B FF				jmp		L$13
+01A0				L$32:
+01A0  BA 0E 00				mov		dx,offset ___iob+0xe
+01A3  B8 0A 00				mov		ax,0x000a
+01A6  E9 FF FE				jmp		L$12
+01A9				L$33:
+01A9  A1 18 00				mov		ax,___iob+0x18
+01AC  2B 06 10 00			sub		ax,___iob+0x10
+01B0  3D 01 00				cmp		ax,0x0001
+01B3  77 03				ja		L$35
+01B5				L$34:
+01B5  E9 FA FE				jmp		L$14
+01B8				L$35:
+01B8  8B 1E 0E 00			mov		bx,___iob+0xe
+01BC  C6 07 0A				mov		byte ptr [bx],0x0a
+01BF  8A 07				mov		al,[bx]
+01C1  3C 0A				cmp		al,0x0a
+01C3  74 F0				je		L$34
+01C5  80 0E 15 00 10			or		byte ptr ___iob+0x15,0x10
+01CA  FF 06 10 00			inc		word ptr ___iob+0x10
+01CE  FF 06 0E 00			inc		word ptr ___iob+0xe
+01D2  E9 E6 FE				jmp		L$15
+
+Routine Size: 469 bytes,    Routine Base: _TEXT + 0000
+
+No disassembly errors
+
+Segment: CONST WORD USE16 0000000B bytes
+0000				L$36:
+0000  20 2E 3A 2D 3D 2B 2A 25 40 23 00                 .:-=+*%@#.
+
+Segment: CONST2 WORD USE16 00000000 bytes
+
+Segment: _DATA WORD USE16 00000000 bytes
+

@@ -1,0 +1,15 @@
+# Build artifacts -- reproduced by `make` in each per-compiler subdir.
+*.o
+*.obj
+*.dis
+*.CMD
+*.cmd
+*.err
+*.map
+*.sym
+
+# Per-subdir source copies (Aztec/DR C compile in cwd); canonical lives in src/
+aztec34/*.c
+aztec42/*.c
+drc/*.c
+watcom/*.c
