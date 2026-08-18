@@ -132,6 +132,37 @@ is still capped at 64 KB (offset is 16-bit; no "huge pointer" normalization
 implied anywhere in the manual), even though the *total* heap can be ≈1 MB
 across many allocations, each living in its own far-addressable slice.
 
+## Far vs. huge pointers (why the distinction matters here)
+
+From Watcom's own memory-model docs (`open-watcom-v2/docs/doc/cmn/wmodels.gml`
+— generic 8086 terminology, industry-standard, not CP/M-86-specific but
+directly explains the mechanism at issue above):
+
+- **Far pointer** (the "big" data model): 4 bytes, 16-bit segment + 16-bit
+  offset. Can point anywhere in the 1 MB address space, but **a single object
+  must not cross a 64 KB segment boundary** — the compiler enforces this by
+  placing each object entirely within one segment. Critically,
+  **incrementing a far pointer only adjusts the offset**; Watcom's docs state
+  it plainly: *"the compiler assumes that the offset portion of a far pointer
+  will not be incremented beyond 64 KB"* — walk past that and the offset just
+  wraps (silently wrong), it does not carry into the segment. Consequence:
+  a 40,000-`int` array (80,000 bytes) does not fit under far/big — it's one
+  object exceeding 64 KB.
+- **Huge pointer**: same 4-byte segment:offset layout, but with
+  **normalized arithmetic** — incrementing/adding carries offset overflow
+  into the segment, so the pointer correctly walks past a 64 KB boundary.
+  This removes the big model's single-object-size cap. The cost: every
+  pointer increment/index calls a runtime normalization routine — Watcom's
+  docs: *"the code generated in the huge data model is not very efficient...
+  should be used only if needed."*
+
+Applied to CP/M-86 big model: the DR C manual describes ordinary far-pointer
+behavior for the heap (Extra segment) with no mention of huge-pointer
+normalization anywhere searched — consistent with "the *total* heap can
+exceed 64 KB (many separate far-addressed allocations), but a *single*
+allocation/object probably cannot" being the actual DR C behavior, pending
+the Phase 0 disassembly check above to confirm.
+
 Deferred-task complement: `[[reference_watcom_wlink_cpm86_format]]` (FORMAT
 CPM86 is phase-1 small-model-only today; 8080 model rejected). Implementation
 plan: `tasks/plan-cpm86-big-model-2026-08-18.md`.
