@@ -55,3 +55,29 @@ $OWROOT/bld/ndisasm/osxa64/wdis.exe -a f.o
 
 Tracking issue: ravn/rc7xx-work#11 (build friction, now resolved). Related build
 of the CP/M-86 wlink writer: `reference_watcom_wlink_cpm86_format.md`.
+
+## macOS release install (`rel/`) — for local cpm86 testing (verified 2026-08-18)
+
+`build.sh rel` (the `rel` stage; `build.sh` alone only COMPILES) stages a release
+install under `$OWROOT/rel/`. **On macOS the macOS host tools land in `rel/armo64/`**
+(Mach-O arm64: wcc, wcc386, wpp, wasm, wlink, wlib, wcl, owcc, wdis — cprel renames
+the `osxa64` build dir to `armo64` in the install). The cpm86 TARGET runtime is
+`rel/lib286/cpm86/{clibs.lib, cstartcpm.obj}`; headers in `rel/h`.
+
+**Watcom cross-builds ALL host OSes in one pass** (its bootstrapped `wlink` emits
+PE/LX/ELF/Mach-O), so a plain `rel` also fills `rel/binl` (ELF Linux), `rel/binnt`
+(PE Windows), `rel/binp` (LX OS/2), `rel/binw` (NE Win3.x), `rel/nlm`, `rel/rdos`.
+These are NORMAL byproducts, not stray/Docker artifacts — the same macbook build
+minute produces PE + LX + ELF + Mach-O. `rel/` is regenerable build output,
+gitignored (submodule `.gitignore`), per-machine. For a macbook-only test tree you
+can safely `rm -rf` the foreign host dirs (`binl binl64 binnt binnt64 binp binw
+binb64 bino64 armb64 arml64 armo nlm rdos`), leaving `armo64` + `h/lh/rh` +
+`lib286/lib386` (~236M → ~109M).
+
+**Activate + test (verified: compiles a valid CP/M-86 .CMD that runs on emu2):**
+```
+source scratch/cpm86-tools/ow-macos-env.sh    # sets WATCOM=rel, PATH+=rel/armo64, INCLUDE=rel/h
+owcc -bcpm86 -mcmodel=s -O2 -o HELLO.CMD hello.c
+scratch/cpm86-tools/emu2-cpm86/emu2 HELLO.CMD  # prints program output, rc=0
+```
+Valid cpm86 `.CMD` starts with a group-descriptor header `01 ..` (type-1 code group).
