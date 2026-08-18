@@ -67,11 +67,14 @@ the executable .CMD file. Section 7.5.2... defines... CGROUP... DGROUP."*
 That "Programmer's Utilities Guide" is **not** cached under that exact title,
 but the cached **FlexOS 286 Programmer's Utilities Guide**
 (`scratch/rc759-cmd-toolchain/docs/1073-2043-001_FlexOS_286_Programmers_
-Utilities_Guide_1986.txt`) documents the **same DRI LINK-86 tool**, shared
-verbatim across DRI operating systems — just under different section numbers
-in this later/reorganized edition (its LINK-86 chapter is "§7", command-file
-options are "§7.7" instead of "§7.5"). Content, not numbering, is what
-transfers. This resolves the earlier open "GAP" (2026-08-16 note) about
+Utilities_Guide_1986.txt`) documents the identical LINK-86 tool almost
+verbatim — because **FlexOS 286 is a later, renamed edition of CP/M-86
+itself** (Digital Research's own OS lineage, not just "another DRI product
+that happens to share the linker" — user, 2026-08-18), so its Utilities Guide
+is directly the successor edition of the very manual DR C's guide cites, just
+reorganized/renumbered (its LINK-86 chapter is "§7", command-file options are
+"§7.7" instead of "§7.5"). Content, not numbering, is what transfers. This
+resolves the earlier open "GAP" (2026-08-16 note) about
 whichever numbering — the mechanics below come straight from that chapter.
 
 ## How code > 64 KB across multiple segments fits in ONE .CMD header slot
