@@ -282,21 +282,96 @@ original single-stage plan (2026-08-18 draft), renumbered B1-B4:
       ordinary OMF far-call relocation fixups resolve the cross-segment
       calls — nothing CP/M-86-specific about the call mechanism itself.
 
-### Phase B2 — wlink: emit multi-segment CODE + STACK group descriptor
+### Phase B2 — wlink: emit multi-segment CODE + STACK group descriptor — **IN PROGRESS, blocked on a real design decision (2026-08-18, session paused here)**
 
-- [ ] Extend `cmdcpm86.c`/`loadcpm86.c` to gather ALL segments/wlink-groups
-      whose class is `CODE` (there will now genuinely be many distinct
-      ones — see Phase B3's finding: `-mm -zm` gives one per FUNCTION, not
-      merged by wlink's generic OMF layer since they have distinct names)
-      and concatenate them into ONE type-1 Code Group Descriptor, each
-      sub-segment paragraph-aligned within it — mirroring LINK-86's
-      `CODE[SEGMENT[...],CLASS[...],GROUP[...]]` mechanism
-      (`[[reference_cpm86_big_model]]`; G-Length up to ~1 MB, 16-bit
-      paragraph count). Needs auditing whether wlink's own internal
-      `Groups`/`OrderGroups`/`CalcGroupSize` machinery already assumes
-      "one group == one segment" (Phase 1's 2-segment small-model test
-      never exercised >1 segment per class, so this is genuinely
-      untested) or already generalizes.
+**Uncommitted change so far:** `bld/wl/c/cmdall.c` — added `_CPM86` to
+the `#if` guard + `MK_CPM86` to the mask for the existing generic
+`OPTION PACKCODE`/`PACKData` options (was `_OS2`/`_EXE`/`_DOS16M`/`_QNX`
+only). Rebuilt wlink clean. **NOT YET COMMITTED** — see finding below
+before committing; the option alone is necessary but not sufficient.
+
+**Empirical finding (real, load-bearing — read before continuing):**
+Compiled a 2-function `-mm -zm` test (`main_` calls `callee_`, each its
+own segment per Phase B3's finding), linked `format cpm86` with the
+now-enabled `OPTION PACKCODE=<limit>`:
+
+- **`PACKCODE` large (0xF0000, i.e. "don't split")**: wlink's existing
+  `AutoGroup` pass (`bld/wl/c/autogrp.c`) packs BOTH function-segments
+  into ONE auto-group, contiguous (`callee_TEXT` at 0001:0000,
+  `main_TEXT` right after at 0001:0002 per `op map` output) — and
+  `loadcpm86.c`, COMPLETELY UNCHANGED, already emits exactly one correct
+  G-Type=1 descriptor for it. The `far ptr callee_` call got
+  link-time-optimized down to a near `jmp` (both ended up in the same
+  real segment) — worked perfectly, zero new code needed for this case.
+- **`PACKCODE` deliberately tiny (8 bytes, to force a split cheaply
+  without writing 64 KB of real code)**: `AutoGroup` now makes TWO
+  separate real segments (`callee_TEXT` at internal address `0001:0000`,
+  `main_TEXT` at `0002:0000` — different "segment" slots in wlink's own
+  map). Two real problems surfaced:
+  1. `loadcpm86.c`'s per-`Groups`-entry loop (unchanged since Phase 1)
+     emitted **TWO separate G-Type=1 (CODE) descriptors** — almost
+     certainly invalid per the CP/M-86 header format (Table 3-1 implies
+     at most one descriptor per type; DR C/LINK-86's own big model
+     always produces exactly one Code descriptor even when internally
+     spanning many segments, `[[reference_cpm86_big_model]]`).
+  2. Worse: the `jmp far ptr callee_` in `main_TEXT`'s machine code was
+     encoded as `EA 00 00 00 00` — **segment operand = 0x0000**, not the
+     correct `0x0001`. Confirmed NOT an artifact of the synthetic test's
+     `op undefsok`/missing-crt0 warnings (re-verified: `_cstart_` is an
+     unreferenced stray `EXTRN`, unrelated to this fixup; a clean link
+     produces the identical wrong value with zero warnings about it).
+
+**Root cause (why this happens, not yet a bug in the usual sense):**
+CP/M-86's `.CMD` format is fully relocatable per-descriptor (`A-Base=0`
+in every Phase-1-emitted header, per `[[reference_cpm86_cmd_header]]`) —
+the LOADER, not the linker, picks each descriptor's real load address,
+and per-descriptor independently (no guarantee of contiguity between
+descriptors). wlink's GENERIC address-resolution engine (shared by every
+format) evidently assumes something more DOS-like — one uniform,
+link-time-computable relocation base for the whole image — and silently
+bakes in a placeholder/zero segment value for a cross-group far pointer
+with no warning at all. This never mattered for Phase 1 (small model
+never has more than one CODE group) or for Stage A's Extra group (no
+code lives there, so no far CALL/JMP ever targets it). It only bites
+once code is deliberately split across genuinely different real
+segments — exactly Stage B's whole point.
+
+**Open decision, NOT yet made (this is what to pick up next):**
+1. **Real fixup records** — CP/M-86's header byte `0x7F` bit 7 ("fixup
+   records present") is reserved for exactly this: a trailing relocation
+   table the LOADER walks and patches at load time. Phase 1 never
+   implemented it (wasn't needed). Most "correct"/general, most work —
+   would need to (a) get wlink's fixup engine to actually EMIT a
+   relocation entry for this case instead of silently zeroing it (may
+   need to tell wlink our format doesn't offer a link-time-resolvable
+   base for groups after the first), and (b) write the CP/M-86 fixup
+   table format into `loadcpm86.c`.
+2. **Fixed (non-relocatable) load address for the CODE descriptor**
+   (`A-Base != 0`) — if wlink assigns/knows the real base at LINK time
+   instead of leaving it to the loader, ordinary link-time address
+   computation just works, no fixups needed. Simpler, but: is a fixed
+   load address even valid/safe for a *transient* program under a
+   4-console Concurrent CP/M-86 system (where TPA placement varies by
+   what's free)? Needs research before assuming yes.
+3. **Investigate DR C's own LINK-86 first** — Phase B1 only confirmed
+   the COMPILER emits `far ptr` call syntax (14 KB test, safely inside
+   one real segment) — never actually tested LINK-86's behavior on
+   REAL >64 KB code forcing genuinely different segments. DR C's own
+   solution (if any) to this exact problem is unverified; worth checking
+   before designing our own, especially since option 1 above would be
+   reproducing whatever DR C's toolchain already had to solve.
+
+The user was mid-way through picking one of these three when the session
+paused — resume by asking again / presenting this same three-way choice.
+
+- [ ] (Blocked on the above) Extend `cmdcpm86.c`/`loadcpm86.c` to gather
+      ALL segments/wlink-groups whose class is `CODE` and concatenate
+      them into ONE type-1 Code Group Descriptor, each sub-segment
+      paragraph-aligned within it — mirroring LINK-86's
+      `CODE[SEGMENT[...],CLASS[...],GROUP[...]]` mechanism. This part
+      (multiple wlink-groups -> one descriptor) is independent of the
+      fixup question and can proceed regardless of which of the 3
+      options above gets picked — it's needed either way.
 - [ ] Add G-Type 4 (Stack) descriptor too — DR C's own big model still caps
       the stack at 64 KB (confirmed from the manual — big model doesn't
       relax the stack), but per Watcom's own precedent this is worth giving
@@ -348,15 +423,10 @@ original single-stage plan (2026-08-18 draft), renumbered B1-B4:
       link should just work unchanged (one Code Group Descriptor,
       trivially the degenerate n=1 case).
 
-**Naming note:** the plan's PARKED "what does Watcom call this" question
-(large `-ml` was an early guess) can likely now be answered directly —
-Stage B's actual technical shape (far code across segments, near/small
-DATA still ≤64 KB) is *exactly* Watcom's own definition of **medium
-model** (`-mm`: far code, near data — see `wmodels.gml`'s table, already
-cited in `[[reference_cpm86_big_model]]`), not large. Still flagging this
-as a proposal rather than closing it outright, since the user asked to
-settle naming only once linker behavior was understood — it now is, but
-this is the first time it's being surfaced back for confirmation.
+**Naming — DECIDED 2026-08-18 (user confirmed):** Stage B = Watcom's own
+**medium model** (`-mm`: far code, near data). The previously PARKED
+question is closed; "Stage B" in this plan is now interchangeable with
+"medium model" in prose/commits going forward.
 
 ### Phase B4 — crt0 + verification
 
