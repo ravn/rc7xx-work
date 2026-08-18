@@ -1,9 +1,17 @@
 /* mandel_watcom.c -- clean, portable fixed-point 8.8 Mandelbrot for the
  * Open Watcom CP/M-86 target (owcc -bcpm86).  NO DR C heritage: no drcbridge.h,
  * no DRC_MAIN, no hand-written `#pragma aux fpmul`, no BDOS int E0h inline asm.
- * Everything is standard C -- Watcom's own code generator lowers the fixed-point
- * multiply to a 16x16->32 IMUL, and console output goes through the cpm86 clib's
+ * Everything is standard C, and console output goes through the cpm86 clib's
  * putchar() (which reaches BDOS via the target runtime).
+ *
+ * CODEGEN NOTE (verified 2026-08-18 via wdis on the -0 -ms object): Watcom does
+ * NOT lower the portable `(int)((long)a*b >> 8)` to a single 16x16->32 IMUL. It
+ * emits `call __I4M` (the 32-bit signed-multiply helper) followed by an 8-step
+ * `sar/rcr/loop` for the >>8 -- three such calls per inner iteration here. To get
+ * the single `imul cx` + byte-extract you must hand-write it with `#pragma aux`
+ * (see the DR C oracle's fpmul). This portable version is kept as-is on purpose:
+ * it demonstrates the clean, DR-C-free build; the IMUL micro-opt is a separate,
+ * deliberate Watcom idiom, not something the compiler derives from portable C.
  *
  * Build + run:
  *   source scratch/cpm86-tools/ow-macos-env.sh

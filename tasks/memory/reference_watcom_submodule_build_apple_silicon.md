@@ -81,3 +81,18 @@ owcc -bcpm86 -mcmodel=s -O2 -o HELLO.CMD hello.c
 scratch/cpm86-tools/emu2-cpm86/emu2 HELLO.CMD  # prints program output, rc=0
 ```
 Valid cpm86 `.CMD` starts with a group-descriptor header `01 ..` (type-1 code group).
+
+## Watcom cpm86 codegen facts (verified 2026-08-18 via wdis)
+
+- **No single-IMUL from portable C.** `wcc -0 -ms` does NOT lower a portable
+  fixed-point multiply `(int)((long)a*b >> 8)` to a 16x16->32 `imul`. It emits
+  `call __I4M` (the 32-bit signed-multiply helper) + an 8-step `sar/rcr/loop` for
+  the `>>8`. To get the tight `imul cx` / `mov al,ah` / `mov ah,dl` you must
+  hand-write it with `#pragma aux fpmul` (as the DR C oracle does). Evidence:
+  `scratch/rc759-cmd-toolchain/mandel_watcom.c` (portable -> __I4M) vs the
+  `#pragma aux` variant (-> single `imul cx`). The pragma-aux idiom is a real,
+  necessary micro-opt, not something the compiler derives.
+- **No `-S` / asm listing.** `wcc` has no assembly-output or listing flag. To
+  inspect optimized assembly, run `wdis <obj.o>` — it disassembles the compiled,
+  post-optimization object (`$WATCOM/armo64/wdis` on macOS). That IS the canonical
+  "show me the optimized codegen" route on this toolchain.
