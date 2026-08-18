@@ -13,18 +13,26 @@ across multiple segments, AND a far-addressed heap outside DGROUP). They
 don't have to ship together. Split into two stages, build the cheaper one
 first:
 
-- **Stage A — small model + far heap.** Code stays ≤64 KB (CGROUP), data
-  stays ≤64 KB (DGROUP), but the **heap moves out of DGROUP into its own
-  Extra (ES) segment**. This is NOT one of DR C's or Watcom's named models —
-  in classic 16-bit C terminology (Turbo C/Microsoft C `farmalloc`/`_fmalloc`
-  era) this exact combination is just called **"far heap"**, an add-on
-  capability layered on top of small model, not a distinct point in the
-  Tiny/Small/Medium/Compact/Large/Huge taxonomy (`[[reference_cpm86_big_model]]`'s
-  Watcom `wmodels.gml` table has no stack/heap axis at all — confirmed
-  2026-08-18). Turns out **Watcom's clib already ships this exact feature**
-  for its DOS targets (`_fmalloc`/`_ffree`/`_frealloc`/`_fcalloc`/`_fmsize` —
-  see Phase A2 below) — this stage is mostly *retargeting an existing seam*,
-  not writing a new allocator.
+- **Stage A — CP/M-86 gets Watcom's existing COMPACT model (`-mc`).** Decided
+  2026-08-18 (see full reasoning in `[[reference_cpm86_big_model]]`'s
+  "Compact model = Stage A's real name" section): don't invent anything new.
+  Watcom already has a named model for exactly this shape — **compact: small
+  code (≤64 KB, CGROUP unchanged) + big data (`DataPtrSize = far`)** — and,
+  crucially, **Watcom's own clib source already redirects `malloc()` itself
+  to `_fmalloc()` when building the compact-model library variant**
+  (`bld/clib/heap/c/fmalloc.c`, gated on `__BIG_DATA__`, which `-mc` sets via
+  `CGSW_X86_BIG_DATA` — verified 2026-08-18 by inspecting `cmdlnx86.c`'s
+  model-switch table). So plain user code calling ordinary `malloc()`/`free()`
+  transparently gets far-heap-backed memory under `-mc` — **the redirect
+  mechanism lives entirely inside Watcom, zero user-code involvement**
+  (explicit user requirement, 2026-08-18). Documented split going forward:
+  **small = 64 KB code + 64 KB data(+heap+stack, all in DGROUP, as today)**;
+  **compact = 64 KB code + 64 KB data, PLUS a separate far heap** (all
+  pointers become 4-byte far under compact — accepted tradeoff, user
+  2026-08-18: "det er fint compact har 4-byte pointere"). This is genuinely
+  the DOS-precedented meaning of "compact" model (small code, big data) — no
+  redefinition of Watcom's own terminology, just the first port of it to
+  `FORMAT CPM86`.
 - **Stage B — code > 64 KB across multiple segments.** The harder half of
   big model: don't group code into CGROUP, emit many far-addressed segments
   concatenated into one Code Group Descriptor. Deferred until Stage A ships
@@ -38,25 +46,28 @@ changes and should ship as independent, separately-testable increments.
 
 ---
 
-## Stage A — small model + far heap
+## Stage A — CP/M-86 compact model (`-mc`)
 
-### Phase A1 — wlink: emit the EXTRA group descriptor
+### Phase A1 — wlink: accept `-mc` for `FORMAT CPM86` + emit the EXTRA group descriptor
 
 Current state (`bld/wl/c/cmdcpm86.c`/`loadcpm86.c`, ~226 lines total):
 small-model-only, emits exactly 2 descriptors (CODE=1, DATA=2), `A-Base=0`,
-no fixup table.
+no fixup table. Today an `-mc` compile would presumably either be silently
+mishandled or rejected outright (needs checking — audit current behavior
+first, don't assume).
 
-- [ ] Add G-Type 3 (Extra) descriptor emission, gated on a new linker option
-      (working name: `OPTION FARHEAP=<size>` or reuse an existing generic
-      wlink heap-size option if one already targets this format) written
-      into G-Min/G-Max of the Extra descriptor, per
-      `[[reference_cpm86_cmd_header]]`'s byte layout. CODE and DATA
-      descriptors are unchanged (still exactly what phase-1 small model
-      already emits).
-- [ ] This does NOT touch Watcom's compiler-side model selection at all —
-      code/data codegen stays exactly small-model `-ms`. Only the linker
-      (extra descriptor) and the C runtime (below) change. Much smaller
-      surface than Stage B.
+- [ ] Recognize `-mc` (compact) as a second valid model for `format cpm86`,
+      alongside small (default). CODE/DATA descriptors are emitted exactly
+      as today (no change — compact model's code is still a single ≤64 KB
+      CGROUP, same as small).
+- [ ] Add G-Type 3 (Extra) descriptor emission when compiling for `-mc`,
+      sized via a new linker option (working name: `OPTION FARHEAP=<size>`)
+      written into G-Min/G-Max of the Extra descriptor, per
+      `[[reference_cpm86_cmd_header]]`'s byte layout.
+- [ ] Keep the existing "reject unvalidated models" policy
+      (`Proc8080()` precedent): any OTHER `-m` flag (medium/large/huge) stays
+      rejected until Stage B is implemented — don't silently accept a model
+      this phase doesn't actually support correctly.
 
 ### Phase A2 — retarget `__AllocSeg`/`__GrowSeg`: the whole seam already exists
 

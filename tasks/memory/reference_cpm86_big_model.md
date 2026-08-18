@@ -163,6 +163,53 @@ exceed 64 KB (many separate far-addressed allocations), but a *single*
 allocation/object probably cannot" being the actual DR C behavior, pending
 the Phase 0 disassembly check above to confirm.
 
+## Compact model = Stage A's real name (decided 2026-08-18)
+
+Working session with the user landed on NOT inventing a new mechanism at all
+— Watcom already has a named model for "code stays 64 KB, data stays 64 KB,
+but the heap gets its own far-addressed segment": **compact** (`-mc`, small
+code + big data). Source-verified this session:
+
+- `bld/cc/c/cmdlnx86.c`'s model-switch table: `case OPT_ENUM_mem_model_mc:
+  ... DataPtrSize = TARGET_FAR_POINTER; bit |= CGSW_X86_BIG_DATA |
+  CGSW_X86_CHEAP_POINTER;` — confirmed empirically too (`wcc -mc` predefines
+  `__COMPACT__`/`M_I86CM`).
+- `bld/clib/heap/c/fmalloc.c`: `#if defined(__BIG_DATA__) void
+  *malloc(size_t amount) { return _fmalloc(amount); } #endif` — Watcom
+  builds a SEPARATE clib variant per model (already observed:
+  `library/msdos.086/mc/clibc.lib` in `bld/clib/builder.ctl`'s DOS section);
+  the compact-model variant of that library has plain `malloc()` already
+  redirected to the far-heap allocator, INSIDE Watcom's own build — no user
+  C code needs to call `_fmalloc()` explicitly, nor know it exists. This was
+  an explicit requirement (user, 2026-08-18: "jeg vil gerne have at denne
+  mekanisme sker i watcom selv, ikke brugerkode").
+
+**Tradeoff, accepted (user, 2026-08-18: "det er fint compact har 4-byte
+pointere"):** compact model makes ALL pointers 4-byte far by default
+(`DataPtrSize = TARGET_FAR_POINTER` applies program-wide, not just to
+malloc's return type) — every ordinary pointer dereference, not just heap
+access, pays the far-pointer cost (extra segment load, no implicit
+DS-relative addressing). This is coarser than a hand-built "only heap
+pointers are far" scheme would be, but it's free (zero new compiler work)
+and it's what "compact model" has always meant on every other 8086 Watcom
+target — reusing existing, well-tested machinery beats inventing a
+CP/M-86-specific pointer-width scheme.
+
+**Documented split going forward:**
+- **small** (today, unchanged) = 64 KB code + 64 KB data, with heap AND
+  stack both sharing that same 64 KB DGROUP (as documented above, §2.4.1).
+- **compact** (Stage A target) = 64 KB code + 64 KB data, PLUS a separate
+  far-addressed heap (Extra/ES segment, `.CMD` G-Type=3) outside DGROUP.
+  Stack still shares DGROUP with regular data, same as small — compact only
+  moves the heap out, nothing else. All pointers become far under this
+  model (see far-vs-huge explanation above for what that costs).
+- **big model** (DR C's own two-model vocabulary, Stage B target) remains
+  the *harder* one: multiple far CODE segments too, not just a far heap —
+  this is closer to what Watcom would call **large** (`-ml`: big code + big
+  data) than compact, since it needs far calls as well as far data. Confirm
+  this mapping empirically when Stage B starts (Phase B3 in the plan) rather
+  than assuming.
+
 Deferred-task complement: `[[reference_watcom_wlink_cpm86_format]]` (FORMAT
 CPM86 is phase-1 small-model-only today; 8080 model rejected). Implementation
 plan: `tasks/plan-cpm86-big-model-2026-08-18.md`.
