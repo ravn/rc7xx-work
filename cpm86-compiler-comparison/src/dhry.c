@@ -13,6 +13,17 @@
  * timing driver is not part of the compared kernel.
  */
 
+/* MAME runtime timing only: guarded so `make compare` (which compiles this
+ * kernel for its code-size metric, with MAME_BRACKET unset) is byte-identical.
+ * When set, main() loops the measurement body REPS times inside OUT 0x2FE
+ * markers -- see src/mame_bracket.h. */
+#ifdef MAME_BRACKET
+#include "mame_bracket.h"
+#ifndef REPS
+#define REPS 1
+#endif
+#endif
+
 #define Ident_1 0
 #define Ident_2 1
 #define Ident_3 2
@@ -253,6 +264,16 @@ main()
     Int_1 = 2; Int_2 = 3;
     sc_strcpy(Str_2_Loc, "DHRYSTONE PROGRAM, 2'ND STRING");
     Bool_Glob = !Func_2(Str_1_Loc, Str_2_Loc);
+#ifdef MAME_BRACKET
+    /* Loop the measurement body REPS times, bracketed for MAME timing. The
+     * one-time setup above (Ptr_Glob, Str_1_Loc) stays outside; a REPS=10 vs 20
+     * differential cancels it and the two markers, leaving one Dhrystone run.
+     * Guarded so the code-size kernel (no MAME_BRACKET) is a single pass. */
+    {
+        int Run_Index;
+        MAME_START();
+        for (Run_Index = 0; Run_Index < REPS; Run_Index++) {
+#endif
     while (Int_1 < Int_2) {
         Int_3 = 5 * Int_1 - Int_2;
         Proc_7(Int_1, Int_2, &Int_3);
@@ -263,5 +284,11 @@ main()
     Proc_6(Ident_1, &Enum_Loc);
     Proc_4();
     Proc_5();
+#ifdef MAME_BRACKET
+            Int_1 = 2;   /* reset the loop-carried inputs for the next run */
+        }
+        MAME_END();
+    }
+#endif
     return 0;
 }

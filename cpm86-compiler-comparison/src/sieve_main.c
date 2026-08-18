@@ -6,6 +6,7 @@
  * Kept in the K&R/C89 common subset so it builds under all four compilers.
  */
 #include <stdio.h>
+#include "mame_bracket.h"
 
 extern int sieve();
 
@@ -16,7 +17,9 @@ extern int sieve();
 int main()
 {
     int r, last;
+    MAME_START();
     for (r = 0; r < REPS; r++) last = sieve();
+    MAME_END();
     printf("sieve primes=%d\n", last);
     return 0;
 }

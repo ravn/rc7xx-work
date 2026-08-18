@@ -21,6 +21,11 @@ DRC_ORACLE="$ROOT/scratch/rc759-cmd-toolchain/drc-oracle.sh"
 EMU2="$ROOT/emu2-cpm86/emu2"; export EMU2
 K="$SRC/$BENCH.c"; D="$SRC/${BENCH}_main.c"
 WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
+# The drivers #include "mame_bracket.h" (no-op macros unless MAME_BRACKET is set).
+# The Watcom leg finds it beside the driver in src/; the Aztec leg compiles in
+# $WORK and the DR C leg builds a concatenated source in $WORK, so both need a
+# copy here (drc-oracle then copies it as a sibling header into its own workdir).
+cp "$SRC/mame_bracket.h" "$WORK/" 2>/dev/null || true
 
 # clocks(cmd) -> estimated 80186 clocks from the executor's summary line.
 # `|| true` so a run that emits no clocks line does not trip `set -e` (the empty

@@ -30,6 +30,9 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 EMU2="${EMU2:-$HERE/../../emu2-cpm86/emu2}"
 BWASM="${BWASM:-$HERE/../../open-watcom-v2/build/binbuild/bwasm}"
 PUTFAR_ASM="${PUTFAR_ASM:-$HERE/../../open-watcom-v2/contrib/ravn/owc-drc/putchar-far.asm}"
+# MAME bracket markers (mame_start/mame_end -> OUT 0x2FE) as a FAR stub, linked
+# only when DRC_MAMEMARK=1. Additive, exactly like DRC_PUTCHAR above.
+MAMEMARK_ASM="${MAMEMARK_ASM:-$HERE/../../cpm86-compiler-comparison/tools/mame-mark-far.asm}"
 # Toolchain source. Default = the OFFICIAL Regnecentralen RC759 DR C v1.11 disk
 # (datamuseum.dk bits 30005869), extracted to rc759-drc-official/ -- the pristine
 # oracle. The hobby drc86111/ port (identical codegen passes, ~9 patched serial
@@ -45,6 +48,10 @@ OUT="${2:-$BASE.CMD}"
 if [ -n "$DRC_PUTCHAR" ]; then
     [ -x "$BWASM" ] || { echo "bwasm not built at $BWASM (build Open Watcom)"; exit 1; }
     [ -f "$PUTFAR_ASM" ] || { echo "putchar-far.asm not found at $PUTFAR_ASM"; exit 1; }
+fi
+if [ -n "$DRC_MAMEMARK" ]; then
+    [ -x "$BWASM" ] || { echo "bwasm not built at $BWASM (build Open Watcom)"; exit 1; }
+    [ -f "$MAMEMARK_ASM" ] || { echo "mame-mark-far.asm not found at $MAMEMARK_ASM"; exit 1; }
 fi
 
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
@@ -83,6 +90,12 @@ if [ -n "$DRC_PUTCHAR" ]; then
     "$BWASM" -0 -ml -nm=PF "$PUTFAR_ASM" -fo="$WORK/PUTFAR.OBJ" >/dev/null
     [ -f "$WORK/PUTFAR.OBJ" ] || { echo "bwasm putchar-far failed"; exit 1; }
     LINKLIST="OUT,PUTFAR,CLEARL.L86[S]"
+fi
+if [ -n "$DRC_MAMEMARK" ]; then
+    "$BWASM" -0 -ml -nm=MM "$MAMEMARK_ASM" -fo="$WORK/MAMEMARK.OBJ" >/dev/null
+    [ -f "$WORK/MAMEMARK.OBJ" ] || { echo "bwasm mame-mark-far failed"; exit 1; }
+    # Insert MAMEMARK after OUT (and after PUTFAR if present) but before the libc.
+    LINKLIST="$(printf '%s' "$LINKLIST" | sed 's/,CLEARL.L86\[S\]/,MAMEMARK,CLEARL.L86[S]/')"
 fi
 ( cd "$WORK" && EMU2_DRIVE_A=. EMU2_DEFAULT_DRIVE=A "$EMU2" LINK86.CMD "$LINKLIST" )
 [ -f "$WORK/OUT.CMD" ] || { echo "DR C link failed"; exit 1; }

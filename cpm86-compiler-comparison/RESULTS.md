@@ -20,21 +20,36 @@ blocked (#5)** and omitted. Lower is better in both tables.
 | Whetstone (sw-float) | 2401 | **2217** | 2254 | 2425 | 2271 | 3318 |
 | AES-256 | 1754 | **1675** | 3092 | 3254 | 3817 | 4523 |
 
-**Speed** (80186 clocks per unit, Unicorn oracle + differential method; best
-variant per compiler):
+**Speed** (80186 clocks per unit, **measured on the genuine MAME rc759 driver**
+via `emu.time()` around `OUT 0x2FE` bracket markers + differential method; best
+variant per compiler). MAME's cycle-accurate i80186 core (validated end-to-end
+against Timer 2, ratio 1.00006) is the oracle. Covers the three differential
+kernels (sieve, dhry, aes256); reproduce with `make speed`:
 
 | Benchmark | Watcom | Aztec 3.40 | Aztec 4.2 | DR C |
 |-----------|-------:|-----------:|----------:|-----:|
-| Sieve (clk/iter) | **1,023,461** | 2,118,049 | 2,197,314 | 3,688,187 |
-| Dhrystone (clk/run) | **5,639** | 10,964 | 10,964 | 47,819 |
-| AES-256 (clk/encrypt) | **3,453,717** | 9,848,615 | 10,173,935 | 11,286,622 |
-| Whetstone (clk/pass) | **19,864,674** | 62,528,360 | 60,358,162 | 39,468,291 |
+| Sieve (clk/iter) | **2,350,531** | 4,417,850 | 4,537,753 | 7,829,932 |
+| Dhrystone (clk/run) | **8,696** | 12,108 | 12,172 | 46,045 |
+| AES-256 (clk/encrypt) | **7,472,346** | 20,008,210 | 21,198,227 | 22,962,717 |
 
-**Takeaways:** Open Watcom wins every size and speed cell. Below Watcom the
-integer/FP rankings **invert**: on integer work (Sieve, Dhrystone, AES) Aztec
-beats DR C, but on floating point (Whetstone) DR C beats both Aztec — its
-soft-float/transcendental library is tighter. Aztec 4.2 edges 3.40 on FP;
-3.40 edges 4.2 on integer.
+**Whetstone** needs floating point. RC759 has no 8087, so it is built with
+software FP (`owcc -fpc`): every `double` op is a `__FDx` call dispatched on
+`__real87==0` to the pure-software path. Only the Watcom soft-float port
+(`watcom-cpm86-libc/build-whetstone.sh`) is wired for this; it has a fixed
+internal LOOP (no REPS knob), so the number is clocks for ONE full standard run.
+Reproduce with `make speed-whet`:
+
+| Benchmark | Watcom (sw-float `-fpc`) |
+|-----------|-------------------------:|
+| Whetstone (clk/full run) | **431,021,022** (≈ 71.8 emulated s @ 6 MHz) |
+
+**Takeaways:** Open Watcom wins every size and speed cell, and by a wide margin
+on speed — ~1.9x faster than the next compiler on sieve, ~1.4x on Dhrystone,
+~2.7x on AES. Below Watcom the integer ranking is Aztec 3.40 < Aztec 4.2 < DR C
+(DR C's default large model far-calls everything, so it is slowest). The earlier
+Unicorn `--ticks` estimate (deprecated, `make speed-unicorn`) put every compiler
+~2-3x lower than MAME across the board — a systematic undercount of the
+hand-written `cycles186.py` model, which is exactly why MAME is now the oracle.
 
 ## Compilers under test
 
@@ -67,16 +82,28 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
   benchmarks. Verified FP models: Watcom default = inline 8087 (`fld/fmul`);
   Aztec 3.40/4.2 = software calls (`$dldp/$dml/$dst`); DR C = software (per
   `reference_drc_float_8087_abi`).
-- **Speed**: cycle count from the **Unicorn/QEMU 8086 executor**
-  (`cpm86run_unicorn.py --ticks`), which runs the real 8086 instruction stream
-  and costs it with the `cycles186.py` 80186 model. It is an 80186 cost model
-  (RC759 is an 8086), so treat the numbers as **relative**, not wall-clock. To
-  cancel fixed crt0/printf/libc overhead we use a **differential** method: build
-  the same kernel at N=10 and N=20 iterations and report
-  `(clocks(N20) − clocks(N10)) / 10` = clocks per kernel iteration. Requires each
-  compiler to emit a runnable CP/M-86 `.CMD` (Watcom via the one-step
-  `owcc -bcpm86` driver, which compiles + links `format cpm86` in a single
-  command; Aztec via `-lc86`; DR C via the emu2 oracle).
+- **Speed**: 80186 clocks measured on the **genuine MAME rc759 driver** (the
+  `make speed` target, `tools/speed_mame.sh`). The benchmark's REPS loop is
+  bracketed by two `OUT 0x2FE` bus cycles (src/mame_bracket.h) — an undecoded
+  port, so side-effect-free — and the compiled `.CMD` is booted as the disk's
+  autostart program; a MAME io-space write-tap (tools/mame_time.lua) reads MAME's
+  emulated clock (`emu.time()`) at each edge. MAME's i80186 core is cycle-accurate
+  by its datasheet-derived `m_i80186_timing[]` table (validated against Timer 2,
+  ravn/mame#27, ratio 1.00006), so elapsed emulated seconds x 6 MHz IS the real
+  rc759 clock cost. Boot + crt0/printf sit OUTSIDE the bracket, and a
+  **differential** (N=10 vs N=20, `/10`) cancels loop-setup + the two markers,
+  leaving one kernel iteration. Each compiler emits the marker its own way:
+  Watcom `#pragma aux`; Aztec `#asm`; DR C a linked FAR stub
+  (tools/mame-mark-far.asm, DR C 1.11 has no inline asm). sieve + aes256 carry a
+  separate bracketable driver; dhry ships its own main() and speed_mame.sh builds
+  it single-source (still the N=10/20 differential). **Whetstone** is measured
+  apart (`make speed-whet`): it needs floating point, RC759 has no 8087, so only
+  the Watcom soft-float (`-fpc`) port links it — its fixed internal LOOP has no
+  REPS knob, so it reports clocks for one full run (whole-run `OUT 0x2FE` markers
+  via test/mamedone.h in watcom-cpm86-libc/build-whetstone.sh).
+  - The former **Unicorn/QEMU `--ticks`** estimate (`cpm86run_unicorn.py`, cost
+    model `cycles186.py`) is **deprecated** — too slow and ~2-3x low vs MAME.
+    Kept only for cross-checking as `make speed-unicorn`.
 
 ---
 

@@ -7,19 +7,34 @@
 #
 # Targets:  make compare  -> per-benchmark code-size table across all compilers
 #           make speed    -> per-benchmark runtime table (80186 clocks/iteration,
-#                            differential; sieve + aes256 kernels)
+#                            differential; sieve + aes256 kernels) measured on the
+#                            genuine MAME rc759 driver (emu.time() around OUT 0x2FE
+#                            bracket markers) -- the PRECISE 80186 clock cost.
+#           make speed-unicorn -> DEPRECATED estimate via the Unicorn cycle model
+#                            (cycles186.py). Too slow and only an estimate; kept
+#                            only for cross-checking. Prefer `make speed` (MAME).
 #           make dis      -> generate every compiler's disassembly of every source
 #           make clean
 include common.mk
 SUBDIRS := watcom drc aztec42 aztec34
 
-.PHONY: all compare speed dis clean
+.PHONY: all compare speed speed-whet speed-unicorn dis clean
 all: compare
 compare:
 	@{ for d in $(SUBDIRS); do $(MAKE) -s -C $$d sizes; done; } | python3 tools/table.py
 speed:
+	@{ for b in $(SPEEDBENCHES); do \
+	     for c in $(SUBDIRS); do sh $(TOOLS)/speed_mame.sh $$c $$b; done; \
+	   done; } | \
+	  python3 tools/table.py "80186 clocks/iteration on MAME rc759 (differential, lower is faster)" "clk/iter (MAME)"
+# Whetstone stands apart: it needs floating point, and the RC759 has no 8087, so
+# only the Watcom soft-float (-fpc) port links it (see speed_mame.sh). It has a
+# fixed internal LOOP (no REPS knob), so the number is clocks for ONE full run.
+speed-whet:
+	@sh $(TOOLS)/speed_mame.sh watcom whet
+speed-unicorn:
 	@{ for d in $(SUBDIRS); do $(MAKE) -s -C $$d speed; done; } | \
-	  python3 tools/table.py "80186 clocks/iteration (differential, lower is faster)" "clk/iter"
+	  python3 tools/table.py "80186 clocks/iteration (Unicorn ESTIMATE, deprecated)" "clk/iter"
 dis:
 	@for d in $(SUBDIRS); do $(MAKE) -s -C $$d all; done
 clean:

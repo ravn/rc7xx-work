@@ -7,6 +7,7 @@
  * K&R/C89 common subset so it builds under all four compilers.
  */
 #include <stdio.h>
+#include "mame_bracket.h"
 
 typedef unsigned char uint8_t;
 typedef struct {
@@ -31,7 +32,9 @@ int main()
     for (i = 0; i < 32; i++) key[i] = i;
     for (i = 0; i < 16; i++) buf[i] = i * 16 + i;
     aes256_init(&ctx, key);
+    MAME_START();
     for (r = 0; r < REPS; r++) aes256_encrypt_ecb(&ctx, buf);
+    MAME_END();
     printf("aes256 ct[0]=%d\n", buf[0]);
     return 0;
 }
