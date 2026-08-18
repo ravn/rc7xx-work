@@ -202,26 +202,39 @@ coincidence.
       detecting fill pattern, verified only after all allocations complete.
 - [x] emu2 leg: **298,973 bytes across 130 blocks, 0 corrupted** (2026-08-18,
       commit `b8cfd0d10e`).
-- [x] MAME rc759 leg — **DONE 2026-08-18**. `floptool` built via
-      `make SUBTARGET=regnecentralen REGENIE=1 TOOLS=1 SOURCES=...
-      OSD=sdl` (the recipe was already in
+- [x] MAME rc759 leg — **DONE 2026-08-18**, on the GENUINE CCP/M-86 disk.
+      `floptool` built via `make SUBTARGET=regnecentralen REGENIE=1
+      TOOLS=1 SOURCES=... OSD=sdl` (recipe was already in
       `[[reference_mame_regnecentralen_rc75x_imd]]`, found only after
-      several blind `make TOOLS=1 ...` guesses failed — see
-      `feedback_check_memory_before_coding`'s new incident entry).
-      **A real hardware constraint found along the way:** the original
-      300 KB FARHEAP request (which emu2 happily ran) was REJECTED by
-      genuine Concurrent CP/M-86 itself — `"Concurrent Fejl: For lidt
-      lager"` (too little memory) — because RC759's 384K RAM minus
-      BDOS/XIOS/console overhead doesn't leave 300 KB free for a
-      transient. Scaled to 96 KB/40 blocks (still > one 64K slab);
-      **passed on real MAME rc759 hardware emulation**, screen-captured:
-      `allocated 94076 bytes in 40 blocks` / `PASS (0 blocks corrupted)`
-      on a genuine Digital Research Concurrent CP/M-86 `A>` prompt
-      (Bits:30002654 boot disk — NOT Bits:30002664, which is an
-      application/toolkit disk that fails to even BOOT, "DISKETTE NOT
-      FORMATTED" — this exact pitfall was already documented in
-      `[[reference_rc759_mame_sonnyboy_headless]]` and re-hit once before
-      being caught). Commit `d9b1de395b`.
+      several blind `make TOOLS=1 ...` guesses failed).
+      **Two real design corrections found along the way, both fixed and
+      re-verified:**
+      1. A fixed `G_Min==G_Max==300 KB` request got REJECTED outright by
+         real Concurrent CP/M-86 (`"Concurrent Fejl: For lidt lager"`).
+         Fixed at the wlink level: `G_Min=1` paragraph, `G_Max=<size>` as
+         a ceiling — the loader now grants whatever's actually free
+         (commit `3c79eea897`).
+      2. `farheaptest.c`'s original fill pattern (single shared slope,
+         only the start value varied by block index) had a real blind
+         spot: blocks 256 apart in index got an IDENTICAL byte sequence,
+         making an overlap between that pair undetectable — a live risk
+         once the test runs to exhaustion (250+ blocks). Fixed by
+         deriving the slope from a second, coprime period (251) as well.
+      First attempt also used the WRONG A: disk (Bits:30002654, cataloged
+      as "CDOS systemdisk" — a different DRI product that happens to
+      share CCP/M-86's BDOS error text, "Concurrent Fejl", which is what
+      caused the initial confusion) — corrected to the genuine
+      `sw1400-r3.1a-disk1.img` CCP/M-86 disk, which turned out to already
+      be a ready **4-console** system (see
+      `[[reference_ccpm86_boot_disk_and_4console_todo]]`'s correction —
+      the old "needs installing" TODO was wrong). Booted straight into
+      the test by overwriting `0:startup.0` (a plain-text CP/M command
+      file) rather than fighting the interactive installer menu's
+      confirmation prompts.
+      **Final verified result on real hardware:** `allocated 181647
+      bytes in 79 blocks (far heap exhausted)` / `PASS (0 blocks
+      corrupted)` — genuine Concurrent CP/M-86 3.1, 384 K RAM / 261 K
+      brugerlager, screen-captured. Commits `d9b1de395b`, `3c79eea897`.
 - [ ] PCE/rc759 leg — not started. Lower priority now: MAME already
       exercised real hardware-class constraints (RAM budget); PCE would
       mainly cross-check MAME's rc759 driver itself, not the far-heap
