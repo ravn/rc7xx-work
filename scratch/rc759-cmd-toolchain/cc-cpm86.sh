@@ -14,7 +14,7 @@
 # LINK-86 objs + WMARKS + CLEAR?.L86 -> relocatable CMD.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
-EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
+EMU2="${EMU2:-$HERE/../../emu2-cpm86/emu2}"
 OW="${OW:-$HERE/../open-watcom-v2/build/binbuild}"
 DRC="${DRC:-$HERE/drc86111}"
 CPM86_TARGET_DIR="${CPM86_TARGET_DIR:-$HERE/../open-watcom-v2/cpm86}"

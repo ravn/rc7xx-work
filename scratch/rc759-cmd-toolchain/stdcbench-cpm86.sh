@@ -19,7 +19,7 @@ set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OW="${OW:-$HERE/../open-watcom-v2/build/binbuild}"
 DRC="${DRC:-$HERE/drc86111}"
-EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
+EMU2="${EMU2:-$HERE/../../emu2-cpm86/emu2}"
 TGT="${CPM86_TARGET_DIR:-$HERE/../open-watcom-v2/cpm86}"
 # stdcbench times ITSELF via the RC759 XIOS Int 28h fn 19 "16 ms counter".  Only
 # the Unicorn CP/M-86 runner (cpm86run_unicorn.py) implements that XIOS clock

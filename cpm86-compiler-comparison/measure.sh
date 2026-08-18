@@ -32,8 +32,8 @@ NAME="$(basename "${SRC%.c}")"
 OWROOT="$ROOT/open-watcom-v2"
 OWCC="$OWROOT/rel/armo64/owcc"
 export WATCOM="$OWROOT/rel" INCLUDE="$OWROOT/rel/h" PATH="$OWROOT/rel/armo64:$PATH"
-CROSS="$ROOT/open-watcom-v2/contrib/ravn/cpm86-crossdev"
-EMU2_DRC="$ROOT/scratch/cpm86-tools/emu2-cpm86/emu2"
+CROSS="$ROOT/cpm86-crossdev"
+EMU2_DRC="$ROOT/emu2-cpm86/emu2"
 DRC_OFF="$ROOT/scratch/rc759-cmd-toolchain/rc759-drc-official"
 DRC_FB="$ROOT/scratch/rc759-cmd-toolchain/drc86111"
 
@@ -52,7 +52,7 @@ printf "%-20s %-12s %s\n" "compiler" "opt/model" "code bytes"
 "$OWCC" -bcpm86 -c -Wc,-ms -Wc,-fpc -Wc,-otexan -o "$TMP/w_ot.o" "$SRC" >/dev/null 2>&1 && printf "%-20s %-12s %s\n" "Open Watcom" "-otexan" "$(omfcode "$TMP/w_ot.o")"
 
 # Aztec C86 3.40a (K&R) and 4.2 (ANSI), fixed code-gen
-export PATH="$CROSS/bin:$PATH"
+export PATH="$CROSS/bin:$ROOT/emu2-cpm86:$PATH"
 cp "$SRC" "$TMP/a.c"
 ( cd "$TMP" && aztec34_cc a.c >/dev/null 2>&1 )
 printf "%-20s %-12s %s\n" "Aztec C86 3.40a" "default" "$( ( cd "$TMP" && aztec34_obd a.o ) 2>/dev/null | azmax)"

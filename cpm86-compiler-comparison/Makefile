@@ -6,15 +6,20 @@
 #   aztec34/ Aztec C86 3.40a, size + obd dump
 #
 # Targets:  make compare  -> per-benchmark code-size table across all compilers
+#           make speed    -> per-benchmark runtime table (80186 clocks/iteration,
+#                            differential; sieve + aes256 kernels)
 #           make dis      -> generate every compiler's disassembly of every source
 #           make clean
 include common.mk
 SUBDIRS := watcom drc aztec42 aztec34
 
-.PHONY: all compare dis clean
+.PHONY: all compare speed dis clean
 all: compare
 compare:
 	@{ for d in $(SUBDIRS); do $(MAKE) -s -C $$d sizes; done; } | python3 tools/table.py
+speed:
+	@{ for d in $(SUBDIRS); do $(MAKE) -s -C $$d speed; done; } | \
+	  python3 tools/table.py "80186 clocks/iteration (differential, lower is faster)" "clk/iter"
 dis:
 	@for d in $(SUBDIRS); do $(MAKE) -s -C $$d all; done
 clean:

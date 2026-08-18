@@ -15,7 +15,7 @@
 # back to a structural check (25 rows, width<=78, set body present).
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
-EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
+EMU2="${EMU2:-$HERE/../../emu2-cpm86/emu2}"
 # The genuine DR C oracle CMD lives in the contrib tree; it may be either the
 # scratch submodule build tree or the top-level repo checkout. Try both.
 if [ -z "${ORACLE:-}" ]; then

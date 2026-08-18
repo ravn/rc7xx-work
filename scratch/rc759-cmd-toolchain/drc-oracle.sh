@@ -27,7 +27,7 @@
 #                  8087); use only for the coprocessor-timing comparison.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
-EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
+EMU2="${EMU2:-$HERE/../../emu2-cpm86/emu2}"
 BWASM="${BWASM:-$HERE/../../open-watcom-v2/build/binbuild/bwasm}"
 PUTFAR_ASM="${PUTFAR_ASM:-$HERE/../../open-watcom-v2/contrib/ravn/owc-drc/putchar-far.asm}"
 # Toolchain source. Default = the OFFICIAL Regnecentralen RC759 DR C v1.11 disk

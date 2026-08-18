@@ -15,7 +15,7 @@
 # Env:    KEEP=1  keep built CMDs + output logs under $OUTDIR
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
-EMU2="${EMU2:-$HERE/../cpm86-tools/emu2-cpm86/emu2}"
+EMU2="${EMU2:-$HERE/../../emu2-cpm86/emu2}"
 TDIR="$HERE/drc-libtest"
 OUTDIR="${OUTDIR:-$(mktemp -d)}"
 [ -n "${KEEP:-}" ] || trap 'rm -rf "$OUTDIR"' EXIT

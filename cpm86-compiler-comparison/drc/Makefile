@@ -15,4 +15,5 @@ all:   $(BENCHES:=.dis)
 %.dis: %.obj         ; wdis -a $< > $@
 sizes: $(BENCHES:=.obj)
 	@for b in $(BENCHES); do echo "$$b|DR C 1.11|small|`$(SIZE) $$b.obj`"; done
+speed: ; @for b in $(SPEEDBENCHES); do sh $(TOOLS)/speed.sh drc $$b; done
 clean: ; @rm -f *.obj *.dis

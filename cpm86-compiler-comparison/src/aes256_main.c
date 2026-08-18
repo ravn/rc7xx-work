@@ -18,16 +18,20 @@ typedef struct {
 extern void aes256_init();
 extern void aes256_encrypt_ecb();
 
+#ifndef REPS
+#define REPS 1
+#endif
+
 int main()
 {
     aes256_context ctx;
     uint8_t key[32], buf[16];
-    int i;
+    int i, r;
 
     for (i = 0; i < 32; i++) key[i] = i;
     for (i = 0; i < 16; i++) buf[i] = i * 16 + i;
     aes256_init(&ctx, key);
-    aes256_encrypt_ecb(&ctx, buf);
+    for (r = 0; r < REPS; r++) aes256_encrypt_ecb(&ctx, buf);
     printf("aes256 ct[0]=%d\n", buf[0]);
     return 0;
 }
