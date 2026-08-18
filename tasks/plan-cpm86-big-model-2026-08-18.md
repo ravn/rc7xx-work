@@ -1,162 +1,211 @@
-# Plan: CP/M-86 "big" memory model for Watcom `FORMAT CPM86` (phase 2)
+# Plan: CP/M-86 memory models beyond small, for Watcom `FORMAT CPM86`
 
 Status: DRAFT, not started. Companion docs (read first):
-`tasks/memory/reference_cpm86_big_model.md` (what "big model" means, from the
-DR C manual), `tasks/memory/reference_cpm86_cmd_header.md` (the `.CMD` header
-byte layout), `tasks/memory/reference_watcom_wlink_cpm86_format.md` (current
-phase-1 small-model-only implementation).
+`tasks/memory/reference_cpm86_big_model.md` (DR C's big model + far/huge
+pointer explanation), `tasks/memory/reference_cpm86_cmd_header.md` (the
+`.CMD` header byte layout), `tasks/memory/reference_watcom_wlink_cpm86_format.md`
+(current phase-1 small-model-only implementation).
 
-## Goal
+## Goal, split into two independently-useful stages (user, 2026-08-18)
 
-Give Watcom's native `wlink FORMAT CPM86` the ability to emit a CP/M-86 big
-model `.CMD` — i.e. two independent capabilities, both needed for the RC759
-production firmware work to eventually exceed the 64 KB small-model wall:
+DR C's "big model" bundles two unrelated capabilities together (far code
+across multiple segments, AND a far-addressed heap outside DGROUP). They
+don't have to ship together. Split into two stages, build the cheaper one
+first:
 
-1. **Code > 64 KB**, spread across multiple separately-addressed far segments.
-2. **Heap > 64 KB**, in a dedicated Extra (ES) segment outside DGROUP.
+- **Stage A — small model + far heap.** Code stays ≤64 KB (CGROUP), data
+  stays ≤64 KB (DGROUP), but the **heap moves out of DGROUP into its own
+  Extra (ES) segment**. This is NOT one of DR C's or Watcom's named models —
+  in classic 16-bit C terminology (Turbo C/Microsoft C `farmalloc`/`_fmalloc`
+  era) this exact combination is just called **"far heap"**, an add-on
+  capability layered on top of small model, not a distinct point in the
+  Tiny/Small/Medium/Compact/Large/Huge taxonomy (`[[reference_cpm86_big_model]]`'s
+  Watcom `wmodels.gml` table has no stack/heap axis at all — confirmed
+  2026-08-18). Turns out **Watcom's clib already ships this exact feature**
+  for its DOS targets (`_fmalloc`/`_ffree`/`_frealloc`/`_fcalloc`/`_fmsize` —
+  see Phase A2 below) — this stage is mostly *retargeting an existing seam*,
+  not writing a new allocator.
+- **Stage B — code > 64 KB across multiple segments.** The harder half of
+  big model: don't group code into CGROUP, emit many far-addressed segments
+  concatenated into one Code Group Descriptor. Deferred until Stage A ships
+  (user, 2026-08-18: "dernæst kigge videre på mere-end-64kb kode" — look at
+  this *next*, after Stage A).
 
-Both map to the SAME underlying mechanism — additional `.CMD` Group
-Descriptors (G-Type 1=Code already used, add 3=Extra and 4=Stack) — but they
-touch different parts of the toolchain (linker/loader vs. compiler codegen vs.
-C runtime), so they're separate phases below.
+Both still map onto the same `.CMD` Group Descriptor mechanism
+(`[[reference_cpm86_cmd_header]]`) — G-Type 3=Extra for Stage A, G-Type
+1=Code (multi-segment) for Stage B — but they're independent linker/runtime
+changes and should ship as independent, separately-testable increments.
 
-## Phase 0 — resolve the one open documentation question (before designing anything)
+---
 
-`reference_cpm86_big_model.md` flags one thing NOT confirmed from manual text:
-does DR C's `-b` compiler make **every** pointer uniformly far (4 bytes,
-segment:offset), or does it do something narrower? This determines whether
-Watcom's big-model heap runtime needs a uniform far-pointer ABI or a mixed
-near/far one.
+## Stage A — small model + far heap
 
-- [ ] Compile a small malloc-using test program with the DR C oracle
-      (`scratch/rc759-cmd-toolchain/drc-oracle.sh`, which per its own header
-      comment already defaults to the "LARGE"/big model + `CLEARL.L86`) — a
-      `char *p = malloc(n); p[big_index] = ...;` style test that would reveal
-      `LES`/far-load codegen if used.
-  - Note: the oracle script as-is only demonstrates output via a
-    `DRC_PUTCHAR=1`-injected far putchar; a pointer-width probe just needs the
-    resulting `.OBJ`/`.CMD` disassembled, not necessarily run.
-- [ ] Disassemble the resulting object/CMD (Watcom's `wdis` can disassemble
-      raw 8086 code; `mandel_watcom.dis` in `scratch/rc759-cmd-toolchain/` is
-      a precedent for how this was done before) and look for `LES`/`MOV
-      AX,ES` around heap-pointer accesses vs. plain 16-bit offset math around
-      DGROUP-local variable accesses.
-- [ ] Record the answer back into `reference_cpm86_big_model.md`'s "Open
-      sub-question" section — this blocks Phase 4 design (below), not Phases
-      1-3.
-
-## Phase 1 — wlink: emit STACK and EXTRA group descriptors
+### Phase A1 — wlink: emit the EXTRA group descriptor
 
 Current state (`bld/wl/c/cmdcpm86.c`/`loadcpm86.c`, ~226 lines total):
 small-model-only, emits exactly 2 descriptors (CODE=1, DATA=2), `A-Base=0`,
 no fixup table.
 
-- [ ] Add G-Type 4 (Stack) and G-Type 3 (Extra) descriptor emission, gated on
-      a new `format cpm86` linker option (working name: `option cpm86_big` or
-      reuse Watcom's existing `-mm`/`-ml` memory-model selection to switch
-      `cmdcpm86.c`'s descriptor-count logic — needs a decision, see Phase 2).
-- [ ] Stack section: size from wlink's existing `OPTION STACK=` (already a
-      general wlink option; needs cpm86-format-specific wiring to become a
-      Stack *group descriptor* instead of being folded into DATA/BSS the way
-      small model does today).
-- [ ] Extra/heap section: size from a new linker option (`OPTION HEAPSIZE=`,
-      already exists generically for some other formats — check reuse vs. a
-      cpm86-specific option) written into G-Min/G-Max of the Extra
-      descriptor, per `reference_cpm86_cmd_header.md`'s byte layout.
-- [ ] Code section: verify `G-Length` computation isn't hardcoded/assumed to
-      fit some small bound — confirm it already handles the "one descriptor,
-      many concatenated segments, up to ~1 MB" case correctly (it may already
-      be correct for phase 1 by construction; audit, don't assume).
-- [ ] Lit-suite equivalent: no LLVM codegen involved here, this is pure
-      linker work — add a small integration test under
-      `open-watcom-v2/contrib/ravn/` (mirroring the existing small-model
-      proof scripts) rather than an LLVM lit test.
+- [ ] Add G-Type 3 (Extra) descriptor emission, gated on a new linker option
+      (working name: `OPTION FARHEAP=<size>` or reuse an existing generic
+      wlink heap-size option if one already targets this format) written
+      into G-Min/G-Max of the Extra descriptor, per
+      `[[reference_cpm86_cmd_header]]`'s byte layout. CODE and DATA
+      descriptors are unchanged (still exactly what phase-1 small model
+      already emits).
+- [ ] This does NOT touch Watcom's compiler-side model selection at all —
+      code/data codegen stays exactly small-model `-ms`. Only the linker
+      (extra descriptor) and the C runtime (below) change. Much smaller
+      surface than Stage B.
 
-## Phase 2 — decide + wire the Watcom compiler-side model selection
+### Phase A2 — retarget `__AllocSeg`/`__GrowSeg`: the whole seam already exists
 
-Open design question, must be settled before Phase 1's option-gating can be
-finalized: which Watcom compiler memory-model flag (if any existing one, or a
-new cpm86-specific mode) produces "many separate, non-CGROUP-merged code
-segments, near DGROUP" — i.e. DR C big model's exact segment topology?
+**Found 2026-08-18, source-verified:** Watcom's far-heap C API is complete
+and OS-generic — `bld/clib/heap/c/{fmalloc,ffree,frealloc,fcalloc,fmsize,
+fheapset,fheapchk,fheapmin,fheapwal}.c` implement `_fmalloc`/`_ffree`/etc.
+entirely in terms of two OS-specific primitives:
+- `__segment __AllocSeg(unsigned amount)` (`bld/clib/heap/c/allocseg.c`) —
+  get a brand-new segment from the OS to seed/extend the far-heap segment
+  list.
+- `int __GrowSeg(__segment seg, unsigned amount)` (`bld/clib/heap/c/growseg.c`)
+  — grow an existing far-heap segment.
+
+Both are `#if defined(__OS2__) / __QNX__ / __WINDOWS__ / #else /* __DOS__ */`
+branches; the DOS branch calls `TinyAllocBlock`/`TinySetBlock` — **the exact
+same low-level DOS INT 21h primitives already replaced once** for the
+near-heap `__brk` seam (`[[reference_watcom_cpm86_heap_shim]]`: "Watcom
+small-model near-heap's ONLY OS trap is sbrk.c's `__brk` -> INT 21h AH=4Ah
+(TinySetBlock)"). This is the SAME retarget pattern, one level up (whole
+segments instead of growing one static arena):
+
+- [ ] Add a `port/farheap.c` seam (sibling to the existing `port/lowlevel.c`
+      near-heap arena-bump) implementing `__AllocSeg`/`__GrowSeg` for
+      `-DCPM86`: CP/M-86 has no dynamic "give me a new segment" OS call (no
+      analogue to DOS's INT 21h AH=48h) — the Extra group's entire memory
+      was already handed to the program at load time (fixed base + size from
+      G-Min/G-Max, Phase A1). So:
+  - `__AllocSeg`: **first call** returns the (single) ES segment value the
+    loader set up; **any subsequent call** (heap already fully claimed)
+    returns `_NULLSEG` (out of memory) — there is nothing more to hand out,
+    unlike DOS where more segments can be requested.
+  - `__GrowSeg`: return 0 (fail) once the single Extra segment already
+    covers its full allocated size — same "nothing more available" logic,
+    simpler than DOS's case since CP/M-86 never has a *second* segment to
+    grow into.
+  - This mirrors `[[reference_watcom_cpm86_heap_shim]]`'s existing guidance
+    almost exactly ("AVOID bmalloc/bexpand/growseg (based variant ->
+    `__GrowSeg` -> DOS trap)") — that note already correctly identified
+    `__GrowSeg` as a DOS-trapping function to avoid for the NEAR heap; Stage
+    A is precisely "stop avoiding it, retarget it instead" for the FAR heap.
+- [ ] `fmalloc.c`/`ffree.c`/`frealloc.c`/`fcalloc.c`/`fmsize.c`/
+      `fheapset.c`/`fheapchk.c`/`fheapmin.c`/`fheapwal.c` themselves need
+      **zero changes** — they're already OS-generic on top of
+      `__AllocSeg`/`__GrowSeg`. Link them in unmodified, same pattern as the
+      near-heap port reusing nmalloc/nfree/calloc/etc. unchanged
+      (`[[reference_watcom_cpm86_heap_shim]]`).
+- [ ] Decide the user-facing API: expose Watcom's native `_fmalloc`/`_ffree`
+      naming (simplest, matches upstream), or additionally provide a CP/M-86
+      convenience wrapper. Lean toward native naming — don't invent new API
+      surface for something Watcom already names consistently.
+
+### Phase A3 — crt0: set ES from the Extra group's loaded base
+
+- [ ] Extend `cstartcpm.asm` (confirm current filename/location — may have
+      moved since the small-model proof) to read the Extra group's loaded
+      segment from the base page (offset per `[[reference_cpm86_cmd_header]]`'s
+      "0x00 code, 0x06 data, 0x0C extra, 0x12 stack" table — **CONFIRM this
+      offset table is exactly right**: it was documented from the
+      2-descriptor small-model case; Stage A adds a 3rd descriptor (Extra)
+      so re-verify against the System Guide's base-page section rather than
+      assuming the table extends trivially) and store it wherever
+      `port/farheap.c`'s `__AllocSeg` reads it from.
+- [ ] Gate this so plain small-model programs (no Extra descriptor
+      requested) are completely unaffected — must not regress the existing
+      MAME-verified small-model boot.
+
+### Phase A4 — verification
+
+- [ ] Test program using ONLY `_fmalloc`/far heap (not regular `malloc`) for
+      an allocation total exceeding 64 KB (many small far allocations, not
+      one big one — no huge-pointer normalization exists here, see
+      `[[reference_cpm86_big_model]]`'s far-vs-huge explanation, so a single
+      allocation stays ≤64 KB same as DOS far heap always has).
+- [ ] Three-tier verification: emu2 (fast iteration) → MAME rc759
+      (`[[reference_rc759_mame_c_verification]]`-style) → PCE/rc759
+      (`[[reference_pce_rc759_headless_automation]]`) — good first real use
+      of the new PCE oracle for something MAME hasn't been asked to verify
+      before.
+- [ ] Regression script under `open-watcom-v2/contrib/ravn/` (linker/runtime
+      work, not backend codegen — no LLVM lit test applies here).
+
+---
+
+## Stage B — code > 64 KB across multiple segments
+
+Deferred until Stage A ships. Retains the phase numbering/content from the
+original single-stage plan (2026-08-18 draft), renumbered B1-B4:
+
+### Phase B1 — resolve the far-pointer-width sub-question for Stage B's OWN needs
+
+Stage A already answers "is the far heap far-pointer-addressed" (yes, by
+construction — `_fmalloc` always returns far pointers, that's the whole
+point of the API). What's still open for Stage B specifically: does calling
+a function in a *different* code segment require anything beyond an ordinary
+far call (it shouldn't — far calls are a well-understood, already-supported
+Watcom compiler feature for its OWN medium/large models on other targets),
+or is there a CP/M-86-specific wrinkle. Lower-risk than originally scoped
+now that Stage A has de-risked the Extra-segment/far-pointer side entirely.
+
+- [ ] Compile a small malloc-using across-multiple-source-files test with
+      the DR C oracle (`scratch/rc759-cmd-toolchain/drc-oracle.sh`, defaults
+      to big model + `CLEARL.L86`) with multiple far-called functions;
+      disassemble (Watcom's `wdis`; `mandel_watcom.dis` is prior art for the
+      technique) to confirm DR C's actual far-call codegen shape as a
+      cross-check reference before implementing Watcom's own.
+
+### Phase B2 — wlink: emit multi-segment CODE + STACK group descriptor
+
+- [ ] Extend `cmdcpm86.c`/`loadcpm86.c`: don't merge code segments into
+      CGROUP when Stage B is requested; concatenate them into one Code Group
+      Descriptor per the LINK-86 `CODE[SEGMENT[...],CLASS[...],GROUP[...]]`
+      mechanism described in `[[reference_cpm86_big_model]]` (G-Length up to
+      ~1 MB, 16-bit paragraph count).
+- [ ] Add G-Type 4 (Stack) descriptor too — DR C's own big model still caps
+      the stack at 64 KB (confirmed from the manual — big model doesn't
+      relax the stack), but per Watcom's own precedent this is worth giving
+      its own descriptor anyway (matches `[[reference_cpm86_cmd_header]]`'s
+      note that large/compact-model crt0s read SS:SP from a dedicated
+      Stack-group base-page entry rather than computing it from DGROUP).
+- [ ] Audit `G-Length` computation isn't hardcoded/assumed small — confirm
+      it already handles "one descriptor, many concatenated segments" (may
+      already be correct by construction from phase-1; audit, don't assume).
+
+### Phase B3 — decide + wire the Watcom compiler-side model selection
 
 - [ ] Audit Watcom's i86 backend segment/group emission for `-mm` (medium:
-      far code, near data) — does it already emit one segment PER COMPILATION
-      UNIT without forcing them into CGROUP, or does something in the
+      far code, near data) — does it already emit one segment PER
+      COMPILATION UNIT without forcing them into CGROUP, or does the
       OMF-writing path merge same-class CODE segments into one group
-      regardless of `-mm`/`-ms`? (`reference_cpm86_big_model.md`'s earlier,
-      unconfirmed inference guessed `-mm`; needs actual verification against
-      Watcom's OMF/group-emission source, not just theory.)
-  - If `-mm` already does the right thing: Phase 1's `cmdcpm86.c` just needs
-    to recognize "code from multiple non-CGROUP segments" and lay them into
-    one Code Group Descriptor per the LINK-86-equivalent CLASS/SEGMENT
-    concatenation described in `reference_cpm86_big_model.md`.
-  - If not: may need a new format-specific compiler flag/mode, more invasive.
-- [ ] Once settled, this is also where the "8080 model rejected" precedent
-      (`Proc8080()` fatal in `cmdcpm86.c`) gets a sibling: decide whether an
-      *invalid* combination (e.g. big model requested but code still lands in
-      CGROUP) should be a hard link-time error, matching the existing
-      "reject unvalidated models" policy for this format.
+      regardless of `-mm`/`-ms`? (Earlier inference guessed `-mm`; verify
+      against Watcom's actual OMF/group-emission source, not just theory.)
+  - If `-mm` already does the right thing: Phase B2's `cmdcpm86.c` just
+    needs to recognize "code from multiple non-CGROUP segments."
+  - If not: may need a new format-specific compiler flag/mode.
+- [ ] Decide whether an *invalid* combination (Stage B requested but code
+      still lands in CGROUP) should be a hard link-time error, matching the
+      existing "reject unvalidated models" policy (`Proc8080()` precedent).
 
-## Phase 3 — crt0 (`cstartcpm.obj`): read SS:SP and ES from the loader-set base page
+### Phase B4 — crt0 + verification
 
-`reference_cpm86_cmd_header.md` already documents the target behavior,
-copied from DR C's own `startup.a86`: in big model, the loader deposits Stack
-and Extra group info in the base page (offsets past 0x12, alongside the
-existing 0x00/0x06 code/data descriptors small model already reads) and crt0
-must read SS:SP from there rather than computing a stack pointer from DGROUP
-the way small-model `cstartcpm.asm` does today.
+- [ ] Extend crt0's Stage-A ES-reading addition (Phase A3) with CS/multi-
+      segment awareness if needed (likely nothing extra — far calls burn in
+      their own target addresses at link time, crt0 doesn't need to know
+      about individual code segments beyond the entry point).
+- [ ] Test program whose CODE section (via padding/multiple source files)
+      exceeds 64 KB total, each individual segment ≤64 KB — same three-tier
+      emu2 → MAME → PCE verification as Phase A4.
 
-- [ ] Extend `open-watcom-v2/contrib/ravn/cpm86-clib/cstartcpm.asm` (or its
-      current equivalent — confirm exact current filename/location, it may
-      have moved since the small-model proof) with a big-model code path,
-      gated the same way Phase 2 gates compiler output (so small-model
-      programs are completely unaffected — this must not regress the
-      existing MAME-verified small-model boot).
-- [ ] Set ES from the Extra group descriptor's loaded base (base page offset
-      per `reference_cpm86_cmd_header.md`'s "0x00 code, 0x06 data, 0x0C
-      extra, 0x12 stack" table — CONFIRM this table's offsets are exactly
-      right for the 4-descriptor case; it was documented from the 2-
-      descriptor small-model case and needs re-verification against the
-      System Guide's base-page section for the general N-descriptor case).
-
-## Phase 4 — heap/malloc runtime: retarget to the Extra segment
-
-The biggest, most uncertain-scope item — blocked on Phase 0's answer.
-
-- [ ] If pointers are uniformly far under big model: Watcom's own clib
-      already has a far/huge pointer heap path for other 8086 targets (large
-      model DOS, etc. — `bld/clib/heap/`) that may be reusable almost as-is,
-      the way the existing small-model cpm86 port reused DOS's `sbrk.c`/`__brk`
-      seam (`reference_watcom_cpm86_heap_shim.md`). Look there FIRST before
-      writing new allocator code.
-- [ ] If narrower: design a CP/M-86-specific seam analogous to the existing
-      `watcom-cpm86-libc/port/lowlevel.c` arena-bump `__brk`, but sized/based
-      from the Extra group's loaded ES base + G-Max instead of static BSS.
-- [ ] Single-allocation-size cap: confirm whether a >64 KB single `malloc()`
-      needs "huge pointer" normalization (re-carrying offset overflow into
-      the segment on pointer arithmetic) or whether it's simply
-      out-of-scope/unsupported (DR C's own manual gives no indication it
-      supports single allocations >64 KB — likely fine to leave unsupported
-      initially, matching DR C's own apparent behavior, revisit only if a
-      concrete production need for a >64 KB single allocation shows up).
-
-## Phase 5 — verification
-
-- [ ] A test program whose CODE section (deliberately, via padding/multiple
-      source files) exceeds 64 KB total but keeps each segment ≤64 KB — prove
-      it links, loads, and runs under emu2 first (fast iteration), then MAME
-      rc759 (`[[reference_rc759_mame_c_verification]]`-style), then cross-
-      check under PCE/rc759 (`[[reference_pce_rc759_headless_automation]]`,
-      now that the two-oracle setup exists — this is a good first real use of
-      PCE as the RC759 hardware cross-check for something MAME hasn't been
-      asked to verify before).
-- [ ] A test program whose heap usage (many small mallocs, not one big one)
-      exceeds 64 KB total — same three-tier verification.
-- [ ] Add both as lit-suite-adjacent regression fixtures per the project's
-      standing rule ("whenever you modify the compiler, always add a lit
-      test" — this is linker/runtime, not backend codegen, so the equivalent
-      here is a permanent script under `open-watcom-v2/contrib/ravn/`, not an
-      LLVM `.ll`/`.s` lit test).
+---
 
 ## Explicitly out of scope for this plan
 
@@ -165,6 +214,10 @@ The biggest, most uncertain-scope item — blocked on Phase 0's answer.
   targets (DOS, Windows, etc.) — those already exist; this plan is only about
   making `FORMAT CPM86` emit the right `.CMD` shape and runtime plumbing for
   *this* OS's loader contract.
+- Huge-pointer normalization (single allocation/object > 64 KB) — neither DR
+  C's manual nor Watcom's own far-heap API implies this is needed; revisit
+  only if a concrete production need shows up (see
+  `[[reference_cpm86_big_model]]`'s far-vs-huge explanation).
 - CP/NET or any multi-console/networking angle — unrelated to memory models,
   don't conflate with the parallel `reference_ccpm86_boot_disk_and_4console_todo.md`
   TODO.
