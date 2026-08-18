@@ -20,7 +20,14 @@ SRC="${1:?usage: measure.sh benchmark.c}"
 [ -f "$SRC" ] || SRC="$HERE/$SRC"
 NAME="$(basename "${SRC%.c}")"
 
-WCC="$ROOT/open-watcom-v2/rel/armo64/wcc"
+# Open Watcom leg is driven through the one-step production driver owcc with the
+# first-class CP/M-86 target (-bcpm86 => -bt=cpm86). owcc needs WATCOM set to
+# locate specs.owc; -c makes it a single compile step yielding an OMF object
+# (no link), so the module CODE-size metric stays apples-to-apples with the
+# raw-wcc numbers (verified identical: sieve 72/74, aes256 1754).
+OWROOT="$ROOT/open-watcom-v2"
+OWCC="$OWROOT/rel/armo64/owcc"
+export WATCOM="$OWROOT/rel" INCLUDE="$OWROOT/rel/h" PATH="$OWROOT/rel/armo64:$PATH"
 CROSS="$ROOT/open-watcom-v2/contrib/ravn/cpm86-crossdev"
 EMU2_DRC="$ROOT/scratch/cpm86-tools/emu2-cpm86/emu2"
 DRC_OFF="$ROOT/scratch/rc759-cmd-toolchain/rc759-drc-official"
@@ -33,11 +40,12 @@ azmax() { python3 -c "import sys,re;v=[int(x,16) for x in re.findall(r'ends @ *(
 echo "=== $NAME -- module code size (bytes), small model unless noted ==="
 printf "%-20s %-12s %s\n" "compiler" "opt/model" "code bytes"
 
-# Open Watcom (small model): -os size, -otexan speed. -fpc = software float
-# (calls, no 8087) -- matches RC759 (no 8087) and the DR C / Aztec default FP
-# model, so float benchmarks are apples-to-apples; no effect on integer code.
-"$WCC" "$SRC" -ms -fpc -os     -fo="$TMP/w_os.o" >/dev/null 2>&1 && printf "%-20s %-12s %s\n" "Open Watcom" "-os"     "$(omfcode "$TMP/w_os.o")"
-"$WCC" "$SRC" -ms -fpc -otexan -fo="$TMP/w_ot.o" >/dev/null 2>&1 && printf "%-20s %-12s %s\n" "Open Watcom" "-otexan" "$(omfcode "$TMP/w_ot.o")"
+# Open Watcom (small model), one-step owcc: -os size, -otexan speed passed
+# through with -Wc,. -fpc = software float (calls, no 8087) -- matches RC759
+# (no 8087) and the DR C / Aztec default FP model, so float benchmarks are
+# apples-to-apples; no effect on integer code.
+"$OWCC" -bcpm86 -c -Wc,-ms -Wc,-fpc -Wc,-os     -o "$TMP/w_os.o" "$SRC" >/dev/null 2>&1 && printf "%-20s %-12s %s\n" "Open Watcom" "-os"     "$(omfcode "$TMP/w_os.o")"
+"$OWCC" -bcpm86 -c -Wc,-ms -Wc,-fpc -Wc,-otexan -o "$TMP/w_ot.o" "$SRC" >/dev/null 2>&1 && printf "%-20s %-12s %s\n" "Open Watcom" "-otexan" "$(omfcode "$TMP/w_ot.o")"
 
 # Aztec C86 3.40a (K&R) and 4.2 (ANSI), fixed code-gen
 export PATH="$CROSS/bin:$PATH"

@@ -40,7 +40,7 @@ soft-float/transcendental library is tighter. Aztec 4.2 edges 3.40 on FP;
 
 | # | Compiler | Dialect | Driver | Notes |
 |---|----------|---------|--------|-------|
-| 1 | **Open Watcom** (v2 fork) | ANSI | `open-watcom-v2/rel/armo64/wcc` | `-os` size / `-otexan` speed; links CP/M-86 via `build/binbuild/bwlink` `format cpm86` |
+| 1 | **Open Watcom** (v2 fork) | ANSI | `open-watcom-v2/rel/armo64/owcc -bcpm86` | one-step production driver, first-class CP/M-86 target; `-os` size / `-otexan` speed passed via `-Wc,`; links CP/M-86 (`format cpm86`) in the same command when producing a `.CMD` |
 | 2 | **Aztec C86 3.40a** | K&R | `cpm86-crossdev/bin/aztec34_cc` | DOS-hosted `.exe` under stock `dmsc/emu2` |
 | 3 | **Aztec C86 4.2** (4.10d) | ANSI | `cpm86-crossdev/bin/aztec42_cc` | DOS-hosted `.exe` under stock `dmsc/emu2` |
 | 4 | **DR C 1.11** | K&R/C89 | `scratch/rc759-cmd-toolchain/drc-oracle.sh` | genuine DRC.CMD, headless under forked `emu2-cpm86`; default = small, `-b` = large |
@@ -74,8 +74,9 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
   cancel fixed crt0/printf/libc overhead we use a **differential** method: build
   the same kernel at N=10 and N=20 iterations and report
   `(clocks(N20) − clocks(N10)) / 10` = clocks per kernel iteration. Requires each
-  compiler to emit a runnable CP/M-86 `.CMD` (Watcom via the hand-built port
-  seam; Aztec via `-lc86`; DR C via the emu2 oracle).
+  compiler to emit a runnable CP/M-86 `.CMD` (Watcom via the one-step
+  `owcc -bcpm86` driver, which compiles + links `format cpm86` in a single
+  command; Aztec via `-lc86`; DR C via the emu2 oracle).
 
 ---
 
