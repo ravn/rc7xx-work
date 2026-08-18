@@ -73,28 +73,41 @@ this is realized by the native **`wlink format cpm86`** writer
 
 ## Distinguishing CP/M-86 in source — the `__CPM86__` macro
 
-Verified empirically (`wcc … -bt=<x>` + `#pragma message`):
+`-bt=cpm86` is a **first-class compiler build target** (implemented in
+`bld/cc/c/cmdlnx86.c`, 2026-08-18). Verified empirically
+(`wcc … -bt=<x>` + `#pragma message`):
 
 - `-bt=dos`   → predefines `__DOS__`, `_DOS`, `MSDOS` (no `__CPM86__`).
-- `-bt=cpm86` → predefines `__CPM86__` **only** (auto `__<TARGET>__` from
-  `SetFinalTargetSystem` in `bld/cc/c/cmdlnx86.c`; the strcmp target table
-  does not yet map "CPM86", so no DOS-family macros are added).
+- `-bt=cpm86` → predefines `__CPM86__` **and** `__DOS__`, `_DOS`, `MSDOS`.
 
-So `#ifdef __CPM86__` is the intended way to distinguish CP/M-86 code paths
-from bare DOS.
+So `#ifdef __CPM86__` distinguishes CP/M-86 code paths, while the DOS-family
+macros keep every DOS-gated header and clib component applying unchanged.
 
-**Current gap (design decision to finish):** the production path
-`owcc -bcpm86` maps to `-bt=dos` (`bld/clib/flags.mif`
-`sw_c_cpm86 = -bt=dos`), so in the *shipping* build `__CPM86__` is **not**
-defined and `__DOS__` is. To make `-bt=cpm86` a true first-class target:
-in `setTargetSystem()` recognise `"CPM86"` → set `TargetSystem = TS_DOS`
-(inherit all DOS codegen, zero divergence) **and** predefine both the
-DOS-family macros (`__DOS__`/`_DOS`/`MSDOS`, so DOS-gated headers/clib still
-apply) **and** the auto `__CPM86__` marker (so source can distinguish).
-Then optionally switch `sw_c_cpm86`/`sw_a_cpm86` to `-bt=cpm86`. ⚠
-`open-watcom-v2` is a shared submodule (sonnyboy's active area) — a
-compiler-source change must be committed/pushed to its remote and the
-gitlink bumped, coordinated cross-machine.
+**How it works (the two-line change):**
+
+1. `setTargetSystem()` maps `"CPM86"` → `TargetSystem = TS_DOS`. This has
+   **zero codegen effect** — nothing in `bld/cg` or `bld/cc` branches on
+   `TS_DOS` vs the former default `TS_OTHER`; `TS_DOS` only selects the
+   `_DOS`/`MSDOS` predefines. Guarded `#if _CPU == 8086` (CP/M-86 is
+   real-mode 8086; `wcc386 -bt=cpm86` is left untouched).
+2. `SetFinalTargetSystem()` additionally predefines `__DOS__` for cpm86
+   (the auto `__<TARGET>__` gives `__CPM86__` from `target_name`; the
+   explicit `__DOS__` gives DOS header/clib compat). Same `#if _CPU == 8086`
+   guard.
+
+The production driver `owcc -bcpm86` already passes `-bt=cpm86` (via
+`bld/wcl/owcc/*/specs.owc`, `system begin cpm86 … ARCH i86 -bt=cpm86`), so
+the shipping build now gets all four macros. (Note: the *clib build* still
+compiles the `_cpm` variant with `-bt=dos` via `bld/clib/flags.mif`
+`sw_c_cpm86 = -bt=dos`; that is fine — identical codegen, and clib does not
+need `__CPM86__`.)
+
+**Verified:** `wcc -bt=cpm86` predefines `__CPM86__`+`__DOS__`+`_DOS`+`MSDOS`;
+`-bt=dos` is unchanged (no `__CPM86__`); `owcc -bcpm86` + `wlink format
+cpm86` still produces a valid `.CMD` that renders correctly on emu2
+(mandel_watcom.c). ⚠ `open-watcom-v2` is a shared submodule (sonnyboy's
+active area) — this compiler-source change was committed/pushed to its
+remote and the superproject gitlink bumped, coordinated cross-machine.
 
 ## Reference pointers
 
