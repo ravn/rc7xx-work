@@ -264,31 +264,39 @@ coincidence.
 Deferred until Stage A ships. Retains the phase numbering/content from the
 original single-stage plan (2026-08-18 draft), renumbered B1-B4:
 
-### Phase B1 — resolve the far-pointer-width sub-question for Stage B's OWN needs
+### Phase B1 — resolve the far-pointer-width sub-question for Stage B's OWN needs — **DONE 2026-08-18**
 
-Stage A already answers "is the far heap far-pointer-addressed" (yes, by
-construction — `_fmalloc` always returns far pointers, that's the whole
-point of the API). What's still open for Stage B specifically: does calling
-a function in a *different* code segment require anything beyond an ordinary
-far call (it shouldn't — far calls are a well-understood, already-supported
-Watcom compiler feature for its OWN medium/large models on other targets),
-or is there a CP/M-86-specific wrinkle. Lower-risk than originally scoped
-now that Stage A has de-risked the Extra-segment/far-pointer side entirely.
-
-- [ ] Compile a small malloc-using across-multiple-source-files test with
-      the DR C oracle (`scratch/rc759-cmd-toolchain/drc-oracle.sh`, defaults
-      to big model + `CLEARL.L86`) with multiple far-called functions;
-      disassemble (Watcom's `wdis`; `mandel_watcom.dis` is prior art for the
-      technique) to confirm DR C's actual far-call codegen shape as a
-      cross-check reference before implementing Watcom's own.
+- [x] Compiled a small two-function DR C oracle test (`caller.c`/`callee.c`,
+      `drc-oracle.sh`'s underlying toolchain, `-b` big model) and
+      disassembled the OBJECT files directly with `wdis -a` (cleaner than
+      disassembling the linked `.CMD`). Confirmed DR C's exact contract:
+      each compiled module gets its OWN uniquely-named `CODE`-class
+      segment (`CALLER_CODE`, `CALLEE_CODE` — not a shared `_TEXT`), and
+      every call to an extern is unconditionally `call far ptr <name>`
+      with a matching `retf` — a static per-module policy, not a
+      link-time size computation. DATA stays merged into one shared
+      DGROUP as usual (only CODE is kept apart). This is exactly the
+      shape a wlink Stage B implementation needs to reproduce: pack
+      same-class CODE segments from many modules into one Code Group
+      Descriptor without merging them into one logical segment, then let
+      ordinary OMF far-call relocation fixups resolve the cross-segment
+      calls — nothing CP/M-86-specific about the call mechanism itself.
 
 ### Phase B2 — wlink: emit multi-segment CODE + STACK group descriptor
 
-- [ ] Extend `cmdcpm86.c`/`loadcpm86.c`: don't merge code segments into
-      CGROUP when Stage B is requested; concatenate them into one Code Group
-      Descriptor per the LINK-86 `CODE[SEGMENT[...],CLASS[...],GROUP[...]]`
-      mechanism described in `[[reference_cpm86_big_model]]` (G-Length up to
-      ~1 MB, 16-bit paragraph count).
+- [ ] Extend `cmdcpm86.c`/`loadcpm86.c` to gather ALL segments/wlink-groups
+      whose class is `CODE` (there will now genuinely be many distinct
+      ones — see Phase B3's finding: `-mm -zm` gives one per FUNCTION, not
+      merged by wlink's generic OMF layer since they have distinct names)
+      and concatenate them into ONE type-1 Code Group Descriptor, each
+      sub-segment paragraph-aligned within it — mirroring LINK-86's
+      `CODE[SEGMENT[...],CLASS[...],GROUP[...]]` mechanism
+      (`[[reference_cpm86_big_model]]`; G-Length up to ~1 MB, 16-bit
+      paragraph count). Needs auditing whether wlink's own internal
+      `Groups`/`OrderGroups`/`CalcGroupSize` machinery already assumes
+      "one group == one segment" (Phase 1's 2-segment small-model test
+      never exercised >1 segment per class, so this is genuinely
+      untested) or already generalizes.
 - [ ] Add G-Type 4 (Stack) descriptor too — DR C's own big model still caps
       the stack at 64 KB (confirmed from the manual — big model doesn't
       relax the stack), but per Watcom's own precedent this is worth giving
@@ -299,20 +307,56 @@ now that Stage A has de-risked the Extra-segment/far-pointer side entirely.
       it already handles "one descriptor, many concatenated segments" (may
       already be correct by construction from phase-1; audit, don't assume).
 
-### Phase B3 — decide + wire the Watcom compiler-side model selection
+### Phase B3 — decide + wire the Watcom compiler-side model selection — **mostly ANSWERED 2026-08-18**
 
-- [ ] Audit Watcom's i86 backend segment/group emission for `-mm` (medium:
-      far code, near data) — does it already emit one segment PER
-      COMPILATION UNIT without forcing them into CGROUP, or does the
-      OMF-writing path merge same-class CODE segments into one group
-      regardless of `-mm`/`-ms`? (Earlier inference guessed `-mm`; verify
-      against Watcom's actual OMF/group-emission source, not just theory.)
-  - If `-mm` already does the right thing: Phase B2's `cmdcpm86.c` just
-    needs to recognize "code from multiple non-CGROUP segments."
-  - If not: may need a new format-specific compiler flag/mode.
-- [ ] Decide whether an *invalid* combination (Stage B requested but code
-      still lands in CGROUP) should be a hard link-time error, matching the
-      existing "reject unvalidated models" policy (`Proc8080()` precedent).
+- [x] Audited Watcom's i86 backend (agent investigation, file:line cited
+      in `[[reference_cpm86_big_model]]`) — **`-mm` ALONE gives no
+      per-file/per-function segment isolation**: segment naming is
+      static (`_TEXT`, `bld/comp_cfg/h/langenv.h`'s `TS_SEG_CODE`) and
+      completely model-independent (`SetSegs`, `cinfo.c:629`); `-mm`'s
+      `CGSW_X86_BIG_CODE` only changes pointer size/call-class semantics,
+      never segment identity. **But `-mm` + `-zm` together already do
+      exactly what Stage B needs**, zero new compiler code: `-zm`
+      (`CompFlags.zm_switch_used`, `cdecl1.c:182-201`) makes the compiler
+      synthesize one segment PER FUNCTION named `<funcname>_TEXT`
+      whenever `CGSW_X86_BIG_CODE` is set — an existing, already-tested
+      Watcom mechanism (normally used for DOS overlays/smart-linking),
+      not something to build. Verified empirically: `wcc -bt=dos -mm -zm`
+      on a 2-function test + `wdis -a` shows `callee_TEXT`/`main_TEXT`
+      segments and `jmp far ptr callee_` between them (tail-call-optimized
+      far jump) — same contract as DR C's, just per-function instead of
+      per-file (strictly better: no per-file 64 KB ceiling either).
+      wlink's own group-formation is ALSO confirmed model-independent and
+      opt-in-only (`-g` switch, `x86obj.c:1068`) — by default, distinct
+      same-class segments are NOT auto-grouped by wlink's generic layer,
+      confirming Phase B2 (not the compiler) owns "pack many CODE
+      segments into one Group Descriptor."
+- [ ] Decide: is `-mm -zm` the DOCUMENTED, required Stage B compile
+      convention (simplest — just tell users to pass both flags, matches
+      how `-zm` already works for other Watcom targets), or should
+      `format cpm86`'s own Stage-B mode flag imply `-zm` automatically
+      when big-code is set (nicer UX, more invasive — would need a
+      CP/M-86-specific tweak in `cdecl1.c`'s `-zm` gate). Lean toward
+      "just document `-mm -zm`" first; only add the implicit-imply
+      convenience later if it proves error-prone in practice.
+- [ ] Decide whether an *invalid* combination (Stage B requested at link
+      time but code isn't actually multi-segment, e.g. `-zm` was forgotten)
+      should be a hard link-time error, matching the existing "reject
+      unvalidated models" policy (`Proc8080()` precedent) — probably not
+      enforceable at link time anyway (wlink can't know the compile flags
+      used), so likely N/A; single-segment code under a Stage-B-format
+      link should just work unchanged (one Code Group Descriptor,
+      trivially the degenerate n=1 case).
+
+**Naming note:** the plan's PARKED "what does Watcom call this" question
+(large `-ml` was an early guess) can likely now be answered directly —
+Stage B's actual technical shape (far code across segments, near/small
+DATA still ≤64 KB) is *exactly* Watcom's own definition of **medium
+model** (`-mm`: far code, near data — see `wmodels.gml`'s table, already
+cited in `[[reference_cpm86_big_model]]`), not large. Still flagging this
+as a proposal rather than closing it outright, since the user asked to
+settle naming only once linker behavior was understood — it now is, but
+this is the first time it's being surfaced back for confirmation.
 
 ### Phase B4 — crt0 + verification
 
