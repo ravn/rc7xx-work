@@ -336,33 +336,41 @@ code lives there, so no far CALL/JMP ever targets it). It only bites
 once code is deliberately split across genuinely different real
 segments — exactly Stage B's whole point.
 
-**Open decision, NOT yet made (this is what to pick up next):**
-1. **Real fixup records** — CP/M-86's header byte `0x7F` bit 7 ("fixup
-   records present") is reserved for exactly this: a trailing relocation
-   table the LOADER walks and patches at load time. Phase 1 never
-   implemented it (wasn't needed). Most "correct"/general, most work —
-   would need to (a) get wlink's fixup engine to actually EMIT a
-   relocation entry for this case instead of silently zeroing it (may
-   need to tell wlink our format doesn't offer a link-time-resolvable
-   base for groups after the first), and (b) write the CP/M-86 fixup
-   table format into `loadcpm86.c`.
-2. **Fixed (non-relocatable) load address for the CODE descriptor**
-   (`A-Base != 0`) — if wlink assigns/knows the real base at LINK time
-   instead of leaving it to the loader, ordinary link-time address
-   computation just works, no fixups needed. Simpler, but: is a fixed
-   load address even valid/safe for a *transient* program under a
-   4-console Concurrent CP/M-86 system (where TPA placement varies by
-   what's free)? Needs research before assuming yes.
-3. **Investigate DR C's own LINK-86 first** — Phase B1 only confirmed
-   the COMPILER emits `far ptr` call syntax (14 KB test, safely inside
-   one real segment) — never actually tested LINK-86's behavior on
-   REAL >64 KB code forcing genuinely different segments. DR C's own
-   solution (if any) to this exact problem is unverified; worth checking
-   before designing our own, especially since option 1 above would be
-   reproducing whatever DR C's toolchain already had to solve.
+**Decision — RESOLVED 2026-08-19 (macbook): Option 1, real fixup records.**
+Ran the three-way's own option 3 first (investigate DR C's LINK-86), and it
+settled the whole question empirically. Built a clean 2-module DR C 1.11
+large-model program (`moda.c` calls extern `callee` in `modb.c`, each its
+own CODE segment) under `emu2` and decoded its `.CMD`. Full decoded wire
+format + cross-check in `[[reference_drc_cpm86_reloc_format]]`. Findings:
 
-The user was mid-way through picking one of these three when the session
-paused — resume by asking again / presenting this same three-way choice.
+- DR C large model emits `9A 00 00 00 00 call callee` (segment operand 0 in
+  the .OBJ, fixed up by the linker) — the same far-call contract as our
+  `-mm -zm`.
+- LINK-86's output has **`header[0x7F] = 0x80` (fixup bit 7 SET)** and a
+  **trailing relocation table** of 4-byte records
+  `[group-nibbles][para-offset:2 LE][byte-in-para:1]`; the low nibble
+  selects which group's load segment the loader adds (1=CODE base, 2=DATA
+  base). LINK-86 writes each far segment field as a **group-relative
+  paragraph**, and the loader adds the real load segment at load time.
+- **Every group descriptor has `A_Base = 0`** — DR C is fully relocatable.
+  → **Option 2 (fixed A-Base) is RULED OUT**: the reference toolchain
+  demonstrably does not use it, and a fixed TPA address is unsafe under a
+  multi-console Concurrent CP/M-86 system anyway.
+- Bonus: DR C large model layout = CODE + DATA + **EXTRA (far heap, G_Max
+  0x800)** + dedicated **STACK** group — the EXTRA/STACK groups match what
+  Stage A already emits, confirming our design direction.
+
+Concrete wlink spec for the remaining work is in
+`[[reference_drc_cpm86_reloc_format]]` ("Concrete wlink implementation
+spec"): (1) coalesce all CODE-class groups into ONE type-1 descriptor;
+(2) intercept `FORMAT CPM86` segment relocations so cross-group far
+segments become loader fixup records (group-relative paragraph in the
+image + a 4-byte table entry) instead of link-time-zeroed values;
+(3) set `header[0x7F] |= 0x80` and append the paragraph-padded table before
+`DBIWrite()`; (4) optionally emit the type-4 STACK group. Step (1) is
+independent and needed regardless. **The relocation-engine intercept (step
+2) is the real remaining implementation effort and requires MAME/emu2
+verification — not yet started.**
 
 - [ ] (Blocked on the above) Extend `cmdcpm86.c`/`loadcpm86.c` to gather
       ALL segments/wlink-groups whose class is `CODE` and concatenate
