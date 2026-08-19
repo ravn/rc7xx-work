@@ -346,12 +346,18 @@ format + cross-check in `[[reference_drc_cpm86_reloc_format]]`. Findings:
 - DR C large model emits `9A 00 00 00 00 call callee` (segment operand 0 in
   the .OBJ, fixed up by the linker) — the same far-call contract as our
   `-mm -zm`.
-- LINK-86's output has **`header[0x7F] = 0x80` (fixup bit 7 SET)** and a
-  **trailing relocation table** of 4-byte records
+- LINK-86's output has **`header[0x7F] = 0x80`** (byte 127 = "Program Flag";
+  DRI documents only bit 6/5 = 8087 — that **bit 7 = relocation is OBSERVED
+  in DR C output, NOT documented**) and a **relocation table carried in a
+  type-8 auxiliary group** of 4-byte records
   `[group-nibbles][para-offset:2 LE][byte-in-para:1]`; the low nibble
-  selects which group's load segment the loader adds (1=CODE base, 2=DATA
-  base). LINK-86 writes each far segment field as a **group-relative
-  paragraph**, and the loader adds the real load segment at load time.
+  selects which group's load segment is added (1=CODE base, 2=DATA base).
+  LINK-86 writes each far segment field as a **group-relative paragraph**,
+  and the real load segment is added at startup. **Who adds it — the
+  program's own self-relocation (verified under emu2, whose loader does NOT
+  walk the table) vs. the OS loader — is UNVERIFIED on genuine CCP/M; emu2 is
+  our reimplementation, only MAME is authoritative.** Safe path: replicate DR
+  C (table in a type-8 aux group + self-relocation runtime).
 - **Every group descriptor has `A_Base = 0`** — DR C is fully relocatable.
   → **Option 2 (fixed A-Base) is RULED OUT**: the reference toolchain
   demonstrably does not use it, and a fixed TPA address is unsafe under a
@@ -364,13 +370,15 @@ Concrete wlink spec for the remaining work is in
 `[[reference_drc_cpm86_reloc_format]]` ("Concrete wlink implementation
 spec"): (1) coalesce all CODE-class groups into ONE type-1 descriptor;
 (2) intercept `FORMAT CPM86` segment relocations so cross-group far
-segments become loader fixup records (group-relative paragraph in the
-image + a 4-byte table entry) instead of link-time-zeroed values;
-(3) set `header[0x7F] |= 0x80` and append the paragraph-padded table before
-`DBIWrite()`; (4) optionally emit the type-4 STACK group. Step (1) is
-independent and needed regardless. **The relocation-engine intercept (step
-2) is the real remaining implementation effort and requires MAME/emu2
-verification — not yet started.**
+segments become fixup records (group-relative paragraph in the image + a
+4-byte table entry) instead of link-time-zeroed values;
+(3) emit the reloc table as a **type-8 aux group** + add **self-relocation
+startup code** in the CP/M-86 runtime (the loader won't relocate it under
+emu2; genuine-CCP/M behavior unverified — replicating DR C is safe);
+(4) optionally emit the type-4 STACK group. Step (1) is independent and
+needed regardless. **The relocation-engine intercept (step 2) + self-reloc
+runtime is the real remaining effort and MUST be verified booting under MAME
+(not just emu2) — not yet started.**
 
 - [ ] (Blocked on the above) Extend `cmdcpm86.c`/`loadcpm86.c` to gather
       ALL segments/wlink-groups whose class is `CODE` and concatenate

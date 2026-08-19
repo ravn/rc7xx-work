@@ -28,8 +28,13 @@ Group Descriptor format (Fig 3-2), all multi-byte fields little-endian, sizes in
     07H G_MAX    (2 bytes)  max paragraphs to allocate
 
 **Table 3-1 — G_Type:** 01=Code, 02=Data, 03=Extra, 04=Stack, 05-08=Auxiliary
-#1-#4. (Header byte 0x7F bit 7 = "fixup records present" — a fixup table trails
-the images; base=0/no-fixups covers every shipping RC759 program sampled.)
+#1-#4. (Header byte 127/07FH = "Program Flag" per Concurrent §3.1.2 — DRI
+documents ONLY bit 6 = optional 8087, bit 5 = 8087 required. DR C sets bit 7
+(0x80) on relocatable large-model output and carries a fixup table in a type-8
+aux group, but "bit 7 = fixups" is OBSERVED in DR C output, NOT documented;
+who applies the fixups — self-relocation vs OS loader — is unverified on
+genuine CCP/M, only emu2. See `[[reference_drc_cpm86_reloc_format]]`.
+base=0/no-fixups covers every shipping RC759 program sampled.)
 
 **Table 3-2 — fields:** G_Length = paragraphs in the group; A_Base = base para of
 a non-relocatable group; G_Min/G_Max = min/max memory to allocate (loader
