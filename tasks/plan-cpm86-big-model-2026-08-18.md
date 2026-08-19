@@ -448,6 +448,30 @@ question is closed; "Stage B" in this plan is now interchangeable with
 
 ---
 
+## Future / to-do (not yet scheduled)
+
+- **TODO (user, 2026-08-19): investigate whether Watcom's generated code
+  qualifies as a "shared code group" (G-Type 9 / "pure" code)** so CCP/M-86
+  can share ONE copy of the code between multiple instances of the same
+  program. Requirements from the manuals: a shared-code program is flagged by
+  `09H` in the Code group descriptor's `G_Type` field (Concurrent CP/M-86
+  Programmer's Ref §3.1.1 "Shared Code" p.3-2, §5.3.3 "Small Model with Shared
+  Code" p.5-4). The code group must be genuinely **pure = read-only**: no
+  self-modifying code, no data/literals stored in and written to the CODE
+  segment, no relocation *into* the code group at runtime — the same copy is
+  mapped read-only for every instance. Constraints: the 8080 model cannot be
+  shared; Small/Compact model code groups are "typically pure" already. Plain
+  CP/M-86 v1 defines the G-Type 9 encoding but IGNORES it (`CPM-86_System_Guide_Jun83`
+  §3.2: *"Presently a Shared Code Group is treated as a non-shared Program Code
+  Group under CP/M-86"*) — only MP/M-86 / Concurrent CP/M-86 honour it, which is
+  exactly our RC759 target. Investigation = audit Watcom's emitted CODE-class
+  segments (`wdis` / the `.CMD` image) for any writes into the code group
+  (string literals, static init, jump tables that land in CODE), decide whether
+  `-zm`/`FORMAT CPM86` output is already pure, and if so add an option to stamp
+  `G_Type = 9` on the Code descriptor in `loadcpm86.c`. Depends on Stage B
+  landing first (the multi-CODE-segment coalescing) since shared code is most
+  valuable once code groups are separated from data.
+
 ## Explicitly out of scope for this plan
 
 - The 8080 single-group model (already implemented, rejected by design).
