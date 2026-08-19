@@ -5,6 +5,19 @@ arithmetic runs on the no-8087 RC759 as **pure call-based software float**, driv
 only by our Layer-2 seams. Committed in the fork (`open-watcom-v2`
 `contrib/ravn/watcom-cpm86-libc`).
 
+## owcc flag mapping (the one-step driver)
+
+`owcc -bcpm86` maps the wcc `-fpc` soft-float flag to **`-msoft-float`** (calls
+to the float library, NO 8087; `-mhard-emu-float` = `-fpi`, `-fpmath=87` =
+`-fpi87` — do NOT use either on the no-8087 RC759). `-Wc,<opt>` passes any raw
+wcc option through if needed. **Caveat:** `owcc -bcpm86 -msoft-float` alone still
+fails to link a float program (`_fltused_` / `__8087` undefined) because the
+default `lib286/cpm86/clibs.lib` does NOT contain the soft-float runtime — the
+`__FDx`/`fdmth086` closure + `port/fpsoftstub.asm` (chip vars = 0) must be linked
+explicitly, exactly as `build-float.sh`/`build-whetstone.sh` assemble it. So a
+float-bearing owcc benchmark needs that closure passed on the owcc command line
+(extra objs/libs), not just the flag.
+
 ## The key correction (supersedes the earlier "must emulate 8087" framing)
 
 `-fpc` does **NOT** emit 8087 ESC opcodes and needs **no emulator and no
