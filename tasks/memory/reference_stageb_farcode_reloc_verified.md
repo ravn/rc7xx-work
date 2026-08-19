@@ -72,7 +72,31 @@ under the base-page bug and would print wrong bytes under the paragraph bug).
 - Oracle/loader source of truth: `scratch/ccpm86-src/kern/load.sup`
   (fixup apply ~line 402-460; `init_base` ~line 477).
 
+## MAME rc759 verification (fully authoritative) — DONE 2026-08-19
+
+Both a wlink-native and a DR C reference build were booted on the genuine
+SW1400 Concurrent CP/M-86 3.1 turnkey disk in the MAME rc759 driver (the real
+loader applies the fixup records), installed as the autostart `menu.cmd`, and
+each printed `OK!` then `....` on the PICCOLINE console and signalled
+`DONE-SIGNAL word=0x0008 pass=8 fail=0` (OUT 0x2FE io-tap, `done_signal.lua`):
+- **wlink's OWN output** (`test_stageb_farptr_mame.c` + `test_stageb_crt759.asm`)
+  — the decisive check: exercises the exact fixup records wlink emits on real
+  hardware. `crt759.asm` is a minimal CP/M-86 crt0 distilled from `load.sup`
+  (base-page reservation; entry at CS:0; loader hands a small stack via
+  `u_initss=lod_lstk`/`ls_sp` + a RETF frame to `user_retf`, so we switch to our
+  own roomier DGROUP stack, as DR C's CLEARL does).
+- **DR C 1.11 reference** (`test_stageb_farptr_drc.c` + `test_stageb_done_far.asm`)
+  — "how it SHOULD be done": DR C's default LARGE model is genuinely
+  far-code/far-data, LINK-86 emits the same fixup format, the loader relocates.
+  Independent period-correct compiler confirming the oracle methodology.
+- MAME loader entry state (verified from `load.sup`): CS:IP = code-group:0000
+  (no entry field; IP=0 for non-8080), DS=ES=base-page (first DATA group),
+  SS:SP = system loader stack. `mame_done()`/`mame_ok`/`mame_bad` = far OUT to
+  the undecoded port 0x2FE; `#pragma aux` works on the wcc path, a small FAR asm
+  stub is needed on the DR C path. Reproduction + evidence in
+  `open-watcom-v2/contrib/ravn/README_stageb_tests.md`.
+
 ## Still to do
-MAME (fully-authoritative oracle) verification of a real medium-model `.CMD`;
-medium-model clib/crt0 so `owcc -mcmodel=m` links (currently small-model only);
-UnZip `-mm -zm` port verified with the pointer-memory oracle + MAME.
+Medium-model clib/crt0 so `owcc -mcmodel=m` links a full program (currently
+small-model only; `crt759.asm` is the minimal freestanding stand-in); UnZip
+`-mm -zm` port verified with the pointer-memory oracle + MAME.

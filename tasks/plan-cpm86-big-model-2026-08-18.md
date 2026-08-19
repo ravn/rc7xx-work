@@ -296,9 +296,15 @@ CODE→CODE far calls + DATA→CODE far-pointer memory check) plus a small-model
 no-fixup guard; small-model output stays byte-identical. Also learned: freestanding
 tests must reserve the base page (`test_stageb_begdata.asm`) because the loader
 zero-fills the start of the first DATA group (`load.sup:477 init_base`). Full
-account: `tasks/memory/reference_stageb_farcode_reloc_verified.md`. **Remaining:
-MAME (authoritative) verification of a real medium-model `.CMD`.** Historical
-notes below kept for context.
+account: `tasks/memory/reference_stageb_farcode_reloc_verified.md`. **MAME
+verification DONE 2026-08-19: both a wlink-native build (`test_stageb_farptr_mame.c`
++ `test_stageb_crt759.asm`, a minimal crt0 distilled from `load.sup`) AND a
+Digital Research C 1.11 reference build booted on genuine Concurrent CP/M-86 3.1
+in the MAME rc759 driver and each printed "OK!...." on the console with
+DONE-SIGNAL word 0x0008 (pass=8 fail=0) — the real loader applies wlink's own
+fixup records correctly on hardware. Reproduction:
+`contrib/ravn/README_stageb_tests.md`.** Remaining: medium-model clib/crt0 for
+`owcc -mcmodel=m`; UnZip port. Historical notes below kept for context.
 
 ### Phase B2 (historical) — wlink: emit multi-segment CODE + STACK group descriptor — **IN PROGRESS, blocked on a real design decision (2026-08-18, session paused here)**
 
