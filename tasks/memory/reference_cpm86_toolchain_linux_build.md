@@ -31,16 +31,19 @@ release-build-only doc-build problem, see the Apple note).
 
 ## 2. Build + smoke-test CP/M-86 programs
 
+Emit `.CMD` natively with the linker (`owcc -bcpm86` / `wl format cpm86`):
+
 ```bash
 export PATH="$PWD/open-watcom-v2/build/binbuild:$PATH"
 cd open-watcom-v2/contrib/ravn
-./build-cpm86.sh hello.c      # -> HELLO.CMD
-./build-cpm86.sh dhry.c       # -> DHRY.CMD (Dhrystone 2.1, real C stress test)
-./build-cpm86.sh bigdata.c    # -> BIGDATA.CMD (>64K far-pointer data)
+wasm hello.asm && wl format cpm86 name HELLO.CMD file hello.obj
 ```
 
-Pipeline is `wasm`/`wcc` (bootstrap) → `wl format raw` → `bin2cmd.py`; no DR C,
-no external linker. `CPU=1 ./build-cpm86.sh dhry.c` selects 80186 (RC759).
+The old `build-cpm86.sh` (`wasm`/`wcc` → `wl format raw` → `bin2cmd.py`) and
+`bin2cmd.py` itself were **RETIRED 2026-08-19** — the linker's native
+`format cpm86` writer (`bld/wl/c/loadcpm86.c`) is now the single authoritative
+`.CMD` header emitter. The prebuilt `HELLO.CMD`/`DHRY.CMD`/`BIGDATA.CMD`
+artifacts remain as runnable references.
 
 **`contrib/ravn/cpm86run.py`** (the repo's own hand-written mini 8086
 interpreter) was DELETED 2026-08-16 per user directive ("den vil jeg ikke have,
