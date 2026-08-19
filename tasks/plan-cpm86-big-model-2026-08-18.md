@@ -346,18 +346,22 @@ format + cross-check in `[[reference_drc_cpm86_reloc_format]]`. Findings:
 - DR C large model emits `9A 00 00 00 00 call callee` (segment operand 0 in
   the .OBJ, fixed up by the linker) — the same far-call contract as our
   `-mm -zm`.
-- LINK-86's output has **`header[0x7F] = 0x80`** (byte 127 = "Program Flag";
-  DRI documents only bit 6/5 = 8087 — that **bit 7 = relocation is OBSERVED
-  in DR C output, NOT documented**) and a **relocation table carried in a
-  type-8 auxiliary group** of 4-byte records
-  `[group-nibbles][para-offset:2 LE][byte-in-para:1]`; the low nibble
-  selects which group's load segment is added (1=CODE base, 2=DATA base).
-  LINK-86 writes each far segment field as a **group-relative paragraph**,
-  and the real load segment is added at startup. **Who adds it — the
-  program's own self-relocation (verified under emu2, whose loader does NOT
-  walk the table) vs. the OS loader — is UNVERIFIED on genuine CCP/M; emu2 is
-  our reimplementation, only MAME is authoritative.** Safe path: replicate DR
-  C (table in a type-8 aux group + self-relocation runtime).
+- LINK-86's output has **`header[0x7F] = 0x80`** (byte 127 bit 7 = **fixup
+  records present** — authoritative: genuine CCP/M-86 2.0 OS source
+  `kern/cmdh.def:18` + `kern/load.sup:405`; the DRI *manuals* cover only bits
+  5/6 = 8087 of this byte) and a **relocation table** of 4-byte records
+  `[group-nibbles][para-offset:2 LE][byte-in-para:1]`, located via
+  `ch_fixrec` (header word 0x7D = the file record number) and also carried as
+  a **type-8 auxiliary group**; the low nibble selects the TARGET group whose
+  load segment is added (1=CODE base, 2=DATA base). LINK-86 writes each far
+  segment field as a **group-relative paragraph**, and **the OS loader adds
+  the real load segment** (`load.sup` `add es:[di],dx`). **RESOLVED 2026-08-19
+  against genuine OS source: the LOADER relocates — no crt0 self-relocation
+  needed. emu2 does NOT implement this (it self-relocs from the aux group), so
+  loader-fixup output MUST be verified under MAME.** Full decode:
+  `[[reference_cpm86_cmd_header_ccpm_source]]`. Safe path: replicate DR C
+  (byte-127 bit 7 + `ch_fixrec` + fixup records, plus the type-8 aux group so
+  emu2 also works).
 - **Every group descriptor has `A_Base = 0`** — DR C is fully relocatable.
   → **Option 2 (fixed A-Base) is RULED OUT**: the reference toolchain
   demonstrably does not use it, and a fixed TPA address is unsafe under a
@@ -372,13 +376,15 @@ spec"): (1) coalesce all CODE-class groups into ONE type-1 descriptor;
 (2) intercept `FORMAT CPM86` segment relocations so cross-group far
 segments become fixup records (group-relative paragraph in the image + a
 4-byte table entry) instead of link-time-zeroed values;
-(3) emit the reloc table as a **type-8 aux group** + add **self-relocation
-startup code** in the CP/M-86 runtime (the loader won't relocate it under
-emu2; genuine-CCP/M behavior unverified — replicating DR C is safe);
+(3) set byte 127 bit 7 + write `ch_fixrec` (header word 0x7D = the fixup
+table's file record number) + emit the 4-byte fixup records so the **genuine
+CCP/M loader** relocates the far segments (`load.sup` `add es:[di],dx`) — no
+crt0 self-relocation needed; ALSO emit the table as a type-8 aux group so
+emu2 (which does not apply loader fixups) works too;
 (4) optionally emit the type-4 STACK group. Step (1) is independent and
-needed regardless. **The relocation-engine intercept (step 2) + self-reloc
-runtime is the real remaining effort and MUST be verified booting under MAME
-(not just emu2) — not yet started.**
+needed regardless. **The relocation-engine intercept (step 2) is the real
+remaining effort and MUST be verified booting under MAME (emu2 does not
+implement byte-127/`ch_fixrec` fixups) — not yet started.**
 
 - [ ] (Blocked on the above) Extend `cmdcpm86.c`/`loadcpm86.c` to gather
       ALL segments/wlink-groups whose class is `CODE` and concatenate

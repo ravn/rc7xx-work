@@ -19,9 +19,11 @@ self-relocate? — see `[[reference_drc_cpm86_reloc_format]]` VERIFICATION
 STATUS):
 
 - **CCP/M-86 2.0 SOURCES (1.74M)** — "complete distribution of Concurrent
-  CP/M-86 v2.0, July 5 1983", mostly PL/M + build tools. Contains the loader /
-  BDOS **Program Load (P_LOAD, fn 59)** implementation → authoritative answer
-  to who applies `.CMD` fixups on the RC759's actual OS family.
+  CP/M-86 v2.0, July 5 1983", mostly PL/M + build tools, but the kernel is
+  8086 assembler. The transient **Program Load** routine is `kern/load.sup`
+  (P_LOAD path), with the header/fixup field defs in `kern/cmdh.def` and the
+  base-page layout in `kern/basep.fmt` → authoritative answer to who applies
+  `.CMD` fixups on the RC759's actual OS family (the loader does).
 - **CCP/M-86 and CP/M-86 sources (196K)** — CCP/M-86 2.0 + ASM86/DDT86 sources.
 - **CP/M-86 SOURCE (28K)** — commented disassembly, tentatively v1.1
   (`BDOS.A86`, "12 january 82").
@@ -34,13 +36,18 @@ STATUS):
 Also present: CP/M 1.x/2.0/2.2/3.0, MP/M I/II, CP/M-68K, PL/M compilers,
 LINK/ASM tooling.
 
-## To resolve the loader-vs-self-relocation question authoritatively
+## RESOLVED 2026-08-19 — loader-relocation, via `kern/load.sup`
 
-Download **CCP/M-86 2.0 SOURCES**, read the loader/BDOS P_LOAD path in PL/M,
-and confirm whether it iterates a relocation table (loader-relocates) or only
-sets the base-page group descriptors and lets the transient self-relocate.
-That settles the caveat currently marked UNVERIFIED. Cross-check by booting a
-wlink-produced `.CMD` under MAME.
+Downloaded **CCP/M-86 2.0 SOURCES** (`ccpm8620.zip`) → `scratch/ccpm86-src/`.
+`kern/load.sup` (the transient Program-Load routine) + `kern/cmdh.def` settle it
+definitively: **the OS loader itself applies the `.CMD` fixups.** It tests
+byte-127 bit 7 (`load.sup:405`), reads the fixup table from the file record named
+by `ch_fixrec` (header word 0x7D), and does `add es:[di],dx` per 4-byte record
+(target group's load segment). So the earlier emu2-based "self-relocation /
+bit-7-undocumented" conclusion was WRONG for genuine CCP/M — emu2 is a
+reimplementation that does NOT apply loader fixups. Full authoritative header
+decode: `[[reference_cpm86_cmd_header_ccpm_source]]`. Still verify wlink output
+under MAME (emu2 will not exercise the loader-fixup path).
 
 See also: `[[reference_drc_cpm86_reloc_format]]`,
 `[[reference_cpm86_cmd_header]]`,
