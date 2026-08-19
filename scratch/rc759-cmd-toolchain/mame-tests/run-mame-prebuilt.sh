@@ -2,8 +2,8 @@
 # run-mame-prebuilt.sh -- install a PRE-BUILT Watcom-native CP/M-86 CMD as the
 # autostart MENU.CMD on a copy of the turnkey disk, boot the real MAME rc759
 # driver, and let the guest signal completion via OUT 0x2FE (done_signal.lua).
-# Unlike run-mame.sh this does NOT rebuild: the CMD is produced by the native
-# small-model Watcom toolchain (wpp/wcc-cpm86.sh) and passed in directly.
+# This does NOT rebuild: pass in a CMD already produced by the native Watcom
+# path (owcc -bcpm86, see ../USING_OWCC_CPM86.md) directly.
 #
 # Usage:  ./run-mame-prebuilt.sh /abs/path/to/PROG.CMD
 set -e

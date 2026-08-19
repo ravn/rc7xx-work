@@ -1,5 +1,19 @@
 # Watcom -> DR C calling-convention bridge (verified 2026-08-13)
 
+> **RETIRED 2026-08-19.** The Watcom+LINK-86 hybrid build/test pipeline in
+> `scratch/rc759-cmd-toolchain/` (cc-cpm86.sh, ccrc759.sh, omf_classicize.py,
+> drcbridge.h, bridge-*.sh, drc-abi-test.sh, drc-libtest.sh, mandel-cpm86.sh,
+> install-cpm86-target.sh, l86-to-lib.sh, stdcbench-cpm86.sh + their inputs)
+> was REMOVED. The user does not want DR C's LINK-86 linker used with Watcom.
+> The sole Watcom CP/M-86 build path is now native one-step `owcc -bcpm86`
+> (wcc + wlink `format cpm86`); see `scratch/rc759-cmd-toolchain/USING_OWCC_CPM86.md`.
+> The genuine DR C 1.11 oracle (`drc-oracle.sh`, `drc86111/`) is KEPT as an
+> INDEPENDENT reference (no Watcom). The contrib-side Open-Watcom→DR
+> experiment trees `open-watcom-v2/contrib/ravn/{owc-drc,owc-drlink}/` still
+> exist (they feed the contrib benchmark suite) and are a separate, larger
+> decision — NOT removed here. Content below is kept as verified history.
+
+
 How Open Watcom C objects are made ABI-compatible with Digital Research C's
 CP/M-86 runtime (CLEARL/CLEARS.L86). This is the "watcall vs cdecl / cmain vs
 main" bridge the blocked todos (write-cmdcpm/write-loadcmd) refer to.

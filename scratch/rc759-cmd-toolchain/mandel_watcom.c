@@ -1,6 +1,6 @@
 /* mandel_watcom.c -- clean, portable fixed-point 8.8 Mandelbrot for the
- * Open Watcom CP/M-86 target (owcc -bcpm86).  NO DR C heritage: no drcbridge.h,
- * no DRC_MAIN, no hand-written `#pragma aux fpmul`, no BDOS int E0h inline asm.
+ * Open Watcom CP/M-86 target (owcc -bcpm86).  Pure Watcom path: no DR C bridge,
+ * no hand-written `#pragma aux fpmul`, no BDOS int E0h inline asm.
  * Everything is standard C, and console output goes through the cpm86 clib's
  * putchar() (which reaches BDOS via the target runtime).
  *
