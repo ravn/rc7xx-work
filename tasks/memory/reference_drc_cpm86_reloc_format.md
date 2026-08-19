@@ -143,13 +143,21 @@ seg=0x0000).
    (`load.sup` does `add es:[di],dx`). `ch_fixrec` (header word 0x7D) = the
    128-byte file RECORD number where the fixup table starts; write the table
    at exactly that record. **No crt0 self-relocation is needed — the loader
-   does it.** Additionally emitting the same table as a **type-8 AUX4 group**
-   (DR C does) makes it also work under emu2, which does NOT apply loader
-   fixups (self-reloc path). See `[[reference_cpm86_cmd_header_ccpm_source]]`.
+   does it.**
+
+   **DECISION (@ravn, 2026-08-19): emit ONLY the pure P_LOAD structure — do
+   NOT also carry the reloc table as a type-8 AUX4 group.** DR C emits the
+   AUX4 duplicate so it also runs under emu2 (which does not apply loader
+   fixups); we deliberately do NOT. emu2's missing P_LOAD relocation is an
+   **emu2 bug to fix later** (ravn/emu2-cpm86#1), not something to work around
+   in the linker output. Consequence: medium-model `.CMD`s verify on MAME
+   (genuine CCP/M) only until that emu2 fix lands.
+   See `[[reference_cpm86_cmd_header_ccpm_source]]`.
 4. Optionally emit the dedicated **type-4 STACK** group (DR C does; matches
    `[[reference_cpm86_cmd_header]]`'s large-model SS:SP-from-base-page note).
 5. **Verify the resulting `.CMD` boots under MAME (genuine CCP/M), not just
-   emu2** — emu2 does not implement the byte-127/`ch_fixrec` loader fixups.
+   emu2** — emu2 does not (yet) implement the byte-127/`ch_fixrec` loader
+   fixups (ravn/emu2-cpm86#1).
 
 ## Reproduce
 ```

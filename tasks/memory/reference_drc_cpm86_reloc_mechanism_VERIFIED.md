@@ -102,6 +102,15 @@ guard) would DOUBLE-relocate DR C programs and break them.
 ## Implication for our wlink Stage B
 
 Our `open-watcom-v2/bld/wl/c/loadcpm86.c` must pick ONE coherent model:
+
+**DECISION (@ravn, 2026-08-19): PURE loader-reloc, and NO type-8 AUX4 copy of
+the reloc table.** We emit only the genuine P_LOAD structure (byte-127 bit7 +
+`ch_fixrec` + fixup records). We do NOT ship DR C's AUX4 self-reloc duplicate:
+emu2 not applying P_LOAD fixups is an **emu2 bug to fix later**
+(ravn/emu2-cpm86#1), not worked around in the linker. Medium-model `.CMD`s
+verify on MAME (genuine CCP/M) only until that emu2 fix lands. The two models
+below are kept for context; the loader-reloc one (minus AUX4) is what we build.
+
 - **Self-reloc model** (what DR C effectively uses on emu2 / plain CP/M-86):
   emit the fixup table + a crt0 that walks it using base-page segments, guarded
   by a relocatable flag = 0. Runs on emu2 AND genuine loaders (guard flips it
