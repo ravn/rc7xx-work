@@ -100,3 +100,32 @@ each printed `OK!` then `....` on the PICCOLINE console and signalled
 Medium-model clib/crt0 so `owcc -mcmodel=m` links a full program (currently
 small-model only; `crt759.asm` is the minimal freestanding stand-in); UnZip
 `-mm -zm` port verified with the pointer-memory oracle + MAME.
+
+## UPDATE 2026-08-19 — medium clib/crt0 + one-command owcc (16-bit `dos` convention)
+Medium-model clib/crt0 DONE and verified. `MODEL=m ./build-lib.sh` builds
+`lib286/cpm86/clibm.lib` (far code; per-function `*_TEXT` coalesced to one CODE
+group). `mediumtest.c`+`mediumtest_b.c` (cross-segment far calls + DATA→CODE far
+fn pointers + printf) run end-to-end under the Unicorn loader oracle: `medium
+clib: 6 far calls, 0 fail` / PASS.
+
+**One-command `owcc -bcpm86 -mcmodel={s,m}` now works, following Open Watcom's
+16-bit `system dos` convention (NO `libfile`).** Key move: the crt0 entry lives
+in the front-sorted `BEGTEXT` segment, so `option dosseg` keeps `_cstart_` at
+code-group offset 0 (the .CMD fixed CS:0000 entry — no entry-point field) EVEN
+when the startup is pulled as a plain **library member**. So crt0 is archived
+into `clibs.lib`/`clibm.lib`; `format cpm86`'s implicit `_cstart_` start pulls
+it FIRST from whichever model lib the object's default-library record
+(`clibs`/`clibm`) auto-fetches. Model selection is automatic — ZERO owcc change,
+one `system cpm86` block. (Gotcha: the compiler `-zl` flag SUPPRESSES the
+default-library record → no auto-fetch; user programs must be compiled WITHOUT
+`-zl` for the one-command link. The clib objects themselves keep `-zl` so the
+stock DOS clib is never pulled.)
+
+Changes: `bld/wl/lnk/specs.sp` — removed `libfile cstartcpm.obj`. crt0 sources
+→ BEGTEXT: contrib `port/crt0sm.asm`+`crt0mm.asm`, standard-build
+`bld/clib/_cpm/a/cstartcpm.asm`; `bld/clib/_cpm/objects.mif` now archives
+`cstartcpm.obj`. Standalone `cstartcpm.obj`/`cstartmm.obj` kept for the
+explicit-`file` demo scripts. **Standard build has only the SMALL (`ms`) cpm86
+model wired; the MEDIUM (`mm`) standard-build integration (mm dirs across the
+merged msdos.086 components) is the remaining task — the contrib
+`build-lib.sh MODEL=m` path already proves medium end-to-end.**

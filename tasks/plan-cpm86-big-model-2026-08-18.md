@@ -501,13 +501,32 @@ question is closed; "Stage B" in this plan is now interchangeable with
 
 ### Phase B4 — crt0 + verification
 
-- [ ] Extend crt0's Stage-A ES-reading addition (Phase A3) with CS/multi-
-      segment awareness if needed (likely nothing extra — far calls burn in
-      their own target addresses at link time, crt0 doesn't need to know
-      about individual code segments beyond the entry point).
-- [ ] Test program whose CODE section (via padding/multiple source files)
-      exceeds 64 KB total, each individual segment ≤64 KB — same three-tier
-      emu2 → MAME → PCE verification as Phase A4.
+- [x] Extend crt0's Stage-A ES-reading addition (Phase A3) with CS/multi-
+      segment awareness if needed — confirmed nothing extra needed: far calls
+      burn in their own target addresses at link time, crt0 doesn't need to
+      know about individual code segments beyond the entry point.
+- [x] Medium-model C library + crt0 built and installed
+      (`lib286/cpm86/clibm.lib` + medium crt0), via `MODEL=m ./build-lib.sh`
+      (contrib) mirrored into the standard build (`bld/clib/_cpm`).
+- [x] Test program whose CODE section (2 source files → cross-segment far
+      calls + far function pointers, ~12.6 KB coalesced to one CODE group)
+      verified end-to-end under the Unicorn loader oracle (applies the P_LOAD
+      fixups): `medium clib: 6 far calls, 0 fail` / PASS. (`build-medium.sh`
+      auto-asserts this; MAME re-verify of MEDTEST.CMD optional/authoritative.)
+- [x] **One-command `owcc -bcpm86 -mcmodel={s,m}` following the 16-bit `system
+      dos` convention** — NO `libfile`. The crt0's entry moved into the front-
+      sorted `BEGTEXT` segment so it lands at code-group offset 0 even as a
+      *library member*; crt0 is archived into `clibs.lib`/`clibm.lib`; the
+      `format cpm86` implicit `_cstart_` start pulls it FIRST from the model
+      clib that the object's default-library record (`clibs`/`clibm`)
+      auto-fetches. So model selection is automatic with zero owcc change and a
+      single `system cpm86` block. `libfile cstartcpm.obj` removed from
+      `bld/wl/lnk/specs.sp`. Standard-build seam updated to match:
+      `bld/clib/_cpm/a/cstartcpm.asm` → BEGTEXT, `bld/clib/_cpm/objects.mif`
+      archives `cstartcpm.obj`. **NOTE:** the standard build only has the SMALL
+      (`ms`) cpm86 model wired; adding the MEDIUM (`mm`) model dirs across the
+      merged `msdos.086` components is the remaining standard-build task (the
+      contrib `build-lib.sh MODEL=m` path already proves medium works).
 
 ---
 
