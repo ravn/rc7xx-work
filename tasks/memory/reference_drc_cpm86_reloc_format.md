@@ -33,6 +33,9 @@ CP/M-86 TPA anyway.
 >   table. **emu2 is our reimplementation, not the oracle — only MAME running
 >   genuine CCP/M-86 is 100% authoritative** for loader/relocation semantics.
 >   emu2 may have chosen self-relocation where real CCP/M loader-relocates.
+>   → Authoritative resolver available: the genuine DRI **CCP/M-86 2.0 PL/M
+>   source** (loader/BDOS P_LOAD fn 59), see
+>   `[[reference_cpm_dri_source_archive]]`.
 > - Header **byte 127 (07FH) = "Program Flag"** (Concurrent §3.1.2): DRI
 >   documents ONLY bit 6 = optional 8087, bit 5 = 8087 required. That
 >   `header[0x7F] = 0x80` (bit 7) triggers relocation is **observed in DR C
