@@ -20,37 +20,39 @@ Option 2) is ruled out because the reference toolchain demonstrably does not
 use it, and a fixed address is unsafe under a multi-console Concurrent
 CP/M-86 TPA anyway.
 
-> **VERIFICATION STATUS — RESOLVED 2026-08-19 against the genuine OS source.**
-> The question of WHO applies the relocation is now settled by the authoritative
-> Digital Research **Concurrent CP/M-86 2.0** OS source (`kern/load.sup` +
-> `kern/cmdh.def`; see `[[reference_cpm86_cmd_header_ccpm_source]]` for the full
-> decode with file:line):
-> - **The OS LOADER applies the fixups**, not the program. `load.sup:405` tests
->   byte-127 bit 7 (`test lod_lbyte,80h`); if set it random-reads the file at
->   record `ch_fixrec` (header word 0x7D) and walks the 4-byte fixup records,
->   doing `add es:[di],dx` where `dx` = the target group's load segment. This is
->   loader-relocation. (This CONFIRMS the original analysis and REVERSES the
->   interim emu2-based "self-relocation" conclusion.)
-> - **Byte 127 bit 7 (0x80) = "fixup records present" IS documented** — in the
->   OS source (`cmdh.def:18`, titled "Command Header Format and Load Fixup
->   Records"), just not in the DRI *manuals* (which cover only the 8087 bits
->   5/6 of the same byte). The earlier downgrade to "observed, not documented"
->   was wrong; it was based on emu2, which is not authoritative.
-> - **emu2 does NOT implement this** (`emu2-cpm86/src/cpm86.c` never reads
->   `ch_fixrec` / applies fixups; it only exposes the type-8 aux group via a
->   base-page descriptor, relying on the program self-relocating). This is the
->   real emu2-vs-genuine fidelity gap — **a wlink `.CMD` using loader fixups
->   MUST be verified booting under MAME, not just emu2.** DR C hedges by
->   emitting the table BOTH as a type-8 AUX4 group (emu2's path) AND via
->   `ch_fixrec`/bit 7 (the genuine loader's path).
+> **VERIFICATION STATUS — RESOLVED 2026-08-19; full mechanism in
+> `[[reference_drc_cpm86_reloc_mechanism_VERIFIED]]`.**
+> DR C emits a **dual, self-coordinating** relocation scheme. Verified by
+> disassembling a real DR C large-model `.CMD` + emu2 experiments + the
+> Concurrent CP/M-86 2.0 loader source (`kern/load.sup` + `kern/cmdh.def`):
+> - **The relocation table is emitted ONCE**, reachable both as a **type-8
+>   (AUX4) group image** AND via header byte-127 bit 7 + `ch_fixrec` (header
+>   word 0x7D). Same bytes, two consumers.
+> - **Either the OS loader OR the program's CLEARL crt0 applies it — never
+>   both.** A guard: CLEARL's entry `mov cx,0 / jcxz / ret` reads a 0x0000
+>   immediate that is ITSELF a fixup target (`RELOCSEG.CMD` fixup rec #561:
+>   CODE para 0x017 off 6, add CODE segment). If the loader ran fixups that
+>   immediate is nonzero → CLEARL skips self-reloc. If the loader did NOT
+>   (emu2, plain CP/M-86) it stays 0 → CLEARL self-relocates, adding each
+>   target group's actual load segment (read from the base-page descriptors).
+> - **The genuine CCP/M-86 loader CAN relocate** (`load.sup:405` tests
+>   `lod_lbyte,80h`; if set, walks `ch_fixrec` records doing `add es:[di],dx`).
+>   Byte 127 bit 7 IS documented — in the OS source (`cmdh.def:18`), not the
+>   DRI manuals (which cover only 8087 bits 5/6).
+> - **emu2 does NOT apply loader fixups, and that is CORRECT for DR C** — the
+>   guard stays 0 and CLEARL self-relocates, so DR C programs run on emu2 by
+>   design (VERIFIED: `RELOCALL.CMD` far-call prints `ABC`). NOT a bug.
+>   (This corrects BOTH the interim "self-relocation only" note AND the
+>   over-swung "loader-relocation, not self-reloc" correction: it is a
+>   guard-coordinated dual path.)
 >
-> Design conclusion: **replicate DR C's loader-fixup output** — set byte 127
-> bit 7, write `ch_fixrec`, emit the 4-byte fixup records. No crt0
-> self-relocation is required (the genuine loader does it); emitting the table
-> also as a type-8 aux group additionally satisfies emu2. That is safe on genuine
-> CCP/M by construction (DR C is the shipping toolchain for this OS), and does
-> not depend on unverified loader behavior. Confirm the final `.CMD` boots
-> under **MAME**, not just emu2, before declaring Stage B done.
+> Design conclusion for Stage B: pick ONE coherent model.
+> **(a) Self-reloc model** — emit the table + a crt0 walker guarded by a
+> relocatable flag=0; runs on emu2 AND genuine loaders (guard flips off when a
+> loader relocates). Robust; matches what already works. **(b) Pure loader-reloc
+> model** — set byte127 bit7 + `ch_fixrec`, no walker; runs on genuine CCP/M-86
+> but NOT emu2/plain CP/M-86 → verify under MAME only. All descriptors stay
+> `A_Base=0` either way, so plan Option 2 (fixed A_Base) remains ruled out.
 
 ## How DR C emits a far call (compiler side)
 

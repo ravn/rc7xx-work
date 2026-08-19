@@ -356,12 +356,14 @@ format + cross-check in `[[reference_drc_cpm86_reloc_format]]`. Findings:
   load segment is added (1=CODE base, 2=DATA base). LINK-86 writes each far
   segment field as a **group-relative paragraph**, and **the OS loader adds
   the real load segment** (`load.sup` `add es:[di],dx`). **RESOLVED 2026-08-19
-  against genuine OS source: the LOADER relocates — no crt0 self-relocation
-  needed. emu2 does NOT implement this (it self-relocs from the aux group), so
-  loader-fixup output MUST be verified under MAME.** Full decode:
-  `[[reference_cpm86_cmd_header_ccpm_source]]`. Safe path: replicate DR C
-  (byte-127 bit 7 + `ch_fixrec` + fixup records, plus the type-8 aux group so
-  emu2 also works).
+  against genuine OS source + DR C disasm: DR C uses a guard-coordinated DUAL
+  path — the loader relocates IF it can (sets a relocatable guard immediate
+  nonzero → CLEARL crt0 self-reloc skipped) ELSE crt0 self-relocates (guard=0);
+  never both. emu2 (guard stays 0) self-relocs, so it is NOT buggy for DR C. We
+  deliberately pick only the loader half for wlink — see LOCKED DECISION below.
+  Verify loader-fixup output under MAME.** Full account:
+  `[[reference_drc_cpm86_reloc_mechanism_VERIFIED]]`; header decode:
+  `[[reference_cpm86_cmd_header_ccpm_source]]`.
 - **Every group descriptor has `A_Base = 0`** — DR C is fully relocatable.
   → **Option 2 (fixed A-Base) is RULED OUT**: the reference toolchain
   demonstrably does not use it, and a fixed TPA address is unsafe under a
@@ -385,6 +387,29 @@ emu2 (which does not apply loader fixups) works too;
 needed regardless. **The relocation-engine intercept (step 2) is the real
 remaining effort and MUST be verified booting under MAME (emu2 does not
 implement byte-127/`ch_fixrec` fixups) — not yet started.**
+
+### LOCKED DECISION 2026-08-19 — pure loader-relocation, NO crt0 self-reloc
+
+Per user (2026-08-19): **our toolchain must NOT self-relocate.** We link with
+**wlink**, which is free to emit the fixup table, so Stage B commits to the
+**pure loader-relocation** model:
+- wlink `loadcpm86.c` emits byte-127 bit 7 + `ch_fixrec` + the 4-byte fixup
+  records (and coalesces CODE groups). **No** CLEARL-style crt0 self-reloc
+  walker, **no** relocatable guard immediate. (DR C itself ships the dual
+  guard-coordinated path — see `[[reference_drc_cpm86_reloc_mechanism_VERIFIED]]`
+  — but we deliberately pick only the loader half; simpler emitter, correct on
+  any relocating loader.)
+- Consequence: the output runs ONLY on a loader that applies P_LOAD fixups.
+  Genuine CCP/M-86 (`load.sup`) does; **emu2 currently does NOT** → two tracked
+  items:
+  1. **emu2 issue ravn/emu2-cpm86#1: add P_LOAD relocation** — read byte-127
+     bit 7 + `ch_fixrec`, apply the 4-byte fixups (`add seg` per target group)
+     after loading groups. Without it, our pure-loader-reloc CMDs won't run
+     under emu2.
+  2. **Oracle issue ravn/rc7xx-work#15: verify large-model CMDs on a real
+     CP/M-86 oracle** (MAME RC759 / genuine CP/M-86) once available. Until then
+     large model is UNTESTED on early CP/M-86 loader editions — carry an
+     explicit caveat note.
 
 - [ ] (Blocked on the above) Extend `cmdcpm86.c`/`loadcpm86.c` to gather
       ALL segments/wlink-groups whose class is `CODE` and concatenate

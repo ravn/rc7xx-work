@@ -36,18 +36,24 @@ STATUS):
 Also present: CP/M 1.x/2.0/2.2/3.0, MP/M I/II, CP/M-68K, PL/M compilers,
 LINK/ASM tooling.
 
-## RESOLVED 2026-08-19 — loader-relocation, via `kern/load.sup`
+## RESOLVED 2026-08-19 — guard-coordinated dual reloc (loader OR crt0)
 
 Downloaded **CCP/M-86 2.0 SOURCES** (`ccpm8620.zip`) → `scratch/ccpm86-src/`.
-`kern/load.sup` (the transient Program-Load routine) + `kern/cmdh.def` settle it
-definitively: **the OS loader itself applies the `.CMD` fixups.** It tests
-byte-127 bit 7 (`load.sup:405`), reads the fixup table from the file record named
-by `ch_fixrec` (header word 0x7D), and does `add es:[di],dx` per 4-byte record
-(target group's load segment). So the earlier emu2-based "self-relocation /
-bit-7-undocumented" conclusion was WRONG for genuine CCP/M — emu2 is a
-reimplementation that does NOT apply loader fixups. Full authoritative header
-decode: `[[reference_cpm86_cmd_header_ccpm_source]]`. Still verify wlink output
-under MAME (emu2 will not exercise the loader-fixup path).
+`kern/load.sup` (the transient Program-Load routine) + `kern/cmdh.def` show the
+genuine Concurrent CP/M-86 loader (dated 29 June 1983) CAN apply `.CMD` fixups:
+it tests byte-127 bit 7 (`load.sup:405`), reads the fixup table from the file
+record named by `ch_fixrec` (header word 0x7D), and does `add es:[di],dx` per
+4-byte record. BUT this is only half the story. DR C programs carry the SAME
+table AND a CLEARL crt0 self-reloc walker, coordinated by a **relocatable guard
+immediate** that is itself a fixup target: the loader relocating sets the guard
+nonzero → crt0 skips self-reloc; a non-relocating loader (emu2, early CP/M-86)
+leaves guard=0 → crt0 self-relocates. Never both. So the earlier "loader
+relocates, NOT self-reloc" wording (and its predecessor "self-reloc only") were
+BOTH over-swings — the truth is the guard-coordinated dual path. emu2 is
+therefore NOT buggy for DR C. Full verified account:
+`[[reference_drc_cpm86_reloc_mechanism_VERIFIED]]`. Full header decode:
+`[[reference_cpm86_cmd_header_ccpm_source]]`. Still verify wlink output under
+MAME (emu2 exercises only the self-reloc/guard=0 path).
 
 See also: `[[reference_drc_cpm86_reloc_format]]`,
 `[[reference_cpm86_cmd_header]]`,

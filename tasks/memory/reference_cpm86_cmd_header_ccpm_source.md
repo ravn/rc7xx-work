@@ -151,29 +151,39 @@ fixup table begins (record N = file offset N·128). Each fixup record is 4 bytes
       add es:[di],dx        ; *** patch: add TARGET load segment to the word ***
       add bx,fixlen         ; next record; re-read next file record at end
 
-So the genuine CP/M-86 / CCP/M loader **relocates the program itself** — this is
-loader-relocation, NOT program self-relocation. `dx` (the value added) is always
-the *target* group's actual load segment; the record says which group's segment
-to add and where.
+So the genuine CP/M-86 / CCP/M loader **can relocate the program itself**.
+But DR C's `.CMD` ALSO ships a `CLEARL` crt0 that self-relocates — and the two
+never double-apply, because a **guard flag that is itself a relocation target**
+selects exactly one actor. Full mechanism (disassembly + experiments):
+`[[reference_drc_cpm86_reloc_mechanism_VERIFIED]]`. In brief: CLEARL's entry
+`mov cx,0 / jcxz / ret` reads a 0x0000 immediate that has its OWN fixup record;
+if the loader ran fixups that immediate is nonzero → CLEARL skips self-reloc; if
+not (emu2, plain CP/M-86) it stays 0 → CLEARL self-relocates using the actual
+group segments the loader wrote into the base page. `dx` (the value added) is the
+*target* group's actual load segment; the record says which group's segment to
+add and where.
 
 ### Cross-check against real DR C artifacts
 
 `LL_l.CMD` (large model): `ch_lbyte=0x80`, `ch_fixrec=0x17B` (record 379 =
 offset 0xBD80); records there include `grp=0x12` (code location, add DATA base)
 and `grp=0x11` (code location, add CODE base) — exactly the loader's semantics.
-`LL_s.CMD` (small model) ALSO has `ch_lbyte=0x80` with one real fixup — so fixups
-are not unique to the large model.
+The fixup table is ALSO reachable as a **type-8 (AUX4) group** whose image is the
+same bytes (`LL_l.CMD` group list: Code, Data, Extra, Stack, AUX4@0xBD80 = the
+`ch_fixrec` offset). `LL_s.CMD` (small model) ALSO has `ch_lbyte=0x80` with one
+real fixup — so fixups are not unique to the large model.
 
-### emu2 does NOT implement this (fidelity gap — only MAME is authoritative)
+### emu2 does NOT apply loader fixups — and that is CORRECT for DR C
 
 `emu2-cpm86/src/cpm86.c` never reads `ch_fixrec` (0x7D) and never applies these
-fixups (only the aux-group base-page descriptor handling at lines 526-527). emu2
-relies on the program self-relocating from a type-8 aux-group image. **A wlink
-`.CMD` that uses byte-127/`ch_fixrec` loader fixups MUST therefore be verified
-booting under MAME, not just emu2.** DR C large model hedges by emitting the
-table BOTH as a type-8 AUX4 group (emu2's self-reloc path) AND via
-`ch_fixrec`/bit 7 (the genuine loader's path); that is why DR C programs run on
-both.
+loader fixups. That is not a bug for DR C output: with no loader relocation the
+guard immediate stays 0 and CLEARL self-relocates, so DR C large-model programs
+run correctly on emu2 (VERIFIED: `RELOCALL.CMD` prints `ABC` — a far call
+through a relocated pointer succeeds). The reloc table is emitted ONCE (as the
+type-8 aux group; the same bytes are pointed at by `ch_fixrec`/bit 7 for a
+relocating loader). A wlink `.CMD` that uses ONLY byte-127/`ch_fixrec` loader
+fixups with NO self-reloc crt0 would run on genuine CCP/M-86 but NOT on emu2, so
+it MUST be verified under MAME. See `[[reference_drc_cpm86_reloc_mechanism_VERIFIED]]`.
 
 ---
 
@@ -231,8 +241,11 @@ revise for Stage B:
    debug info, and appending debug info must never shift the fixup record number.
 2. It currently emits `ch_fixrec`/byte-127 = 0 (no fixups). Stage B must set
    byte 127 bit 7, write `ch_fixrec`, and emit the 4-byte fixup records in the
-   format above so the genuine CCP/M loader relocates cross-group far segment
-   references (no crt0 self-relocation needed — the loader does it).
+   format above. DR C's model is dual: the loader applies these IF it relocates
+   (guard set nonzero → crt0 self-reloc skipped), else a CLEARL-style crt0
+   walker self-relocates (guard=0). See
+   `[[reference_drc_cpm86_reloc_mechanism_VERIFIED]]`; pick ONE coherent Stage B
+   model (self-reloc runs on emu2 AND genuine loaders).
 
 See also: `[[reference_cpm86_cmd_header]]`,
 `[[reference_drc_cpm86_reloc_format]]`, `[[reference_cpm_dri_source_archive]]`,
