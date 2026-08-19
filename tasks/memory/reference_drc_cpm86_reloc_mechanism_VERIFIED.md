@@ -118,7 +118,12 @@ below are kept for context; the loader-reloc one (minus AUX4) is what we build.
   already works.
 - **Pure loader-reloc model**: set byte127 bit7 + `ch_fixrec`, no crt0 walker.
   Runs on genuine CCP/M-86 but NOT on emu2 (or plain CP/M-86). Verify under
-  MAME only.
+  MAME **or the Unicorn runner** — since 2026-08-19 `cpm86run_unicorn.py`
+  implements loader relocation (`_apply_fixups()`, a port of `load.sup:402-449`;
+  unit-tested in `contrib/ravn/test_cpm86_reloc.py`), so it now applies P_LOAD
+  fixups exactly like a genuine loader (verified: DR C LL_l/LL_s/MANDEL/TINY63
+  relocate + run there, output identical to the CLEARL self-reloc path). emu2
+  still does not (ravn/emu2-cpm86#1).
 
 ## Still unverified (would need MAME / genuine RC759)
 
