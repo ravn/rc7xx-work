@@ -282,7 +282,25 @@ original single-stage plan (2026-08-18 draft), renumbered B1-B4:
       ordinary OMF far-call relocation fixups resolve the cross-segment
       calls — nothing CP/M-86-specific about the call mechanism itself.
 
-### Phase B2 — wlink: emit multi-segment CODE + STACK group descriptor — **IN PROGRESS, blocked on a real design decision (2026-08-18, session paused here)**
+### Phase B2 — wlink: emit multi-segment CODE + STACK group descriptor — **IMPLEMENTED + RUNTIME-VERIFIED on Unicorn (2026-08-19); MAME verify still pending**
+
+**UPDATE 2026-08-19 (macbook): Option 1 (real fixup records) implemented and
+runtime-verified.** wlink now coalesces same-class CODE segments into ONE
+type-1 descriptor, sets header byte 127 bit 7, writes `ch_fixrec`, and emits the
+4-byte fixup records. A real linker bug was found+fixed in the process: a far
+target's group-relative paragraph MUST come from the PACKED `.CMD` image layout
+(`cpm86GroupImgPara` = running sum of `CMD_PARAS(CalcGroupSize())`), NOT from
+`grp_addr.seg` (wlink frame numbers increment by 1 per segment regardless of
+size). Verified on TWO committed runtime oracles (`contrib/ravn/test_stageb_farcall.sh`:
+CODE→CODE far calls + DATA→CODE far-pointer memory check) plus a small-model
+no-fixup guard; small-model output stays byte-identical. Also learned: freestanding
+tests must reserve the base page (`test_stageb_begdata.asm`) because the loader
+zero-fills the start of the first DATA group (`load.sup:477 init_base`). Full
+account: `tasks/memory/reference_stageb_farcode_reloc_verified.md`. **Remaining:
+MAME (authoritative) verification of a real medium-model `.CMD`.** Historical
+notes below kept for context.
+
+### Phase B2 (historical) — wlink: emit multi-segment CODE + STACK group descriptor — **IN PROGRESS, blocked on a real design decision (2026-08-18, session paused here)**
 
 **Uncommitted change so far:** `bld/wl/c/cmdall.c` — added `_CPM86` to
 the `#if` guard + `MK_CPM86` to the mask for the existing generic
