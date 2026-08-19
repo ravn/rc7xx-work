@@ -156,8 +156,16 @@ seg=0x0000).
 4. Optionally emit the dedicated **type-4 STACK** group (DR C does; matches
    `[[reference_cpm86_cmd_header]]`'s large-model SS:SP-from-base-page note).
 5. **Verify the resulting `.CMD` boots under MAME (genuine CCP/M), not just
-   emu2** — emu2 does not (yet) implement the byte-127/`ch_fixrec` loader
-   fixups (ravn/emu2-cpm86#1).
+   emu2 or the Unicorn runner** — NEITHER host runner applies P_LOAD fixups.
+   Both `emu2` and `contrib/ravn/cpm86run_unicorn.py` parse the group
+   descriptors + build the base page correctly but do NOT read byte-127 bit7 /
+   `ch_fixrec` and do NOT relocate far-segment references (the runner even
+   unpacks the descriptor `base` field and then ignores it, placing groups at
+   its own computed segments — correct only because base==0). This is fine for
+   base=0 self-relocating DR C small/compact/large output, but pure-P_LOAD
+   medium-model output (steps 2-3, far calls needing loader segment fixups)
+   can only be verified on MAME until P_LOAD relocation is added to the runners
+   (emu2: ravn/emu2-cpm86#1; the Unicorn runner needs the same).
 
 ## Reproduce
 ```
