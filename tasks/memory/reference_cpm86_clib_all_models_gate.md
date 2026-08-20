@@ -13,8 +13,12 @@ runtime-library functional suite against each, from the ONE installed model lib
 `lib286/cpm86/clib{s,m,c}.lib` (no bespoke object list — a link failure means a
 routine is genuinely missing from the archive, which is what the gate catches).
 
-**Result matrix (all GREEN, 15 PASS / 0 FAIL / 0 SKIP):** heap / stdio / float /
-math PASS in s, m, c under the Unicorn runner (`cpm86run_unicorn.py`, applies P_LOAD
+`run-all-models.sh` is now ONE command: it builds+installs each model's clib+libm
+via `build-lib.sh` if missing (or `BUILD=1` to force), then runs the gate. Process
+docs: `docs/BUILDING_ALL_MODELS.md` + `docs/FLOAT_PRINTF.md`.
+
+**Result matrix (all GREEN, 18 PASS / 0 FAIL / 0 SKIP):** heap / stdio / float /
+math / fltfmt PASS in s, m, c under the Unicorn runner (`cpm86run_unicorn.py`, applies P_LOAD
 reloc so it runs m+c too). **disk PASS in s, m AND c under emu2** — emu2 now also
 applies P_LOAD relocation (`[[reference_cpm86_emu2_p_load_reloc]]`, closes
 ravn/emu2-cpm86#1), so it runs medium/compact .CMDs with the file BDOS the
@@ -70,10 +74,21 @@ alone, WITHOUT stock fltused.c's `AXIN(__setEFGfmt)` %f-formatter cascade).
 Programs that want `printf("%f")` link `setefg.c` explicitly. Test:
 `test/mathtest.c` (scaled-integer oracle) — `run-all-models.sh` math row, 15/15.
 
+## Real %e/%f/%g printf — DONE, opt-in (2026-08-20)
+
+Works in all 3 models (`fltfmt` row, oracle `f=3.1416 e=2.500e+00 g=0.001`). It is
+OPT-IN because the dtoa/cvt subsystem is ~4 KB: a program must (1) compile `-fpc`,
+(2) call `__setEFGfmt()` ONCE before its first %f (our minimal crt0 does NOT walk
+Watcom's auto-init table, so the formatter isn't installed automatically), and (3)
+link libm (which carries `_EFG_Format`/`__cnvs2d`). The formatter chain (`setefg`,
+`cvt`, `ldcvt`, `efcvt`, `gcvt`, `cvtbuf`, `i8ls086`=__U8LS 64-bit shift) is
+archived in clib but pulled ONLY by the `__setEFGfmt` reference, so integer-only
+programs pay nothing (default = the `noefgfmt` stub). Full how-to:
+`docs/FLOAT_PRINTF.md`. Test: `test/floatfmt_test.c`.
+
 ## NOT included
 
-Real `%e/%f/%g` printf formatting (setefg/dtoa/ecvt big-decimal subsystem) — the
-math tests print scaled `%ld`. Wire `setefg.c` when a program needs float output.
+`scanf("%f")` (read side `__cnvs2d` archived but untested) and `%a` hex-float.
 
 ## Also fixed this session
 
