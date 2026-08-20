@@ -277,7 +277,15 @@ a magic literal (`test lod_lbyte,80h`). So ALL FIVE named equates
 (`need_fxps`/`opt_8087`/`need_8087`/`need_rsx`/`susp_mode`) are v3.1 additions. Bits
 5/6 (8087) existed only in the DRI manuals for 2.0, never in its source; bits 4
 (`need_rsx`, RSX = Resident System eXtension) and 3 (`susp_mode`, background-suspend)
-are genuinely new 3.x features with no counterpart anywhere in the 2.0 tree. The v3.1 loader
+are genuinely new 3.x flags with no counterpart anywhere in the 2.0 tree. NB their
+*implementation* status differs in v3.1: **`susp_mode` is fully wired** (`LOAD.SUP`
+l.130 → `p_sflag |= psf_suspend`, then `DSPTCH.RTM` `switch1:` moves a backgrounded
+suspendable process off RLR onto the suspend list SPLR), but **`need_rsx` is DEFINED
+yet NOT implemented** — the equate is never tested by the loader, `PROC.RTM:50` says
+RSX "aren't yet implemented", and its companion `P_RSX` (fn 60, `CPMFUNC.H`) is an
+illegal-function stub (`sysent[60]=db 1,sup`→`supfunc[1]=i_ent`). RSX (Resident System
+eXtension = a BDOS-call-intercepting module, à la CP/M Plus) only became real in later
+Concurrent DOS / DOS Plus / DR-DOS. The v3.1 loader
 `D1/LOAD.SUP` acts on all of them: `ndpchk:`/`ndp_flg:` test bit5/bit6 (→ `lod_ndp`,
 `owner_8087`, error `e_nondp=17`), `h_hdr:` tests `susp_mode` (→ `lod_suspnd`), and
 `test lod_lbyte,80h` (l.440) gates fixups.
