@@ -17,8 +17,8 @@ routine is genuinely missing from the archive, which is what the gate catches).
 via `build-lib.sh` if missing (or `BUILD=1` to force), then runs the gate. Process
 docs: `docs/BUILDING_ALL_MODELS.md` + `docs/FLOAT_PRINTF.md`.
 
-**Result matrix (all GREEN, 18 PASS / 0 FAIL / 0 SKIP):** heap / stdio / float /
-math / fltfmt PASS in s, m, c under the Unicorn runner (`cpm86run_unicorn.py`, applies P_LOAD
+**Result matrix (all GREEN, 21 PASS / 0 FAIL / 0 SKIP):** heap / stdio / float /
+math / fltfmt / scanf PASS in s, m, c under the Unicorn runner (`cpm86run_unicorn.py`, applies P_LOAD
 reloc so it runs m+c too). **disk PASS in s, m AND c under emu2** — emu2 now also
 applies P_LOAD relocation (`[[reference_cpm86_emu2_p_load_reloc]]`, closes
 ravn/emu2-cpm86#1), so it runs medium/compact .CMDs with the file BDOS the
@@ -86,9 +86,18 @@ archived in clib but pulled ONLY by the `__setEFGfmt` reference, so integer-only
 programs pay nothing (default = the `noefgfmt` stub). Full how-to:
 `docs/FLOAT_PRINTF.md`. Test: `test/floatfmt_test.c`.
 
+**scanf float + %a hex-float DONE (2026-08-20):** `sscanf("%lf")` works (scanf
+row, oracle `n=2 f=314159 i=42`) — the scanf family (`scnf`/`sscanf`/`fscanf`/
+`scanf` + `isdigit`/`isspace`/`mbtowc`/`__U8M`) is archived in clib on-demand;
+float reads go through `__EFG_scanf`→`__cnvs2d` (libm) after `__setEFGfmt()`.
+`printf("%a")`→`0x1.8p+0` works ONLY because clib builds `efgfmt.c` from CURRENT
+source (the prebuilt libm efgfmt predates %a and drops it silently); clib links
+before libm so the source `_EFG_Format` wins.
+
 ## NOT included
 
-`scanf("%f")` (read side `__cnvs2d` archived but untested) and `%a` hex-float.
+`scanf("%a")` hex-float READ (uses the prebuilt libm `__cnvs2d`, may share the %a
+gap); console `scanf` stdin path (only `sscanf` exercised here).
 
 ## Also fixed this session
 
