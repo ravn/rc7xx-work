@@ -1,0 +1,249 @@
+  ----------------------------------------------------------------
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |         ================================================     |
+  |	    |						   |	 |	
+  |	    |						   |	 |
+  |         |       *****  Assembler Plus Tools  *****     |     |
+  |         |                                              |     |
+  |	    |           for the CP/M-86 Family of	   |	 |
+  |         |               Operating Systems		   |	 |
+  |         |                                              |     |
+  |         |                ---------------               |     |
+  |         |                                              |     |
+  |         |               READ.ME File Notes             |     |
+  |         |                                              |     |
+  |         |               - November 1983 -              |     |
+  |         |                                              |     |
+  |         |             Digital Research Inc.            |     |
+  |         |                 P.O. Box 579                 |     |
+  |         |           Pacific Grove, CA  93950           |     |
+  |         |                                              |     |
+  |         ================================================     |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |       You can print  the information in this file on your    |
+  |       line  printer  using  8 by 11 inch  paper  with the    |
+  |       printer set to 6 lines per inch.   You can trim the    |
+  |       pages along the dotted  lines and place  the  pages    |
+  |       in your product documentation binder.                  |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |	
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |	
+  |								 |
+  ----------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ----------------------------------------------------------------
+  |  Assembler Plus Tools READ.ME File Notes	   LINK-86 Notes |
+  |                                                              |
+  |                                                              |
+  |                          LINK-86 Notes			 |	
+  |	    ================================================	 |
+  |								 |
+  |	 1. Three new command line options have  been added to	 |
+  |	    LINK-86.  Note that only the  most recent versions	 |
+  |	    of  CP/M-86  support  the  8087  math  coprocessor	 |
+  |	    options.						 |
+  |	    							 |
+  |	    							 |
+  |	    The 8087REQUIRED switch sets a flag  in the header	 |
+  |	    record  of  the   .CMD   file  indicating  to  the	 |
+  |	    operating system  that the 8087  math  coprocessor	 |
+  |	    must be available to the run  the program.  If the	 |
+  |	    8087 processor is not available, CP/M-86 does  not	 |
+  |	    load the program.					 |
+  |								 |
+  |	    The 8087CONDITIONAL switch  sets  a  flag  in  the	 |
+  |	    header record of the .CMD file indicating  to  the	 |
+  |	    operating system  that the 8087  math  coprocessor	 |
+  |	    must be available to run the program.  If the 8087	 |
+  |	    processor  is  not  available,  the  program  must	 |
+  |	    access 8087 simulation routines.			 |
+  |								 |
+  |	    The $MY option  directs LINK-86 to send  the  .MAP	 |
+  |	    file to your line printer.			 	 |
+  |								 |
+  |	 2. A new optional parameter has  been  added  to  the	 |
+  |	    MAP option. The NOCOMMON parameter directs LINK-86	 |
+  |	    to suppress the listing of common segment names in	 |
+  |	    the MAP file.					 |
+  |								 |
+  |	 3. LINK-86 now displays the filename and  module name	 |
+  |	    indicating the location of an undefined symbol.	 |
+  |								 |
+  |	 4. The   Assembler  Plus  Tools   package   does  not	 |
+  |	    include an overlay manager.  The  overlay  manager	 |
+  |	    is part of the run-time library that  is  packaged	 |
+  |	    with your language software.			 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |                             Page 1				 |
+  |								 |
+  |______________________________________________________________|
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ----------------------------------------------------------------
+  |  Assembler Plus Tools READ.ME File Notes       LINK-86 Notes |
+  |								 |
+  |	    							 |
+  |	    							 |
+  |	 5. LINK-86 can  now  report  three  additional  error	 |
+  |	    messages.						 |
+  |								 |
+  |	    CLASS NOT FOUND  -  The  class name  specified  in	 |
+  |	    the command line does not  exist  in  any  of  the	 |
+  |         being linked.					 |
+  |	    							 |
+  |	    GROUP NOT FOUND  -  The group name  specified  in	 |
+  |	    the command line does not exist  in  any  of  the	 |
+  |	    files being linked.					 |
+  |	    							 |
+  |	    SEGMENT NOT FOUND  -  The segment name  specified	 |
+  |	    in the command line does not exist in any  of the	 |
+  |	    files being linked.					 |
+  |								 |
+  |					    			 |
+  |                          RASM-86 NOTES			 |
+  |         ===============================================	 |
+  |	    							 |
+  |	  * A new command line option switch  has been  added	 |
+  |	    to the RASM-86 assembler.  The $NC switch directs	 |
+  |	    RASM-86 not to convert  letters  to  upper  case.	 |
+  |	    This  feature  supports  users  of   C   language	 |
+  |	    software.						 |
+  |								 |
+  |       * RASM-86 now supports 8087 opcodes, if you include    |
+  |         file 8087DEF.A86 in your program.   Refer to that	 |
+  |         file for the names of the 8087 opcodes.		 |
+  |								 |
+  |	    							 |
+  |                           SID-86 Notes			 |
+  |         ===============================================	 |
+  |								 |
+  |	  * SID-86 does  not currently support  symbol  files	 |
+  |	    for programs configured according  to the  LARGE,	 |
+  |	    COMPACT, or MEDIUM memory models.			 |
+  |								 |
+  |	    To  reference symbols in a LARGE or MEDIUM  model	 |
+  |	    program,    you  must  refer  to  the  .MAP  file	 |
+  |	    generated for the program by LINK-86.    The .MAP	 |
+  |	    file   provides   you   with   relative   segment	 |
+  |       							 |
+  |                             Page 2				 |
+  |								 |
+  ----------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ----------------------------------------------------------------
+  |  Assembler Plus Tools READ.ME File Notes	   RASM-86 Notes |
+  |								 |
+  |       							 |
+  |	  							 |	
+  |	    To  reference a  segment  during  debugging  with	 |
+  |	    SID-86,  you   must   add  the  relative  segment	 |
+  |	    location   provided  by  the  .MAP  file  to  the	 |
+  |	    absolute segment location  which is  displayed by	 |
+  |	    by SID-86 when the file is loaded.			 |
+  |								 |
+  |								 |
+  |								 |
+  |				VVVVV				 |
+  |			         VVV	           		 |
+  |			          V	           		 |
+  |			        	           		 |
+  |			 END OF READ.ME FILE       		 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |			     		 			 |
+  |			     		 			 |
+  |			     		 			 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |								 |
+  |			     		 			 |
+  |			     		 			 |
+  |			     		 			 |
+  |			     		 			 |
+  |			 			 		 |
+  |								 |
+  |                             Page 3				 |
+  |								 |
+  ----------------------------------------------------------------
+

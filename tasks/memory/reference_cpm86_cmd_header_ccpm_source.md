@@ -116,6 +116,10 @@ The loader never stores a "model" field; it infers behavior from the descriptors
 | 5 | 0x20 | 8087 required | Concurrent CP/M-86 PRG §3.1.2 |
 | 0-4 | — | unused / reserved | — |
 
+**Source caveat (verified 2026-08-21):** in this CCP/M-86 2.0 `kern/` source only **bit 7 is acted upon** — `load.sup:173` saves the flag byte to `lod_lbyte`, `load.sup:404` does `test lod_lbyte,80h`/`jz init_base` (fixups). There is NO `test lod_lbyte,20h`/`40h` anywhere; `lod_lbyte` is referenced only at those two lines. The 8087 subsystem exists as data (`pf_8087 equ 08000h` `pd.def:112`, `u8087len`, `owner8087`, `ndp8087`) but the dispatch save/restore in `dsptch.rtm` is fully commented out, and nothing wires header bit 5/6 to `pf_8087`. So bits 5/6 are DOCUMENTED (Concurrent PRG §3.1.2) but NOT enforced in this loader snapshot (8087 support stubbed). Only `kern/` was searched.
+
+**Cross-version update (verified 2026-08-21):** the newer **CCP/M-86 v3.1** source (cached `scratch/ccpm31-src/`, `ccpmv31.zip`) DOES enforce the 8087 bits — 2.0 was simply an incomplete snapshot. 3.1 `D2/CMDH.DEF` gives the authoritative masks: `opt_8087 equ 040H` (bit 6), `need_8087 equ 020H` (bit 5), plus a NEW `susp_mode equ 008H` (bit 3 = suspend if background task). 3.1 `D1/LOAD.SUP` actively tests them: `ndpchk:` `test ch_lbyte[bx],need_8087`/`test ch_lbyte[bx],opt_8087` (l.109-122), checks `owner_8087`, sets `lod_ndp`, wires `or p_flag[bx],pf_8087` (l.585), and allocates the long/emulator UDA (`u8087len`/`em87len`). So bit map is stable across versions; only the enforcement differs (2.0 acts on bit 7 only; 3.1 acts on bits 3/5/6/7). 
+
 The DRI *manuals* call byte 127 the "Program Flag" but document only the 8087
 bits 5/6 — they never mention bit 7. Bit 7 = fixups is documented ONLY in the OS
 source. (An earlier note wrongly downgraded bit 7 to "observed, not documented"
@@ -250,3 +254,60 @@ revise for Stage B:
 See also: `[[reference_cpm86_cmd_header]]`,
 `[[reference_drc_cpm86_reloc_format]]`, `[[reference_cpm_dri_source_archive]]`,
 `[[tasks/plan-cpm86-big-model-2026-08-18]]`.
+
+## P_LOAD (BDOS fn 59) dispatch + full flag byte — from CCP/M-86 v3.1 source (2026-08-21)
+
+Grounded in the newer v3.1 tree `scratch/ccpm31-src/` (`[[reference_ccpm86_v31_source]]`),
+which is more complete than the v2.0 loader.
+
+### Full `ch_lbyte` (Program Flag, byte 127 / 07FH) — all 5 bits
+From `D2/CMDH.DEF` (v3.1) — supersedes the partial 2.0 map (bits 5/6/7 only):
+
+| bit | mask  | equate      | meaning                                   |
+|-----|-------|-------------|-------------------------------------------|
+| 7   | 0x80  | `need_fxps` | load-time fixup records present           |
+| 6   | 0x40  | `opt_8087`  | optional 8087 (LINK-86 `8087CONDITIONAL`) |
+| 5   | 0x20  | `need_8087` | 8087 required (LINK-86 `8087REQUIRED`)    |
+| 4   | 0x10  | `need_rsx`  | requires RSX (Resident System eXtension) load |
+| 3   | 0x08  | `susp_mode` | suspend process if it is a background task |
+
+Bits 4 (`need_rsx`) and 3 (`susp_mode`) are NEW vs the older note. The v3.1 loader
+`D1/LOAD.SUP` acts on all of them: `ndpchk:`/`ndp_flg:` test bit5/bit6 (→ `lod_ndp`,
+`owner_8087`, error `e_nondp=17`), `h_hdr:` tests `susp_mode` (→ `lod_suspnd`), and
+`test lod_lbyte,80h` (l.440) gates fixups.
+
+### Group descriptor + fixup record format (`D2/CMDH.DEF`)
+Group descriptor (max `ch_entmax`=8): `ch_form`(byte type) `ch_length`(word)
+`ch_base`(word) `ch_min`(word) `ch_max`(word); `chlen`=9. `ch_fixrec` = word at 0x7D =
+file record# where fixup records start (only if bit 7). Fixup record = `fix_grp`(byte:
+hi-nibble=location group, lo-nibble=target group) `fix_para`(word para offset)
+`fix_offs`(byte in-para offset); `fixlen`=4. Loader applies `add es:[di],dx` where
+DX=target group's load segment (`D1/LOAD.SUP` `fx_chk:`).
+
+### LDTAB (internal load table, `D1/LOAD.SUP` header comment)
+9 entries (1 per potential group + 1 for independent allocs), each: `ldt_start`(abs
+seg) `ldt_min` `ldt_max` `ldt_pd` `ldt_atr`(mem flags) `ldt_fstrt`(file para)
+`ldt_flen`(file paras) `ldt_type`(group type) `ldt_id`(seg addr); `ldtlen`=17.
+
+### P_LOAD = BDOS function 59 — the dispatch chain (answers "where is 59?")
+Public fn 59 is alive despite `;f_userload equ (user*0100h)+59` being commented in
+`D2/MODFUNC.DEF`. The live wiring:
+1. BDOS entered with `CL=59`. Functions ≤80 are NOT renumbered, so table index=59.
+2. `D1/SYSDAT.DAT:258` `sysent` row: **`db 4, sup or net_bit ; 59-load`** — word
+   `enttab_entry[59]` = AL=4 (subfunction), AH=`sup`(module 1) `| net_bit` (P_LOAD is
+   CP/NET-capable).
+3. `D1/SUPIF.SUP` `okfunc`→`localfunc`: `cmp ah,sup ! je insup`; `insup:` `shl ax,1`
+   (4→8) `jmp cs:supfunc[si]`.
+4. `D1/SUPIF.SUP:349` `supfunc` table row 4: **`dw load_ent ; 4-(59)user load
+   function`** → enters `load_ent` in `D1/LOAD.SUP`.
+Neighbours #60/#61 are `db 1, sup` → `supfunc[1]=i_ent` (illegal-function stub),
+i.e. reserved. So P_LOAD IS a real supervisor call routing to the loader; it's also
+called internally by P_CLI (150, `cli_ent`) and P_CHAIN (47, `chain_ent`/`cload_ent`).
+
+### `load_ent` contract & error codes (`D1/LOAD.SUP`, `D2/ERR.DEF`)
+Input: `DX`=addr of open FCB in `u_wrkseg`. Output: `BX`=base-page segment, or
+`BX=0FFFFh` + `CX`=error. Errors: `e_no_memory=3`, `e_nondp=17` (no 8087 when
+required), `e_bad_load=28` (0-length/bad header), `e_no_cseg=33` (no code segment),
+`e_fixuprec=41` (fixup error). Base page (`init_base:`) built in the 1st Data group
+(type 2), else 1st non-shared Code group (type 1) = 8080 model (`lod_8080=1`, written
+to base-page byte 5).
