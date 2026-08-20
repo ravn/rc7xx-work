@@ -42,3 +42,44 @@ CP/M-86 `.CMD`, gates purity (0× INT 21h), runs under emu2, matches oracle:
 note p[0]=0 is the SMALLEST after sort, an easy oracle slip), `reuse: ok`.
 Fork commit `bb1c7f68`. Next: stdio FILE* write-path shim, then relink stdcbench
 off DR C and cross-check its reference final score 13.
+
+## FAR heap: compact model (-mc) NOW WORKS (was BLOCKED); small + explicit _fmalloc also WORKS
+
+> **UPDATE 2026-08-20: compact `-mc` is NO LONGER blocked.** The wlink type-3
+> EXTRA fix (`09c2eb3099`, `[[reference_wlink_cpm86_far_data_type3]]`) places
+> program far data in ONE loader-placeable group, so clib far globals
+> (`__heap_enabled`) now read correctly and transparent far `malloc()` runs.
+> `run-all-models.sh` compact heap/stdio/float all PASS
+> (`[[reference_cpm86_clib_all_models_gate]]`). The paragraph below is the
+> ORIGINAL (pre-fix) diagnosis, kept for history.
+
+2026 (this session). Goal: put big buffers (UnZip's 32 KB inflate window + huft)
+OUTSIDE the single 64 KB DGROUP so DEFLATE fits. Two routes:
+
+**Transparent compact `-mc` (near code / FAR data) — [HISTORICAL] was BLOCKED at runtime.**
+`-mc` makes module-level data FAR, incl. the clib's own globals
+(`int __heap_enabled = 1` in heapen.c, `__fheapbeg`, `_amblksiz`) and string
+literals. wlink's `format cpm86` emits that FAR_DATA as a SECOND `type=2` group.
+The CP/M-86 .CMD header identifies groups by TYPE (1=code,2=data,3=extra,...); a
+second type=2 collides with DGROUP and is placed by NEITHER the loader NOR
+cpm86run_unicorn.py (keys its image dict + group_seg by group NUMBER). So every
+clib far global reads 0 → `__heap_enabled==0` → `port/farheap.c::__AllocSeg`
+early-returns `_NULLSEG` → `malloc`/`_fmalloc` return NULL. Empirically confirmed
+(probe: `E0 A0000 F0000:0000`). Fixing transparent -mc needs wlink to emit
+compact far-data as its OWN loader-placeable group + far-pointer relocation, PLUS
+teaching the Unicorn runner to place a second type=2 — substantial linker work.
+`build-lib.sh MODEL=c` still builds `clibc.lib`+`cstartcm.obj` cleanly (crt0cm.asm,
+near code) as the foundation for that future work; it is NOT runtime-usable yet.
+
+**Small model + EXPLICIT `_fmalloc` — WORKS TODAY (recommended).**
+In `-ms` the clib globals + literals stay NEAR in DGROUP → exactly ONE type=2
+group, no collision. A program still offloads big buffers by calling `_fmalloc()`
+by name: the far heap is a separate paragraph arena (the .CMD Extra group, type=3)
+carved by `__AllocSeg`, linked with `option farheap=<size>`. VERIFIED PASS under
+cpm86run_unicorn.py: `test/farheap_smalltest.c` allocates 8×12 KB = 96 KB of far
+blocks (>64 KB, impossible in DGROUP), fills + round-trips every byte, asserts
+each block's segment != DS. Oracle script: `build-farheap-small.sh` (links against
+the INSTALLED clibs.lib — proves build-lib.sh now ARCHIVES the far-heap members
+`_fmalloc`/`_ffree`/`farheap.c`/… into all models; that archive gap previously
+left far-heap symbols undefined). For UnZip: route the 32 KB window + huft tables
+(via a `zcalloc`→`_fcalloc` shim) to the far heap, freeing ~35 KB from DGROUP.
