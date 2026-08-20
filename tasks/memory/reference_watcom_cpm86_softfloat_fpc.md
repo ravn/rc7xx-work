@@ -81,3 +81,22 @@ seam set from build-stdio.sh.
   not model a no-8087 machine faithfully).
 - The DR C independent oracle (segment-0 IVT poke; `m.init.8087` if-0'd out of the
   C startup = library-driven float) is in `docs/DR_C_8087_CPM86_REFERENCE.md`.
+
+## Corrections (2026-08-20)
+
+- **8087 ESC opcodes are NOT "illegal instructions" on the RC759.** The RC759 CPU
+  is an **80186** (and per @ravn *never* has an 8087; the RC750 Partner *may*).
+  On the 8086/80186, ESC opcodes (`fstenv`/`fldenv`/`fnstsw`) are *defined*
+  coprocessor-escape opcodes: with no 8087 the CPU does a dummy bus cycle and
+  otherwise **ignores** them — there is no INT 6 invalid-opcode trap. So stock
+  `clib/fpu/c/fenv.c`'s `feraiseexcept` would **not crash**; the only real runtime
+  risk is its trailing `fwait`, which *could* hang depending on the TEST/BUSY-pin
+  wiring (unverified) — a hang, not a trap. `port/fesoft.c`'s no-op-returning-0 is
+  therefore justified by **semantics** (no FPU status word exists to raise), which
+  is exactly what fesoft.c's own comment says — NOT by an "illegal instruction".
+  (Retracts an earlier chat overclaim.)
+- **The no-8087 ESC/x87 "purity gate" (`build-float.sh` opcode scan) was
+  confidence scaffolding**, per @ravn, to prove the softfloat build emits 0 ESC.
+  Now that the `-fpc` + `__real87=0` → `__FDxemu` path is established/proven, the
+  gate is **redundant** — do not treat it as a hard permanent requirement, and do
+  not over-justify `fesoft.c` by it.
