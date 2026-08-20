@@ -41,8 +41,8 @@ unicorn (`func == N` in cpm86run_unicorn.py):
 | 5  | L_WRITE (list / LST: output)    | ✗ | **✓** | unicorn only |
 | 7  | Get IOBYTE                       | ✗ | ✗ | redirection control byte |
 | 8  | Set IOBYTE                       | ✗ | ✗ | redirection control byte |
-| 104| T_SET (set date/time)           | ✗ | **✓** | unicorn only |
-| 155| T_SECONDS (get time + seconds)  | ✗ | **✓** | unicorn only; self-timing |
+| 104| T_SET (set date/time)           | **✓** | **✓** | now in emu2 (44270a1) |
+| 155| T_SECONDS (get time + seconds)  | **✓** | **✓** | now in emu2 (44270a1); self-timing |
 | 15..36 | file system (open/read/... FCB) | **✓** | ✗ | emu2 only (by design) |
 | 26/51 | F_DMAOFF / F_DMASEG           | **✓** | ✗ | emu2 only |
 | 27/29/30/31 | alloc/RO vec, attrib, DPB | **✓** | ✗ | emu2 only |
@@ -63,6 +63,34 @@ default (emu2 returns 0xFF; unicorn stops with `BdosUnimplemented`).
 That is exactly why stdcbench self-timing runs on the Unicorn runner and real
 MAME rc759 but **NOT under emu2** (see MEMORY.md notes marked "(not emu2)").
 
+> **UPDATE 2026-08-21 — emu2 now implements 104 + 155.** Filed as issue #14,
+> fixed in ravn/emu2-cpm86 `44270a1` (branch `local/cpm86`). emu2's BDOS clock
+> was also switched from the host wall clock (`time(0)`, which barely advances
+> while emu2 races through the benchmark in a fraction of a real second) to a
+> **deterministic instruction-count virtual clock**: absolute time = wall clock
+> captured once at first use + emulated seconds = `cpuGetInstructionCount() /
+> CLOCK_HZ`, tunable via `EMU2_CPM86_CLOCK_HZ` (default 300000 instr/sec). This
+> mirrors the Unicorn runner's code-byte clock (`ticks / CPM86_CLOCK_HZ`). Both
+> now give a reproducible, work-proportional timer.
+>
+> **Precision note (the 1-second wall):** T_SECONDS returns *whole* BCD seconds
+> — there is no sub-second field in the TOD struct, so 1 s is the hard interface
+> resolution on both emulators AND real hardware (the finer XIOS Int 28h fn 19
+> "16 ms counter" is NOT maintained on the real RC759, which is why portme.c
+> abandoned it). "More precise" therefore means (a) deterministic + reproducible
+> instead of host-wall-clock noise — the real emu2 win — and (b) tuning CLOCK_HZ
+> so the benchmark window spans enough emulated seconds that ±1 s quantisation is
+> a small relative error. It does NOT mean sub-second resolution.
+>
+> **Unicorn caveat:** its `ticks` clock only advances when the block hook is
+> installed, i.e. in `--count`/`--ticks` runs (the FULL-SPEED RULE keeps plain
+> runs callback-free). A self-timing program run *plain* sees ticks==0 → no
+> elapsed time. Run stdcbench with `--count` (build-owc-drc.sh now does).
+>
+> Regression oracle: `watcom-cpm86-libc/build-tsecs.sh` + `test/tsecs_test.c`
+> (open-watcom-v2 `d3717b361d`) — gates ELAPSED>0, determinism, CLOCK_HZ
+> scaling. Verified: emu2 66→133 s, Unicorn(--count) 186→373 s when HZ halved.
+
 ## unicorn's gaps are BY DESIGN; emu2's are genuine holes
 
 - unicorn is a compute/console/time oracle — no file system, no memory
@@ -76,6 +104,7 @@ MAME rc759 but **NOT under emu2** (see MEMORY.md notes marked "(not emu2)").
     IOBYTE). Ties directly to the redirection theme.
   - **ravn/emu2-cpm86 time issue** — 104/155 (T_SET/T_SECONDS); complements the
     already-present 105, unblocks self-timing benchmarks under emu2.
+    **DONE 2026-08-21** (issue #14, commit `44270a1`).
   - **ravn/emu2-cpm86 filesys-completeness issue** — 28 (DRV_SETRO), 37
     (DRV_RESET), 40 (F_WRITEZF), 52 (F_MULTISEC).
 - Already-tracked emu2 gaps (do NOT re-file): 59 P_LOAD (#11), 54/56 abs alloc
