@@ -13,8 +13,8 @@ runtime-library functional suite against each, from the ONE installed model lib
 `lib286/cpm86/clib{s,m,c}.lib` (no bespoke object list — a link failure means a
 routine is genuinely missing from the archive, which is what the gate catches).
 
-**Result matrix (all GREEN, 12 PASS / 0 FAIL / 0 SKIP):** heap / stdio / float
-PASS in s, m, c under the Unicorn runner (`cpm86run_unicorn.py`, applies P_LOAD
+**Result matrix (all GREEN, 15 PASS / 0 FAIL / 0 SKIP):** heap / stdio / float /
+math PASS in s, m, c under the Unicorn runner (`cpm86run_unicorn.py`, applies P_LOAD
 reloc so it runs m+c too). **disk PASS in s, m AND c under emu2** — emu2 now also
 applies P_LOAD relocation (`[[reference_cpm86_emu2_p_load_reloc]]`, closes
 ravn/emu2-cpm86#1), so it runs medium/compact .CMDs with the file BDOS the
@@ -45,13 +45,35 @@ Driven by resolving every undefined symbol when tests link the FULL model lib:
   NB: programs using `double` must compile `-fpc` (else the -fpi 8087-emulator
   path pulls `__CHP` etc., which are NOT archived — by design, no 8087 here).
 
-## NOT included (separate subsystem)
+## libm (transcendentals) NOW per-model too (2026-08-20)
 
-libm transcendentals (sin/cos/atan/exp/log/sqrt, `IF@Dxxx`) are still
-small-model-only: build-whetstone.sh links them from PREBUILT msdos.086/286
-small-model objects (`mathlib/library/msdos.286/ms`), not a per-model source
-compile. Adding libm across models is a distinct, larger effort with
-model/precision risk — out of scope for the core runtime-library gate.
+sin/cos/atan/exp/log/sqrt work in ALL three models via a separate per-model
+`libm{s,m,c}.lib` (the classic -lc/-lm split, installed alongside clib). Why
+per-model and not one: the arithmetic is identical but the objects differ for two
+real reasons — **code model** → near vs far RET (a medium far-code caller must
+far-call; verified `mm/atan.obj` uses `retf`, `ms`/`mc` near `ret`), and **data
+model** → a function's private coefficient tables sit in DGROUP (near data: s/m)
+but are EMBEDDED in the code segment for far-data compact (verified: `mc/atan.obj`
+`_TEXT` is ~123 B larger, holding the L$n coefficient doubles). So one libm can
+only serve same-code-model programs; per-model is required (Watcom itself ships
+mc/mm/ms/ml/mh mathlib). `build-lib.sh` archives Watcom's stock 80186-safe
+SOFT-FLOAT mathlib (`mathlib/library/msdos.286/m$MODEL`, 0 x87 + 0 286-only
+opcodes) into `libm$MODEL.lib`.
+
+To make libm linkable, build-lib.sh also gained its clib-side deps: the rest of
+the soft-float core (`__FDC` compare, `__FDN`/`__FSN` negate, `__FDFS`/`__FSFD`
+conversions, `fstat086` status), the fpu atan/tan wrappers (`chipw16`/`chipt16`/
+`chipa16`), math seams (`seterrno`, `rtcntrl`, `iobaddr`, `_matherr`, `hugeval`),
+plus two tiny no-8087 stubs in `port/`: `fesoft.c` (soft `feraiseexcept`, since
+stock `fenv.c` is inline-8087) and `_fltused_` in `fpsoftstub.asm` (the marker
+alone, WITHOUT stock fltused.c's `AXIN(__setEFGfmt)` %f-formatter cascade).
+Programs that want `printf("%f")` link `setefg.c` explicitly. Test:
+`test/mathtest.c` (scaled-integer oracle) — `run-all-models.sh` math row, 15/15.
+
+## NOT included
+
+Real `%e/%f/%g` printf formatting (setefg/dtoa/ecvt big-decimal subsystem) — the
+math tests print scaled `%ld`. Wire `setefg.c` when a program needs float output.
 
 ## Also fixed this session
 
