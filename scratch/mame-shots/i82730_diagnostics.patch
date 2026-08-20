@@ -1,0 +1,102 @@
+diff --git a/src/devices/video/i82730.cpp b/src/devices/video/i82730.cpp
+index 792e143c17e..53a3959928d 100644
+--- a/src/devices/video/i82730.cpp
++++ b/src/devices/video/i82730.cpp
+@@ -15,8 +15,8 @@
+ 
+ #define LOG_COMMANDS (1U << 1)
+ #define LOG_DATASTREAM (1U << 2)
+-//#define VERBOSE (LOG_GENERAL | LOG_COMMANDS | LOG_DATASTREAM)
+ #define VERBOSE (LOG_GENERAL)
++//#define VERBOSE (LOG_GENERAL | LOG_COMMANDS | LOG_DATASTREAM)
+ #include "logmacro.h"
+ 
+ 
+@@ -311,6 +311,17 @@ void i82730_device::execute_command()
+ 
+ 	LOGMASKED(LOG_COMMANDS, "list switch %d, autolf %d, dma count %02x\n", m_list_switch, m_auto_line_feed, m_max_dma_count);
+ 
++	// TEMP DIAGNOSTIC: log every executed command with a timestamp + the state
++	// that matters for the ~15-min flip: command byte, the freshly-latched
++	// list_switch, and the status-row pointer (cbp+34/36) which is independent
++	// of list_switch. This shows whether the flip is a bare list-switch or a
++	// full MODE SET that also reprograms geometry/status.
++	{
++		uint32_t statptr = (read_word(m_cbp + 36) << 16) | read_word(m_cbp + 34);
++		logerror("CMD t=%.3f cmd=%02x lsw=%d cbp=%06x statptr=%06x\n",
++			machine().time().as_double(), command, m_list_switch, m_cbp, statptr);
++	}
++
+ 	switch (command)
+ 	{
+ 	// NOP
+@@ -733,6 +744,12 @@ TIMER_CALLBACK_MEMBER( i82730_device::row_update )
+ 
+ 	if (y == 0)
+ 	{
++		// TEMP DIAGNOSTIC: clear the whole device bitmap at frame start to test
++		// the "stale uncleared bitmap" root cause -- if the top-line garbage
++		// vanishes, it was leftover pixels never overwritten (blank border band
++		// + skipped blank cells), not guest/stack corruption.
++		m_bitmap.fill(rgb_t::black());
++
+ 		// clear interrupt status flags
+ 		m_status &= (VDIP | DIP);
+ 
+@@ -753,6 +770,25 @@ TIMER_CALLBACK_MEMBER( i82730_device::row_update )
+ 		m_current_row = 0;
+ 		m_row = &m_row_buffer[m_row_index][0];
+ 		load_row();
++
++		// TEMP DIAGNOSTIC: frame-level detector. Log when the display-list
++		// pointer state (cbp/lptr/sptr/list_switch) changes between frames.
++		// This fires at the ~15-min flip regardless of whether m_row bytes
++		// change, pinning down whether the flip is a list-switch / pointer
++		// change (guest RAM is provably static after boot).
++		{
++			uint64_t fsig = ((uint64_t)m_cbp << 40) ^ ((uint64_t)m_lptr << 20)
++				^ (uint64_t)m_sptr ^ ((uint64_t)m_list_switch << 60);
++			static uint64_t last_fsig = ~0ull;
++			if (fsig != last_fsig)
++			{
++				last_fsig = fsig;
++				logerror("FRAMESIG t=%.3f fn=%d cbp=%06x lptr=%06x sptr=%06x lsw=%d fam=%04x\n",
++					machine().time().as_double(), (int)screen().frame_number(),
++					m_cbp, m_lptr, m_sptr, m_list_switch, m_mb.field_attribute_mask);
++			}
++		}
++
+ 	}
+ 	else if (y >= m_mb.vsyncstp && y < m_mb.vfldstrt)
+ 	{
+@@ -775,6 +811,30 @@ TIMER_CALLBACK_MEMBER( i82730_device::row_update )
+ 		// call driver
+ 		m_update_row_cb(m_bitmap, m_row, lc, y - m_mb.vsyncstp, m_row_count, cursor_x);
+ 
++		// TEMP DIAGNOSTIC: log the TOP row (m_current_row==0) and the display-
++		// list pointer state ONLY when the row-0 content changes -- this fires
++		// at boot and again at the ~15-minute single-frame flip, giving the
++		// before/after device state (cbp/lptr/sptr/list_switch) with the guest
++		// RAM provably static. rowcnt + first codes localise the corruption.
++		if (m_current_row == 0 && lc == 0)
++		{
++			uint32_t sig = m_row_count;
++			for (int i = 0; i < m_row_count && i < 90; i++)
++				sig = sig * 131 + m_row[i];
++			static uint32_t last_sig = 0xffffffff;
++			if (sig != last_sig)
++			{
++				last_sig = sig;
++				char buf[8 * 100];
++				int n = 0;
++				for (int i = 0; i < m_row_count && i < 90; i++)
++					n += snprintf(buf + n, sizeof(buf) - n, " %04x", m_row[i]);
++				logerror("ROW0CHG t=%.3f cbp=%06x lptr=%06x sptr=%06x lsw=%d rowcnt=%d:%s\n",
++					machine().time().as_double(), m_cbp, m_lptr, m_sptr,
++					m_list_switch, m_row_count, buf);
++			}
++		}
++
+ 		// swap buffers at end of row
+ 		if (lc == m_mb.lpr)
+ 		{

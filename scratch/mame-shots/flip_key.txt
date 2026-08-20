@@ -1,0 +1,8 @@
+[t=45.008] steady-state topline hash = f94b3a00
+[t=941.104] FLIP DETECTED hash f94b3a00 -> de54e200
+[t=941.104] snapshot BEFORE-key #1 taken
+[t=941.104] posted SPACE key (can_post=true, ok=true)
+[t=942.064] +60 frames: hash=f94b3a00 reverted=true snapshot AFTER #2
+[t=943.984] +180 frames: hash=f94b3a00 reverted=true snapshot AFTER #3
+[t=944.944] posted ENTER key
+[t=945.904] +300 frames: hash=f94b3a00 reverted=true snapshot AFTER #4
