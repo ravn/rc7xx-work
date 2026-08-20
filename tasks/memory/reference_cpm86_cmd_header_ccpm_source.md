@@ -271,7 +271,13 @@ From `D2/CMDH.DEF` (v3.1) — supersedes the partial 2.0 map (bits 5/6/7 only):
 | 4   | 0x10  | `need_rsx`  | requires RSX (Resident System eXtension) load |
 | 3   | 0x08  | `susp_mode` | suspend process if it is a background task |
 
-Bits 4 (`need_rsx`) and 3 (`susp_mode`) are NEW vs the older note. The v3.1 loader
+**Not present in v2.0:** the v2.0 `kern/cmdh.def` defines ONLY `ch_lbyte equ byte ptr
+07fh` — it has NO named flag equates at all; the 2.0 loader references bit 7 solely as
+a magic literal (`test lod_lbyte,80h`). So ALL FIVE named equates
+(`need_fxps`/`opt_8087`/`need_8087`/`need_rsx`/`susp_mode`) are v3.1 additions. Bits
+5/6 (8087) existed only in the DRI manuals for 2.0, never in its source; bits 4
+(`need_rsx`, RSX = Resident System eXtension) and 3 (`susp_mode`, background-suspend)
+are genuinely new 3.x features with no counterpart anywhere in the 2.0 tree. The v3.1 loader
 `D1/LOAD.SUP` acts on all of them: `ndpchk:`/`ndp_flg:` test bit5/bit6 (→ `lod_ndp`,
 `owner_8087`, error `e_nondp=17`), `h_hdr:` tests `susp_mode` (→ `lod_suspnd`), and
 `test lod_lbyte,80h` (l.440) gates fixups.

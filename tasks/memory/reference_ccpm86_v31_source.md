@@ -26,7 +26,10 @@ reads the `.CMD` Program-Flag byte 127 but only acts on **bit 7 (fixups)**; its 
 handling is commented out. v3.1 **enforces the 8087 bits**:
 - `D2/CMDH.DEF`: `opt_8087 equ 040H` (bit 6 = optional/CONDITIONAL), `need_8087 equ
   020H` (bit 5 = required/REQUIRED), `susp_mode equ 008H` (bit 3 = suspend if
-  background — NEW), and bit 7 still = fixups.
+  background — NEW), and bit 7 still = fixups. **NB: the v2.0 `cmdh.def` had NO named
+  flag equates at all (only `ch_lbyte`+a magic `80h` in the loader); the whole
+  `need_fxps/opt_8087/need_8087/need_rsx/susp_mode` block — incl. bit 4 `need_rsx`
+  (0x10, RSX load) and bit 3 `susp_mode` (0x08) — is a v3.1 addition, absent from 2.0.**
 - `D1/LOAD.SUP` `ndpchk:` (l.109-127) does `test ch_lbyte[bx],need_8087` / `test
   ch_lbyte[bx],opt_8087`, compares `owner_8087`, sets `lod_ndp`; later
   `or p_flag[bx],pf_8087` (l.585) and allocates the long/emulator UDA
