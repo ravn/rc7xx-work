@@ -158,5 +158,4 @@ exec "$MAME_BIN" rc759 \
     -flop1 "$A_DISK" \
     -flop2 "$B_DISK" \
     -window \
-    -skip_gameinfo \
-    -nothrottle
+    -skip_gameinfo

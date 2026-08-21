@@ -873,3 +873,8 @@ in shared pixel6.inc) documented + baselined, DEFERRED (genuine fork, awaits go-
 - "hvorfor er dette svært?" (x2) — answered with the measured layered-failure map (OP_EXT_MUL is unfinished i86 scaffolding).
 - "færdiggør undersøgelsen ... og præsenter resultatet" — done; presented the 3-layer map + A-vs-B revision.
 - "analysér, opsummér og opdater issues, commit" — updated ccpm86 #9 (layered-failure analysis) + rc7xx-work #11 (scratch retired, ready to close).
+
+## 2026-08-21 (ZIP.CMD on CP/M-86 / MAME rc759)
+- "claude har lavet en del arbejde. Vi er nået til M7 i at få zip.cmd til at virke" / "emu2 må gerne køre" / "bare boot" / "zip kunne ikke forstå a:*.*" / "kørte men løb tør for hukommelse" / `"zip a a:*.*" on b: gives out of memroy` / `"zip file file.txt" gives out of memory` / "mame til interaktivt skal køre throttled ellers er det umulig tat skrive" — continued M7 ZIP.CMD bring-up.
+- Result: Info-ZIP large-model works under emu2 after wildcard, DMA-segment, startup near/far, and farheap/FAR_DATA fixes, but real MAME CCP/M-86 fails before `main` with `Concurrent Fejl: For lidt lager / Kommando = ZIP`. Added a MAME-suitable small-model STORE-only `ZIP.CMD` (`build-minizip-cpm86.sh`, 63520 B) that writes standard ZIP files with CRC32 and CP/M wildcard support. Verified under emu2 and MAME rc759; user confirmed "den virker". Updated `B_zip.mfi`; rc759 MAME launcher now stays throttled.
+- Follow-up prompt: "analyser, opsummer, opret issues og commit" — analyze diffs, summarize outcome, file follow-up issues, and commit relevant changes.
