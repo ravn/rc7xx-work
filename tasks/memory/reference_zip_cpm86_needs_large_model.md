@@ -55,3 +55,27 @@ unzip klarede sig med SMALL model (mindre kode, ingen far-data-mismatch) —
 - Harness fik en **per-test timeout** (`guard()` via perl alarm, default 25s,
   override `TEST_TIMEOUT`) så et far-data-hæng ikke staller hele matrixen (den
   spandt 6+ min før). `[[feedback_show_progress_on_long_runs]]`.
+
+## MILEPÆL 2026-08-21: zip LINKER og STARTER på CP/M-86
+`build-zip-cpm86.sh` bygger **ZIP.CMD (197632 B, header 0x01)** reproducerbart.
+Opskrift: `owcc -bcpm86 -mcmodel=l -zm -Os` + `-DDOS -DMSDOS -DDYN_ALLOC
+-DNO_ASM -DSMALL_MEM -DLIT_BUFSIZE=0x1000`, **ingen `-zc`**, link `format cpm86
+… op farheap=0x8000 cstartlm.obj … clibl.lib`. Nul pristine-edits; OS-laget er
+ny `src/zip30/cpm86/cpm86.c`.
+
+Nøgle-gotchas (alle løst):
+- **`-DNO_ASM` obligatorisk:** `msdos/osdep.h` tvinger ellers `#define ASMV` →
+  udefinerede asm-entry `_crc32`/`_longest_match`/`_match_init` (C-udgaverne
+  ligger i deflate.c/crc32.c under `#ifndef ASMV`).
+- **`-zc` udelukket:** const-i-kode sprænger kodegruppen → `E2052` "relocation
+  not in same segment" i clib-streamio. Behold CONST i DGROUP; trim data i
+  stedet (`-DSMALL_MEM -DLIT_BUFSIZE=0x1000` bragte DGROUP fra 3.3 KB over → under).
+- Kode ~115 KB spænder frames 0001+0002 (multi-gruppe far-code) uden E2052 når
+  `-zc` er væk.
+- `PATH_END`/`PAD` defineres PR. OS-fil (ikke i header) — cpm86.c definerer selv.
+- clib strlwr hedder `_strlwr_` (ledende underscore); undgået via inline lowercase.
+
+**M7 (runtime) ÅBEN:** ZIP.CMD loader + starter, crasher så i init med
+`unimplemented opcode 0x65 at 1CEC:841A` (0x65 = 386 seg-prefix → udførelse
+hoppet til garbage). Mistænkt: `intdosx` casemap-far-pointer-stub som
+`init_upper()` (util.c MSDOS16-gren) kalder. Task #8.
