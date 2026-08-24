@@ -38,11 +38,19 @@ RC759_BYTES=1261568
 ZIP_CMD="$IZIP/out-zip-cpm86/ZIP.CMD"
 MINIZIP_CMD="$IZIP/out-minizip-cpm86/MINIZIP.CMD"
 UNZIP_CMD="$IZIP/out-cpm86/UNZIP.CMD"
+ZIPNOTE_CMD="$IZIP/out-ziputils-cpm86/ZIPNOTE.CMD"
+ZIPSPLIT_CMD="$IZIP/out-ziputils-cpm86/ZIPSPLIT.CMD"
+ZIPCLOAK_CMD="$IZIP/out-ziputils-cpm86/ZIPCLOAK.CMD"
+FUNZIP_CMD="$IZIP/out-funzip-cpm86/FUNZIP.CMD"
 
 for f in "$ZIP_CMD" "$UNZIP_CMD"; do
-    [ -f "$f" ] || { echo "MISSING: $f"; echo "Build it: cd $IZIP && bash build-zip-cpm86.sh  (and build-cpm86.sh for UNZIP)"; exit 1; }
+    [ -f "$f" ] || { echo "MISSING: $f"; echo "Build: cd $IZIP && bash build-zip-cpm86.sh (+ build-cpm86.sh)"; exit 1; }
 done
-[ -f "$DEMO/POEM.TXT" ] || { echo "MISSING: $DEMO/POEM.TXT  (demo txt files)"; exit 1; }
+for f in "$ZIPNOTE_CMD" "$ZIPSPLIT_CMD" "$ZIPCLOAK_CMD"; do
+    [ -f "$f" ] || { echo "MISSING: $f"; echo "Build: cd $IZIP && bash build-ziputils-cpm86.sh"; exit 1; }
+done
+[ -f "$FUNZIP_CMD" ] || { echo "MISSING: $FUNZIP_CMD"; echo "Build: cd $IZIP && bash build-funzip-cpm86.sh"; exit 1; }
+[ -f "$DEMO/POEM.TXT" ] || { echo "MISSING: $DEMO/POEM.TXT"; exit 1; }
 [ -f "$DEMO/BIG.TXT"  ] || { echo "MISSING: $DEMO/BIG.TXT"; exit 1; }
 [ -f "$DEMO/hello.txt" ] || { echo "MISSING: $DEMO/hello.txt"; exit 1; }
 
@@ -51,13 +59,19 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 cp "$DISKDEFS" "$STAGE/diskdefs"
 
-echo "==> authoring B_zip.mfi (ZIP + UNZIP + test files)"
+echo "==> authoring B_zip.mfi (full Info-ZIP suite + test files)"
 cd "$STAGE"
 "$MKFS" -f rc759-drc B_zip.img
 
+# Full Info-ZIP suite
 "$CPMCP" -f rc759-drc B_zip.img "$ZIP_CMD"      0:zip.cmd
 "$CPMCP" -f rc759-drc B_zip.img "$UNZIP_CMD"    0:unzip.cmd
+"$CPMCP" -f rc759-drc B_zip.img "$ZIPNOTE_CMD"  0:zipnote.cmd
+"$CPMCP" -f rc759-drc B_zip.img "$ZIPSPLIT_CMD" 0:zipsplit.cmd
+"$CPMCP" -f rc759-drc B_zip.img "$ZIPCLOAK_CMD" 0:zipcloak.cmd
+"$CPMCP" -f rc759-drc B_zip.img "$FUNZIP_CMD"   0:funzip.cmd
 [ -f "$MINIZIP_CMD" ] && "$CPMCP" -f rc759-drc B_zip.img "$MINIZIP_CMD" 0:minizip.cmd || true
+# Test data
 "$CPMCP" -f rc759-drc B_zip.img "$DEMO/POEM.TXT"  0:poem.txt
 "$CPMCP" -f rc759-drc B_zip.img "$DEMO/BIG.TXT"   0:big.txt
 "$CPMCP" -f rc759-drc B_zip.img "$DEMO/hello.txt" 0:hello.txt
@@ -82,9 +96,15 @@ echo
 echo "DONE. Boot med:"
 echo "  B_DISK=\"$DISKDIR/B_zip.mfi\" sh $WORKSPACE/scripts/rc759_boot_cpm.sh"
 echo
+echo "Komplet Info-ZIP suite paa B:  ZIP UNZIP ZIPNOTE ZIPSPLIT ZIPCLOAK FUNZIP"
+echo
 echo "I MAME (efter boot til A>-prompt):"
 echo "  B:                              -- skift til B:"
-echo "  ZIP POEM.ZIP POEM.TXT           -- deflate (M9-test: virker nu?)"
+echo "  ZIP POEM.ZIP POEM.TXT           -- deflate-test (M9-fix)"
 echo "  ZIP BIG.ZIP BIG.TXT             -- deflate stor fil"
+echo "  ZIP ALL.ZIP *.TXT               -- wildcard-arkivering"
 echo "  UNZIP -t POEM.ZIP               -- verificer round-trip"
+echo "  ZIPNOTE POEM.ZIP                -- vis arkivkommentar"
+echo "  FUNZIP POEM.ZIP > POEM2.TXT     -- stream-uddrag til fil"
+echo "  ZIPCLOAK POEM.ZIP               -- kryptér (tast kodeord)"
 echo "  MINIZIP SMALL.ZIP HELLO.TXT     -- store-only (baseline)"
