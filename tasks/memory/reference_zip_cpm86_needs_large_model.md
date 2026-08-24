@@ -79,3 +79,17 @@ Nøgle-gotchas (alle løst):
 `unimplemented opcode 0x65 at 1CEC:841A` (0x65 = 386 seg-prefix → udførelse
 hoppet til garbage). Mistænkt: `intdosx` casemap-far-pointer-stub som
 `init_upper()` (util.c MSDOS16-gren) kalder. Task #8.
+
+## CCP/M-vs-emu2 compressed-size divergence (uafklaret, 2026-08-25)
+
+The minimal `POEM2.ZIP` repro still diverges after deflation on real CCP/M-86
+even after forcing `FOPW` and `FOPW_TMP` to `"wb"`. With identical input-read
+samples (`zread` returns 3960 bytes, then 0, and sampled bytes match), emu2
+writes a 333-byte archive while CCP/M reports `s=350, actual=349` and fails
+with `Internal logic error (incorrect compressed size)`. The first observed
+divergence is therefore not proven to be CR/LF translation or a generic
+FILE*/BDOS write failure; it is currently localized to the ZIP/zlib
+compression or runtime state under CCP/M. The source instrumentation was
+removed after the comparison. The binary-mode source regression test remains
+useful only as a guard for the intended mode definition, not as proof of a
+runtime fix.

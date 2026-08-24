@@ -1,5 +1,23 @@
 # Z80 Code Density Optimization Todo
 
+## CP/M-86 Info-ZIP ZIP divergence (2026-08-25)
+
+- [x] Rebuilt the instrumented large-model ZIP and ran the same 3960-byte
+  `POEM.TXT` input under emu2 and CCP/M/MAME.
+- [x] Confirmed both runtimes' first input read is identical: 3960 bytes,
+  followed by EOF; sampled input bytes at offsets 0/1000/2000/3000/3959 match.
+- [x] Confirmed forcing `FOPW`/`FOPW_TMP` to binary does not fix the runtime
+  failure. emu2 produces a 333-byte archive; CCP/M reaches
+  `s=350, actual=349` and reports the compressed-size logic error.
+- [ ] Isolate the zlib/runtime-state divergence before writing a fix or
+  treating the binary-mode test as a runtime regression test. Next useful
+  control: build the `CPM86_STORE_ONLY` ZIP and compare STORE-mode output on
+  both runtimes; if STORE agrees, the fault is confined to deflate/zlib state.
+- [x] STORE-only control completed: the same `POEM.TXT` archive passes under
+  both emu2 and CCP/M/MAME. The failure is therefore confined to the
+  deflate/zlib path or its large-model runtime state, not the common output
+  FILE*/BDOS path.
+
 ## NEXT SESSION TODO — complete CP/M-86 test coverage (user directive 2026-08-18)
 
 - [ ] **Complete test coverage for the CP/M-86 port.** Current state (see
@@ -1300,3 +1318,56 @@ improve density/speed on compute-heavy code — e.g. the Mandelbrot / fixed-poin
 inner loops. Verify on cycle-accurate MAME rc759 and confirm the purity gate stays
 green. (Raised 2026-08-15 while confirming that Watcom's prebuilt msdos.286 math
 objects use 0 286-protected-mode opcodes and thus already run on the 80186.)
+
+## TODO: Diagnose CCP/M versus emu2 ZIP divergence (2026-08-24)
+
+**Status: completed.** CCP/M-86 on real RC759 MAME is the
+authoritative oracle; emu2 is a differential/debugging oracle only.
+
+1. **Freeze the current evidence.** Record the exact ZIP binary, CMD header,
+   linker map, disk images, MAME binary, emu2 commit, command line, and complete
+   outputs already produced. Do not regenerate artifacts in this phase.
+2. **Define one minimal repro.** Use one input file and one command that fails
+   under CCP/M but succeeds under emu2. Keep the ZIP binary, command tail,
+   disk geometry, and input bytes identical; use fresh copies for each run.
+3. **Locate the first divergence.** Determine whether CCP/M rejects the CMD
+   before `main`, whether startup reaches `main` and fails in far-heap/BDOS,
+   or whether ZIP writes a malformed archive. Capture the CCP/M error text,
+   a completion signal or crash address, and guest RAM/loader state where
+   possible.
+4. **Cross-check independently.** For any archive produced, verify it with the
+   host `unzip -t` and Python `zipfile`, and compare the input/output bytes.
+   Compare emu2 and MAME only after the independent host oracle passes.
+5. **Test hypotheses one variable at a time.** Candidate classes are CMD
+   header/loader reservation, G_MIN/G_MAX far-heap accounting, large-model
+   segment pointers, BDOS FCB/DMA semantics, and ZIP's own deflate path. Change
+   only one variable per run and preserve every result.
+6. **Only after confirmation, fix at the owning layer.** First add a regression
+   test that fails on the confirmed bug; then make the smallest fix, rerun the
+   CCP/M oracle and emu2, and update the ZIP plan/memory notes with the verified
+   root cause. No upstream issue or commit is part of this diagnosis phase.
+
+Initial result was withdrawn after fresh CCP/M runs reproduced the same
+post-deflate mismatch despite binary output mode. The binary-mode test is
+therefore only a source guard until the runtime cause is proven.
+
+### Re-plan after failed verification (2026-08-24)
+
+The preceding result is withdrawn as unconfirmed: fresh CCP/M runs still
+produce `s=318, actual=319`. The value pair proves only that ZIP's compressor
+count and `bytes_this_entry` diverge; it does not prove CRLF conversion.
+
+1. Freeze the failing binary, disk, input bytes, MAME command, and snapshot.
+2. Add one diagnostic at the owning seam that records each `bfwrite()` call's
+   requested count, `fwrite()` return, mode, and cumulative entry count. Make
+   the diagnostic visible in the guest screenshot or a guest disk log.
+3. Run a four-case matrix without changing the libc: `-0`/STORE versus
+   deflate, input with and without LF, and output to a fresh archive. This
+   separates compressor accounting from FILE*/BDOS behavior.
+4. Independently compare `fwrite()` return values with `ftell()` and the BDOS
+   random-record calls. Identify the first call where the cumulative count
+   changes by one.
+5. Only then write a regression test for that exact seam, confirm it fails on
+   the frozen binary, and make one owning-layer fix.
+6. Re-run CCP/M, emu2, and host `unzip`/Python byte checks. Remove diagnostic
+   code and update the reference note only after all three oracles agree.
