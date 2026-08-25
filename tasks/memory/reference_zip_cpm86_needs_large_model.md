@@ -255,6 +255,19 @@ stops starving the runtime M_ALLOC grant; (2) shrink zip's ~200 KB image (B3) so
 deflate's 24 KB far heap fits the ~210 KB effective TPA. Full operational handoff:
 `infozip-cpm86-builds/HANDOFF_farheap_bdos128.md`.
 
+### B2 interface contract strengthened (2026-08-25)
+
+After the initial fn128 probe, `test/memtest128.c` was expanded to cover
+variable-size and partial-grant requests (`min < max`) and to verify the
+returned blocks by writing/reading all bytes in each grant. On MAME rc759:
+- guest self-check: `pass=4 fail=0`
+- independent host oracle (`test/verify_memtest128_dump.py`) found all expected
+  pattern blocks in the full 384 KB RAM dump
+
+This closes the remaining uncertainty around the BDOS memory-call interface
+itself: current ZIP failures are downstream of allocator correctness (not a
+wrong CL/DX/MPB contract implementation).
+
 ROOT LAYER = the **M9 `CPM86_FARHEAP_PARAS` far-heap accounting** returns wrong
 far pointers on the real CCP/M-86 loader's memory layout (it was "verified on
 emu2, MAME pending" per `ZIP_CPM86_PLAN.md` M9 — this is that pending MAME

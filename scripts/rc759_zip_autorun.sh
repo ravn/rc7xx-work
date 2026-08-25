@@ -27,10 +27,16 @@ cp "$IMAGES/mandel.img" "$IMG"
 cd "$IMAGES"                          # cpmtools reads ./diskdefs from CWD
 # Free space: ZIP.CMD is ~196 KB, so strip every optional app the boot+autorun
 # does not need (same list as disk-mame.sh, plus mandel).
+"$CPMRM" -f "$FMT" "$IMG" "0:*.cmd" 2>/dev/null || true
+"$CPMRM" -f "$FMT" "$IMG" "0:*.mdf" 2>/dev/null || true
+"$CPMRM" -f "$FMT" "$IMG" "0:*.sub" 2>/dev/null || true
 for f in menu.cmd comal80.cmd comal80.erm diskvedl.cmd filadm.cmd function.cmd \
          function.sys asm86.cmd ddt86.cmd chset.cmd ed.cmd filex.a86 filex.cmd \
          gencmd.cmd help.hlp mandel.cmd mandeldr.cmd whet.cmd disktest.cmd \
-         poem.zip poem.txt; do
+         poem.zip poem.txt gkonfig.cmd graphics.cmd help.cmd imenu.mdf instal.cmd \
+         konfig.cmd lanrel.cmd menu.mdf menuvedl.cmd okonfig.cmd pip.cmd print.cmd \
+         ren.cmd reserver.cmd sdir.cmd set.cmd show.cmd siorel.cmd submit.cmd \
+         systat.cmd sysvedl.cmd type.cmd vcmode.cmd vindue.cmd; do
     "$CPMRM" -f "$FMT" "$IMG" "0:$f" 2>/dev/null || true
 done
 "$CPMCP" -f "$FMT" "$IMG" "$ZIP_CMD" 0:menu.cmd
@@ -39,7 +45,7 @@ done
 
 echo "== 2. boot MAME rc759 headless (autostart menu.cmd -> zip POEM.ZIP POEM.TXT) =="
 cd "$MAME_DIR"
-rm -f snap/rc759/*.png 2>/dev/null || true
+rm -f snap/rc759/*.png nvram/rc759/nvram 2>/dev/null || true
 SDL_VIDEODRIVER=dummy ./regnecentralend rc759 -bios 0 -skip_gameinfo -rompath roms \
   -flop1 "$IMG" \
   -seconds_to_run "$SECS" \
