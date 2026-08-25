@@ -17,6 +17,25 @@
   both emu2 and CCP/M/MAME. The failure is therefore confined to the
   deflate/zlib path or its large-model runtime state, not the common output
   FILE*/BDOS path.
+- [x] Strengthened the BDOS 128 oracle (`test/memtest128.c`) with variable
+  and partial-grant requests (`min<max`) plus full-block write/read checks.
+  Real MAME reports `pass=4 fail=0`, and independent RAM-dump verification
+  (`verify_memtest128_dump.py`) confirms all expected patterns.
+- [ ] Continue ZIP runtime work from `zipcopy` failure: `window allocation`
+  no longer reproduces after the BDOS fix; current blocker is temporary-archive
+  write on the packed turnkey image (space/layout on A:), not fn128 contract.
+- [x] **emu2 MCB pool now honours CPM86_TPA_KB at runtime, not just load time**
+  (2026-08-25, `emu2-cpm86` commit `fe9dfb9`). Root cause of "emu2 never OOMs
+  like MAME": `dos.c init_dos()` sized the whole free-memory pool ONCE at
+  startup (~640 KB), independent of the loader's TPA cap — runtime BDOS-128
+  calls (farheap `_fmalloc`) could always find room. Fixed by peeking
+  `cpm86_detect()` before `mcb_init()` and shrinking the WHOLE arena to
+  `CPM86_TPA_KB` for CP/M-86 programs. New `-m <kb>` CLI option (precedence:
+  CLI > `CPM86_TPA_KB` env > 210 KB default) lets you dial the emulated TPA.
+  **Calibrated: `-m 190` reproduces MAME's exact `Out of memory (window
+  allocation)` message byte-for-byte**; default 210 instead fails one
+  allocation later (`hash table allocation`). `memtest128`/`farheap_smalltest`
+  regressions re-verified PASS on MAME + emu2 after the fix.
 
 ## NEXT SESSION TODO — complete CP/M-86 test coverage (user directive 2026-08-18)
 
