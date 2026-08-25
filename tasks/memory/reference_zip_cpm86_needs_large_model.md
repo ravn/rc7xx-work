@@ -93,3 +93,173 @@ compression or runtime state under CCP/M. The source instrumentation was
 removed after the comparison. The binary-mode source regression test remains
 useful only as a guard for the intended mode definition, not as proof of a
 runtime fix.
+
+## VERIFIED ROOT CAUSE via MAME lua/debugger (2026-08-25)
+
+Not CR/LF, not the size-check (that is only the messenger), not I/O. The
+`incorrect compressed size` and the alternate hang/OOM are ALL symptoms of a
+**large-model far-heap corruption in Info-ZIP's own deflate** (DYN_ALLOC:
+`window`/`prev`/`head` via `_fcalloc`), which emu2 masks and real CCP/M-86
+exposes. Manifestation depends on `option farheap=` size:
+- 48K (0xC000): `zip error: Out of memory (hash table allocation)` — `_fcalloc`
+  of prev/head fails after window succeeds.
+- 64K (0x10000): allocs succeed, then deflate **hangs** in a deterministic
+  infinite far-scan loop (confirmed 899 emul. sec, no progress).
+- divergence env: completed once but produced a WRONG stream (s=350 vs emu2's
+  219 B, +60%).
+
+Headless capture (no interactive typing): boot turnkey `mandel.img` to A>,
+`natkeyboard:post` the ZIP command, sample CPU state via MAME lua.
+Scripts: `scripts/rc759_zip_autorun.sh`, `scripts/rc759_zip_stream_diff.sh`,
+`scratch/zip_debug.lua` / `zip_hang_dump.lua` / `zip_stack_dump.lua`.
+
+Instruction-level evidence at the hang (CS=01A4 IP=0865, deterministic):
+```
+CMP byte ES:[0x1B], 0xFF ; JNZ +3 ; JMP -0x443   (ES:[0x1B] stays 0xFF)
+2E 8E 1E 06 00 = MOV DS, CS:[6]   (large-model far-data DS-reload idiom)
+```
+- Loop never terminates because it scans a far buffer via `ES=0x2F3A` whose
+  contents are NOT clean deflate array data — they are allocator-metadata /
+  saved-context bytes (an exact copy of live SP=0xFDAA, SS=0x4C2E, BP=0xFDB2,
+  0x5DD5 sits at ES:+0x18..). So **ES holds a wrong/corrupt far-segment value**;
+  the scan's terminator is sought in the wrong segment.
+- Caller (far return `[BP+2:4]` = 2000:0006) is in code frame 0002 = the
+  deflate/longest_match/fill_window group (map `0002:2d92..365d`); the scan
+  helper runs in frame 0001 with the bad ES.
+- Deflate far globals (map, DGROUP=grp 0004): `_window` @0004:0774, `_prev`
+  @0004:0778 (far ptrs), `_head` @0004:b29c — the objects whose far segment is
+  mis-set. Root layer = the **M9 `CPM86_FARHEAP_PARAS` far-heap placement**,
+  which was "verified on emu2, MAME pending" (`ZIP_CPM86_PLAN.md` M9) — this IS
+  the pending MAME failure.
+
+Instrumentation left in `src/zip30` (gated, pristine-DOS build unaffected):
+`-DCPM86_KEEP_BADZIP` (zipup.c: keep archive instead of destroy(tempzip)),
+`-DCPM86_AUTORUN` (zip.c: fixed `zip POEM.ZIP POEM.TXT` for headless autostart),
+`-DCPM86_ASSERT_ONLY` (zip.h: keep Assert/check_match under DEBUG but drop the
+Trace() format-string CONST bloat).
+
+`-DDEBUG` build (`build-zip-debug.sh`, 201856 B): compiles DEBUG only in
+deflate.c+zipup.c (isize must be global in both), Trace stripped via
+CPM86_ASSERT_ONLY. DGROUP overflow (near DATA+BSS+CONST+STACK is one 64 KB
+group; we sit at ~0 headroom) fixed NOT by `-zc` (that overflows CODE frame
+0002 -> E2052 in clib) but by **`-zt64`** = move data objects >64 B to FAR_DATA,
+freeing DGROUP for the assert strings. Result: builds+loads, but **asserts do
+NOT fire** — the corruption manifests as a 2-instruction dead loop
+(`CMP byte ES:[0x1B],0xFF ; JNZ ; JMP`) that never returns to the assert-guarded
+C code. DEBUG would catch a wrong-but-progressing deflate, not this dead spin.
+The 640 KB RAM dump stays the conclusive evidence.
+
+CONCLUSIVE (full 640 KB RAM dump at the hang, `scratch/zip_ramdump.lua` ->
+`/tmp/zipram.bin`, offline analysis):
+- The **input text is ABSENT from all 640 KB of RAM** — no `poem.txt` fragment
+  ("Line 01", "quick brown", "jumps" … all ABSENT). Zip re-reads POEM.TXT via
+  BDOS (fbdos trace) but the data never lands in any coherent window buffer.
+- The block the hang scans (`_window` -> seg 0x2F3A, phys 0x2F3A0) holds
+  **far-heap allocator control data**, not window bytes: words
+  `8062 EF76 4C2E 0C02 F35E 4C2E FFFF 0000` (0x4C2E = live SS appears twice).
+- => `_fcalloc` returned a **bogus `window` far pointer** aimed at the
+  allocator's own control structures / a wrong segment. So the file DMA/copy
+  target is wrong (input lost), and deflate's match/scan loop reads garbage
+  whose terminator (`ES:[0x1B]==0xFF`) is permanently true -> deterministic
+  infinite loop.
+
+## Testcase + emu2-fidelity goal (2026-08-25)
+
+Testcase built: `watcom-cpm86-libc/test/deflate_fheap_test.c` +
+`build-deflate-fheap-mame.sh` — allocates deflate's exact triple
+(`_fcalloc` window/prev/head, 3×8 KB, LARGE model, FARHEAP=0x10000, M9 farheap.c)
+and checks NULL / not-zeroed / alias / overlap, signalling PASS/FAIL via
+`mame_done()`. **It PASSES on BOTH emu2 and real MAME** — proving the bug is NOT
+the raw 3-alloc pattern. The trigger is zip's cumulative state: zip's image is
+~200 KB, so its far heap is handed out from a HIGH segment (0x2F3A, near the
+RC759 384 KB ceiling) where farheap.c's overcommit
+(`total_paras = marker + FARHEAP_PARAS`, assuming the FULL 64 KB farheap reserve)
+runs PAST the real (spread) Extra grant into adjacent live memory. The test's
+26 KB image gets a low, roomy heap and never reaches the boundary.
+
+**Why emu2 != real CCP/M (user goal: make emu2 faithful).** emu2-cpm86 ALREADY
+models the loader's group-SIZE spread (`cpm86.c:463+`, load.sup-style, bounded by
+`CPM86_TPA_KB=210`) so it reproduces the OOM boundary. The residual gap is memory
+CONTENTS: emu2's `memory[0x110000]` arena is a zero BSS global and it `memset(0)`
+the granted Extra group (`cpm86.c:629`), so farheap.c's over-committed pointer
+reads **zeros (benign)** on emu2 but **garbage/live-neighbour data (0xFF -> deflate
+scan never finds its terminator -> hang)** on real CCP/M. Fix design: emu2 should
+POISON uninitialized/over-committed TPA (garbage, e.g. 0xFF) instead of leaving it
+zero — but the arena is MCB-managed (`loader.c` mcb_alloc_new), so a blanket
+poison would corrupt MCB headers; the safe version poisons each group's
+allocated-but-uninitialized span (extra->min..extra_par) + free space minus MCB
+headers, env-gated (`CPM86_POISON`), default off so existing tests are unaffected.
+With that fidelity fix, zip AND deflate_fheap_test would reproduce the hang under
+emu2 (fast oracle) instead of only on slow MAME.
+
+### A implemented + refined (2026-08-25): poison is necessary-not-sufficient
+Added `CPM86_POISON=<byte>` to emu2-cpm86 (`loader.c` `mem_poison_free()` walks the
+MCB chain and fills FREE-block DATA, leaving headers intact; `cpm86.c`
+`cpm86_load_cmd` calls it before carving the program's groups). Safe + env-gated
+(default off, existing tests unaffected). BUT with poison ON, zip still produces a
+valid archive under emu2 even at low `CPM86_TPA_KB` (grant ~10 K << the 24 K
+triple). So poison alone does NOT reproduce the hang. Refined root of the emu2
+divergence: it is NOT the initial CONTENTS of the over-committed region — it is
+that on real CCP/M the far-heap over-commit lands on the **LIVE STACK** (the RAM
+dump shows SS/SP/BP bytes inside the window region), which overwrites the
+`_fcalloc`-zeroed window AFTER the fact; under emu2 the same over-commit lands in
+DEAD free space that nothing rewrites, so the window survives and zip works.
+Full emu2 fidelity therefore also needs matching the Extra/stack LAYOUT adjacency
+(over-commit must hit the live stack), a bigger emu2 change than poison. Poison is
+kept as a correct, independent fidelity improvement.
+
+### B options (the real fix) — for user decision
+On real CCP/M the base page exposes only G_MIN at 0x0C (not the loader's SPREAD
+grant), so a far heap literally cannot know its true size; M9's
+`FARHEAP_PARAS` assumes the FULL reservation and thus over-commits past the spread.
+Candidate fixes:
+- B1: shrink the far-heap footprint so the loader grants it FULLY
+  (`farheap <= effective_TPA - program`); narrow window (~24-32 K need vs ~28 K
+  grant) -- fragile.
+- B2: `farheap.c` PROBES real available memory at runtime (write/read-back walk
+  from the Extra base until it wraps/fails) instead of trusting `FARHEAP_PARAS`.
+- B3: shrink zip's code footprint (smaller image -> more TPA -> full grant).
+B2 is the robust fix; B1/B3 are mitigations.
+
+### B2 API confirmed from CCP/M-86 source (2026-08-25)
+The bug is in OUR libc port, not firmware/compiler/malloc: `__AllocSeg`
+(`port/farheap.c`, our "sbrk") over-reports the far heap by trusting compile-time
+`FARHEAP_PARAS` instead of the loader's real spread grant. The correct fix uses
+the OS memory call, which RETURNS the actual granted size (user hypothesis,
+confirmed in `scratch/ccpm86-src/kern/memory.mem` + `mpb.def` + `modfunc.def`):
+- **BDOS function 128 = Allocate Memory** (`f_malloc equ user*0x100 + 128`).
+- Input: `CL=128`, `DX=offset(MPB)` in the DS work seg. MPB = 5 words
+  `{start, min, max, pdadr, flags}`: start=0 (relocatable), min=least acceptable
+  paras, max=wanted paras, pdadr=0 (self), flags=0 (plain unused mem).
+- Output: `BX=0` ok / `0xFFFF` fail, `CX`=err. MPB updated in place:
+  **`mpb_start`=granted base paragraph (segment), `mpb_max`=ACTUAL granted paras**
+  (memory.mem clamps mpb_max to available at L143-145 & writes it at L265).
+- Free = function 130 (`f_memfree`, MFPB `{pd}`).
+So `__AllocSeg` should call BDOS 128 (min=needed, max=wanted), use `mpb_start` as
+the segment and `mpb_max` as the true size -- no overcommit possible. Likely lets
+us drop `OPTION FARHEAP` entirely (loader no longer pre-reserves -> more free TPA
+for runtime M_ALLOC). Free path -> BDOS 130. Verify: zip deflates on real MAME
+(window holds poem text; no hang; s==actual) + emu2 (emu2 already implements the
+memory-manager spread, so it should agree once __AllocSeg asks the OS).
+
+### B2 IMPLEMENTED + MAME-verified (2026-08-25) -- see HANDOFF doc
+`__AllocSeg` (`port/farheap.c`) now calls BDOS 128 first (fn128 probe
+`test/memtest128.c` CONFIRMED it works on real MAME rc759 and returns the actual
+grant in mpb.max); old OPTION-FARHEAP carving kept as fallback. emu2 gained fn
+128/130 (`cpm86.c`) -- it previously only had CP/M-86 fns 53-57, a real Concurrent
+machine does NOT expose those, which was itself an emu2 fidelity bug. On MAME zip
+**no longer hangs** -- it cleanly reports `Out of memory (window allocation)`
+(ZE_MEM). Hang -> honest OOM = the correctness win. REMAINING (Copilot):
+(1) drop `OPTION FARHEAP` to minimal in build-zip-cpm86.sh so its reservation
+stops starving the runtime M_ALLOC grant; (2) shrink zip's ~200 KB image (B3) so
+deflate's 24 KB far heap fits the ~210 KB effective TPA. Full operational handoff:
+`infozip-cpm86-builds/HANDOFF_farheap_bdos128.md`.
+
+ROOT LAYER = the **M9 `CPM86_FARHEAP_PARAS` far-heap accounting** returns wrong
+far pointers on the real CCP/M-86 loader's memory layout (it was "verified on
+emu2, MAME pending" per `ZIP_CPM86_PLAN.md` M9 — this is that pending MAME
+failure, now pinned to the instruction and the corrupt pointer). emu2 lays the
+far heap out benignly, hiding it. FIX belongs in `port/farheap.c` /
+`__cpm86_fh_init` so `_fcalloc` hands out valid, correctly-based, non-metadata
+segments; then re-run the headless oracle (window must contain poem text; no
+hang; s==actual).
