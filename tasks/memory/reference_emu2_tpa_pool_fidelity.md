@@ -71,12 +71,19 @@ build recipe.
   PASS) AND on local emu2 (default + `CPM86_DIRTY_GROUPS=1`), at TPA=210 and 190.
 - `farheap_smalltest`: PASS on real MAME (6/6 blocks, independent RAM-dump scan
   PASS) — unaffected by emu2 changes since it runs on real hardware. Local emu2
-  run reports `PASS far-heap n=45 seg=16384 kb=720`; this number (720 KB
-  concurrently held within an apparently ~210 KB-capped pool) is because
-  `farheap.c`'s `__AllocSeg()` has a dual path (BDOS-128 primary, static-carve
-  fallback) — NOT yet fully root-caused as of 2026-08-25, flagged as an open
-  loose end for whoever picks this up next (see `emu2-cpm86/src/port` and
-  `open-watcom-v2/.../port/farheap.c` `__AllocSeg`/`__cpm86_fh_bdos_alloc`).
+  run initially reported `PASS far-heap n=45 seg=16384 kb=720` — **ROOT-CAUSED
+  AND FIXED (`emu2-cpm86` commit `f8c607a`)**: a variable-aliasing bug in the
+  group-allocation retry path (`mem_alloc_segment(gotmax, &gotmax)` — the callee
+  resets `*max` internally and only rewrites it on a mismatch, so an exact-fit
+  success left `grant` reading back 0) underflowed `surplus` to a huge `uint32_t`,
+  which the surplus-spread clamp then turned into `extra_par == ex_max` (the
+  FULL requested Extra size, ~960 KB, ignoring the TPA cap) instead of the
+  correctly-bounded spread value — corrupting the base-page Extra-length field
+  that `farheap.c`'s static-carve fallback reads. Fixed by capturing the retry
+  request amount in its own variable instead of reading it back out of the
+  aliased one. After the fix, `farheap_smalltest` under emu2 reports a sane
+  `kb=112` (7x16KB blocks), consistent with MAME's real `96 KB` (6 blocks) grant
+  on the same effectively-~210KB pool.
 - Production `ZIP.CMD` under local emu2: full `CPM86_TPA_KB` sweep confirmed
   the 210->190 message transition described above; `-m` CLI flag precedence
   over `CPM86_TPA_KB` env var confirmed via `CPM86_TPA_KB=300 emu2 -m 190 ...`
