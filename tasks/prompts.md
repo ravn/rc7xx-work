@@ -886,3 +886,10 @@ in shared pixel6.inc) documented + baselined, DEFERRED (genuine fork, awaits go-
 > du skla ikke gå i gang med noget før vi har lagt en plan
 
 > lokal version
+
+## 2026-08-25 (nedluk: opret manglende ZIP-issue + forward-plan)
+
+- "copilot var ved at runde af på tidligere arbejde og løb tør for tokens. Den var nået til at lave github issues" [Krydstjekkede committet arbejde mod eksisterende issues på tværs af ravn/{infozip-cpm86-builds,emu2-cpm86,open-watcom-v2-ccpm86}. Alt kode committet; issue-dækning næsten komplet. Ét hul: deflate-divergensen manglede tracking-issue.]
+- Godkendte "opret tracking-issue nu" + eksplicit go-ahead [Oprettede ravn/infozip-cpm86-builds#5 som ÅBENT investigations-issue (root cause ikke fundet: large-model deflate afviger CCP/M vs emu2, s=350/actual=349, STORE-only OK begge steder). Per feedback_explain_before_filing: forklarede + viste tekst + ventede på go-ahead.]
+- "en plan for det videre arbejde, målet er stadig at zip.cmd virker i mame" [Skrev fasedelt plan: infozip-cpm86-builds/PLAN_zip_deflate_mame_2026-08-25.md — Fase 1 diagnosticér divergens (zlib-state instrumentering + stream-diff emu2 vs MAME) → beslutningspunkt (compiler-miscompile / far-pointer-layout / zlib-buffer-state) → Fase 2 ret rod → Fase 3 hukommelses-headroom (parallel) → Fase 4 verifikations/regressions-gate #3. Fallback: small-model STORE-only ZIP.CMD virker allerede.]
+- "gem plan i projekt" / "commit og gør klar til nedluk" [Gemt + linket fra tasks/todo.md + HANDOFF_farheap_bdos128.md. Committet begge repos.]

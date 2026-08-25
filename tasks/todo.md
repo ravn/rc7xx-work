@@ -2,6 +2,11 @@
 
 ## CP/M-86 Info-ZIP ZIP divergence (2026-08-25)
 
+**PLAN for the way forward:** `infozip-cpm86-builds/PLAN_zip_deflate_mame_2026-08-25.md`
+(goal: full-deflate ZIP.CMD valid on real MAME rc759). Current blocker =
+deflate divergence, tracked as ravn/infozip-cpm86-builds#5. Fallback
+(small-model STORE-only ZIP.CMD) already works on MAME.
+
 - [x] Rebuilt the instrumented large-model ZIP and ran the same 3960-byte
   `POEM.TXT` input under emu2 and CCP/M/MAME.
 - [x] Confirmed both runtimes' first input read is identical: 3960 bytes,
