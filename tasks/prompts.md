@@ -893,3 +893,25 @@ in shared pixel6.inc) documented + baselined, DEFERRED (genuine fork, awaits go-
 - Godkendte "opret tracking-issue nu" + eksplicit go-ahead [Oprettede ravn/infozip-cpm86-builds#5 som ÅBENT investigations-issue (root cause ikke fundet: large-model deflate afviger CCP/M vs emu2, s=350/actual=349, STORE-only OK begge steder). Per feedback_explain_before_filing: forklarede + viste tekst + ventede på go-ahead.]
 - "en plan for det videre arbejde, målet er stadig at zip.cmd virker i mame" [Skrev fasedelt plan: infozip-cpm86-builds/PLAN_zip_deflate_mame_2026-08-25.md — Fase 1 diagnosticér divergens (zlib-state instrumentering + stream-diff emu2 vs MAME) → beslutningspunkt (compiler-miscompile / far-pointer-layout / zlib-buffer-state) → Fase 2 ret rod → Fase 3 hukommelses-headroom (parallel) → Fase 4 verifikations/regressions-gate #3. Fallback: small-model STORE-only ZIP.CMD virker allerede.]
 - "gem plan i projekt" / "commit og gør klar til nedluk" [Gemt + linket fra tasks/todo.md + HANDOFF_farheap_bdos128.md. Committet begge repos.]
+
+## 2026-08-25 (cont.) — full-deflate ZIP.CMD WORKS on real 384K MAME
+
+Long diagnostic + fix session. User drove with hypotheses (CR/LF, timestamps,
+80186 emulation, changed 8086->186 semantics, compiler runtime, M_ALLOC docs,
+512K RAM). Key user prompts: "kan det være ... CR+LF" / "det kan muligvis være
+at 80186 emuleringen i mame ikke er korrekt" / "er der forskel på ... -0 vs -1"
+/ "hvis det hjælper kan du sætte rc759 til 512 KB ram" / "er 333A dokumenteret i
+programmers guide?" / "gælder det også ved 512 KB" / "ændrer opstartsbesked sig"
+/ "lad os minimere zip mest muligt" / "hvorfor laver vi altid kun nye arkiver?"
+/ "opfører emu2 sig på samme måde med samme hukommelsestryk?" / "jatak" (cleanup
++ hardening + commit).
+
+Outcome: divergence was NOT CPU/80186/emu2 — it was memory pressure. RC759 XIOS
+2.3 reports a FIXED 384K/293K TPA regardless of physical RAM (RAM-probe proved
+0x70000 became RAM at 512K yet banner stayed 384K). M_ALLOC matches doc §6.2.6
+(grant <= MAX; the "333A" was an OCR misread). Fixed by (1) -DCPM86_CREATE_ONLY
+footprint cut (186->163K) + WSIZE=0x800 -> deflate tables fit ~190K TPA
+(build-zip-cpm86-mame.sh); (2) farheap.c clean-OOM on fn-128 FFFF instead of
+carving overlapping memory. Verified: valid POEM.ZIP on real MAME, byte-identical
+to emu2 -m 190, 3 oracles green. Commits: infozip 68ed3ee, open-watcom ddaabd8.
+Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
