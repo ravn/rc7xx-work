@@ -41,6 +41,7 @@ OS=$(uname -s)
 case "$OS" in
 Darwin)
     OWTOOLS=CLANG
+    OWDOSBOX=dosbox-x     # CI uses dosbox-x on macOS to run the DOS doc/help tools
     echo "==> host: macOS -> OWTOOLS=CLANG"
     miss=$(missing_cmds clang make)
     if [ -n "$miss" ]; then
@@ -52,11 +53,14 @@ Darwin)
     ;;
 Linux)
     OWTOOLS=GCC
+    OWDOSBOX=dosbox      # OW runs DOS wgml under dosbox to build browser/GUI .gh help
     echo "==> host: Linux -> OWTOOLS=GCC (assuming Ubuntu/Debian)"
-    # Open Watcom v2 bootstraps its own tools; the host only needs a C/C++
-    # compiler + GNU make + the C library headers.  build-essential provides
-    # gcc, g++, make, binutils and libc6-dev.
-    REQ_PKGS="build-essential"
+    # Open Watcom v2 bootstraps its own tools; the host needs a C/C++ compiler +
+    # GNU make + the C library headers (build-essential = gcc, g++, make,
+    # binutils, libc6-dev), plus dosbox to run the DOS-hosted doc/help tools that
+    # the full `rel` build needs (matches the GitHub CI, which installs dosbox
+    # and sets OWDOSBOX=dosbox).
+    REQ_PKGS="build-essential dosbox"
     miss_cmds=$(missing_cmds gcc g++ make)
     miss_pkgs=""
     if command -v dpkg >/dev/null 2>&1; then
@@ -93,8 +97,8 @@ esac
 # Replicates setvars.sh but with the host-correct OWTOOLS (setvars.sh hardcodes
 # GCC).  cmnvars.sh derives OWOBJDIR / per-host object dirs from uname.
 cd "$OWROOT"
-export OWROOT OWTOOLS
-export OWDOCBUILD=0        # skip the DOS/dosbox documentation build
+export OWROOT OWTOOLS OWDOSBOX
+export OWDOCBUILD=0        # skip the big DOS/dosbox manual (PDF/HTML) doc set
 export OWDISTRBUILD=0      # skip building the distribution installers
 # cmnvars.sh + build.sh assume plain-shell semantics (unset vars, non-zero
 # intermediate exits), so relax -e while they run and check build.sh explicitly.
