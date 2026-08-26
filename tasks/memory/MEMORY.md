@@ -154,6 +154,8 @@
 
 ## 6. Before any MAME / boot / test run
 
+- **[rc759 CCP/M boots ~290 emulated s](reference_rc759_mame_c_verification.md) — HARD: turnkey `menu.cmd`/autostart program does NOT run until ~t175-290. ALWAYS `-seconds_to_run 400` + read a LATE snapshot frame. An early `*** PICCOLINE TEST V.2.1 ***` is the ROM monitor MID-BOOT, NOT a crash. (Mis-read 2026-08-26 as "compact UNZIP crashes"; real result was a clean inflate PASS once boot finished.) `rm -f nvram/rc759/nvram` before each run to force autoboot; regnecentralend MUST have FDC fix 59b21dc1312 or CMDs won't load (spurious WD2797 LOST DATA).**
+- **[emu2 default TPA is ROOMIER than real MAME](reference_emu2_tpa_pool_fidelity.md) — HARD: emu2 is a differential oracle, not truth. Its default `-m 210` gives more runtime memory than the rc759 XIOS's fixed 384 KB / ~293 KB TPA, so a program that passes under default emu2 can OOM/diverge on real MAME. Use `emu2 -m 190` to match rc759 byte-for-byte before trusting a CP/M-86 memory result.**
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: banner timestamp vs BUILD_INFO_STR before any diagnosis**
 - **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — first try `make _kill-mpm; sleep 5-8; retry`. ★ BOTH PIO+SIO failing identically (transport-agnostic), or after you ran standalone `mpm`/`nc`-probed :4002 = master state YOU contaminated; kill your own stragglers (ps/lsof :4002), NOT codegen.**
 - **[cpnos PIO netboot: NO -autoboot_script](feedback_cpnos_pio_netboot_no_autoboot.md) — HARD: any autoboot (even empty) breaks the wall-clock-coupled PIO cpnet_bridge netboot (stalls at 1st LOGIN byte); drive cpnos via host-side SIO-B injector (`cpnos_polypascal_inject.py`), `-nothrottle`, `wait_mpm_ready.py` gate. Never restore local/mpm-net2-1.dsk from library (stale SERVER.RSP → gettod `ff`); rebuild MPM.SYS.**
@@ -192,6 +194,7 @@
 ## 7. Before file/script ops
 
 - **[NEVER traverse outside the workspace root](feedback_no_home_search.md) — see §0; ABSOLUTE**
+- **[cpmtools live at `~/.local/bin`](reference_rc759_mame_c_verification.md) — `mkfs.cpm`/`cpmcp`/`cpmls`/`cpmrm`/`floptool` — INVOKE BY FULL PATH (`$HOME/.local/bin/...`); this is the one sanctioned home path, but NEVER `find`/`ls` inside home to locate them (§0). They read the disk geometry from a `./diskdefs` in the CURRENT DIR — the `DISKDEFS` env var is IGNORED — so `cd` to the dir holding the right `diskdefs` (e.g. `scratch/rc759-pce/images/`, format `drc-rc759`) BEFORE running them.**
 - **[No stale dump files](feedback_no_stale_dump_files.md) — HARD: `rm -f` the artifact BEFORE the producer, every iteration**
 - **[No DOTALL backtracking on source](feedback_no_dotall_backtracking.md) — HARD: no `re.DOTALL` + non-greedy over multi-line source; kill scans >10s**
 - [z80 tree has no untrusted hooks](feedback_z80_tree_no_untrusted_hooks.md) — `cd … && git …` is safe; don't hedge
