@@ -9,14 +9,14 @@
 # artifact on Linux (e.g. sonnyboy) first.
 #
 # Usage:
-#   scripts/build_open_watcom_docker.sh                 # tag open-watcom:latest
+#   scripts/build_open_watcom_docker.sh                 # tag open-watcom-cpm86:latest
 #   IMAGE=ghcr.io/ravn/open-watcom:v2 scripts/build_open_watcom_docker.sh
 #   OWROOT=/path scripts/build_open_watcom_docker.sh
 set -e
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 OWROOT=${OWROOT:-${1:-"$SCRIPT_DIR/../open-watcom-v2"}}
-IMAGE=${IMAGE:-open-watcom:latest}
+IMAGE=${IMAGE:-open-watcom-cpm86:latest}
 DOCKERFILE="$SCRIPT_DIR/open-watcom.Dockerfile"
 REL="$OWROOT/rel"
 

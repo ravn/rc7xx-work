@@ -7,14 +7,14 @@
 # image is built on the Linux host with build_open_watcom_docker.sh.
 #
 # Usage:
-#   scripts/load_open_watcom_image.sh                       # sonnyboy.local, open-watcom:latest
+#   scripts/load_open_watcom_image.sh                       # sonnyboy.local, open-watcom-cpm86:latest
 #   scripts/load_open_watcom_image.sh HOST                  # other build host
 #   scripts/load_open_watcom_image.sh HOST IMAGE            # other image tag
 #   OW_BUILD_HOST=box IMAGE=open-watcom:v2 scripts/load_open_watcom_image.sh
 set -e
 
 HOST=${1:-${OW_BUILD_HOST:-sonnyboy.local}}
-IMAGE=${2:-${IMAGE:-open-watcom:latest}}
+IMAGE=${2:-${IMAGE:-open-watcom-cpm86:latest}}
 
 command -v docker >/dev/null 2>&1 || { echo "!! docker not found on PATH" >&2; exit 1; }
 docker info >/dev/null 2>&1 || { echo "!! local Docker daemon not running (start Docker Desktop)" >&2; exit 1; }

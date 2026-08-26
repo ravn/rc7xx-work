@@ -7,9 +7,9 @@
 # shell -- no runtime libraries.
 FROM debian:stable-slim
 
-LABEL org.opencontainers.image.title="open-watcom-v2 (ravn fork)" \
+LABEL org.opencontainers.image.title="open-watcom-cpm86 (ravn fork)" \
       org.opencontainers.image.source="https://github.com/ravn/open-watcom-v2" \
-      org.opencontainers.image.description="Open Watcom v2 toolchain (Linux x64), CP/M-86 first-class"
+      org.opencontainers.image.description="Open Watcom v2 toolchain (Linux x64) from the ravn fork; CP/M-86 first-class (owcc -bcpm86 turnkey)"
 
 # Unpack the rel/ artifact into the conventional install prefix.
 COPY . /opt/watcom
