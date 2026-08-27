@@ -32,6 +32,29 @@ if command -v file >/dev/null 2>&1 && ! file "$REL/binl64/owcc" | grep -q 'x86-6
 fi
 command -v docker >/dev/null 2>&1 || { echo "!! docker not found on PATH" >&2; exit 1; }
 
+# --- build CP/M-86 clib (all models) and install into rel/ -------------------
+# build-lib.sh installs to $OW/lib286/cpm86/ (OW root, not rel/), and that
+# directory is gitignored -- so the clib must be (re)built here, using the
+# Linux-x64 tools from rel/binl64/, before the Docker context is assembled.
+# The OMF object files are 8086 target code: host-independent, so a Linux-built
+# clib is byte-for-byte equivalent to a macOS-built one from the same source.
+echo "==> building CP/M-86 clib (models: s m c l)"
+CLIB_DIR="$OWROOT/contrib/ravn/watcom-cpm86-libc"
+for MODEL in s m c l; do
+    echo "    model=$MODEL"
+    MODEL="$MODEL" \
+    OW="$OWROOT" \
+    OWCC_BIN="$REL/binl64/wcc" \
+    OWASM_BIN="$REL/binl64/wasm" \
+    OWLIB_BIN="$REL/binl64/wlib" \
+    OUTDIR="$CLIB_DIR/build-lib-${MODEL}-docker" \
+        sh "$CLIB_DIR/build-lib.sh"
+done
+echo "==> installing clib into rel/lib286/cpm86/"
+mkdir -p "$REL/lib286/cpm86"
+cp "$OWROOT/lib286/cpm86/"*.lib "$REL/lib286/cpm86/"
+cp "$OWROOT/lib286/cpm86/"cstart*.obj "$REL/lib286/cpm86/"
+
 echo "==> packaging $REL  ($(du -sh "$REL" 2>/dev/null | cut -f1)) -> image '$IMAGE'"
 # Build context is rel/ itself (the Dockerfile COPYs '.' -> /opt/watcom).
 docker build -f "$DOCKERFILE" -t "$IMAGE" "$REL"
