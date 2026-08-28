@@ -50,6 +50,29 @@ CP/M BIOS, CP/NOS) booted in MAME.
   peepholes; question prior design decisions rather than band-aiding an immature
   backend.
 
+## Agent research protocol
+
+**Before acting on any task, agents MUST:**
+
+1. **Search the entire workspace** for existing scripts, notes, and documentation
+   relevant to the task (keywords: `mame`, `rc700`, `rc702`, `cpm`, `disk`, `build`, `run`,
+   and any task-specific terms).
+
+2. **Read all relevant files:**
+   - All `README*` / `*.md` / `*.txt` files in the task directory and up the hierarchy
+   - All `.sh`, `.py`, `Makefile`, `CMakeLists.txt` that could be related
+
+3. **Report findings** before taking action:
+   - List all found scripts, tools, and documented procedures
+   - Quote the exact steps from existing documentation
+   - Ask: "Should I follow [found procedure] or proceed differently?"
+
+4. **Use existing procedures** unless explicitly told otherwise.
+
+**Rationale:** This project contains extensive tooling and documentation in
+`rc700-gensmedet/`, `llvm-z80/`, and other subdirectories. Failing to consult these
+first wastes time and risks breaking established workflows.
+
 ## Build & test quick reference
 
 ```bash
