@@ -915,3 +915,18 @@ footprint cut (186->163K) + WSIZE=0x800 -> deflate tables fit ~190K TPA
 carving overlapping memory. Verified: valid POEM.ZIP on real MAME, byte-identical
 to emu2 -m 190, 3 oracles green. Commits: infozip 68ed3ee, open-watcom ddaabd8.
 Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
+
+## 2026-08-27/28 — Watcom CP/M-86 Docker + emu2 P_LOAD session
+
+1. mangler vi noget funktionalitet i watcom, eller er vi færdige?
+2. kig på om #19 er løst med docker image
+3. jeg vil have at det watcom image der laves indeholder den complette compiler.
+4. du burde kunne bygge modellerne her, bare du ikke overskriver de binære med macosversioner
+5. ja [file owcc -mm issue + alle modeller til Docker]
+6. lav et issue på at jeg gerne vil have en testcase for hver hukommelsesmodel der sikrer at alting er med og i orden. Måske kan stdcbench bruges til noget af det?
+7. mangler vi mere watcom funktionalitet?
+8. 1+2+3 [emu2 P_LOAD merge + UnZip compact + #38/#40]
+9. a [fix FARPTR test]
+10. hvor er vi? [status]
+11. a [fix FARPTR med begdata+STACK+zm]
+12. opsummer, analyser og opret issues, commit og forbered på clear
