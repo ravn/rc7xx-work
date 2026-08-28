@@ -4,6 +4,9 @@ This workspace is portable: every memory file, planning doc, project rule, and
 sub-project pointer lives in git.  A fresh clone on any Linux/macOS box brings
 you up to date except for the **Anthropic API key**, which you install yourself.
 
+> **CP/M-86 Docker images?** See **[SONNYBOY.md](SONNYBOY.md)** — the Linux
+> build-host workflow for `open-watcom-cpm86:latest` and `emu2-cpm86:latest`.
+
 ## 1. Clone (one command, recursive)
 
 ```sh
