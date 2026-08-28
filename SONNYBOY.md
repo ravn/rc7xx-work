@@ -186,6 +186,61 @@ clear error.
 
 ---
 
+## Booting MAME with custom disk images
+
+Two consolidated scripts replace all the ad-hoc `rc759_make_*.sh` / `rc702_boot_cpm.sh`
+recipes.  Both share the same interface and do a make-style freshness check on the
+output MFI — files are only copied when the disk is older than its inputs.
+
+### `scripts/rc759_run.sh` — RC759 Piccoline (CP/M-86, 8086)
+
+```sh
+# Boot with default B: (existing or blank):
+sh scripts/rc759_run.sh
+
+# Build a B: with UnZip + a zip archive, then boot:
+sh scripts/rc759_run.sh infozip-cpm86-builds/out-cpm86/UNZIP.CMD test.zip:TEST.ZIP
+
+# Rename on the way in (HOST_PATH:CPM_NAME):
+sh scripts/rc759_run.sh build/myprog.cmd:MYPROG.CMD
+
+# Force rebuild even if disk is fresh:
+sh scripts/rc759_run.sh --force UNZIP.CMD
+
+# Build disk but do not boot:
+sh scripts/rc759_run.sh --no-boot --out /tmp/myb.mfi PROG.CMD data.zip:DATA.ZIP
+
+# Use a pre-built MFI (skip the build step):
+sh scripts/rc759_run.sh --disk mame/rc759_sw/B_mandel.mfi
+
+# Headless CI run (60 s wall clock, no sound, throttled):
+sh scripts/rc759_run.sh --seconds 60 --sound none PROG.CMD
+
+# Override A: boot disk:
+sh scripts/rc759_run.sh --a-disk /tmp/other-system.img PROG.CMD
+```
+
+### `scripts/rc702_run.sh` — RC702 (CP/M 2.2, Z80)
+
+Same interface.  Defaults to `-nothrottle` (rc702 is fast enough).  The A: disk
+(SW1711-I8.imd) is auto-fetched from rc700-gensmedet on first use.
+
+```sh
+sh scripts/rc702_run.sh                         # boot with default B:
+sh scripts/rc702_run.sh BIOS.COM TEST.COM        # build disk + boot
+sh scripts/rc702_run.sh --disk mame/rc702_sw/B_my.mfi   # use existing MFI
+sh scripts/rc702_run.sh --throttle BIOS.COM      # throttled (interactive)
+```
+
+**Disk geometry reference:**
+
+| Machine | Format | Geometry | cpmtools diskdef | MAME fmt |
+|---------|--------|----------|-----------------|---------|
+| rc759 | 5.25" DS-HD | 77cyl × 2h × 8s × 1024B = 1,261,568 B | `rc759-drc` | `rc759` |
+| rc702 | 8" DS-DD | 77cyl × 2h × 15s × 512B = 1,184,640 B | `rc702-8dd` | `u8dsdd` |
+
+---
+
 ## Quick-use examples (on the Mac after images are loaded)
 
 ```sh
