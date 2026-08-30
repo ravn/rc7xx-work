@@ -154,6 +154,7 @@
 
 ## 6. Before any MAME / boot / test run
 
+- [RC759 graphics = char-gen framebuffer, not a bitmap plane](reference_rc759_82730_graphics.md) — 82730 is text-only; "graphics" screen feeds char CODES not pixels; mode = mode-block `lpr` (text=9/10px, gfx=15/16px, both 560px → 7 vs 16 px cells); CPU draws 560×256 into m_vram tiled by `(col<<4)|row`. PPI bit6 is NOT the signal. `./myresnak.sh` to run.
 - **[rc759 CCP/M boots ~290 emulated s](reference_rc759_mame_c_verification.md) — HARD: turnkey `menu.cmd`/autostart program does NOT run until ~t175-290. ALWAYS `-seconds_to_run 400` + read a LATE snapshot frame. An early `*** PICCOLINE TEST V.2.1 ***` is the ROM monitor MID-BOOT, NOT a crash. (Mis-read 2026-08-26 as "compact UNZIP crashes"; real result was a clean inflate PASS once boot finished.) `rm -f nvram/rc759/nvram` before each run to force autoboot; regnecentralend MUST have FDC fix 59b21dc1312 or CMDs won't load (spurious WD2797 LOST DATA).**
 - **[emu2 default TPA is ROOMIER than real MAME](reference_emu2_tpa_pool_fidelity.md) — HARD: emu2 is a differential oracle, not truth. Its default `-m 210` gives more runtime memory than the rc759 XIOS's fixed 384 KB / ~293 KB TPA, so a program that passes under default emu2 can OOM/diverge on real MAME. Use `emu2 -m 190` to match rc759 byte-for-byte before trusting a CP/M-86 memory result.**
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: banner timestamp vs BUILD_INFO_STR before any diagnosis**
