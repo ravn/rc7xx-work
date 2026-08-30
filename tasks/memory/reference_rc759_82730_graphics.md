@@ -53,9 +53,23 @@ How the RC759 (and Myresnak) actually draw:
 
 ## Handover / open items
 
-- MAME changes committed on branch `rc759-82730-graphics` in `ravn/mame` (fork).
+- MAME changes committed on branch `rc759-82730-graphics` in `ravn/mame` (fork),
+  commit `6aac1dd`, pushed. No PR opened.
 - Interactive drawing pages (KASSE/FIRKANT/circles, manual pp.12/29-32) not yet
   visually verified — a GSX-86 test disk reportedly exists at
   `scratch/rc759-gsx-test/` (GRAPHICS.CMD, SCRN*.CMD demos) worth trying.
+  → tracked in **ravn/mame#29**.
 - `m_gfx_mode` / `set_gfx_mode` (PPI bit6 plumbing) is now dead for rendering;
   can be removed later (also referenced by sibling `rc750.cpp` — check first).
+  → tracked in **ravn/mame#30**.
+- MYRESNAK **BB** and **HENT** menu functions appear to freeze the program
+  (no screen update / no response). Cause unknown — could be FDC/disk (HENT ≈
+  "fetch/load"), keyboard, or CPU loop; needs debugger triage.
+  → tracked in **ravn/mame#31**.
+
+## Session-end notes (2026-08-30)
+
+- **GitHub Actions are DISABLED on `ravn/mame`** (repo-level
+  `actions/permissions enabled=false`, set 2026-08-30). This fork is not meant
+  to run upstream MAME CI. Re-enable if ever needed with
+  `gh api -X PUT repos/ravn/mame/actions/permissions -F enabled=true`.
