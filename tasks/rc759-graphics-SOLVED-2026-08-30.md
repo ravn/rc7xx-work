@@ -85,16 +85,24 @@ shows only the three intended source files changed.
 
 ## Handover / open items
 
-- The `mame` changes are **uncommitted** by design (never commit/push without
-  an explicit go-ahead). When ready, commit inside the submodule on a branch
-  off its default branch.
-- `m_gfx_mode` / `set_gfx_mode` (PPI bit6 plumbing, from Mistral's committed
-  58c65ba) is now **dead for rendering** but left in place (also referenced by
-  the sibling `rc750.cpp`). A future tidy-up could remove it, but verify rc750
-  first.
 - Not yet exercised: the interactive **drawing pages** (KASSE/FIRKANT/circles,
   manual pp. 12/29-32). The ready-screen △ proves the pipeline; drawing needs
-  keyboard interaction. Worth a follow-up visual check but the renderer is
-  format-correct (it reproduces arbitrary 560×256 bitmaps).
+  keyboard interaction. Worth a follow-up visual check. → ravn/mame#29.
 - Cell width is computed `560 / x_count`; if any RC759 program uses a third
   layout this stays correct as long as the active field is 560 px.
+
+## Session 2026-08-31 — screensaver + dead code (all merged to ravn/mame master)
+
+- **Dead code removed**: `m_gfx_mode`/`set_gfx_mode` (ravn/mame#30 CLOSED)
+- **Myresnak BB/HENT/HUSK freeze**: frame-interrupt fix `2a4b21c` verified
+  working (ravn/mame#31 CLOSED)
+- **Screensaver garbage (ravn/mame#28 CLOSED)**: root cause — two mechanisms:
+  1. EOF (0x81) at top of list-1 row-0 string blanks the field — was ignored
+  2. `blk_row=1` in status-row FULROWDESCRPT blanks status line — was ignored
+  Both fixed in `6352f80`: `m_eof_hit` flag + `blk_row` check + black fill
+  at `y - m_mb.vsyncstp` (bitmap coordinate pitfall).
+- **Boot status-line "sære tegn"**: same blk_row fix eliminates it.
+- New issues filed: #33 (rvv_row), #34 (CA bits), #35 (field_attr_mask),
+  #36 (Intensify/palette), #32 (NVRAM L-parameter mapping).
+- Branch `rc759-82730-graphics` merged to ravn/mame master (`d96b498`).
+- Boot screen verified correct after all fixes (snapshot 0153.png).
