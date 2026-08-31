@@ -62,10 +62,9 @@ How the RC759 (and Myresnak) actually draw:
 - `m_gfx_mode` / `set_gfx_mode` (PPI bit6 plumbing) is now dead for rendering;
   can be removed later (also referenced by sibling `rc750.cpp` — check first).
   → tracked in **ravn/mame#30**.
-- MYRESNAK **BB** and **HENT** menu functions appear to freeze the program
-  (no screen update / no response). Cause unknown — could be FDC/disk (HENT ≈
-  "fetch/load"), keyboard, or CPU loop; needs debugger triage.
-  → tracked in **ravn/mame#31**.
+- MYRESNAK **BB** and **HENT** (text↔graphics switching) — **VERIFIED WORKING**
+  (2026-08-31). Fixed by commit `2a4b21c` (frame interrupt lost when field taller
+  than physical frame). **ravn/mame#31 CLOSED**.
 
 ## Session-end notes (2026-08-30)
 
