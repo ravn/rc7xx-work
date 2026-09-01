@@ -17,7 +17,12 @@
 
 ## 1. Always-on (every response)
 
-- **[Check memory BEFORE coding](feedback_check_memory_before_coding.md) — HARD: at task start (not just session start) scan MEMORY.md for applicable sections, READ the linked files, NAME the rules that apply in your first response, THEN start coding. Session-start read is necessary but not sufficient.**
+- **[Check memory BEFORE coding](feedback_check_memory_before_coding.md) — HARD: at task start (not just session start) scan MEMORY.md for applicable sections, READ the linked files, NAME the rules that apply in your first response, THEN start coding. Session-start read is necessary but not sufficient.
+
+## 1b. Multi-agent integration
+
+- **[Mistral Vibe agent introduction](agent_mistralvibe_introduction.md) — Agent capability profile, integration approach with Claude Code and Copilot
+- **[Mistral Vibe project understanding](agent_mistralvibe_project_understanding.md) — Detailed technical baseline, current status matrix, known issues, future roadmap**
 - **[Revalidate historical compiler claims](feedback_revalidate_historical_compiler_claims.md) — HARD: before acting on any historical compiler-perf claim (size/speed/miscompile/"pass X pessimizes"), re-run the original measurement on a clean rebuild. Stale-rebuild + backend movement invalidate old numbers; current measurement wins. CASCADING: any replacement code (heuristic/fix) you write needs the same scrutiny — use a no-op control cell, not the heuristic's own output, to validate it.**
 - **[Rebuild ALL Z80 tools after backend edit](feedback_rebuild_all_z80_tools.md) — HARD: after editing llvm/lib/Target/Z80/, `ninja -C build-macos clang llc lld` (all three; LLVMZ80CodeGen is in all). LTO/`-flto`/PROM builds go through `ld.lld` — rebuilding only clang+llc leaves it stale → phantom "LTO differs" bugs (2026-07-08 incident).**
 - **[No-op control measurement](feedback_no_op_control_measurement.md) — HARD: for any new heuristic / cost-model hook / pass override, run THREE cells (baseline / no-op control / feature-ON) and check that no-op-control matches baseline byte-identically. If not, the new code has a presence-cost side effect; investigate before trusting feature-ON measurements.**
