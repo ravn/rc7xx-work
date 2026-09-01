@@ -930,3 +930,17 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 10. hvor er vi? [status]
 11. a [fix FARPTR med begdata+STACK+zm]
 12. opsummer, analyser og opret issues, commit og forbered på clear
+
+## 2026-09-01 — Open Watcom Docker multi-arch
+
+1. vi fandt ud af at LARGE ikke fandtes i open watcom docker. Undersøg og lav en plan.
+2. du kan afteste dockerimage for arm64 på denne maskine. Målet er at github actions bygger en komplet openwatcom for både arm64 og amd64
+3. "komplet" som i "alle modeller understøtter cpm86"
+4. der behøver ikke være et nyt trin. Jeg vil gerne have at standard watcom docker imaget understøtter alle de platforme det gør i dag, PLUS cpm86
+5. docker desktop kører lokalt. Byg dér
+6. [diverse fremskridtsspørgsmål undervejs]
+7. du kan godt bygge amd64 imaget her, jeg har rosetta
+8. forklar hvorfor multi-arch kræver registry
+9. fint, hvor store er de images du har bygget?
+10. analyser, opsummer og tilføj issues, og commit+merge
+11. gør klar til clear
