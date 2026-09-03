@@ -180,9 +180,26 @@ Den vælger **DRIVE A** fra den seedede NVM load-device-byte (mem[25]='A') og be
 Issue #46 lukket (løst-ved-config, IKKE port-0x100-modellering). Fra ikke-fungerende driver → fuld POST →
 bootloader-prompt.
 
-**NÆSTE (sidste) BLOCKER — floppy-boot (issue ravn/mame#45; tracking #21):** WD1797-læsestien (@0x200,
-densitet via 0x210, READ SECTOR 0x8C @FD5DD) skal levere en læsbar diskette i drev A (fx SW1500_2.0.imd)
-for at boote et OS. Alt POST-hardware er nu på plads.
+## 2026-09-03 (forts.): BOOTER CP/M! + skærm-fidelity (mono/intensitet/font)
+
+**RC750 booter nu CP/M fra floppy** (SW1500_2.0.imd i drev A) — bruger menusystemet, `DIR` virker.
+Floppy-læsestien (#45) fungerer i praksis. Commits: `66730659f78` (LAN/Winchester absent → BOOTLOADER),
+`b8de89b5563` (mono default + intensitet).
+
+**Skærm-fidelity (user-observationer, commit `b8de89b5563`):**
+- **Monitor-type**: Partner understøtter BÅDE mono og farve. Default var "Color" (rc750.cpp `config`-port
+  bit5 → PPI port B/0x72) → firmware tolker attribut-byte som fg/bg-farve-nibbles → fg=0 usynlig. Sat default
+  til **Monochrome** (matcher amber P3-skærm). Farve-dekodning = issue #47.
+- **Fed/intensitet**: hver display-word high-byte = char-attribut. Bit 6 (word-bit 14) = høj-intensitet
+  ("bold") på mono. Renderes nu som lysere amber `0xff,0xe0,0x60` (normal `0xff,0xb0,0x00`). Banner+menu-titler
+  =0x40, hint-linjer =0x60 (bit 5 ekstra).
+- **Usynlige tegn (issue #48, hoved-blocker for læsbar CP/M):** RC750-driveren har **ingen char-gen-ROM** —
+  kun boot-ROM'erne. `init_rom_font` udtrækker kun 47 diagnostik-glyffer (**ASCII 0x2A-0x5A = kun STORE
+  bogstaver**). Små bogstaver (0x61-0x7A) + menu-ramme (0x88/0x89/0x8D) mangler → usynlige. Bevis: menu-buffer
+  = "Tryk A1 for specialfunktioner" men kun T/A1 synlige. 82730 pixel-RAM (m_vram @0xD0000) er TOM (CP/M loader
+  ingen soft-font). Fix: skaf/dump Partner char-gen-ROM, ELLER find font-upload-stien.
+
+**NÆSTE:** #48 (fuld font → læsbar CP/M) er hoved-blocker; #47 (farve-skærm); #45 (floppy write/mere robust).
 
 ## Byg/kør
 ```
