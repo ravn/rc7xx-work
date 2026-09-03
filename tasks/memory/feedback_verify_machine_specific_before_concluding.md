@@ -41,4 +41,14 @@ one shot (routine @F9CE2 -> 0xF0000). Rule: contradicting evidence against a sys
 always means one of my premises is wrong, not that they are. Design the most direct test of the user's
 stated mechanism *first*, before weighing it against conclusions built on an unverified assumption.
 
+**When asked to investigate a specific artifact, actually DUMP and READ it — don't log the top-level
+names and then assert a conclusion from general architecture.** The user asked me to investigate the
+82730 *configuration* to find where the font should be. I only logged the command *names* (MODE SET,
+LOAD CBP, START DISPLAY) and asserted "the 82730 doesn't touch the char-gen" from architecture — I never
+dumped the mode block or the character words. Had I dumped them I'd have seen the 9x14 cell and that each
+display word's **bits 0-9 = a pixel-block address** into a character generator, which points straight at
+the pixel-memory section of the guide (F000:0000). The requested investigation WAS the path to the answer;
+I did a shallow version of it and concluded from the gap. Do the investigation at the depth asked: read
+the actual register/mode-block/data-structure contents, not just the API call names.
+
 Related: [[feedback_check_memory_before_coding]], [[feedback_ask_about_design_decisions]].
