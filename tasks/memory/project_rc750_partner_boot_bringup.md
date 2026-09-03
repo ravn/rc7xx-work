@@ -59,6 +59,38 @@ delt kerne `rc75x.cpp/.h`). Nye ROM-dumps kom: `mame/roms/rc750/ROD398.bin` + `R
 - **CPU = 8 MHz** (rettet fra 6 MHz gæt; user 2026-09-02: rc750 har 8 MHz 80186). 82730 char-clock
   (916'500 Hz i add_common_devices) er uafhængig af CPU-klokken.
 
+## Floppy-boot bring-up (2026-09-03) — SW1500 CCP/M-86
+
+Boot-floppy: **datamuseum.dk Bits:30009620** = `SW1500_2.0.imd` (IMAGEDisk, "SW1500 CCP/M 86 (2.0)").
+Hentet til `mame/floppies/`. Monteres `-flop1 floppies/SW1500_2.0.imd` (IMD understøttet af
+add_mfm_containers). Selvtest-doku: **datamuseum.dk Bits:30002753** (188-siders service-manual PDF
+med tekstlag; fejlkode-tabel side 126-127).
+
+Reverse-engineered port-kort (via unidasm x86_16 på flettet ROM):
+- **FDC = WD1797 @ 0x200-0x206** (status/cmd, track, sektor, data på lige bytes). Verificeret:
+  selvtest poller 0x200 bit0 (BUSY) ved FD72E, skriver Force-Interrupt 0xD8. (0x280 var Piccoline-gæt.)
+- **Floppy drive-select/control @ 0x260** (skriv drive-kode, læs bit4="disk present"), **sense @ 0x220**
+  (config-jumpere bit6-7, ready bit4, aktiv-lav). Handlers PROVISORISKE (aldrig eksekveret endnu —
+  boot når ikke floppy-læsning).
+- **SCSI-controller @ 0x30-0x36 + 0x40-0x46** (80186-DMA-baseret transfer-test; IKKE emuleret).
+
+**ERROR 00035 = SCSI-test (dok. side 127), ROOT-CAUSED + FIXET:** fejl-gaten (fa971) er en
+poll-løkke (fa978) der venter på **PPI port B bit3** (`in 0x72`, bit 0x08) skal gå LAV med timeout.
+`ppi_portb_r()` hardkodede bit3=1 (Piccoline "not used") -> timeout -> ERROR 35. **Fix: bit3=0** i
+ppi_portb_r (bit3 = SCSI-handshake-linje på Partneren). Bekræftet: error 35 forsvinder, POST fortsætter.
+
+**CTRL+ALT+SLET (selvtest-skip, dok. side 125) dekodet men GATED under selvtest:** combo =
+scancode CTRL 0x1D (kode 29) + ALT 0x37 (**kode 55**, var IPT_UNUSED i MAME — nu mappet til host
+LALT/RALT) + SLET 0x0E (Backspace, kode 14). Detekteres i F9999 via tæller [12Fh]>=2; men ISR'en
+(f99e3) springer F9999 over når **[13Bh]==0xFF** (sat mens selvtest kører, fb9b1). Så combo'en er en
+warm-boot-genvej der er DEAKTIVERET under selvtest — kan ikke skippe SCSI-haltet. Derfor valgt
+SCSI-fix-vejen i stedet (user 2026-09-03).
+
+**NÆSTE BLOCKER:** efter error-35-fix spinner POST i 82730-mailbox-handshake-ISR'en (F000:2000-lock,
+kicker CA 0x240, skriver 0x230; test-id 16 = "Dataskærm controller"). 82730-emuleringen opdaterer
+ikke mailboxen (es:[0x2014], test ax&0x64) som Partneren forventer -> løkke. 0x230 unmapped er
+harmløst (writes kasseres); problemet er 82730-handshake-semantikken. Kræver 82730-Partner-analyse.
+
 ## Byg/kør
 ```
 cd mame && make SUBTARGET=regnecentralen DEBUG=1 \
