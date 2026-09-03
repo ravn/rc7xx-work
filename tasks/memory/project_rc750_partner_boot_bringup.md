@@ -224,7 +224,26 @@ sted end 0xD0000), map den, og render derfra → ægte 9×14 Partner-font, stopg
 RcFont-disken kan dekodes (IMD→CP/M: RCFONT.CMD, CHARSET.CMD, fonte DK/US/STD/OVH×{88,99,119,710,914},
 printer-fonte RC603/604/605) men læses ikke af drev B i MAME (floppy-format #45).
 
-**NÆSTE:** #48 (find Partner char-gen-adresse → ægte font); #47 (farve-skærm); #45 (floppy robusthed/drev B).
+## 2026-09-03 (forts.): font sættes af XIOS, ikke boot-PROM (DK914 = 9×14)
+
+**User-hypotese (bekræftet af fund):** den fulde skærmfont ligger IKKE i boot-PROM'en — det er **XIOS'ens**
+(CCP/M-86 BIOS) opgave at loade den i char-gen pixel-lageret ved opstart. Understøttes af:
+- Diagnostik-boot-ROM'ens font (0x7f, 55 records) = store bogstaver + cifre + tegnsætning (0x2A-0x5A) +
+  **ramme-tegn 0x80-0x83, 0x90-0x93** — INGEN små bogstaver.
+- SW1500 har en `XIOS CON`-fil. Med *install-disken* loader XIOS'en åbenbart ikke den fulde font (bruger
+  boot-PROM'ens store-font); en *produktions-system-disk* ville loade DK914.
+- Emuleret char-gen (m_vram@0xD0000) tom; ingen font i RAM (scan finder kun RAM-testmønstre/display-buffer).
+
+**RcFont-fontnavne = DIMENSIONER:** `DK914`=9×14 (**Partner**), `DK710`=7×10 (Piccoline), `DK88`=8×8,
+`DK99`=9×9, `DK119`=11×9. Så **DK914 på RcFont-disken (`mame/floppies/SW1435_RcFont_1.3.imd`) ER den ægte
+Partner-skærmfont.** Blind mønster-scanning af disken narres af komprimerede/repeterende sektorer — kræver
+ordentlig CP/M-86-directory+extent-parsing + RcFont-font-filformat (dokumenteret i manualen).
+
+**To veje til ægte Partner-font (#48):** (a) ekstrahér DK914 fra RcFont-disken (CP/M-parse + font-format) og
+brug som glyph-tabel; (b) find en produktions-system-disk og tracér XIOS'ens char-gen-skrivning for at
+modellere den rigtige font-load-sti. Indtil da: RC759-backfill (7×10-agtig, sidder lidt højt) er stopgap.
+
+**NÆSTE:** #48 (DK914-ekstraktion ELLER XIOS char-gen-trace → ægte 9×14-font); #47 (farve-skærm); #45 (floppy/drev B).
 
 ## Byg/kør
 ```
