@@ -160,7 +160,7 @@ delte Piccoline-seed sum 0x2A, ikke 0xAA.
   `add_common_devices`): `mem[25]=0x41` ('A'), `mem[0]=0x69` → sum(0..95)=0xAA. Rører ikke delt seed.
 - **Resultat:** live checksum=AA, errcode **0x13→0x27**, banner→**11 stjerner**→ERROR 00039.
 
-**NÆSTE BLOCKER — fejl 39 (0x27), interrupt-test (ROM `fb069`):** `in al,100h` (arm), `sti`, vent på at
+**NÆSTE BLOCKER — fejl 39 (0x27), interrupt-test (ROM `fb069`)** (issue ravn/mame#46; tracking #21): `in al,100h` (arm), `sti`, vent på at
 ISR `fb01e` sætter flag `[6478h]=0xFF`; timeout (cx=0xffff) → error 0x27. **Port 0x100 er umappet** (ny
 interrupt-kilde-blok). ISR fb01e læser 0x100 + manipulerer struktur @DS:0x640A ([bx+2] får 0x100/0x770).
 Fix-vej: identificér hvilken IRQ-vektor fb01e sidder på + modellér port-0x100-enheden så den genererer
