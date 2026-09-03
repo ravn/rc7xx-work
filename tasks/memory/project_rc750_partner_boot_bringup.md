@@ -86,10 +86,36 @@ LALT/RALT) + SLET 0x0E (Backspace, kode 14). Detekteres i F9999 via tæller [12F
 warm-boot-genvej der er DEAKTIVERET under selvtest — kan ikke skippe SCSI-haltet. Derfor valgt
 SCSI-fix-vejen i stedet (user 2026-09-03).
 
-**NÆSTE BLOCKER:** efter error-35-fix spinner POST i 82730-mailbox-handshake-ISR'en (F000:2000-lock,
-kicker CA 0x240, skriver 0x230; test-id 16 = "Dataskærm controller"). 82730-emuleringen opdaterer
-ikke mailboxen (es:[0x2014], test ax&0x64) som Partneren forventer -> løkke. 0x230 unmapped er
-harmløst (writes kasseres); problemet er 82730-handshake-semantikken. Kræver 82730-Partner-analyse.
+## LØST 2026-09-03: 82730-mailbox-handshake (test 16 "Dataskærm controller")
+
+To MAME-`i82730.cpp`-bugs blokerede POST-videotesten; begge rettet, ingen rc759-regression
+(PICCOLINE TEST renderer stadig). Branch `rc750-rom-font-text`.
+
+1. **EONF/SINT fyrede aldrig** → mailboxen blev aldrig opdateret. Fixet allerede skrevet til
+   rc759 (MYRESNAK-freeze, `[[reference_82730_channel_attention_myresnak_fix]]`, commit
+   `2a4b21cdbdb`) men manglede i dette træ. **Cherry-picked hertil** (e94bd02f856): clamp
+   end-of-frame-housekeeping til `screen().height()-1` + div-by-zero-guard på frame_int_count.
+   Uden den: intet SINT → SINT-ISR'en (0xFA0F7) kører aldrig → mailbox (m_cbp+20) står stille.
+2. **LOAD CBP ryddede forkert bloks busy** (nyt fix, commit `07ff837f61b`): `execute_command()`
+   for cmd 5 satte `m_cbp` = ny pointer og ryddede via den fælles afsluttende `write_word` kun
+   busy på den NYE blok. Den blok CPU'en pollede (fast mailbox @ F000:2000-området) fik aldrig
+   sin busy ryddet → hang. Fix: ryd den oprindelige bloks busy straks pointeren er latchet, load
+   + eksekvér ny blok (rydder sin egen busy), `return`.
+
+SINT-ISR'en (0xFA0F7) semantik: lock-xchg busy @F2000 → skriv cmd 0x08 (READ STATUS) @F2001 →
+CA 0x240 → læs mailbox+0x14 (m_cbp+20 interrupt-cause); `test ax,64h` (RDC|RCC|DBOR fejl-bit),
+`jne` → errorcode 0x10; ellers tæl [135h] op; slut skriv 0x230 (unmapped/harmløst).
+
+**Verifikation (headless, `-video none`, PC-histogram + mailbox-dump via lua):**
+- Pre-fix: mailbox-busy stuck **01**, SINT-ISR (FA110/FA14B) kører ALDRIG.
+- Post-fix: busy rydder til **00**, SINT-ISR kører+iret hver frame, mailbox-status = 0x0008 (EONF,
+  ingen fejl-bit 0x64 → ISR tæller "god frame", sætter IKKE errorcode 0x10). CPU passerer test 16.
+
+**NY NÆSTE BLOCKER — floppy-læsning (WD1797 @ 0x200 + drive-select @ 0x260):** efter test 16
+poller POST FDC-status i timeout-løkke (0xFD72E `in 0x200; test al,1; loop`), men floppy-handlerne
+er stadig PROVISORISKE (aldrig eksekveret) → ingen boot fra SW1500_2.0.imd. Selftesten kører
+stabilt (banner + POST-cyklus), ikke frosset. Probe-scripts: `scratch/rc750_status_probe.lua`,
+`rc750_cbp_probe.lua`. Kør: `-flop1 floppies/SW1500_2.0.imd`.
 
 ## Byg/kør
 ```
