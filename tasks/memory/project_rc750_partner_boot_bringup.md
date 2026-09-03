@@ -269,7 +269,28 @@ DK914-diskfilerne er små partielle sæt (384 B), IKKE den fulde font — ikke b
 **Metode-note:** blind mønster-scanning af RAM/disk efter fonten narres af strukturerede data (RAM-test,
 display-buffer, kode) — brug hellere API-intercept (INT 0x28/52) eller søg efter *kendte* glyf-bytes.
 
-**NÆSTE:** #48 (implementér INT 0x28/AL=52-intercept i rc750.cpp → autentisk font); #47 (farve); #45 (floppy).
+## 2026-09-03 (forts.): FONT-KILDEN LØST — boot-ROM loader soft-font i pixel-lager
+
+**Afgørende eksperiment:** RC759 **uden diskette** (kun boot-ROM POST) har den fulde font (1536 words =
+96 tegn × 16 rækker, inkl. store OG små bogstaver) i pixel-lageret **0xD0000**. Så **RC759's boot-ROM
+indeholder + loader den fulde soft-font ved opstart** (ingen disk). RC750 med SAMME SW1500-disk: 0xD0000 TOM.
+Forskellen er MASKINEN (boot-ROM), ikke disken.
+
+**Konklusion (velbegrundet):**
+- **Fonten kommer fra BOOT-ROM'en**, som kopierer den ind i pixel-lager-char-gen'en (0xD0000) ved opstart —
+  IKKE en separat font-PROM (user-gæt var tæt, men det er hoved-ROM'en). Bevist på RC759.
+- Vores RC750-ROM er **DIAGNOSTIK-ROM'en** (rod398/399, "TEST V.4.3") — en test-ROM der IKKE loader fonten
+  (kun 47 store-bogstav-glyffer @0x7f til banneret; 0xD0000 tom; dens XIOS-dispatch har `define_font`=52 NULL).
+- En **produktions-RC750-boot-ROM** ville loade den fulde 9×14-font (som RC759 gør). Den har vi ikke.
+- **82730-programmering tænd→menu:** MODE SET (geometri) → LOAD INTMASK(0x02) → LOAD CBP=0x52000 (display-
+  liste) → START DISPLAY → poll READ STATUS. 82730'eren loader IKKE char-gen'en (ekstern, i dot-clock-stien).
+
+**Konsekvens (#48):** for den ægte Partner-font kræves en **dump af en produktions-RC750-boot-PROM**. Indtil da
+er RC759-backfill'en faktisk tæt på autentisk (det ER RC759's egen boot-ROM-font, bare 7×10 vs Partner 9×14).
+Intercept-vejen (INT 0x28/52) er blindgyde her: install/diagnostik-XIOS'en implementerer ikke funktionen, og
+read-tap fanger ikke 80186-INT/opcode-fetch.
+
+**NÆSTE:** #48 (skaf produktions-RC750-boot-PROM → ægte 9×14-font); #47 (farve); #45 (floppy).
 
 ## Byg/kør
 ```
