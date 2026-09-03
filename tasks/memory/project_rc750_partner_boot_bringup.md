@@ -34,6 +34,14 @@ Dette supersederer al tidligere font-spekulation i denne note (0x7f-tabel-stopga
 - **Lærdom:** [[feedback_verify_machine_specific_before_concluding]] — læs maskinens egen memory map først, stol
   ikke på søskende-arvede adresser, test brugerens hypotese direkte, dump det artefakt du bliver bedt om.
 
+## Partner-modeller (Bits:30005001, gemt i `rc700-gensmedet/docs/rc750/`)
+
+Fire centralenheds-konfigurationer (alle 80186@8MHz, samme ROM, **512 KB base-RAM**): **/21** uden diske ·
+**/22** 1× 1200 KB FD · **/23** 2× 1200 KB FD (ingen HD) · **/20** 1× FD + 1× 20 MB Winchester.
+**MAME modellerer /23** (2 floppy-connectors, ingen SCSI/HD) → RAM sat til 512 KB (0x00000-0x7FFFF, var 384 KB
+arvet fra RC759), FULLNAME "RC750/23 Partner" (commit `b60a83f9604`). Specs: 32 KB pixel-lager, 128 B CMOS,
+trestemmig lyd, 80×25 tegn, 2×56 tegnsæt, Concurrent DOS. Doc: `RC750_Partner_systemarkitektur_30005001.pdf`.
+
 ## Verificerede fakta
 
 - **ROM-interleave**: to byte-brede 16 KB EPROMs på 80186 16-bit bus.
