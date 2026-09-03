@@ -207,7 +207,24 @@ beholder native glyffer. **Installations-menuen er nu fuldt læsbar** ("Diskette
 for at returnere"...). Udtræks-lua: `scratch/rc759_fontextract.lua`. #48 forbliver åben for den ÆGTE
 Partner char-gen (ramme-tegn 0x80+ mangler stadig).
 
-**NÆSTE:** #47 (farve-skærm-attributdekodning); #48 (ægte Partner-font / 0x80+ ramme-tegn); #45 (floppy robusthed).
+## 2026-09-03 (forts.): Partner font-arkitektur afklaret (RcFont-manual)
+
+**RcFont** (SW1435, manual Bits:30002765 gemt i `rc700-gensmedet/docs/RcFont_Brugervejledning_v1.3_30002765.pdf`;
+disk-image `mame/floppies/SW1435_RcFont_1.3.imd`) er et font-værktøj der kører på **BÅDE Partner og Piccoline**.
+Afgørende fund: Partner bruger **IKKE en hardware char-gen-ROM** — den bruger et **soft-font pixel-lager**
+(pixellager) som Piccoline, bare større celle:
+- Skærmens tegngenerator = pixel-lager med **4 font-banke** (Standard 1/2, Alternativ 1/2).
+- Fonte op til 16×16; **Partner = 9×14** (matcher den høje celle), Piccoline mindre. Derfor sidder RC759-
+  backfill-glyfferne lidt højt (de er mindre end den ægte 9×14-font).
+
+**Emulerings-implikation (#48):** vores RC759-style pixel-RAM @`0xD0000` (delt `vram`) forbliver TOM efter
+Partner-boot → vi falder tilbage på diagnostik-font + RC759-backfill. Ægte fix: find Partnerens char-gen-
+pixel-lager-adresse / font-load-sti (boot-ROM'en kopierer formentlig font fra ROM til pixel-lageret et andet
+sted end 0xD0000), map den, og render derfra → ægte 9×14 Partner-font, stopgap kan droppes.
+RcFont-disken kan dekodes (IMD→CP/M: RCFONT.CMD, CHARSET.CMD, fonte DK/US/STD/OVH×{88,99,119,710,914},
+printer-fonte RC603/604/605) men læses ikke af drev B i MAME (floppy-format #45).
+
+**NÆSTE:** #48 (find Partner char-gen-adresse → ægte font); #47 (farve-skærm); #45 (floppy robusthed/drev B).
 
 ## Byg/kør
 ```
