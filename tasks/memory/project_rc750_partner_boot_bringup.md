@@ -160,11 +160,29 @@ delte Piccoline-seed sum 0x2A, ikke 0xAA.
   `add_common_devices`): `mem[25]=0x41` ('A'), `mem[0]=0x69` → sum(0..95)=0xAA. Rører ikke delt seed.
 - **Resultat:** live checksum=AA, errcode **0x13→0x27**, banner→**11 stjerner**→ERROR 00039.
 
-**NÆSTE BLOCKER — fejl 39 (0x27), interrupt-test (ROM `fb069`)** (issue ravn/mame#46; tracking #21): `in al,100h` (arm), `sti`, vent på at
-ISR `fb01e` sætter flag `[6478h]=0xFF`; timeout (cx=0xffff) → error 0x27. **Port 0x100 er umappet** (ny
-interrupt-kilde-blok). ISR fb01e læser 0x100 + manipulerer struktur @DS:0x640A ([bx+2] får 0x100/0x770).
-Fix-vej: identificér hvilken IRQ-vektor fb01e sidder på + modellér port-0x100-enheden så den genererer
-interruttet. (Diskette-testen fejl 26 er allerede forbi — de 11 stjerner dækker den.)
+## 2026-09-03 (forts.): SELVTEST FULDT BESTÅET → BOOTLOADER (fejl 39 løst)
+
+**Fejl 39 (0x27) = lokalnet-kort giver ikke interrupt** (user-indsigt). Testen `fb0ad`: `in 220h; not al;
+test al,10h; jne run-LAN-test`. Port 0x220 **bit4=0 = "LAN-kort tilstede"** → armer netværks-interrupt-vent
+(via umappet port 0x100, ISR `fb01e`) → timeout → fejl 39. Winchester-testen `fb7f9` er gated af `[12Dh]`
+bit 0x800. Port 0x220-bits: **6-7**=monitor-jumpers (f9e17 inverteret), **5-0**=device-presence (fa8fe-scan,
+0=installeret).
+
+**Fix (rc750.cpp, commit `66730659f78`): modellér ingen lokalnet + ingen Winchester** →
+`fdc_sense_r` returnerer **0xff** (alle presence-bits fravær; monitor-jumpers uændret) i stedet for 0xef.
+Selvtesten springer LAN-testen over og kører **fejlfrit (errcode 0)** → boot-ROM viser:
+```
+BOOTLOADER  VERSION 4.3
+LOADMEDIUM: DRIVE A
+INSERT DISKETTE
+```
+Den vælger **DRIVE A** fra den seedede NVM load-device-byte (mem[25]='A') og beder om en boot-diskette.
+Issue #46 lukket (løst-ved-config, IKKE port-0x100-modellering). Fra ikke-fungerende driver → fuld POST →
+bootloader-prompt.
+
+**NÆSTE (sidste) BLOCKER — floppy-boot (issue ravn/mame#45; tracking #21):** WD1797-læsestien (@0x200,
+densitet via 0x210, READ SECTOR 0x8C @FD5DD) skal levere en læsbar diskette i drev A (fx SW1500_2.0.imd)
+for at boote et OS. Alt POST-hardware er nu på plads.
 
 ## Byg/kør
 ```
