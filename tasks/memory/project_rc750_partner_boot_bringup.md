@@ -135,10 +135,36 @@ via Docker `jbarlow83/ocrmypdf` + `dan.traineddata`). **Fejlkode-tabel** ([120h]
   (Gamle `fdc_drive`@0x260 var fejlnavngivet — det ER printer-kontrol.)
 - Resultat: errcode **25→19**. POST forbi printer-testen.
 
-**NÆSTE BLOCKER — NVRAM systemparam-checksum (fejl 19/0x13):** test ved `FAF52` summerer 3×0x20
-NVRAM-bytes (via `FDBAE`) i `bl`, kræver `bl==0xAA` ellers error 0x13 (medmindre [12Dh] bit10). NVRAM
-uinitialiseret → sum≠0xAA. **Fix-vej:** default NVRAM-blob med sum=0xAA over de 96 FDBAE-bytes.
-Derefter forventes fejl 26 (diskette) → WD1797-læsning @0x200 (densitet via 0x210).
+## 2026-09-03 (forts.): NVRAM systemparam-checksum LØST (fejl 19 forbi) → nu fejl 39
+
+**Autoritativ kilde:** `rc700-gensmedet/docs/PARTNER_Programmers_Guide_v3_jun1986.pdf` (284 sider,
+tekstlag). §3.2 (s.34-35, Table 3-2 "NVM format"): checksum = sum af NVM **block 0,1,2** (IKKE block 3)
+mod 256 == **0AAH**. `mem[0]` er checksum-byten (`nvm_read(block0,offset0)`), justeret så summen holder.
+Byte-layout (s.32,34): byte **25 = load device** ('A'..'D' floppy / 'N' net); byte 20=floppy motor-idle,
+22=fg-farve, 69=cursor-config, 71-75=MF144, 76-127 reserveret.
+
+**FDBAE afkodet (ROM `FAF52`+`FDBAE`+`FDBD2`=address_block):** hver "byte" al i block b læses som to
+nibble-porte `0x80+al*4` (høj) og `+2` (lav); **block b vælges via port 0x70 (PPI port A) bits 6-7**
+(FDBD2 RMW). I MAME-modellen = `mem[b*32+al]`, så checksum = `sum(mem[0..95]) mod 256`.
+
+**Bug (root cause):** RC750 vælger NVM-block via **port 0x70/PPI port A** (address_block), men delt
+`rc75x` fangede kun banken fra **port C bits 4-5** (Piccoline-wiring). RC750 driver aldrig port C-banken
+→ banken sad fast på 2 → checksum-testen læste block 2 (nul) tre gange → sum 0 → fejl 19. Desuden gav den
+delte Piccoline-seed sum 0x2A, ikke 0xAA.
+
+**Fix (rc750.cpp, KUN RC750 — rc759/rc75x urørt, RC759 smoke-booter fint):**
+- Port A er **OUTPUT-latch** på Partner (selvtest 18 = walking-bit readback på port 0x70 via 8255 output-
+  latch — carve IKKE port 0x70 væk fra PPI'en, det brød test 18!). Fang block via `out_pa_callback` →
+  `nvm_block_w`: `m_nvram_bank=(data>>6)&3`. Fjernede bank-latch fra `ppi_portc_w`.
+- RC750-specifik seed `nvram_init_partner` (sat via `m_nvram->set_custom_handler` efter
+  `add_common_devices`): `mem[25]=0x41` ('A'), `mem[0]=0x69` → sum(0..95)=0xAA. Rører ikke delt seed.
+- **Resultat:** live checksum=AA, errcode **0x13→0x27**, banner→**11 stjerner**→ERROR 00039.
+
+**NÆSTE BLOCKER — fejl 39 (0x27), interrupt-test (ROM `fb069`):** `in al,100h` (arm), `sti`, vent på at
+ISR `fb01e` sætter flag `[6478h]=0xFF`; timeout (cx=0xffff) → error 0x27. **Port 0x100 er umappet** (ny
+interrupt-kilde-blok). ISR fb01e læser 0x100 + manipulerer struktur @DS:0x640A ([bx+2] får 0x100/0x770).
+Fix-vej: identificér hvilken IRQ-vektor fb01e sidder på + modellér port-0x100-enheden så den genererer
+interruttet. (Diskette-testen fejl 26 er allerede forbi — de 11 stjerner dækker den.)
 
 ## Byg/kør
 ```
