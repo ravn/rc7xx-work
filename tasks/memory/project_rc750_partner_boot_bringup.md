@@ -42,6 +42,13 @@ Fire centralenheds-konfigurationer (alle 80186@8MHz, samme ROM, **512 KB base-RA
 arvet fra RC759), FULLNAME "RC750/23 Partner" (commit `b60a83f9604`). Specs: 32 KB pixel-lager, 128 B CMOS,
 trestemmig lyd, 80×25 tegn, 2×56 tegnsæt, Concurrent DOS. Doc: `RC750_Partner_systemarkitektur_30005001.pdf`.
 
+**Kilder — datamuseum.dk (fulde links, så de kan genfindes):**
+- Systemarkitektur/konfigurationer (/20-/23): <https://datamuseum.dk/bits/30005001>
+- Partner brugervejledning / service-manual (fejlkoder, POST): <https://datamuseum.dk/bits/30002753>
+- RcFont brugervejledning (font-værktøj, INT-28h define_font): <https://datamuseum.dk/wiki/Bits:30002765> (PDF: `/bits/30002765`)
+- RcFont program + disk-image (SW1435, CHARSET-kilde): <https://datamuseum.dk/wiki/Bits:30005758> (IMD: `/bits/30005758`)
+- Partner Programmer's Guide v3 (jun 1986) — kun lokal fil (`rc700-gensmedet/docs/PARTNER_Programmers_Guide_v3_jun1986.pdf`), ingen kendt datamuseum-URL. §4.1.2 = pixel-hukommelse F000:0000; §4.3 = define_font.
+
 ## Verificerede fakta
 
 - **ROM-interleave**: to byte-brede 16 KB EPROMs på 80186 16-bit bus.
