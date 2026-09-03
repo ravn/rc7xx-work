@@ -290,7 +290,26 @@ er RC759-backfill'en faktisk tæt på autentisk (det ER RC759's egen boot-ROM-fo
 Intercept-vejen (INT 0x28/52) er blindgyde her: install/diagnostik-XIOS'en implementerer ikke funktionen, og
 read-tap fanger ikke 80186-INT/opcode-fetch.
 
-**NÆSTE:** #48 (skaf produktions-RC750-boot-PROM → ægte 9×14-font); #47 (farve); #45 (floppy).
+## 2026-09-03 (forts.): ÆGTE PARTNER-FONT LØST — pixel-hukommelse @0xF0000
+
+**RC750-autoritativt** (Partner Programmer's Guide §4.1.2, som jeg gemte): 82730-display-ordet adresserer en
+**32-byte blok i 32KB pixel-hukommelsen @F000:0000**; i alfanumerisk mode ER pixel-blokkene tegngeneratoren
+(14 rækker, ét 9-px word pr. linje, bit 15=venstre). **Fonten lå der hele tiden** — jeg kiggede på 0xD0000
+(RC759's placering, som Partner IKKE bruger). Mit RAM-dump stoppede ved 0xDFFFF, så jeg så den aldrig.
+
+**Fix (commit `2d6549a90d5`):** gav 0xF0000-RAM'en share "pixmem" + `optional_shared_ptr m_pixmem`; render
+læser glyffen direkte fra `m_pixmem[(kode&0x3ff)*16 + lc]`, 9px i bit 15..7. Display-ord: bits 0-9=blok/kode,
+bits 10-14=palette/intensitet. **Både banner OG CP/M-menu renderer nu den ægte 9×14 Partner-font** med korrekte
+små bogstaver + ramme-glyffer. Fjernede RC759-backfill-stopgap'en (rc759_font.ipp, init_rc759_font) — overflødig.
+RC759 uændret (bruger m_vram@0xD0000, kommer aldrig i ROM-font-stien).
+
+**Lærdom:** metodisk fejl tidligere — jeg antog RC750=RC759 (char-gen@0xD0000) og drog ugyldige slutninger fra
+RC759's opførsel. RC750/RC759 er SØSKENDE, ikke samme maskine. Den RC750-autoritative guide gav det rigtige
+svar (0xF0000). Font kom fra firmwaren (uanset CCP/M 2.0-alder — den ER loadet ved boot).
+
+**Rest på #48:** RC-logo-tegnet øverst-venstre ("IE750" i stedet for "RC750") — ramme/logo-glyf-detalje, minor.
+
+**NÆSTE:** #47 (farve/palette-dekodning — bits 10-14); #45 (floppy/drev B); #48-rest (logo-tegn, minor).
 
 ## Byg/kør
 ```
