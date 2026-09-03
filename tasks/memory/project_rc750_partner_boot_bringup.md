@@ -117,6 +117,29 @@ er stadig PROVISORISKE (aldrig eksekveret) → ingen boot fra SW1500_2.0.imd. Se
 stabilt (banner + POST-cyklus), ikke frosset. Probe-scripts: `scratch/rc750_status_probe.lua`,
 `rc750_cbp_probe.lua`. Kør: `-flop1 floppies/SW1500_2.0.imd`.
 
+## 2026-09-03 (forts.): POST-fejl dekodet via SERVICE-MANUAL + hardware-modellering
+
+**Strategi (user):** lav nok hardware til at selvtesten LYKKES (ikke spring-over — CTRL+ALT+SLET
+virkede ikke). Iterér: kør → læs errcode `[120h]` (**DS=0!** variablene ligger i lav-RAM) →
+tilføj hardware → gentag. Probe: `scratch/rc750_decide.lua`.
+
+**Service-manual gemt i projektet:** `rc700-gensmedet/docs/rc750/` (Bits:30002753, OCR'et dan+eng
+via Docker `jbarlow83/ocrmypdf` + `dan.traineddata`). **Fejlkode-tabel** ([120h], hex):
+`0x13`=19 systemparam-checksum · `0x18/0x19`=24/25 printer port kontrol/data · `0x1A`=26 diskette ·
+`0x1B`=27 CRC · `0x1E-0x22`=30-34 Winchester · `0x23`=35 SCSI.
+
+**Rettet (commit `5efba8f24ea`, master):**
+- `0x230`=82730 irst (som rc759; ISR ack'er hver frame) — IKKE 0x210 (rettede tidligere fejl-antagelse).
+- `0x210`=FDC-kontrol-latch (0x40|bits, readback bit2-3; bruges i disk-læse-sti FD5DD før READ SECTOR).
+- `0x250`/`0x260`=Centronics printer data/kontrol readback-latches → printer-test (fejl 24/25) består.
+  (Gamle `fdc_drive`@0x260 var fejlnavngivet — det ER printer-kontrol.)
+- Resultat: errcode **25→19**. POST forbi printer-testen.
+
+**NÆSTE BLOCKER — NVRAM systemparam-checksum (fejl 19/0x13):** test ved `FAF52` summerer 3×0x20
+NVRAM-bytes (via `FDBAE`) i `bl`, kræver `bl==0xAA` ellers error 0x13 (medmindre [12Dh] bit10). NVRAM
+uinitialiseret → sum≠0xAA. **Fix-vej:** default NVRAM-blob med sum=0xAA over de 96 FDBAE-bytes.
+Derefter forventes fejl 26 (diskette) → WD1797-læsning @0x200 (densitet via 0x210).
+
 ## Byg/kør
 ```
 cd mame && make SUBTARGET=regnecentralen DEBUG=1 \
