@@ -309,6 +309,13 @@ svar (0xF0000). Font kom fra firmwaren (uanset CCP/M 2.0-alder — den ER loadet
 
 **Rest på #48:** RC-logo-tegnet øverst-venstre ("IE750" i stedet for "RC750") — ramme/logo-glyf-detalje, minor.
 
+**Hvordan 0xF0000 defineres (write-tap-trace):** **boot-ROM'en selv** loader den fulde 9×14-font (inkl. små
+bogstaver) ind i pixel-hukommelsen ved POST — rutine ved **ROM-offset 0x1CE2 (kører @F9CE2, ~t=0.85s)**, lige
+efter den RAM-tester pixel-hukommelsen (0x55AA/0xAA55-mønstre @F9B71). Font-data ligger i boot-ROM'en (IKKE den
+lille 0x7f-tabel — den var en anden/mindre font). CCP/M/XIOS/disken er IKKE involveret i standard-fonten;
+INT-28h define_font (AL=52) redigerer den kun ved runtime (soft-fonts / 4 alternative banke, guide §4.3).
+Så den ER til stede før banneret og længe før disk-boot; renderen læser den bare tilbage fra m_pixmem.
+
 **NÆSTE:** #47 (farve/palette-dekodning — bits 10-14); #45 (floppy/drev B); #48-rest (logo-tegn, minor).
 
 ## Byg/kør
