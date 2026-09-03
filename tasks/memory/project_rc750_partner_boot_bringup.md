@@ -199,7 +199,15 @@ Floppy-læsestien (#45) fungerer i praksis. Commits: `66730659f78` (LAN/Winchest
   = "Tryk A1 for specialfunktioner" men kun T/A1 synlige. 82730 pixel-RAM (m_vram @0xD0000) er TOM (CP/M loader
   ingen soft-font). Fix: skaf/dump Partner char-gen-ROM, ELLER find font-upload-stien.
 
-**NÆSTE:** #48 (fuld font → læsbar CP/M) er hoved-blocker; #47 (farve-skærm); #45 (floppy write/mere robust).
+**Usynlige tegn LØST (stopgap, commit `9fb4d7f0d4e`):** udtrak den fulde RC759-soft-font fra Piccolinens
+82730 pixel-RAM (boot rc759 m. disk, dump `program:0xD0000`, ASCII 0x20-0x7f, 7px, bit15=leftmost) →
+konverteret til Partner-glyph-format (`>>9 & 0x7f`, shift 1) i `src/mame/regnecentralen/rc759_font.ipp`.
+`init_rc759_font()` udfylder KUN de glyffer diagnostik-fonten mangler (kaldes efter `init_rom_font`), så POST
+beholder native glyffer. **Installations-menuen er nu fuldt læsbar** ("Diskette vedligeholdelse", "Tryk ESC
+for at returnere"...). Udtræks-lua: `scratch/rc759_fontextract.lua`. #48 forbliver åben for den ÆGTE
+Partner char-gen (ramme-tegn 0x80+ mangler stadig).
+
+**NÆSTE:** #47 (farve-skærm-attributdekodning); #48 (ægte Partner-font / 0x80+ ramme-tegn); #45 (floppy robusthed).
 
 ## Byg/kør
 ```
