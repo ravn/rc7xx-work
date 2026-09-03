@@ -243,7 +243,33 @@ ordentlig CP/M-86-directory+extent-parsing + RcFont-font-filformat (dokumenteret
 brug som glyph-tabel; (b) find en produktions-system-disk og tracér XIOS'ens char-gen-skrivning for at
 modellere den rigtige font-load-sti. Indtil da: RC759-backfill (7×10-agtig, sidder lidt højt) er stopgap.
 
-**NÆSTE:** #48 (DK914-ekstraktion ELLER XIOS char-gen-trace → ægte 9×14-font); #47 (farve-skærm); #45 (floppy/drev B).
+## 2026-09-03 (forts.): FONT-MEKANISMEN FUNDET — XIOS INT 0x28 / define_font=52
+
+**Kilde:** PolyPascal-kildekode på RcFont-disken (CHARSET, `define_screen_font`), fundet ved at dekode IMD→
+CP/M-blob og søge `swint`. Mekanismen (bekræfter user-hypotesen 100%):
+```pascal
+CONST xios=$28; define_font=52;
+  mask:=$FFFF shl (16-cols); ones:=(NOT mask) shr 1;
+  FOR i:=1 TO rows DO charfont[i]:=charfont[i] AND mask OR ones;
+  reg.ax:=define_font;                          (* XIOS ekstra-funktion 52 *)
+  reg.cx:=(destination-1)*256+ORD(character);   (* destination=font-bank 1..4 *)
+  reg.dx:=ofs(charfont[1]); reg.ds:=seg(charfont[1]);  (* DS:DX -> rows words, cols MSB-just. *)
+  swint(xios,reg);                              (* INT 0x28 *)
+```
+Så skærmfonten loades **ét tegn ad gangen via INT 0x28, AL=52 (define_font)**: CX=bank×256+tegnkode,
+DS:DX→`rows` 16-bit words (`cols` pixels MSB-justeret; Partner 9×14 → mask 0xFF80). INT 0x28-vektor →
+dispatcher @phys **0x074A5** (CS=0x0684), indekseret på AL.
+
+**REN FIX (#48):** intercept `INT 0x28 / AL=52` i rc750-driveren → fang hver glyf (DS:DX) i render-glyph-
+tabellen ved CX. Renderer den autentiske 9×14-font uanset hvor XIOS'ens char-gen ligger, og dropper RC759-
+stopgap'en. Åbent: om SW1500 *install*-disken laver en fuld define_font-sweep (m_vram@0xD0000 tom + ingen
+font-grid fundet i RAM → måske bruger den kun boot-ROM'ens store-font). Intercept-hook'en svarer direkte.
+DK914-diskfilerne er små partielle sæt (384 B), IKKE den fulde font — ikke brugbar som kilde.
+
+**Metode-note:** blind mønster-scanning af RAM/disk efter fonten narres af strukturerede data (RAM-test,
+display-buffer, kode) — brug hellere API-intercept (INT 0x28/52) eller søg efter *kendte* glyf-bytes.
+
+**NÆSTE:** #48 (implementér INT 0x28/AL=52-intercept i rc750.cpp → autentisk font); #47 (farve); #45 (floppy).
 
 ## Byg/kør
 ```
