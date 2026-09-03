@@ -30,4 +30,15 @@ right, and came only after I'd built on the wrong foundation.
 
 Siblings/variants (RC750 vs RC759, or any two machines sharing a base driver) can differ in exactly the
 detail under investigation. Treat "same as the sibling" as a hypothesis to verify, never a premise.
+
+**When a knowledgeable user asserts a mechanism and my evidence seems to contradict it, suspect MY
+premise — and test THEIR claim directly.** In this incident the user said repeatedly "the boot PROM must
+set the character set," and I kept effectively refuting it — because I had silently translated it into
+"does the boot PROM write to 0xD0000?" (my wrong char-gen address), saw 0xD0000 empty, and concluded "no."
+I was testing my own model, not their hypothesis. Their claim had one direct test — a **write tap during
+POST to see where the boot ROM writes font data** — which I only ran at the very end; it confirmed them in
+one shot (routine @F9CE2 -> 0xF0000). Rule: contradicting evidence against a system-savvy user almost
+always means one of my premises is wrong, not that they are. Design the most direct test of the user's
+stated mechanism *first*, before weighing it against conclusions built on an unverified assumption.
+
 Related: [[feedback_check_memory_before_coding]], [[feedback_ask_about_design_decisions]].
