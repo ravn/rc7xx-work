@@ -4,6 +4,36 @@ Session 2026-09-02. Mistral havde lavet driver-skelettet (`mame/src/mame/regnece
 delt kerne `rc75x.cpp/.h`). Nye ROM-dumps kom: `mame/roms/rc750/ROD398.bin` + `ROD399.bin`
 (16 KB hver). Mål: se om rc750 kan boote (floppy).
 
+## ⭐ FONT-ARKITEKTUR — ENDELIG/AUTORITATIV (2026-09-03, LØST)
+
+**Kilde: Partner Programmer's Guide v3 §4.1.2 (`rc700-gensmedet/docs/PARTNER_Programmers_Guide_v3_jun1986.pdf`).**
+Dette supersederer al tidligere font-spekulation i denne note (0x7f-tabel-stopgap, RC759-backfill,
+"produktions-PROM nødvendig", "XIOS loader den" — ALT det var forkert eller kun delvist).
+
+- **Tegngeneratoren er 32 KB pixel-hukommelse (RAM) på fast adresse `F000:0000` = 0xF0000** (IKKE 0xD0000 —
+  det er RC759/Piccolinens placering; Partner er en SØSKENDE, ikke samme maskine). Fast hardware-adresse-
+  dekode, ikke en programmerbar pointer.
+- **Display-ord** (82730 henter fra display-buffer): **bit 0-9 = pixel-blok/glyf-adresse**, bit 10-14 = palette-
+  vælger, bit 15 = datastream-kommando-flag.
+- **Glyf-format:** tegn C's glyf ligger på `0xF0000 + C*32` (32-byte blok = 1024 blokke × 32 = 32 KB), **14
+  rækker, ét 9-px word pr. række, bit 15 = venstre pixel** (bit 15..7 = de 9 px; lav-bits = "hale"-guard 0x3F).
+- **Hvem loader fonten:** **boot-ROM'en selv** ved POST — rutine @ROM-offset 0x1CE2 (kører **@F9CE2, ~t=0.85s**),
+  lige efter den RAM-tester pixel-hukommelsen. Den fulde 9×14-font (STORE+små bogstaver + ramme-glyffer 0x80+)
+  ligger i boot-ROM'en. Disk/CCP/M/XIOS er IKKE involveret i standard-fonten. (Den lille 0x7f-tabel var en
+  ANDEN, mindre font — rød sild.)
+- **XIOS INT-28h `define_font` (AL=52)** redigerer fonten ved RUNTIME (soft-fonts / 4 alternative banke,
+  guide §4.3) — ikke nødvendig for standard-fonten.
+- **82730-config indeholder INGEN font-pointer** (verificeret ved at dumpe mode-blokken: kun geometri —
+  line_length=61, aktivt felt 720px=80×9, lpr=13→celle 14). Data-strømmen (tegn-koder) er programmerbar via
+  CBP→liste→strenge; kun font-placeringen er fast hardware. Hvem der fysisk læser pixel-RAM'en (82730 selv vs
+  ekstern video-logik) er uafklaret uden skematik (har vi ikke).
+- **Implementering (commit `2d6549a90d5`, doc `13263fd3f8d`):** `map(0xf0000,0xf7fff).ram().share("pixmem")` +
+  `optional_shared_ptr m_pixmem`; `txt_update_row` renderer `m_pixmem[(kode&0x3ff)*16 + lc]`, 9px, bit 15..7.
+  RC759-backfill (`rc759_font.ipp`, `init_rc759_font`) FJERNET. **Banner + CP/M-menu (inkl. box-ramme + små
+  bogstaver) renderer nu den ægte 9×14 Partner-font.** RC759 uændret (m_vram@0xD0000, m_use_rom_font=false).
+- **Lærdom:** [[feedback_verify_machine_specific_before_concluding]] — læs maskinens egen memory map først, stol
+  ikke på søskende-arvede adresser, test brugerens hypotese direkte, dump det artefakt du bliver bedt om.
+
 ## Verificerede fakta
 
 - **ROM-interleave**: to byte-brede 16 KB EPROMs på 80186 16-bit bus.
@@ -30,7 +60,7 @@ delt kerne `rc75x.cpp/.h`). Nye ROM-dumps kom: `mame/roms/rc750/ROD398.bin` + `R
   selvtestens READ STATUS-poll (cmd 0x08) hang. Patchen brød IKKE rc759 (verificeret: renderer
   stadig "PICCOLINE TEST"). BEHØVER stadig bredere validering mod andre 82730-brugere.
 
-## LØST 2026-09-02: læsbar skærm (font i ROM)
+## LØST 2026-09-02: læsbar skærm (font i ROM) — ⚠️ SUPERSEDET af FONT-ARKITEKTUR øverst (0x7f-tabellen var en mindre font; den ægte 9×14-font ligger i pixel-hukommelsen @0xF0000)
 
 - Skærm-char-koder er **ASCII** (lav byte af 16-bit ord, høj byte = attribut), lagret i
   display-buffer @F3000 (list[0] via CBP-kæde F2000->lptr F2054->sptr F3000).
