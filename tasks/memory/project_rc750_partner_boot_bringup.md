@@ -361,7 +361,18 @@ lille 0x7f-tabel — den var en anden/mindre font). CCP/M/XIOS/disken er IKKE in
 INT-28h define_font (AL=52) redigerer den kun ved runtime (soft-fonts / 4 alternative banke, guide §4.3).
 Så den ER til stede før banneret og længe før disk-boot; renderen læser den bare tilbage fra m_pixmem.
 
-**NÆSTE:** #47 (farve/palette-dekodning — bits 10-14); #45 (floppy/drev B); #48-rest (logo-tegn, minor).
+**FDC-status (2026-09-04):** FDC-kontrol-latch er **0x210**, ikke 0x260. **Bit3 = drev-vælger**
+(0=A, 1=B — traced 0x210 under DIR A: vs DIR B:; A=0x46/0x47, B=0x48-0x4b), bit6 = enable/motor,
+bit0 = density. `fdc_ctrl_w` var hardkodet til `m_floppy[0]` → FIXET til `m_floppy[BIT(data,3)]`
+(commit f4ae4351b33). **Drev A booter nu CCP/M-86 2.0 fra SW1500, DIR A: virker.** **Drev B fejler
+stadig:** WD1797-status 0x34/0x36 = **Record Not Found (bit4)** + Lost Data (bit2) på nogle sektorer,
+hvor drev A læser SAMME tracks (15, 2) fint → drev-B-enheds-specifikt på læse-niveau. `force_ready(true)`
+hjælper ikke. Mistænkte: side-select ikke wired (`ss_w`), eller hoved-/track-register-desync ved
+drev-skift. Issue **#49** (fuld trace); #45 er nu paraply for read-path-robusthed (titlen "cannot boot"
+forældet — kommenteret).
+
+**NÆSTE:** #49 (drev-B RNF — korrelér fejlende reads' H-bit vs fysisk side); #47 (farve/palette-dekodning
+— bits 10-14); #45 (read-path-robusthed).
 
 ## Byg/kør
 ```
