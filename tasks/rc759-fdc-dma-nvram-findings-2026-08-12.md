@@ -15,6 +15,42 @@ check that would have failed if wrong.
 
 ---
 
+## UPDATE 2026-09-05 — re-verified on valid NVRAM; NVRAM checksum bug found; posted to r/MAME
+
+- **Re-ran the DMA A/B on a VALID seeded NVRAM** (the first attempts this session were
+  invalid because the NVRAM file had been deleted -> PROM self-test aborted with
+  "ERROR: 19" before floppy; see NVRAM bug below). Machine rc759, disk
+  `scratch/rc759-pce/images/sw1400_r31a_d1.img`; the PICCOLINE 3.1 install-menu
+  program-load is the post-boot-read discriminator. Three-way result:
+  - stock `drq0_w` -> "CCP/M fejl: Program-indlaesning" (fails)
+  - stock `drq0_w` + `config.set_perfect_quantum(m_maincpu)` -> **byte-for-byte identical failure** (perfect_quantum does NOT help)
+  - `#53` inline `drq_callback(0)` -> menu + DISKVEDL sub-program load OK (works)
+  Confirms the Aug conclusion cleanly: quantum-class changes do not fix it.
+- **Separate driver bug found & FIXED:** `rc75x.cpp nvram_init` seeded byte0=0x5f, giving
+  checksum sum(bytes[0..95])&0xff = 0x2A (not 0xAA) -> self-test "ERROR: 19" (NVM fault,
+  per PICCOLINE Brugervejledning 8.3.1) on any blank NVRAM (first boot / CI). Fixed to
+  byte0=0xdf. Branch `rc759-fdc-dma-bringup`, commit a5efa30. Boots to the PICCOLINE 3.1
+  menu out of the box now. Brugervejledning added to rc700-gensmedet/docs (with .txt).
+- **Shared-core survey** (drq0_w/drq1_w live in i80186, ~53 machines): every i80186+FDC
+  machine on **drq1** is MACHINE_NOT_WORKING (digilog320, ngen, pcd, mpc60, yes, pwrview);
+  working drq0+FDC = lb186, slicer, compis; working drq1 (non-FDC) = leland_a (PIT),
+  mikromikko2 (MPSC), compis (iSBX). mpc60 is NOT_WORKING and does NOT solve this - its
+  drq1 floppy DRQ is a stock wire with a `// FIXME: delayed and combined with DRQAD`.
+- **Decision:** instead of upstreaming #53's ch0-only change to the shared core, a neutral
+  facts-only problem statement was posted to r/MAME to get maintainer guidance first:
+  `rc700-gensmedet/docs/mame_i80186_dma_floppy_question.md` /
+  https://www.reddit.com/r/MAME/comments/1w7yj9j/ . See memory
+  `reference_reddit_i80186_dma_question`.
+- **NEXT (resume here):** await Reddit responses. Then either follow the recommended
+  approach, or generalize #53 = symmetric `drq0_w`+`drq1_w`, gated on `ST_STOP | SYNC_MASK`,
+  keeping the `!m_dma_latency` window (mpc60 ch0 RAM->RAM relies on it; that transfer is
+  unsynchronised so the gate never fires for it). Regression set: lb186/slicer/compis must
+  still boot; leland_a/mikromikko2/compis (working drq1 non-FDC) must not break. Open,
+  honest caveats to resolve: the inline path does not `m_icount--` and runs in the FDC's
+  callback context (`dma_sync_req` does the same, labelled "a hack").
+
+---
+
 ## 1. The program-load bug (SOLVED 2026-08-12)
 
 > **RESOLVED [known].** Root cause: MAME's `i80186` internal DMA serviced bytes
