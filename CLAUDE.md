@@ -32,9 +32,9 @@ Sizes (refreshed dates noted; re-verify MAME boot after any code change):
 Durable facts:
 - **Compiler intrinsics/attributes** (#42/#4): clang ships `<intrinsic.h>` so the same rcbios source compiles under clang AND SDCC with no `-I`/`#ifdef`. Builtins `__builtin_z80_di/ei/halt/nop/im2/set_i`; `__attribute__((z80_critical))` drives Z80FrameLowering DI/EI.
 - **SW1 bit allocation** (canonical: `rc700-gensmedet/docs/SW1_BIT_MAP.md`): bit 0 (S01) console mode (rcbios+cpnos); bit 1 (S02) PROM1 lineprog enable (autoload); bit 2 (S03) CP/NET transport PIO/SIO (cpnos + rcbios SNIOS). Default DIPs (S03=On=0) route to PIO.
-- **rcbios CP/NET SNIOS dual SIO+PIO**: polypascal-pio-test PASS (`cpnet/polypascal_pio_test.sh`). MAME z80pio fix in ravn/mame `2eb88cea` (upstream candidate ravn/mame#13).
+- **rcbios CP/NET SNIOS dual SIO+PIO**: polypascal-pio-test PASS (`cpnet/polypascal_pio_test.sh`). MAME z80pio fix in ravn/mame-rc702-rc759-rc750 `2eb88cea` (upstream candidate ravn/mame-rc702-rc759-rc750#13).
 - **IX/IY reserved by default** (un-reserve gated on cost-model work #38). Byte-decompose leaks #189/#27/#112 FIXED (`llvm-z80/tasks/issue112-189-iy-leak-taxonomy-2026-05-25.md`). Un-reserving IY is worth ~0 on production (re-measured 2026-07-14); #23 Phase 2 cost-tier split PARKED (`llvm-z80/tasks/plan-z80-cost-model-refinement-2026-06-08.md`).
-- **MAME**: `rc702sem702` machine = rc702 clone with SEM702 RAM-backed chargen (ports 0xD1/D2/D3). rc702 col-80 fix `set_size(560,...)` (ravn/mame@035d29086bf). Video capture via `scripts/mame_capture.sh` → `scratch/mame-videos/`.
+- **MAME**: `rc702sem702` machine = rc702 clone with SEM702 RAM-backed chargen (ports 0xD1/D2/D3). rc702 col-80 fix `set_size(560,...)` (ravn/mame-rc702-rc759-rc750@035d29086bf). Video capture via `scripts/mame_capture.sh` → `scratch/mame-videos/`.
 - **PARKED**: two-PROM build (2026-05-17), cpnos-in-asm (2026-05-17, superseded by cpnos-in-c), cpnos PIO→INIR #115 (2026-06-14, needs physical HW — `cpnos-in-c/tasks/PIO_INIR_PARKED.md`). Sole production topology: autoload-in-c (ROA375, PROM 0) + cpnos-in-c PROM1-only (PROM 1).
 
 ## Canonical Plan

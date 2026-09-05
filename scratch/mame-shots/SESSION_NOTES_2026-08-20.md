@@ -2,7 +2,7 @@
 
 ## Outcome
 - **Root-caused** the ~15-min idle "top rows -> garbage + status line vanishes" bug on
-  the RC759 (PICCOLINE) CCP/M-86 config menu. Filed as **ravn/mame#28** (authoritative
+  the RC759 (PICCOLINE) CCP/M-86 config menu. Filed as **ravn/mame-rc702-rc759-rc750#28** (authoritative
   record: analysis, garbage screenshot, command-level trace, resume-here handoff).
 - **Mechanism (verified):** deterministic flip at emulated t=941.104s / frame 58816.
   The guest issues `LD CUR POS` (cmd 0x09) every frame; `execute_command()` re-latches

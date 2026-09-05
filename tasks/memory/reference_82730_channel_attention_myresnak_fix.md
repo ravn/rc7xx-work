@@ -1,11 +1,11 @@
 ---
 name: 82730 channel-attention frame-int lost when field taller than frame (MYRESNAK freeze fix)
-description: RC759 MYRESNAK BB/HENT/HUSK froze because the 82730 end-of-frame housekeeping (deferred channel-attention service + EONF interrupt) was keyed to a scanline past frame_length. Fixed by clamping to screen height. (ravn/mame#31, commit 2a4b21cdbdb.)
+description: RC759 MYRESNAK BB/HENT/HUSK froze because the 82730 end-of-frame housekeeping (deferred channel-attention service + EONF interrupt) was keyed to a scanline past frame_length. Fixed by clamping to screen height. (ravn/mame-rc702-rc759-rc750#31, commit 2a4b21cdbdb.)
 metadata:
   type: reference
 ---
 
-**Bug (FIXED 2026-08-30, ravn/mame#31, commit `2a4b21cdbdb`, branch
+**Bug (FIXED 2026-08-30, ravn/mame-rc702-rc759-rc750#31, commit `2a4b21cdbdb`, branch
 `rc759-82730-graphics`, NOT pushed / issue NOT closed):** RC759 MYRESNAK froze on
 `BB`/`HENT`/`HUSK` (all switch to the text page).
 

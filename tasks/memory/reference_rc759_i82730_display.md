@@ -5,7 +5,7 @@ description: RC759 Piccoline i82730 CRT display facts and fixes (MAME regnecentr
 # RC759 i82730 CRT display (MAME) + DDHF original-image inventory
 
 Work done 2026-08-17 on branch `rc759-i82730-cursor` in `/Users/ravn/z80/mame`
-(pushed to origin `ravn/mame`, NOT merged, no PR). The i82730 device is used
+(pushed to origin `ravn/mame-rc702-rc759-rc750`, NOT merged, no PR). The i82730 device is used
 ONLY by rc750/rc759 (only `rc75x.h` includes `i82730.h`) — compis moved off it,
 so device-level changes carry no compis regression risk.
 
@@ -57,7 +57,7 @@ Commit `20070a869ce`.
 - Cursor = reverse-video the cell (device owns cursor pos/blink). Cursor at the
   A> prompt renders correctly (col 2).
 
-## Open i82730 issues (ravn/mame, filed not fixed — hardware values not guessed)
+## Open i82730 issues (ravn/mame-rc702-rc759-rc750, filed not fixed — hardware values not guessed)
 
 - **#24** cursor blinks ~2× too fast even at 62.5 Hz: `cursor_visible()` formula
   `((frame_number()/cursor_blink)&1)==0` ignores `DUTY CYC CURSOR` and
@@ -101,7 +101,7 @@ columns); levee shows garbage filenames in the lower half (hoekSOeRW!, hnAe50z..
 Two independent oracles (pixel differential + host-side `cpmtools cpmls`, which
 never touches MAME) agree the difference is on-disk content, so the garbage is
 NOT an i82730 rendering/emulation defect. Verdict + before/after screenshots
-posted to ravn/mame#25.
+posted to ravn/mame-rc702-rc759-rc750#25.
 
 RETRACTED a premature "un-zeroed directory" cause: dumping the FIRST 8 KB dir
 block of BOTH images shows an identical 65 status-0x20/0x21 entries (normal CCP/M

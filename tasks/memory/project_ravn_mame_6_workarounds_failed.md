@@ -1,15 +1,15 @@
 ---
-name: ravn/mame#6 — workaround paths attempted, all failed
+name: ravn/mame-rc702-rc759-rc750#6 — workaround paths attempted, all failed
 description: Path 2 (Einstein topology) and Path 3 (bypass slot entirely) both fail; underlying bug must be fixed in chip/slot layer
 type: project
 originSessionId: 5295f669-4bd6-4de0-8588-d661b7498d99
 ---
-On 2026-04-26 I tried two distinct workarounds for ravn/mame#6 (any
+On 2026-04-26 I tried two distinct workarounds for ravn/mame-rc702-rc759-rc750#6 (any
 card on PIO-B's slot wrapper breaks cpnos-rom IM2 IRQs).  Both
 failed:
 
 **Path 2 — Einstein topology (PIO-A direct, only PIO-B as slot)**:
-implemented in commit `54cccdbc3af` on `ravn/mame:cpnet-fast-link`.
+implemented in commit `54cccdbc3af` on `ravn/mame-rc702-rc759-rc750:cpnet-fast-link`.
 Removes the `pioa` slot, wires the keyboard direct via `kbd_put` /
 `kbd_r` (matching the original pre-slot RC702 driver and Einstein's
 "Port A direct, Port B userport slot" layout).  Result:

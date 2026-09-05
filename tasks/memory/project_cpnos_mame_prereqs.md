@@ -28,7 +28,7 @@ isr_pio_par / any other resident-payload behaviour never fires.
    sources live (the user owns these, no live upstream — see
    project_dri_ndos_frozen memory).
 4. **cpnos-rom built recently** (`make cpnos` in cpnos-rom/).
-5. **ravn/mame:cpnet-fast-link branch built** as
+5. **ravn/mame-rc702-rc759-rc750:cpnet-fast-link branch built** as
    `/Users/ravn/z80/mame/regnecentralend` for any test that uses
    the CP/NET fast-link bridge slot (Option P).
 

@@ -1,11 +1,11 @@
 ---
 name: reference_mame_crt_geom_flat
-description: ravn/mame bgfx chain crt-geom-flat = crt-geom with curvature off (flat CRT look) for RC702/RC759 amber; not wired by default
+description: ravn/mame-rc702-rc759-rc750 bgfx chain crt-geom-flat = crt-geom with curvature off (flat CRT look) for RC702/RC759 amber; not wired by default
 metadata:
   type: reference
 ---
 
-`ravn/mame` ships `bgfx/chains/crt-geom-flat.json` (commit 7cebd719, master) — a
+`ravn/mame-rc702-rc759-rc750` ships `bgfx/chains/crt-geom-flat.json` (commit 7cebd719, master) — a
 verbatim copy of MAME's stock `crt-geom` shader with **one** change: the
 `curvature` slider default `1.0 -> 0.0`. So it gives the full "real CRT" look
 (scanlines, shadow mask/aperture, phosphor glow) but **flat** (no curved-glass

@@ -1,7 +1,7 @@
 # RC759 (MAME) — FDC/DMA program-load bug + NVRAM — findings 2026-08-12
 
 Machine: MAME `rc759` (Regnecentralen RC759 Piccoline, Intel 80186) running
-Concurrent CP/M-86 3.1. Driver: `src/mame/regnecentralen/rc759.cpp` (fork `ravn/mame`).
+Concurrent CP/M-86 3.1. Driver: `src/mame/regnecentralen/rc759.cpp` (fork `ravn/mame-rc702-rc759-rc750`).
 
 Confidence is marked per claim: **[known]** = verified this session from
 code/traces/observation; **[guessed]** = inference/hypothesis not yet proven by a

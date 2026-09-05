@@ -1,11 +1,11 @@
 ---
-name: ravn/mame#6 — PIO-B slot regression blocks Option P bring-up
+name: ravn/mame-rc702-rc759-rc750#6 — PIO-B slot regression blocks Option P bring-up
 description: Open MAME bug; cpnos-rom IM2 IRQs die when any card is on PIO-B; gating item for the cpnet-fast-link parallel-port path
 type: project
 originSessionId: 5295f669-4bd6-4de0-8588-d661b7498d99
 ---
-**Filed 2026-04-26 as [ravn/mame#6](https://github.com/ravn/mame/issues/6).**
-On `ravn/mame:cpnet-fast-link`, plugging any card into the PIO-B slot
+**Filed 2026-04-26 as [ravn/mame-rc702-rc759-rc750#6](https://github.com/ravn/mame-rc702-rc759-rc750/issues/6).**
+On `ravn/mame-rc702-rc759-rc750:cpnet-fast-link`, plugging any card into the PIO-B slot
 (`-piob keyboard` or `-piob cpnet_bridge`) stops the cpnos-rom guest
 from completing IM2 init: no IRQs fire, screen black, CCP never loads.
 The bridge byte path itself works (6 test bytes verified flowing
@@ -79,7 +79,7 @@ slot infrastructure was already 6 years old.
 
 **How to apply:**
 - When resuming Option P / cpnet-fast-link work, check the issue
-  first: `gh issue view 6 --repo ravn/mame --json state,comments`.
+  first: `gh issue view 6 --repo ravn/mame-rc702-rc759-rc750 --json state,comments`.
   If still open, do not waste time on harness-side bring-up — the
   blocker is upstream of every Z80-side test.
 - Two fix paths exist; minimum-disruption is path 2:

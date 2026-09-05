@@ -5,7 +5,7 @@ metadata:
   type: reference
 ---
 
-# RC759 i82730 screensaver / screen-blank mechanism (ravn/mame#28, FIXED 2026-08-31)
+# RC759 i82730 screensaver / screen-blank mechanism (ravn/mame-rc702-rc759-rc750#28, FIXED 2026-08-31)
 
 ## What the screensaver does
 
@@ -69,7 +69,7 @@ All in `src/devices/video/i82730.cpp`:
 
 SL SCROLL START/END commands implement "blød rulning" (soft scrolling). The RC759
 config menu does NOT use it — "CRT scroll mode" in the NVRAM (byte 18, high nibble)
-is 0 = jump scroll. Tracked in ravn/mame#23 (not implemented, not urgent).
+is 0 = jump scroll. Tracked in ravn/mame-rc702-rc759-rc750#23 (not implemented, not urgent).
 
 ## Diagnostic scripts (scratch/mame-shots/)
 
@@ -89,8 +89,8 @@ Snapshot `snap/rc759/0129.png` confirms correct behavior.
 
 ## Related
 
-- ravn/mame#28 — filed issue with full instrumentation trace (CLOSED by this fix)
-- ravn/mame#30 — dead m_gfx_mode cleanup (CLOSED 2026-08-31)
-- ravn/mame#31 — MYRESNAK BB/HENT freeze (CLOSED 2026-08-31)
+- ravn/mame-rc702-rc759-rc750#28 — filed issue with full instrumentation trace (CLOSED by this fix)
+- ravn/mame-rc702-rc759-rc750#30 — dead m_gfx_mode cleanup (CLOSED 2026-08-31)
+- ravn/mame-rc702-rc759-rc750#31 — MYRESNAK BB/HENT freeze (CLOSED 2026-08-31)
 - [[reference-rc759-82730-graphics]] — graphics mode (Myresnak) fix
 - [[reference_rc759_i82730_display]] — general 82730 display facts

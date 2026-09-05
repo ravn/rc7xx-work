@@ -92,7 +92,7 @@ STALE diskdef name `rc759-drc` (as it existed in
 os 2.2`, but the real RC759 CCP/M-86 directory is 512 entries / os 3. A
 `cpmcp` WRITE with the wrong (too-small) maxdir reserves too few directory
 blocks and overwrites real file data in the 2nd directory block — this is
-the root cause of a prior disk-corruption incident (ravn/mame#25). FIXED
+the root cause of a prior disk-corruption incident (ravn/mame-rc702-rc759-rc750#25). FIXED
 2026-08-18: `scratch/rc759-cmd-toolchain/diskdefs`'s `rc759-drc` entry now
 has the correct geometry (content matches the canonical
 `open-watcom-v2/contrib/ravn/owc-drc/diskdefs`'s `drc-rc759`, name kept

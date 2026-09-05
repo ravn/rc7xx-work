@@ -1,30 +1,33 @@
-# GSX-86 Graphics System Analysis for RC759 - 2026-08-29
+# GSX-86 Graphics System Analysis for RC759 - 2026-08-30
 
 ## Overview
 
 This document analyzes the **GSX-86 Graphics System Extension** for Concurrent CP/M-86 on the **Regnecentralen RC759 Piccoline**, with the goal of implementing graphics support in MAME.
 
-**Key finding:** The RC759 hardware (Intel 82730 CRT controller) supports **graphics modes** that are currently **not emulated** in MAME. The GSX-86 software layer provides the API, but the underlying hardware support is missing.
+**Key finding:** The RC759 hardware (Intel 82730 CRT controller) supports **graphics modes** that are currently **not fully emulated** in MAME. The GSX-86 software layer provides the API, but the underlying graphics rendering is incomplete.
 
-**NEW (2026-08-29):** Found detailed Intel 82730 graphics mode documentation in PICCOLINE Programmer's Guide v2 at `scratch/rc759-graphics/docs/`.
+**NEW (2026-08-30):** 
+- Partial implementation **already exists** (see Current Status below)
+- Found GSX-86 test disk with GRAPHICS.CMD, SCRN*.CMD demos, and MPBBC284.SYS printer driver in `scratch/rc759-gsx-test/`
+- Detailed Intel 82730 graphics mode documentation referenced in PICCOLINE Programmer's Guide v2
 
 ---
 
 ## Viden kilder (Sources of Knowledge)
 
 ---
-
-## Viden kilder (Sources of Knowledge)
 
 ### 1. Project Files (Verificeret / Verified)
 - **`/Users/ravn/z80/scratch/zip-a-extract/graphics.cmd`** - GSX-86 v1.3 (14 Feb 84) from Digital Research
   - Contains strings: `"GSX-86  Graphics System Extension  14 Feb 84  V1.3"`
   - Copyright Digital Research, Inc. 1983
   - Serial No. 5044-0261-007041
-- **`/Users/ravn/z80/mame/src/devices/video/i82730.cpp/.h`** - Intel 82730 device emulation
-- **`/Users/ravn/z80/mame/src/mame/regnecentralen/rc75x.cpp/.h`** - Shared RC759/RC750 implementation
-- **`/Users/ravn/z80/mame/src/mame/regnecentralen/rc759.cpp`** - RC759-specific implementation
+- **`/Users/ravn/z80/mame/src/devices/video/i82730.cpp/.h`** - Intel 82730 device emulation (HAS `set_gfx_mode()` and `m_gfx_mode`)
+- **`/Users/ravn/z80/mame/src/mame/regnecentralen/rc75x.cpp/.h`** - Shared RC759/RC750 implementation (HAS `gfx_update_row` stub + mode check in `txt_update_row`)
+- **`/Users/ravn/z80/mame/src/mame/regnecentralen/rc759.cpp`** - RC759-specific implementation (HAS PPI->i82730 connection at lines 307-308)
 - **`/Users/ravn/z80/rc700-gensmedet/docs/RC702_VPB701_GRAPHICS.md`** - RC702 graphics (µPD7220 GDC) - different hardware
+- **`/Users/ravn/z80/scratch/rc759-gsx-test/`** - GSX-86 test disk with GRAPHICS.CMD v1.3, SCRN*.CMD demos, MPBBC284.SYS printer driver
+- **`/Users/ravn/z80/scratch/zip-a-extract/graphics.cmd`** - Original Digital Research GSX-86 v1.3 (14 Feb 84)
 
 ### 2. Hardware Documentation (Referenced)
 - **Intel 82730 Text Coprocessor datasheet (Preliminary)**
@@ -39,7 +42,7 @@ This document analyzes the **GSX-86 Graphics System Extension** for Concurrent C
 
 ---
 
-## Current Status (2026-08-29)
+## Current Status (2026-08-30)
 
 ### What Works
 1. **Text mode** - Fully implemented and verified
@@ -55,17 +58,22 @@ This document analyzes the **GSX-86 Graphics System Extension** for Concurrent C
    - Cursor tracking
    - Interrupt handling
 
-3. **Graphics mode infrastructure** - Partially in place
+3. **Graphics mode infrastructure** - **PARTIALLY IMPLEMENTED**
    - `m_gfx_mode` variable exists in rc75x_state (set via PPI port C bit 6)
    - PPI port C bit 6 controls graphics mode (0Ch = graphics, 0Dh = alphanumeric)
-   - But `m_gfx_mode` is **NOT USED** in rendering yet
+   - **`m_gfx_mode` IS USED** in rendering, but implementation is incomplete:
+     - `rc759.cpp:307-308`: `m_gfx_mode = BIT(data, 6); m_txt->set_gfx_mode(m_gfx_mode);`
+     - `rc75x.cpp:24-28`: `if (m_gfx_mode) { gfx_update_row(...); return; }`
+     - `gfx_update_row()` exists but **only generates test checkerboard pattern**
+   - **CRITICAL FINDING:** The connection chain PPI -> rc75x_state -> i82730_device -> txt_update_row **IS COMPLETE**, but gfx_update_row doesn't use VRAM data yet
 
 ### What's Missing
-1. **Graphics modes** - NOT implemented
+1. **Graphics modes** - **PARTIALLY IMPLEMENTED, INCOMPLETE**
    - High-res graphics: 560x256, 1 bit/pixel
    - Medium-res graphics: 280x256, 2 bits/pixel
    - These are selected via **PPI port C bit 6** (`m_gfx_mode` in rc75x_state)
-   - The `m_gfx_mode` flag exists but is not connected to the i82730 device or the rendering pipeline
+   - The `m_gfx_mode` flag **IS** connected to i82730 device and **IS** checked in rendering pipeline
+   - **BUT:** `gfx_update_row()` only generates test checkerboard, doesn't use VRAM data
 
 2. **GSX-86 Integration**
    - GRAPHICS.CMD is the GSX-86 loader
@@ -203,31 +211,32 @@ Based on the error messages in GRAPHICS.CMD, the installation process:
 - [x] Identify GSX-86 components in project
 - [x] Understand i82730 graphics capabilities
 - [x] Map hardware connections (PPI -> i82730)
-- [ ] **Find RC759-specific GSX driver files** (if they exist)
-- [ ] **Document exact pixel data format for both graphics modes**
+- [x] **Found GSX-86 test disk with GRAPHICS.CMD and MPBBC284.SYS printer driver** in `scratch/rc759-gsx-test/`
+- [ ] **Find RC759-specific screen driver file** (search in progress)
+- [ ] **Document exact pixel data format for both graphics modes** (from PICCOLINE Programmer's Guide)
 
 ### Phase 2: i82730 Device Enhancement
 
 #### Task 2.1: Add graphics mode support to i82730_device
 - **File:** `mame/src/devices/video/i82730.h`
 - **Changes:**
-  - Add `m_gfx_mode` state variable to i82730_device
-  - Add method to set graphics mode from external (PPI)
-  - Extend device to know about graphics vs text mode
+  - ✅ `m_gfx_mode` state variable ALREADY EXISTS (line 50 in i82730.cpp constructor)
+  - ✅ `set_gfx_mode()` method ALREADY EXISTS (lines 106-110 in i82730.cpp)
+  - ⬜ Extend device to use `m_gfx_mode` in rendering (CURRENTLY UNUSED in rendering)
 
 #### Task 2.2: Add graphics mode data interpretation
 - **File:** `mame/src/devices/video/i82730.cpp`
 - **Changes:**
-  - Add `set_gfx_mode()` method to receive mode changes from PPI
-  - Modify `load_row()` to handle graphics data format
-  - Graphics mode: VRAM contains pixel data directly, not character codes
-  - Add graphics-specific row update callback
+  - ✅ `set_gfx_mode()` method ALREADY RECEIVES mode changes from PPI via rc759.cpp
+  - ⬜ Modify `load_row()` to handle graphics data format
+  - ⬜ Graphics mode: VRAM contains pixel data directly, not character codes
+  - ⬜ Add graphics-specific row update callback
 
 #### Task 2.3: Enhance screen_update for graphics
 - **File:** `mame/src/devices/video/i82730.cpp`
 - **Changes:**
-  - Modify `screen_update()` to handle graphics mode rendering
-  - Need to understand how graphics mode affects display timing
+  - ⬜ Modify `screen_update()` to handle graphics mode rendering
+  - ⬜ Need to understand how graphics mode affects display timing
 
 ### Phase 2.5: Graphics Mode Pixel Format Research
 
@@ -266,50 +275,44 @@ Based on the error messages in GRAPHICS.CMD, the installation process:
 #### Task 3.1: Connect PPI to i82730 graphics mode
 - **File:** `mame/src/mame/regnecentralen/rc759.cpp`
 - **Changes:**
-  - In `ppi_portc_w()`: after setting `m_gfx_mode`, also notify i82730 device
-  - Add callback from rc75x_state to i82730_device to set graphics mode
-  - **CRITICAL:** The i82730 device needs to know about graphics mode to interpret VRAM correctly
+  - ✅ ALREADY IMPLEMENTED: `ppi_portc_w()` at lines 307-308: `m_gfx_mode = BIT(data, 6); m_txt->set_gfx_mode(m_gfx_mode);`
+  - ✅ The callback chain PPI -> rc75x_state::m_gfx_mode -> i82730_device::m_gfx_mode **IS COMPLETE**
 
 #### Task 3.2: Modify txt_update_row to handle graphics mode
 - **File:** `mame/src/mame/regnecentralen/rc75x.cpp`
 - **Changes:**
-  - Modify `txt_update_row()` to check `m_gfx_mode`
-  - If in graphics mode: call `gfx_update_row()` instead
-  - If in text mode: use existing logic
-  - **OR:** Create separate `gfx_update_row()` callback and set it when mode changes
+  - ✅ ALREADY IMPLEMENTED: `txt_update_row()` at lines 24-28 checks `m_gfx_mode` and calls `gfx_update_row()`
 
 #### Task 3.3: Implement gfx_update_row for i82730 graphics
 - **File:** `mame/src/mame/regnecentralen/rc75x.cpp`
 - **Changes:**
-  - Add `gfx_update_row()` function
-  - Interpret VRAM data as pixel data, not character codes
-  - Handle both high-res (1 bpp) and medium-res (2 bpp) formats
-  - Map pixel data to bitmap using correct palette
+  - ⬜ **CRITICAL: Replace checkerboard with VRAM data** (lines 75-112)
+  - ⬜ Interpret VRAM data as pixel data, not character codes
+  - ⬜ Handle both high-res (1 bpp) and medium-res (2 bpp) formats
+  - ⬜ Map pixel data to bitmap using correct palette
 
 #### Task 3.4: Palette configuration for graphics
 - **File:** `mame/src/mame/regnecentralen/rc75x.cpp`
 - **Changes:**
   - Current `palette_w` handles IRGB format for text attributes
-  - For graphics mode: palette indices come from VRAM data
-  - Need to map graphics palette indices to the 32-entry palette
-  - High-res: 2 colors from palette entries (bits 10-13 select which 2)
-  - Medium-res: 4 colors from palette entries (bits 10-13 select which 4)
+  - ⬜ For graphics mode: palette indices come from VRAM data
+  - ⬜ Need to map graphics palette indices to the 32-entry palette
+  - ⬜ High-res: 2 colors from palette entries (bits 10-13 select which 2)
+  - ⬜ Medium-res: 4 colors from palette entries (bits 10-13 select which 4)
 
 #### Task 3.5: Update i82730 device to support graphics mode
 - **Files:** `mame/src/devices/video/i82730.h`, `i82730.cpp`
 - **Changes:**
-  - Add `m_gfx_mode` state variable to i82730_device
-  - Add `set_gfx_mode(bool mode)` method
-  - Modify `load_row()` to interpret data differently in graphics mode
-  - In graphics mode: data words = pixel data, not character codes
-  - Modify `screen_update()` to handle graphics mode timing (may differ from text mode)
+  - ✅ `m_gfx_mode` state variable ALREADY EXISTS
+  - ✅ `set_gfx_mode(bool mode)` method ALREADY EXISTS
+  - ⬜ Modify `load_row()` to interpret data differently in graphics mode
+  - ⬜ In graphics mode: data words = pixel data, not character codes
+  - ⬜ Modify `screen_update()` to handle graphics mode timing (may differ from text mode)
 
 #### Task 3.6: Connect rc75x to i82730 graphics mode
 - **File:** `mame/src/mame/regnecentralen/rc75x.cpp`
 - **Changes:**
-  - When `m_gfx_mode` changes, call `m_txt->set_gfx_mode(m_gfx_mode)`
-  - This ensures the i82730 device knows about mode changes
-  - The callback chain: PPI -> rc75x_state::m_gfx_mode -> i82730_device::m_gfx_mode
+  - ✅ ALREADY IMPLEMENTED: The connection **IS COMPLETE**
 
 ### Phase 4: Testing & Verification
 
@@ -401,42 +404,42 @@ The most critical issue is that `m_gfx_mode` in rc75x_state is **not connected**
 
 ## Quick Start Implementation Plan
 
-1. **Add to i82730_device (i82730.h):**
+### CRITICAL FINDING: Most of this is ALREADY DONE!
+
+1. **i82730_device (i82730.h):**
    ```cpp
-   int m_gfx_mode;  // 0 = alphanumeric, 1 = graphics
-   void set_gfx_mode(int mode);
+   int m_gfx_mode;  // ✅ ALREADY EXISTS (line 50 in constructor)
+   void set_gfx_mode(int mode);  // ✅ ALREADY EXISTS (lines 106-110)
    ```
 
-2. **Modify rc759.cpp ppi_portc_w():**
+2. **rc759.cpp ppi_portc_w():**
    ```cpp
-   void rc759_state::ppi_portc_w(uint8_t data)
-   {
-       // ... existing code ...
-       m_gfx_mode = BIT(data, 6);
-       m_txt->set_gfx_mode(m_gfx_mode);  // NEW: notify i82730
-       // ... rest of existing code ...
-   }
+   // ✅ ALREADY IMPLEMENTED at lines 307-308:
+   m_gfx_mode = BIT(data, 6);
+   m_txt->set_gfx_mode(m_gfx_mode);  // notifies i82730
    ```
 
-3. **Modify txt_update_row in rc75x.cpp:**
+3. **txt_update_row in rc75x.cpp:**
    ```cpp
+   // ✅ ALREADY IMPLEMENTED at lines 24-28:
    if (m_gfx_mode) {
        gfx_update_row(bitmap, data, lc, y, x_count, cursor);
-   } else {
-       // existing text mode rendering
+       return;
    }
    ```
 
 4. **Implement gfx_update_row in rc75x.cpp:**
    ```cpp
+   // ⬜ TODO: Replace checkerboard with VRAM data (lines 75-112)
    void rc75x_state::gfx_update_row(bitmap_rgb32 &bitmap, uint16_t *data, uint8_t lc, uint16_t y, int x_count, int cursor)
    {
-       // Interpret data as pixel data
-       // Map to bitmap with palette
+       // TODO: Interpret data as pixel data
+       // TODO: Handle 1 bpp (high-res) and 2 bpp (medium-res)
+       // TODO: Map to bitmap with 32-entry palette
    }
    ```
 
 ---
 
-*Document created: 2026-08-29*
-*Status: Analysis complete, implementation pending*
+*Document created: 2026-08-29, last updated: 2026-08-30*
+*Status: Analysis complete, Phase 3.3 (gfx_update_row implementation) is the CRITICAL NEXT STEP*

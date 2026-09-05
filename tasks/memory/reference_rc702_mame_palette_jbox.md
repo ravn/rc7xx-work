@@ -1,12 +1,12 @@
 ---
 name: RC702 MAME palette = jbox/RC752 amber (dark brown bg + soft amber fg), not bright orange
-description: ravn/mame rc702 palette+layout colours sampled from jbox; the authentic RC752 look — don't revert to the old saturated orange
+description: ravn/mame-rc702-rc759-rc750 rc702 palette+layout colours sampled from jbox; the authentic RC752 look — don't revert to the old saturated orange
 type: reference
 metadata:
   type: reference
 ---
 
-**ravn/mame rc702 display colours (fixed 2026-07-26, commit ffca0712).** The
+**ravn/mame-rc702-rc759-rc750 rc702 display colours (fixed 2026-07-26, commit ffca0712).** The
 RC752 (NEC JB-1201M(A)) amber monitor look, sampled pixel-exact from the jbox
 (Michael Ringgard) RC702 emulator:
 

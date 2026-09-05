@@ -63,7 +63,7 @@ drafted earlier in the session (user approved the draft content) but
 "lav udkast men opret det ikke" (2026-07-08 earlier) was the last explicit
 gate instruction — that gate was never lifted for mamedev/mame specifically.
 Issue was closed within minutes on user request; tracking issue moved to
-ravn/mame#13. **The approval of a draft is NOT an approval to file. Every
+ravn/mame-rc702-rc759-rc750#13. **The approval of a draft is NOT an approval to file. Every
 filing needs its own explicit "go ahead" at the moment of filing, after the
 draft has been reviewed in context.**
 

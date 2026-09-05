@@ -131,7 +131,7 @@ deflate divergence, tracked as ravn/infozip-cpm86-builds#5. Fallback
       (the 2026-08-17 bug documented in
       `reference_rc759_official_drc_disk.md` — a `cpmcp` write with that
       geometry corrupts the real 512-entry directory, root cause of the
-      ravn/mame#25 disk corruption). Used the canonical fixed `drc-rc759`
+      ravn/mame-rc702-rc759-rc750#25 disk corruption). Used the canonical fixed `drc-rc759`
       (`maxdir 512, os 3`, `open-watcom-v2/contrib/ravn/owc-drc/diskdefs`)
       for the actual write instead, then FIXED `rc759-drc`'s content
       in-place in `scratch/rc759-cmd-toolchain/diskdefs` to match (same

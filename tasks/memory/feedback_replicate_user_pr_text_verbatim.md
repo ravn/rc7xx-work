@@ -6,7 +6,7 @@ metadata:
 ---
 
 2026-09-04. The RC7xx→MAME upstreaming flow is deliberately two-stage: open a
-DRAFT PR on the user's own fork (ravn/mame) so the user can write the human
+DRAFT PR on the user's own fork (ravn/mame-rc702-rc759-rc750) so the user can write the human
 description, THEN open an identical PR against mamedev/mame. When moving
 osd/sdl #52 upstream (mamedev/mame#16056), I wrote a fresh "clean, mamedev-
 appropriate" body from the diff instead of copying the user's already-revised

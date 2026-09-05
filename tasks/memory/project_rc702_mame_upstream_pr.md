@@ -21,7 +21,7 @@ reverted in the fork — both moot).
 
 Status as of 2026-07-31 (pre-merge): OPEN, awaiting review (pmackinlay round 1).
 
-- Branch: `upstream-rc702-clean` on `origin` (git@github.com:ravn/mame.git),
+- Branch: `upstream-rc702-clean` on `origin` (git@github.com:ravn/mame-rc702-rc759-rc750.git),
   built on mamedev base `8f21e978`. Local mame repo is on this branch.
 - **Three commits** (each round kept separate — see [[feedback_preserve_reviewed_commit]]):
   1. `0a453825` — original reviewed commit (do NOT alter; reviewer comments anchor to it).

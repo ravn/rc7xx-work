@@ -19,7 +19,7 @@ The project uses a **monorepo pattern** with git submodules:
 ```
 z80/ (this repo - ravn/rc7xx-work)
 ├── .gitmodules              # Submodule definitions
-├── mame/                    # ravn/mame fork
+├── mame/                    # ravn/mame-rc702-rc759-rc750 fork
 │   └── src/mame/regnecentralen/  # RC702/RC759/RC750 drivers
 │
 ├── llvm-z80/               # ravn/llvm-z80 fork (owner: zlfn)
@@ -491,7 +491,7 @@ make clang_prom         # Clang PROM + install to MAME/RC700
 
 1. **MAME upstream**
    - Prepare PRs for RC702/RC759/RC750
-   - Submit FDC fixes (ravn/mame#13 candidate)
+   - Submit FDC fixes (ravn/mame-rc702-rc759-rc750#13 candidate)
    - Document all local changes
 
 2. **llvm-z80 upstream**

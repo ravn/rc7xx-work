@@ -44,5 +44,5 @@ faster.
 ## Note on the 2026-08-17 diskdef fix
 `owc-drc/diskdefs` was corrected maxdir 256→512 (RC759 CCP/M dir is 512 entries;
 old value corrupted images on cpmcp — see reference_rc759_official_drc_disk.md /
-ravn/mame#25). Correct and harmless but on a RETIRED path → low priority. The
+ravn/mame-rc702-rc759-rc750#25). Correct and harmless but on a RETIRED path → low priority. The
 same fix on the ACTIVE toolchain lives in scratch/rc759-pce/images/diskdefs.

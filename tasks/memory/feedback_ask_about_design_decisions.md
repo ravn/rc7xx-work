@@ -14,7 +14,7 @@ before code is written.
 MAME work boxed itself into a slot-wrapper-on-Z80-PIO design
 (`bus/rc702/pio_port/`) that turned out to be both:
 
-  - blocked by a MAME bug (ravn/mame#6 — any card on a Z80-PIO slot
+  - blocked by a MAME bug (ravn/mame-rc702-rc759-rc750#6 — any card on a Z80-PIO slot
     breaks IM2 IRQs) that took most of a session to narrow, and
   - architecturally heavier than the proven-working alternative
     (Xerox 820, Attache, Altos 5, Bullet, original pre-slot RC702

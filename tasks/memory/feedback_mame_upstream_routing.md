@@ -1,16 +1,16 @@
 ---
 name: MAME upstream routing — shared devices vs rc702 driver
-description: Shared MAME devices (FDC/PIO) → upstream mamedev/mame; rc702 driver → ravn/mame fork. NEVER file in any MAME repo without explicit per-issue permission.
+description: Shared MAME devices (FDC/PIO) → upstream mamedev/mame; rc702 driver → ravn/mame-rc702-rc759-rc750 fork. NEVER file in any MAME repo without explicit per-issue permission.
 metadata:
   type: feedback
 ---
 
 When a bug is in **shared MAME device code** (e.g. the FDC `upd765`, the `z80pio`),
 the upstream target is **`mamedev/mame`**. Our **`src/mame/regnecentralen/rc702.cpp`**
-driver stays in the **`ravn/mame`** fork.
+driver stays in the **`ravn/mame-rc702-rc759-rc750`** fork.
 
 **HARD (user directive, 2026-06-02): never file anything in any MAME repo
-(`mamedev/mame` or `ravn/mame`) without explicit per-issue permission.** Draft and
+(`mamedev/mame` or `ravn/mame-rc702-rc759-rc750`) without explicit per-issue permission.** Draft and
 analyse only; the user approves each filing. Same spirit as [[feedback_no_upstream_issues]].
 
 **Why / lessons from the two rejected 2026-03 PRs** (`mamedev/mame#15031` Read Track ST1_ND,

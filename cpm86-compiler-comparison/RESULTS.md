@@ -89,7 +89,7 @@ Sieve, Dhrystone, Whetstone, stdcbench, AES-256.
   autostart program; a MAME io-space write-tap (tools/mame_time.lua) reads MAME's
   emulated clock (`emu.time()`) at each edge. MAME's i80186 core is cycle-accurate
   by its datasheet-derived `m_i80186_timing[]` table (validated against Timer 2,
-  ravn/mame#27, ratio 1.00006), so elapsed emulated seconds x 6 MHz IS the real
+  ravn/mame-rc702-rc759-rc750#27, ratio 1.00006), so elapsed emulated seconds x 6 MHz IS the real
   rc759 clock cost. Boot + crt0/printf sit OUTSIDE the bracket, and a
   **differential** (N=10 vs N=20, `/10`) cancels loop-setup + the two markers,
   leaving one kernel iteration. Each compiler emits the marker its own way:

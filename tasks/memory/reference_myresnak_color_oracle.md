@@ -23,7 +23,7 @@ Concrete hooks:
 - Disk: `scratch/rc759-cmd-toolchain/30004078.imd` (MYRESNAK.CMD + 10 `.MYR`
   programs). Headless-run recipe + capture harness documented in
   MYRESNAK_programoversigt.md ("Kørsel og interaktiv indtastning i MAME").
-- The 82730 BB/HENT/HUSK freeze fix (ravn/mame, branch `rc759-82730-graphics`,
+- The 82730 BB/HENT/HUSK freeze fix (ravn/mame-rc702-rc759-rc750, branch `rc759-82730-graphics`,
   commit `2a4b21cdbdb`) is a prerequisite for driving MYRESNAK to the point of
   drawing; keep it in the build when using MYRESNAK as an oracle.
 

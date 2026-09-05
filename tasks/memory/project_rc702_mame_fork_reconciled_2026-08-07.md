@@ -1,12 +1,12 @@
 ---
 name: project_rc702_mame_fork_reconciled_2026-08-07
-description: ravn/mame fork brought up to date with upstream after PR #15805 merged — how, and the SDL2/SOURCES build facts that came out of it
+description: ravn/mame-rc702-rc759-rc750 fork brought up to date with upstream after PR #15805 merged — how, and the SDL2/SOURCES build facts that came out of it
 metadata:
   type: project
 ---
 
 After mamedev/mame PR #15805 merged ([[project_rc702_mame_upstream_pr]]), the
-ravn/mame fork `master` was reconciled to the post-merge `upstream/master`
+ravn/mame-rc702-rc759-rc750 fork `master` was reconciled to the post-merge `upstream/master`
 (2026-08-07). Method: `git reset --hard upstream/master` + rebuild the fork-only
 layer as **5 small targeted commits** instead of replaying ~60 dev commits.
 

@@ -179,7 +179,7 @@ tm→heap,misc,printf (all in `compiler-rt/lib/builtins/z80/`).
   (prom.clang.lis, text_compressed.zx0, cpnos error.log) — NOT this session's
   work, left uncommitted. Timeline updated with this session (committing).
 - Open issues verified correct earlier this session (see the issue-audit at
-  session start): 51 open in llvm-z80, 21 in rc700-gensmedet, 10 in ravn/mame,
+  session start): 51 open in llvm-z80, 21 in rc700-gensmedet, 10 in ravn/mame-rc702-rc759-rc750,
   8 in ravn/z88dk. Nothing stale.
 
 

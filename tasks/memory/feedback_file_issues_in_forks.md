@@ -9,7 +9,7 @@ When work in `/Users/ravn/z80/` reveals a bug in a dependency project (clang/llv
 **Why:** The user maintains forks for everything we use.  Bugs in upstream tools flow through the fork.  Filing in the fork keeps our bug log with the code, makes PR workflow possible, and respects the "no upstream issues" rule.
 
 **How to apply:**
-- Target repo: `ravn/llvm-z80`, `ravn/z80pack`, `ravn/mame`, `ravn/cpnet-z80`, etc.  Not upstream (udo-munk/z80pack, mamedev/mame, …).
+- Target repo: `ravn/llvm-z80`, `ravn/z80pack`, `ravn/mame-rc702-rc759-rc750`, `ravn/cpnet-z80`, etc.  Not upstream (udo-munk/z80pack, mamedev/mame, …).
 - Include:
   - Concise symptom description (what doesn't work).
   - Reproduction steps (exact commands, inputs, versions, commit SHA).

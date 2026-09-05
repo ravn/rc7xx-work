@@ -12,7 +12,7 @@
 	branch = master
 [submodule "mame"]
 	path = mame
-	url = git@github.com:ravn/mame.git
+	url = git@github.com:ravn/mame-rc702-rc759-rc750.git
 	branch = master
 	shallow = true
 [submodule "cpnet-z80"]

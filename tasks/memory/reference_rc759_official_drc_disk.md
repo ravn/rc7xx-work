@@ -41,7 +41,7 @@ the raw directory landing at 0x8000):
   files/SFCBs past slot 96) and, worse, WRITING (cpmcp) with too-small maxdir
   reserves too few dir blocks and scribbles file data over the real 2nd dir
   block, corrupting the disk (this is the root cause of the levee SDIR garbage,
-  ravn/mame#25). Use **maxdir 512** for any RC759 CCP/M / DR C floppy. The
+  ravn/mame-rc702-rc759-rc750#25). Use **maxdir 512** for any RC759 CCP/M / DR C floppy. The
   canonical fixed diskdef is scratch/rc759-pce/images/diskdefs (format
   `drc-rc759`, maxdir 512, os 3); mirror in contrib/ravn/owc-drc/diskdefs.
 

@@ -87,16 +87,16 @@ shows only the three intended source files changed.
 
 - Not yet exercised: the interactive **drawing pages** (KASSE/FIRKANT/circles,
   manual pp. 12/29-32). The ready-screen △ proves the pipeline; drawing needs
-  keyboard interaction. Worth a follow-up visual check. → ravn/mame#29.
+  keyboard interaction. Worth a follow-up visual check. → ravn/mame-rc702-rc759-rc750#29.
 - Cell width is computed `560 / x_count`; if any RC759 program uses a third
   layout this stays correct as long as the active field is 560 px.
 
-## Session 2026-08-31 — screensaver + dead code (all merged to ravn/mame master)
+## Session 2026-08-31 — screensaver + dead code (all merged to ravn/mame-rc702-rc759-rc750 master)
 
-- **Dead code removed**: `m_gfx_mode`/`set_gfx_mode` (ravn/mame#30 CLOSED)
+- **Dead code removed**: `m_gfx_mode`/`set_gfx_mode` (ravn/mame-rc702-rc759-rc750#30 CLOSED)
 - **Myresnak BB/HENT/HUSK freeze**: frame-interrupt fix `2a4b21c` verified
-  working (ravn/mame#31 CLOSED)
-- **Screensaver garbage (ravn/mame#28 CLOSED)**: root cause — two mechanisms:
+  working (ravn/mame-rc702-rc759-rc750#31 CLOSED)
+- **Screensaver garbage (ravn/mame-rc702-rc759-rc750#28 CLOSED)**: root cause — two mechanisms:
   1. EOF (0x81) at top of list-1 row-0 string blanks the field — was ignored
   2. `blk_row=1` in status-row FULROWDESCRPT blanks status line — was ignored
   Both fixed in `6352f80`: `m_eof_hit` flag + `blk_row` check + black fill
@@ -104,5 +104,5 @@ shows only the three intended source files changed.
 - **Boot status-line "sære tegn"**: same blk_row fix eliminates it.
 - New issues filed: #33 (rvv_row), #34 (CA bits), #35 (field_attr_mask),
   #36 (Intensify/palette), #32 (NVRAM L-parameter mapping).
-- Branch `rc759-82730-graphics` merged to ravn/mame master (`d96b498`).
+- Branch `rc759-82730-graphics` merged to ravn/mame-rc702-rc759-rc750 master (`d96b498`).
 - Boot screen verified correct after all fixes (snapshot 0153.png).

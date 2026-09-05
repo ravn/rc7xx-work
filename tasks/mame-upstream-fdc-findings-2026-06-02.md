@@ -6,7 +6,7 @@ Extend the curated-upstream-submission discipline (already used for `llvm-z80`)
 to MAME, for **shared device code** — not the RC700 driver.
 
 - **Shared MAME devices** (e.g. the FDC `upd765`, the `z80pio`) → upstream **`mamedev/mame`**.
-- **`src/mame/regnecentralen/rc702.cpp`** (our driver) → stays in the **`ravn/mame`** fork.
+- **`src/mame/regnecentralen/rc702.cpp`** (our driver) → stays in the **`ravn/mame-rc702-rc759-rc750`** fork.
 
 **HARD constraint (user, 2026-06-02): never file anything in any MAME repo
 without explicit per-issue permission.** Everything below is draft/analysis.
@@ -55,11 +55,11 @@ not a source of upstream bugs:
 - **Re-approach:** standalone, **cleanest of the two** — a regression with a culprit
   commit is the most persuasive report. Real HW returns unit-select only.
 
-Our `ravn/mame` fork already carries both fixes locally (`& 3` at upd765.cpp:1696/1712;
+Our `ravn/mame-rc702-rc759-rc750` fork already carries both fixes locally (`& 3` at upd765.cpp:1696/1712;
 Read Track ND logic neutered) and must reapply them after any upstream merge.
 
 ### Bonus (not FDC)
-`ravn/mame#6` — the `z80pio` device drops IM2 IRQs when two slot devices share one PIO.
+`ravn/mame-rc702-rc759-rc750#6` — the `z80pio` device drops IM2 IRQs when two slot devices share one PIO.
 Shared-device upstream candidate, but it's the PIO, not the FDC; already a fork issue
 (see `tasks/memory/project_ravn_mame_6.md`).
 

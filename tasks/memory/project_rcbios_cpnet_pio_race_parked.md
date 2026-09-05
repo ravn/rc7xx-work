@@ -1,13 +1,13 @@
 ---
 name: project_rcbios_cpnet_pio_race_parked
-description: FIXED 2026-07-08 — rcbios CP/NET PIO stuck-IUS stall fixed in ravn/mame 2eb88cea; remaining constraint is z80pack 10ms poll speed
+description: FIXED 2026-07-08 — rcbios CP/NET PIO stuck-IUS stall fixed in ravn/mame-rc702-rc759-rc750 2eb88cea; remaining constraint is z80pack 10ms poll speed
 metadata:
   type: project
 ---
 
-**FIXED 2026-07-08** — ravn/mame `2eb88cea` (z80pio) + rc700-gensmedet
+**FIXED 2026-07-08** — ravn/mame-rc702-rc759-rc750 `2eb88cea` (z80pio) + rc700-gensmedet
 `8f64d9d` (snios RECVBY_PIO timeout). **polypascal-pio-test PASS 16s.**
-Upstream candidate: ravn/mame#13.
+Upstream candidate: ravn/mame-rc702-rc759-rc750#13.
 
 **What was fixed:** `check_interrupts` used `ius = A.ius || B.ius` globally,
 letting PORT_B's own in-service bit block PORT_B's own next interrupt. After

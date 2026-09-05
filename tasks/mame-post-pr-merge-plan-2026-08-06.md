@@ -35,7 +35,7 @@ merges PR #15805 into `upstream/master`.
 ### B. Generic MAME bugs — candidates for a SEPARATE upstream PR to mamedev
 These benefit all MAME users and are cleanly separable from rc702:
 - **z80pio `check_interrupts`: port N.ius must not block port N itself**
-  (`2eb88ceac44`, tracked ravn/mame#13). Root cause of the rcbios/cpnos PIO-IRQ
+  (`2eb88ceac44`, tracked ravn/mame-rc702-rc759-rc750#13). Root cause of the rcbios/cpnos PIO-IRQ
   deadlock. **Highest-value generic fix.**
 - **z80pio `set_mode`: set `m_mode` BEFORE the output callback** (`72c5e46cfa7`).
 - **luaengine_mem: tap callbacks use `invoke()` not `invoke_direct()`**
