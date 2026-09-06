@@ -68,6 +68,8 @@
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: search MEMORY.md before any fix; commit message includes `Rules-checked:`**
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep for existing `*_REFERENCE.md` before re-deriving encodings**
 - [No UNSOLICITED Upstream Issues](feedback_no_upstream_issues.md) — default: file in ravn/* forks; curated submissions only on user direction
+- **[No external issues ever](feedback_no_external_issues.md) — HARD: issues/PRs i externe repos (z88dk/z88dk, llvm-z80/llvm-z80, etc.) kræver eksplicit per-issue go-ahead; "lav issues" = opret i ravn-fork, aldrig upstream**
+- [Upstream tracking issues](project_upstream_tracking_issues.md) — ravn/z88dk #64-68 + ravn/llvm-z80 #291-295 oprettet 2026-09-06
 - **[Upstream routing](feedback_upstream_routing_two_targets.md) — HARD: generic-LLVM bugs → llvm/llvm-project (or local XFAIL); llvm-z80/llvm-z80 ONLY for Z80-specific**
 - **[MAME upstream routing](feedback_mame_upstream_routing.md) — HARD: never file in any MAME repo without explicit per-issue permission; devices → mamedev, rc702 driver → ravn/mame-rc702-rc759-rc750**
 - **[No local zsdcc fixes](feedback_no_local_zsdcc_fixes.md) — HARD: root-cause + repro + `wontfix` + report upstream; clang fixes still local**
