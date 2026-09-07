@@ -944,3 +944,28 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 9. fint, hvor store er de images du har bygget?
 10. analyser, opsummer og tilføj issues, og commit+merge
 11. gør klar til clear
+
+## 2026-09-06
+
+12. jeg vil gerne have det i en grundig plan i projektet
+13. der var også en z88dk_etellerandet konvention jeg ikke kan se i plan-llvm-z80-upstream-pr-series-2026-09-06.md
+14. du skal forklare z80_allreg / the z88dk all-register convention; z80_fastcall; z80_callee
+15. der er også brug for en forklaring på hvor returværdierne placeres
+16. jeg vil gerne have den komplette tabel der også viser hvilke der allerede er i llvm-z80 upstream og hvilke der er nye
+17. tilføj begrundelsen med memmove til planen
+18. lav først et issue til dette hos mig beregntet til pr1
+19. check at #292 stadig er korrekt
+20. start arbejdet på at lave et pr til #296
+21. husk jeg har z88dk kildeteksten i projektet også, så du kan validere
+22. kan du eventuelt gøre det sådan at der er flere forskellige byggetræer så vi kan have flere compilerversioner aktive af gangen? Det er meget dyrt at oversætte forfra
+
+## 2026-09-07
+
+1. nyt emne - jeg har fået https://github.com/ravn/open-watcom-v2-ccpm86/issues/46#issuecomment-5562670218 ind
+2. du må meget gerne lave links ned til filerne på linjeniveau i svaret
+3. commit og svar
+4. kør også testen under mame
+5. hvad er problemet?
+6. kør færdig og lav en fejlrapport
+7. lav et issue med alt relevant materiale
+8. commit og push
