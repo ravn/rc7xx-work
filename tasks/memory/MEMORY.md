@@ -42,6 +42,7 @@
 - **[Minimal repro BEFORE source dive](feedback_minimal_repro_before_source_dive.md) — HARD: for "why does X fail under tool Y" questions, do a 30-second minimal repro (failing form + variants that the assumed root cause says shouldn't fail) BEFORE reading the implementation source. Don't post "suggested fix" lines in filed issues without proving them via repro.**
 - **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: after 2-3 fixes of one class, STOP and find the systemic cause unprompted**
 - **[Audit the oracle, not just the fix](feedback_audit_oracle_not_just_fix.md) — HARD: bug found by luck → build the detector that would have caught it on purpose**
+- **[Emulator zero-fill hides dirty BSS](feedback_emulator_zerofill_hides_dirty_bss.md) — HARD: when emulator and real HW disagree, suspect a resource the emulator initialises and HW does not; a proposed cause that doesn't explain the emulator's SILENCE is wrong**
 - **[Verify process state by full enumeration](feedback_verify_process_state_full_enumeration.md) — HARD: never claim "clean" from a `ps | grep` of expected names; enumerate fully + reconcile**
 - [No Unicode arrows](feedback_no_unicode_arrows.md) — ASCII `->`, not `→`
 - **[NEVER unquoted "===" in shell](feedback_no_double_equals.md) — HARD: zsh silently truncates the command; use `---` as separator**
