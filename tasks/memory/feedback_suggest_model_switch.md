@@ -5,9 +5,11 @@ metadata:
   type: feedback
 ---
 
-Tell the user when the current model is a poor fit for the task at hand, before starting.
+**STANDING RULE (user 2026-09-08): be attentive to token cost AT ALL TIMES, not just at task start — never burn an unnecessarily expensive model (Opus) on work a cheaper one can do.** Tell the user when the current model is a poor fit for the task at hand, before starting AND whenever the character of the work shifts mid-session (e.g. analysis finished, now it's mechanical patching).
 
-**Why:** User wants to be informed so they can switch — they don't want to discover mid-session that they were on the wrong model for the work.
+**Why:** User works multiple projects in parallel and pays per-model; an idle Opus session doing mechanical edits is pure waste. They want continuous vigilance, not a one-time check.
+
+**Cheaper-model offload:** when on Opus and a chunk of work is mechanical/well-scoped, prefer spawning a **Sonnet subagent** (Agent tool, `model: sonnet`) for it rather than doing it on Opus yourself — reserve Opus for the review/judgement. (Done 2026-09-08: Opus reviewed the crt0 BSS-fix plan, a Sonnet subagent implemented it.) Only spawn when the user asks or the work is clearly delegable; see the parent-agent spawn guidance.
 
 **How to apply:**
 
