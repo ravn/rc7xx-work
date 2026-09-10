@@ -152,7 +152,7 @@
 - **[Never push/merge upstream remotes](feedback_never_push_or_merge_upstream_remotes.md) — HARD: cpnet-z80 origin is durgadas311/*; keep local commits FLAT**
 - **[CP/NET 1.2 only](feedback_cpnet_12_only.md) — HARD: BDOS-105 NOT forwardable under 1.2; time-from-master via BDOS-66/67+FN-105**
 - **[rcbios jump table is ABI](feedback_rcbios_jump_table_is_abi.md) — HARD: BIOS jump table at 0xDA00 is frozen ABI; new paths ADDITIVE only**
-- **[rcbios: never enable -flto](feedback_rcbios_no_lto_boot_placement.md) — HARD: -flto breaks per-file ld matchers; boot code lands wrong; drop -flto**
+- **[rcbios -flto: section-attrs required](feedback_rcbios_no_lto_boot_placement.md) — was ON+working 2026-07-06 (section attrs+KEEP+ASSERTs); RE-DISABLED 2026-09-10 due to codegen crashes (ravn/llvm-z80#312: Z80DanglingDebugCleanup on -g + addrspace(2) cannot-select), NOT boot-placement**
 - [MP/M II bakes RSPs at GENSYS time](reference_mpm_sys_baked_via_gensys.md) — .RSP edits inert until GENSYS regens MPM.SYS + re-installs on A:
 - [ravn/mame#6 — PIO-B slot regression](project_ravn_mame_6.md) — gates Option P; fix needed at chip/slot layer
 
