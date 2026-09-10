@@ -14,6 +14,13 @@ ninja -C build-macos clang llc lld
 
 (or just `ninja -C build-macos` — default builds everything).
 
+**NEVER build a subset — not even "just this once to save build time."** That
+optimization is always net-negative (it caused the 2026-07-08 incident below AND
+a 2026-09-11 repeat: rebuilt `clang llc`, then rcbios `-flto` linked with a stale
+`ld.lld` still carrying the pre-fix Z80DanglingDebugCleanup → LTO crash). If a
+backend file changed, run all three (or default `ninja`) — full stop. Citing this
+rule in a commit's `Rules-checked:` is not compliance; running the aggregate is.
+
 **Why.** `LLVMZ80CodeGen` is statically linked into `clang`, `llc`, AND
 `lld`.  Different tests invoke different tools:
 - `llc` — standalone codegen lit tests.
