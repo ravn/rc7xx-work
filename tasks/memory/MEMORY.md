@@ -55,7 +55,7 @@
 - [No UNSOLICITED Upstream Issues](feedback_no_upstream_issues.md) — default: file in ravn/* forks; curated submissions only on user direction
 - **[No external issues ever](feedback_no_external_issues.md) — HARD: external repos require explicit per-issue go-ahead**
 - [Upstream tracking issues](project_upstream_tracking_issues.md) — ravn/z88dk #64-68 + ravn/llvm-z80 #291-295 oprettet 2026-09-06
-- **[PR #40 fallout — 4 åbne regressioner](project_pr40_fallout_2026_09_10.md) — builtins+memset.pattern ulegaliseret, IY-flag omdøbt, 32 lit FAIL; plan i llvm-z80/tasks/plan-pr40-fallout-recovery-2026-09-10.md**
+- **[PR #40 fallout](project_pr40_fallout_2026_09_10.md) — R1/R2/R4+inline-asm LØST; R5-drift = ingen regressioner (kun stale tests). ÅBEN blokade: #316 static-frame inert → +57% bloat = rod under #314 (rcbios link-overflow + autoload over 2 KB). Analyse: llvm-z80/tasks/analysis-static-frame-regression-2026-09-11.md**
 - **[Upstream routing](feedback_upstream_routing_two_targets.md) — HARD: generic-LLVM bugs -> llvm/llvm-project; Z80-specific -> llvm-z80/llvm-z80 only**
 - **[MAME upstream routing](feedback_mame_upstream_routing.md) — HARD: never file in MAME without explicit per-issue permission**
 - **[No upstream sdcccall discrepancies](feedback_no_upstream_sdcccall_discrepancies.md) — HARD: ABI mismatches are known build-config issues, NOT upstream-fileable**
