@@ -72,14 +72,29 @@ cmake -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build
 ninja -C build          # full  (or: clang / llc)
 ```
 
-### PROM builds (in rc700-gensmedet/autoload-in-c/)
+### Firmware builds (each component: `make help` lists its real targets)
+The native llvm-z80 toolchain is **auto-detected** in every firmware Makefile
+(`$(firstword $(wildcard .../build-linux/bin .../build-macos/bin .../build/bin))`)
+— no `LLVM_Z80=` or path args needed on any host. Run `make help` in a component
+dir for the authoritative target list.
+
 ```bash
-make rom_parts          # SDCC build (needs z88dk in ../z88dk)
-make clang              # Clang build (needs Docker + llvm-z80/build/)
-make clang_asm          # Show clang assembly
-make mame               # SDCC PROM + boot test in MAME
-make clang_prom         # Clang PROM + install to MAME/RC700
+# autoload-in-c/  (ROA375 boot PROM, PROM 0)
+make prom                 # clang PROM (COMPILER=clang default) -> clang/prom.clang.bin  [2 KB cap]
+make prom COMPILER=sdcc   # SDCC PROM -> sdcc/prom.bin                                    [4 KB, MAME-only]
+make mame                 # build PROM + boot-test in MAME
+make clang_asm            # show clang assembly
+
+# cpnos-in-c/  (CP/NOS slave PROM1-only line program, PROM 1)
+make prom1-lineprog COMPILER=clang   # production PROM1 line program (PIO transport default)
+make cpnos-polypascal-test           # full-stack MP/M + slave + PolyPascal boot test
+
+# rcbios-in-c/  (CP/M BIOS in C)
+make bios                 # build BIOS (clang)
+make mame-test            # boot-test in MAME (rcbios standalone)
 ```
+Note: the old `make clang` / `make clang_prom` names never existed here; the
+clang build is `make prom` (autoload) — COMPILER defaults to clang.
 
 ### Tests
 ```bash
