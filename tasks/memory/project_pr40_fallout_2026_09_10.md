@@ -29,4 +29,17 @@ STATUS 2026-09-11: R1 (memset.pattern) + R2 (builtins/HasZ80) + inline-asm + R4 
 
 **#314 ROD FUNDET 2026-09-11 → #316:** den "brede ~14% regression" er ÉN bug, ikke mange. **Static-frame-transformationen er blevet inert** efter 23.1.0: funktioner med register-pres bygger nu en rigtig SP-relativ stak-frame og adresserer locals via `ld hl,off; add hl,sp; ld (hl),r` i stedet for BSS-resident/register-resident. Målt: autoload-kode +57.5% (2046→3223 B, excl font); `add hl,sp` 0→115; `.frame` BSS-symboler 5→0; `_compare_6bytes` 20→96 B. Samme .text-bloat skubber rcbios `.bss` forbi 0xF600 → link-overflow (+1306 B). Passene ER i pipelinen og deres flag defaulter on (`z80-enable-auto-static-frame` cl::init(true); `useStaticFrames()` BOU_UNSET→true), men default-output er BYTE-IDENTISK med eksplicit `-z80-enable-auto-static-frame=false` → passet kører men injicerer intet effektivt (auto-inject-gate afviser alt, ELLER attribut-navns-drift inject↔forbrug, R3-klasse). Fuld analyse: `llvm-z80/tasks/analysis-static-frame-regression-2026-09-11.md`. IKKE fikset (kun analyseret + filet).
 
-ÅBNE: **#316 static-frame inert (rod under #314 — fix genopretter formentlig størstedelen af begge)**, #315 (inline-LDIR for no-overlap G_MEMMOVE), cpnos addrspace, R3 (IY-flag), R5 test-refresh (kosmetisk).
+**INTERRUPT-DI/EI 2026-09-11 → #317 (LØST i firmware):** `z80_critical`/`__critical`
+fjernet upstream; clangs `interrupt`-attribut emitter bar `RETI` uden `EI`, og RETI
+genaktiverer ikke interrupts på Z80 → efter første ISR forbliver IFF1 clear → CRT-ISR
+død (sort skærm) + floppy-completion aldrig → boot-stall. Fix: eksplicit `ei()` sidst i
+autoloads tre ISR'er (rom.c). Verificeret: CRT-ISR fyrer (216 CTC2-OUT/3s), display
+renderer (banner+QR+SW1). Upstream-spørgsmål (bar RETI vs auto-EI) i #317.
+
+**AUTOLOAD BOOT 2026-09-11:** interrupt/display GENOPRETTET. Resterende blokade for
+boot-til-A>: **DISKETTE ERROR** (FDC-læsning fejler, compiler-uafhængig — SDCC får det
+også) → ravn/rc700-gensmedet#128 (miljø: MAME-FDC/disk/timing, ikke compiler).
+4 KB-EPROM + original BIOS på medie er den valgte topologi (static-stack-densitet rummes
+af 4 KB-cap).
+
+ÅBNE: **#316 static-frame inert** (arkitektur-beslutning til upstream — udkast klar, IKKE filet), #317 (interrupt auto-EI upstream-spørgsmål), rc700#128 (DISKETTE ERROR), #315 (inline-LDIR), cpnos addrspace, R3 (IY-flag), R5 test-refresh (kosmetisk).

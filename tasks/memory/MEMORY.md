@@ -74,6 +74,8 @@
 ## 4. Before any build / compile / link flag change
 
 - **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD: non-reentrant, SILENTLY miscompiles recursion**
+- **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — static-frame regression: prefer build-side (whole-program LTO+internalize) or upstream-submitted fix; NOT reinstating our old AutoStaticFrame as authority**
+- **[Short and concise](feedback_short_and_concise.md) — HARD: brief responses/write-ups/filings; deep detail goes in project docs, not the reply**
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
 - **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel ifeq COMPILER recipes must emit the SAME artifact set**
 - **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use -Cg-O2; verify const data in SHELL; build against classic not newlib**
