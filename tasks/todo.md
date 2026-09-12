@@ -1,5 +1,34 @@
 # Z80 Code Density Optimization Todo
 
+## Plan: revalidate #267 textual branch-range coverage (2026-09-13)
+
+**Observed state.** `issue-267-jr-out-of-range-textual.ll` currently fails
+because its `CHECK-NOT: jr z,.LBB0_22` matches a short, in-range branch. The
+same current object output contains a real far `jp nc`, and
+`Z80InstrInfo::getInstSizeInBytes()` still accounts for the variable-shift
+pseudos that caused the original #267 failure. The old test's label-specific
+negative checks therefore do not prove an active range failure.
+
+1. Capture the exact `.s`, object disassembly, and strict external-assembler
+   result from the real `sf_fix` repro. Assemble through the same
+   syntax-normalizing zcc/bridge path used in production: raw current llc
+   output is not z80asm syntax on its own. Record each checked branch's byte
+   displacement, not merely its label spelling.
+2. Dump MIR immediately after `BranchRelaxation` and after every later
+   branch-producing pass. Compare the reported pseudo sizes with the final
+   expanded byte spans, including all post-relaxation expansion paths.
+3. Audit the complete set of post-relaxation expansions against
+   `getInstSizeInBytes()`, using the former drift-guard inventory as a
+   checklist. Treat a missing/incorrect size as a separate candidate only
+   when it demonstrably causes an out-of-range final branch.
+4. Reclassify `issue-267-jr-out-of-range-textual.ll` under the PR #40 test
+   drift tracker if all current textual branches are in range. Retain a
+   range-sensitive regression oracle only when it proves a real out-of-range
+   textual branch and is accepted by the external z80 assembler.
+5. If step 1-3 finds a real out-of-range textual branch, produce a separate
+   bug analysis with the responsible pass, exact MIR delta, and external
+   assembler failure before selecting any repair.
+
 ## CP/M-86 Info-ZIP ZIP divergence (2026-08-25)
 
 **PLAN for the way forward:** `infozip-cpm86-builds/PLAN_zip_deflate_mame_2026-08-25.md`
