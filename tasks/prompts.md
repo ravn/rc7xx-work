@@ -969,3 +969,7 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 6. kør færdig og lav en fejlrapport
 7. lav et issue med alt relevant materiale
 8. commit og push
+
+## 2026-09-12
+
+1. claude var ved at fejlfinde zcc med llvm-z80 men løb tør for tokens. Kan du gøre arbejdet færdigt?

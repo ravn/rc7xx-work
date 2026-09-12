@@ -1395,3 +1395,61 @@ count and `bytes_this_entry` diverge; it does not prove CRLF conversion.
    the frozen binary, and make one owning-layer fix.
 6. Re-run CCP/M, emu2, and host `unzip`/Python byte checks. Remove diagnostic
    code and update the reference note only after all three oracles agree.
+
+## Plan: complete `zcc +cpm -compiler=llvmz80` recovery (2026-09-12)
+
+**Goal:** verify and complete the recovery from the PR #40 regression that
+removed the `-z80-float-sdcccall0` backend option required by zcc's llvmz80
+route. The production firmware oracle is autoload; rcbios is deliberately not
+a gate for this work.
+
+**Verified starting point:** `llvm-z80` commit `b460205f7031` restores the
+backend option and its f32 arithmetic, comparison, and conversion call
+conventions. The focused note
+`tasks/memory/project_focus_zcc_llvmz80_2026_09_12.md` records a successful
+minimal `zcc +cpm -compiler=llvmz80 --math32` build. The full z88dk integration
+matrix has not yet been rerun against this compiler. `z88dk` commit
+`d910c45087` adds a per-test timeout because `nontrivial_demo` previously
+blocked the sequential runner.
+
+1. **Establish the full baseline.** Confirm `LLVMZ80EXE` resolves to the
+   `b460205f7031` clang binary and record its `--version` and
+   `--help-hidden` visibility of `z80-float-sdcccall0`. Run
+   `test/clang/run_all.sh` sequentially for `TEST_CLIB=classic` and
+   `TEST_CLIB=newlib_iy`, preserving each summary and the named failing test
+   outputs under the session directory. Expected healthy historical result is
+   24 PASS / 0 FAIL classic and 23 PASS / 0 FAIL newlib_iy; that is a
+   comparison point, not an oracle for current behavior.
+2. **Classify every non-pass from the first run.** Reproduce each failure
+   alone with the exact runner environment. Separate driver/configuration
+   errors (zcc command line, archive/link order, stale binary) from generated
+   code/runtime failures. For runtime claims, use each test's explicit exit
+   value or output assertion, not only a successful link. If the watchdog
+   fires, retain the captured output and reduce it to the smallest standalone
+   zcc command before inspecting zcc or compiler source.
+3. **Prove each confirmed defect red before editing.** Add or repair the
+   narrowest in-tree regression test in `z88dk/test/clang/` (and a compiler
+   lit test if the defect is in `llvm-z80`), execute it against the unmodified
+   failing state, and record the observed failure. Do not alter existing user
+   or Claude worktree changes.
+4. **Fix at the owning layer.** Make a surgical change in zcc, its library
+   integration, or LLVM-Z80 only after the red test identifies the layer.
+   Rebuild the affected artifact through its existing procedure. A backend
+   change requires `ninja -C build-macos clang llc lld`; a z88dk library change
+   uses its existing target-specific build/install command.
+5. **Validate the complete contract.** Rerun the red regression test, then
+   both full classic and newlib_iy matrices. Build the autoload firmware with
+   the repaired clang toolchain and run its documented floppy boot test as the
+   independent firmware gate. Compare failures to the recorded baseline and
+   inspect any newly generated artifact rather than inferring correctness from
+   a successful build.
+6. **Persist outcome.** Update the focused status note and the relevant z88dk
+   capability documentation with measured counts, the exact commands, and any
+   remaining verified gap. Commit only files belonging to this work after the
+   gates pass; do not push or open a pull request without a current explicit
+   instruction.
+
+**Decision points:** stop for direction if the full suite needs a policy choice
+between classic and newlib behavior, if a failure requires changing a public
+z88dk ABI, or if the compiler source is not at the recorded #277 commit.
+Otherwise follow the existing test procedures above.
