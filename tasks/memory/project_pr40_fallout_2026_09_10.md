@@ -36,10 +36,16 @@ død (sort skærm) + floppy-completion aldrig → boot-stall. Fix: eksplicit `ei
 autoloads tre ISR'er (rom.c). Verificeret: CRT-ISR fyrer (216 CTC2-OUT/3s), display
 renderer (banner+QR+SW1). Upstream-spørgsmål (bar RETI vs auto-EI) i #317.
 
-**AUTOLOAD BOOT 2026-09-11:** interrupt/display GENOPRETTET. Resterende blokade for
-boot-til-A>: **DISKETTE ERROR** (FDC-læsning fejler, compiler-uafhængig — SDCC får det
-også) → ravn/rc700-gensmedet#128 (miljø: MAME-FDC/disk/timing, ikke compiler).
-4 KB-EPROM + original BIOS på medie er den valgte topologi (static-stack-densitet rummes
-af 4 KB-cap).
+**AUTOLOAD BOOT 2026-09-11/12: LØST — booter til A>.** To lag: (1) `ei()` i de tre ISR'er
+(interrupt/display genoprettet efter z80_critical-fjernelse). (2) DISKETTE ERROR var IKKE
+timing/MAME — det var en clang-**miscompile** (#318): `main_relocated` gjorde redundant
+`SET_SP(ROM_STACK)` (start() sætter den allerede), hvilket flyttede SP efter prologens
+frame-spills → `&fdc_cmd.sector` reloadet som **0x0000** → `sector=1` skrev til null →
+boot læste sektor 0 (disk 1-baseret) → No Data. Fix: fjern SET_SP fra main_relocated
+(rc700 `b6726d8`). Verificeret: floppy-boot-test PASS + visuelt A> i MAME. Udløst af
+static-frame-regressionen (#316) der tvang spills. Lit XFAIL-repro: llvm-z80
+`naked-manual-sp-frame-spill-miscompile.ll`. MAME rc702 skærm-højde 200→275px (25×11)
+for at un-klippe A>-rækken (mame `fb4f378`); 4-sidet amber-border kosmetisk follow-up.
+4 KB-EPROM + original BIOS på medie er den valgte topologi.
 
 ÅBNE: **#316 static-frame inert** (arkitektur-beslutning til upstream — udkast klar, IKKE filet), #317 (interrupt auto-EI upstream-spørgsmål), rc700#128 (DISKETTE ERROR), #315 (inline-LDIR), cpnos addrspace, R3 (IY-flag), R5 test-refresh (kosmetisk).
