@@ -42,6 +42,8 @@ Read this file before ANY llvm-z80 compiler/codegen/ABI change.
 - [Fork-local pass naming](feedback_fork_local_pass_naming.md) — Z80* prefix is locative; target-agnostic body -> name with operation
 - [#212-class HL borrow-save audit](project_212_class_borrow_save_pattern.md) — PUSH_HL without IMPLICIT_DEF trips verifier; 5+ latent sites #239
 - **[Z80Pseudo undersize -> far-jr under-relaxation](issue267_pseudo_undersize_class.md) — #266+#267 fixed; LDIR/IDX8/MUL8/DIV8/SAT8 still latent**
+- **[#331 spill->PUSH/POP unsound (multi-reload)](issue331_pushpop_unsound_multireload.md) — HARD: conversion needs single-reader proof; naive draft hangs recursion; PARKED**
+- **[-Oz dynamic-frame stack-arg wrong offset](oz_dynamic_frame_stackarg_offset.md) — pre-existing; test_33_Oz detector; production +static-frame SAFE; NOT a regression**
 - **[M6: narrow i16 EQ/NE of byte sext](reference_m6_sext_icmp_narrowing.md) — ravn/llvm-z80#259; IR-level narrowing chosen; no upstream report until verified**
 - [Sieve-gap passes](reference_sieve_gap_passes.md) — Z80SinkColdLoopIV(-2.3%) + Z80PinLoopPointer(net-regresses); trackers #256/#250/#251
 
