@@ -73,6 +73,7 @@
 
 ## 4. Before any build / compile / link flag change
 
+- **[ZX0 PROMs: optimize compressed, not raw](feedback_zx0_optimize_compressed_not_raw.md) — HARD: autoload metric is compressed B; raw codegen wins can grow the PROM (add a,a chains are ZX0-free)**
 - **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD: non-reentrant, SILENTLY miscompiles recursion**
 - **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — static-frame regression: prefer build-side (whole-program LTO+internalize) or upstream-submitted fix; NOT reinstating our old AutoStaticFrame as authority**
 - **[Short and concise](feedback_short_and_concise.md) — HARD: brief responses/write-ups/filings; deep detail goes in project docs, not the reply**

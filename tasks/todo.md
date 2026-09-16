@@ -1,6 +1,55 @@
 # Z80 Code Density Optimization Todo
 
-## Plan: revalidate #267 textual branch-range coverage (2026-09-13)
+## Plan: Systematisk genindførelse af tabte optimeringer (Z80 Code Density) (2026-09-14)
+
+**Mål:** Lukke det resterende overskud på **143 bytes** i RC702 autoload-firmwaren (`INIT_SEM702=1` med skærmfont) så den fysiske 2048-byte grænse på 2716 EPROM (IC66) overholdes, ved systematisk at genindføre de optimeringer fra `ravn/llvm-z80`, der faldt ud ved upstream PR #40 / PR #296 merget (`cbaa9835043a`).
+
+### Nuværende status & opnåede gevinster:
+- **Baseline før genindførelse:** Rå `.text` = 3879 B; komprimeret PROM = 2366 B (+318 B over 2048 B).
+- **1. Direct Global Addressing i ISel (`37f696f38ee5`):** `LD A,(nn)` / `LD (nn),A` direkte for globale symboler. Sparer 3 B pr. adgang. Resultat: `.text` -194 B, PROM -125 B.
+- **2. Comparison Narrowing i ISel (`ce20d2bdf6b2`):** Snævring af 16-bit zext/sext sammenligninger til 8-bit `cp`. `_check_sysfile` alene faldt fra 98 B til 45 B. Resultat: PROM -47 B.
+- **3. Peephole #116/#117 (`f93cacb36c02`):** i16 EQ/NE byte-XOR -> `AND A; SBC HL,rr` (3 B vs 6 B). Un-XFAIL'ede `issue-117-i16-eq-ne-neither-hl.mir`.
+- **4. In-Memory INC/DEC (`354d14db1273`):** `LD A,(addr); INC/DEC A; LD (addr),A` -> `LD HL,addr; INC/DEC (HL)` (4 B vs 7 B). Resultat: `.text` -3 B, PROM -3 B.
+- **5. Consecutive Stores #85 (`74b2f251529f`):** Folds >= 3 på hinanden følgende stores til en `LD HL,addr; LD (HL),n; INC HL...` pointer-kæde (sparer 4-6+ B). Testet i `store-chain-walk.ll`.
+- **6. CP (HL) / SUB (HL) Load Fusion (`b86e19774a85`):** Fold single-use `G_LOAD` ind i `CP (HL)` og `SUB (HL)` i `emitFusedCompareAndBranch` og `G_ICMP`. Inkluderer `isHLPreferred` så pointere med HL-affinitet bevares i HL, hvilket frigør `B` til hardware `DJNZ` i `compare_6bytes` og `check_sysfile`. Resultat: `.text` -11 B (3425 -> 3414 B), payload 1950 B, PROM total 2069 B (21 B over 2048 B loftet).
+- **Status nu (PARKERET 2026-09-16):** Rå `.text` = **3414 B**; komprimeret PROM = **2069 B** (21 B over 2048 B loftet). Samlet genvundet: **-465 B rå kode, -297 B komprimeret**. Lit: 249 PASS, 61 XFAIL, 0 FAIL. MAME boot & QR oracle: PASS.
+- **Tilknyttede issues:**
+  - `rc700-gensmedet#130`: `autoload-in-c: clang PROM build overflows 2048-byte EPROM ceiling by 21 bytes (2069 / 2048 B)`
+  - `llvm-z80#331`: `Dynamic SP stack frame allocated for callee-saved scratch instead of direct PUSH/POP in non-static-frame functions` (Class 2 regression, ~19 B i `_fdc_read_result`)
+  - `llvm-z80#332`: `-Oz miscompile: dynamic-SP-frame stack-argument read at wrong offset` (afsløret af `test_33_string_ops.c`)
+  - `llvm-z80#333`: `G_ZEXT(G_LOAD i1) in 8-bit comparison blocks CP (HL) memory fold` (afsløret i `rom.c` `_floppy_legacy_boot`)
+
+### Prioriteret eksekveringsplan for resterende optimeringer:
+
+1. **Peephole #18 / #206 (Konstant-genbrug på tværs af alle GR8-registre)**
+   - *Princip:* Når et 8-bit register (A, B, C, D, E, H, L) i en basisblok allerede holder en konstant `n`, erstattes en senere `LD r, n` (2 B, 7 T) med `LD r, r'` (1 B, 4 T).
+   - *Test:* `llvm/test/CodeGen/Z80/issue-206-const-reuse-non-a.mir` er p.t. XFAIL. Fjern XFAIL, verificér at testen passerer efter genindførelse.
+   - *Forventet gevinst:* 1 byte pr. forekomst.
+
+2. **In-Memory Bit Set/Reset (`SET b,(HL)` / `RES b,(HL)`) (Issue #147)**
+   - *Princip:* Mønstre `mem |= (1<<b)` eller `mem &= ~(1<<b)` foldes til `LD HL,addr; SET/RES b,(HL)` frem for `LD A,(addr); OR/AND; LD (addr),A` (sparer 3 bytes).
+   - *Test:* `llvm/test/CodeGen/Z80/issue-147-set-res-mem.ll`.
+
+3. **DJNZ-løkke transformationer (#185 / #221 / #92)**
+   - *Princip:* Udnyt Z80's hardware-løkkeinstruktion `DJNZ` (2 B, 13/8 T) i stedet for `DEC B; JR NZ` (3 B, 16/11 T) eller `DEC A; LD B,A; JR NZ`.
+   - *Inderste løkke prioritering (afgørende):*
+     - Da Z80 kun har ét `B`-register, er det altafgørende, at den *inderste* løkke vinder `B` (højeste trip count / mest eksekveringstid).
+     - Implementeres via `getRegAllocationHints`:
+       - **Self-back-edge (inderste løkke):** Positivt hint om `B`.
+       - **Latch til anden blok (ydre løkke):** Anti-hint for `B` (foretræk `D, E, H, L, C`), så `B` aldrig stjæles af den ydre løkke.
+   - *Peephole:* `DEC B; JR NZ -> DJNZ` og `DEC A; LD B,A; JR NZ -> DJNZ` i `Z80PreEmitPeephole.cpp` (med liveness-guard på `FLAGS`).
+   - *Test:* `llvm/test/CodeGen/Z80/djnz.ll`, `issue-92-nested-djnz.ll` og `issue-185-djnz-b-clobber.ll`.
+
+4. **BSS-spill til PUSH/POP konvertering (Issue #74 / BSS-spill suite)**
+   - *Princip:* I `+static-frame`/`+static-stack` gemmes registre i midlertidige statiske BSS-adresser: `LD (sym), HL; ...; LD HL, (sym)` (2 * 3 = 6 B). Når stakken er tilgængelig og uforstyrret, kan dette erstattes af `PUSH HL; ...; POP HL` (1 + 1 = 2 B), hvilket sparer 4 B pr. spill.
+   - *Test:* `issue-74-bss-spill-no-call.ll` og tilhørende MIR-tests.
+
+5. **Tail-call optimering (`CALL nn; RET` -> `JP nn`)**
+   - *Princip:* Erstat `CALL nn; RET` (3 B + 1 B = 4 B) med `JP nn` (3 B). Sparer 1 B og 17 T-states.
+   - *Krav:* Skal scopes så eksisterende lit-tests med eksplicitte `call; ret` forventninger ikke fejler (f.eks. ved at aktivere det specifikt under `-Oz` eller `-min-size` eller opdatere lit-tjek hvor semantikken er identisk).
+
+---
+
 
 **Observed state.** `issue-267-jr-out-of-range-textual.ll` currently fails
 because its `CHECK-NOT: jr z,.LBB0_22` matches a short, in-range branch. The

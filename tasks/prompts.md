@@ -973,3 +973,10 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 ## 2026-09-12
 
 1. claude var ved at fejlfinde zcc med llvm-z80 men løb tør for tokens. Kan du gøre arbejdet færdigt?
+
+## 2026-09-16
+
+1. Claude har arbejdet videre, og løb tør for tokens da den nåede til "[...]" (CP (HL) load-fusion analyse)
+2. ok
+3. ja
+4. jeg opgiver at nå 2048 byte målet for nu.  analyser, opsummer og lav issues, og commit
