@@ -980,3 +980,6 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 2. ok
 3. ja
 4. jeg opgiver at nå 2048 byte målet for nu.  analyser, opsummer og lav issues, og commit
+5. **NO DISKETTE NOR LINEPROG** er en fejl
+6. ok så det var en del af testen. godt :)  fortsæt
+7. gem al relevant viden i projektet og gør klar til handover til claude
