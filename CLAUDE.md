@@ -111,7 +111,7 @@ GlobalISel backend (not SelectionDAG). Key files:
 - `Z80CallLowering.cpp` — sdcccall(0/1) calling conventions
 - `Z80LegalizerInfo.cpp` — legalization; `Z80RegisterBankInfo.cpp` — reg bank selection
 
-PROM build: `--target=z80 -Os` with `+static-stack` (BSS locals) + `+shadow-regs` (EXX for ISRs), linked with `ld.lld` via custom linker script.
+PROM build: `--target=z80 -Os` with `+static-frame` (BSS locals via `-ffreestanding`) + `+shadow-regs` (EXX for ISRs), linked with `ld.lld` via custom linker script.
 
 ## Code Density (BIOS)
 
