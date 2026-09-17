@@ -14,6 +14,7 @@
 - **[Rebuild ALL Z80 tools after backend edit](feedback_rebuild_all_z80_tools.md) — HARD: `ninja -C build-macos clang llc lld` after any Z80/ edit**
 - **[No-op control measurement](feedback_no_op_control_measurement.md) — HARD: baseline/no-op-control/feature-ON three cells; no-op must match baseline**
 - **[Token-efficiency](feedback_token_efficiency.md) — HARD: no raw logs in context; long builds in background; handoff file at boundaries**
+- **[Self-compact during long builds](feedback_self_compact_during_long_builds.md) — kør /compact selv mens ninja/docker/MAME kører i baggrund**
 - **[Style](feedback_style.md) — tænk højt, ingen undskyldninger eller komplimenter, ingen aforismer, record prompts**
 - [Suggest model switch](feedback_suggest_model_switch.md) — flag Opus/Sonnet fit before and mid-task
 - **[Fix as close to the source as possible](reference_quad_init_backend_split.md) — HARD: fix in earliest/owning layer; never downstream band-aid**
@@ -75,6 +76,7 @@
 
 - **[ZX0 PROMs: optimize compressed, not raw](feedback_zx0_optimize_compressed_not_raw.md) — HARD: autoload metric is compressed B; raw codegen wins can grow the PROM (add a,a chains are ZX0-free)**
 - **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD: non-reentrant, SILENTLY miscompiles recursion**
+- **[-ffreestanding unlocks Z80 static-frame promotion](reference_z80_ffreestanding_closed_world.md) — HARD: standard C flag; sets "Freestanding" module flag Z80NonReentrant reads; +~35% speed on div-heavy code; use this, NOT the removed -z80-closed-world**
 - **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — static-frame regression: prefer build-side (whole-program LTO+internalize) or upstream-submitted fix; NOT reinstating our old AutoStaticFrame as authority**
 - **[Short and concise](feedback_short_and_concise.md) — HARD: brief responses/write-ups/filings; deep detail goes in project docs, not the reply**
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
@@ -92,6 +94,9 @@
 ## 5. llvm-z80 compiler / codegen changes
 
 **-> Read [MEMORY_CODEGEN.md](MEMORY_CODEGEN.md) before any compiler/codegen/ABI change**
+
+- **[Priority: miscompiles first for upstream](project_priority_miscompiles_for_upstream.md) — HARD: rank miscompiles above density/missed-opts; density defers until correctness gate clears**
+- **[Z80 interrupt attr = bare RETI by design](reference_z80_interrupt_attr_bare_reti.md) — programmer controls EI via `__builtin_z80_ei()`; do NOT file "no EI" as compiler bug (see #317 closed 2026-09-17)**
 
 ## 6. Before any MAME / boot / test run
 
