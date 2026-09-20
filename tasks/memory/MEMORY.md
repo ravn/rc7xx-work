@@ -48,6 +48,7 @@
 - **[File bugs, not fixes](feedback_file_bugs_not_fixes.md) — HARD: upstream filings are BUG REPORTS only; maintainer decides how to fix**
 - **[Thorough tests for upstream bugs](feedback_thorough_tests_for_upstream_bugs.md) — HARD: matrix-grade (lit+runtime, negatives+positives+controls)**
 - **[Include C tests for regressions](feedback_include_c_code_in_tests.md) — HARD: PR tests must have C in comments + executable .c test in test-runner**
+- **[Run tests locally before pushing PR](feedback_run_tests_locally_before_pushing_pr.md) — HARD: never push to PR without running tests locally**
 - **[Cross-machine workflow](feedback_cross_machine_workflow.md) — HARD: commit-push at end of every working segment; pull-with-submodules at start**
 - **[ravn/llvm-z80 Actions OFF](feedback_ravn_llvm_z80_ci_disabled.md) — HARD: no CI on ravn/llvm-z80; local oracle is the merge gate**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD: value oracle (test-runner + MAME) required before commit**
