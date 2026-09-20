@@ -1024,3 +1024,4 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 13. analyser, opsummer og opret issues efter behov, commit og push
 14. kig på Oprydning i XFAIL-inventar (ravn/llvm-z80#338) og Static-frame kompatibilitet (#336, #337)
 15. lav et issue for hver kategori med fulde detaljer
+16. jeg vil gerne have du fjerner --z80-static-frames fra mine tests og programmer
