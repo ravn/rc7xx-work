@@ -5,6 +5,7 @@
 ## 0. ABSOLUTE BAN — read before EVERY find/ls/grep/glob/mdfind
 
 - **[NEVER traverse outside workspace root](feedback_no_home_search.md) — ABSOLUTE. Root: `/Users/ravn/z80/` (mac) `/home/ravn/z80/` (sonnyboy). No find/ls/mdfind outside.**
+- **[Temp files in scratch/tmp](feedback_temp_files_in_scratch.md) — HARD: all temp files in scratch/tmp/, NEVER /tmp/ (prompts user).**
 
 ## 1. Always-on (every response)
 
@@ -37,9 +38,6 @@
 
 - **[Mistral Vibe agent](agent_mistralvibe_introduction.md) — capability profile + integration with Claude Code and Copilot**
 - **[Mistral Vibe project understanding](agent_mistralvibe_project_understanding.md) — technical baseline, status matrix, known issues, roadmap**
-- [RC750 Partner MAME boot](project_rc750_partner_boot_bringup.md) — ROD398/399 interleave; readable text DONE; 82730 mailbox DONE; NEXT: WD1797 floppy @0x200
-- [MAME loose-branch inventory](reference_mame_loose_branches.md) — rc759+rc750 merged; only unmerged = RC702 upstreaming line
-- [rc7xx MAME boot disks](reference_rc7xx_mame_boot_disks.md) — rc702=SW1711-I8.imd; rc750=SW1500_2.0.imd; rc759=sw1400_r31a_d1.img
 
 ## 2. Before any commit / PR / issue
 
@@ -49,6 +47,7 @@
 - **[Self-caused bug? reflect](feedback_self_caused_bug_reflect_on_instructions.md) — HARD: if Co-Authored-By: anybody, identify which rule would have prevented it**
 - **[File bugs, not fixes](feedback_file_bugs_not_fixes.md) — HARD: upstream filings are BUG REPORTS only; maintainer decides how to fix**
 - **[Thorough tests for upstream bugs](feedback_thorough_tests_for_upstream_bugs.md) — HARD: matrix-grade (lit+runtime, negatives+positives+controls)**
+- **[Include C tests for regressions](feedback_include_c_code_in_tests.md) — HARD: PR tests must have C in comments + executable .c test in test-runner**
 - **[Cross-machine workflow](feedback_cross_machine_workflow.md) — HARD: commit-push at end of every working segment; pull-with-submodules at start**
 - **[ravn/llvm-z80 Actions OFF](feedback_ravn_llvm_z80_ci_disabled.md) — HARD: no CI on ravn/llvm-z80; local oracle is the merge gate**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD: value oracle (test-runner + MAME) required before commit**
@@ -56,8 +55,6 @@
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep for *_REFERENCE.md before re-deriving encodings**
 - [No UNSOLICITED Upstream Issues](feedback_no_upstream_issues.md) — default: file in ravn/* forks; curated submissions only on user direction
 - **[No external issues ever](feedback_no_external_issues.md) — HARD: external repos require explicit per-issue go-ahead**
-- [Upstream tracking issues](project_upstream_tracking_issues.md) — ravn/z88dk #64-68 + ravn/llvm-z80 #291-295 oprettet 2026-09-06
-- **[PR #40 fallout](project_pr40_fallout_2026_09_10.md) — R1/R2/R4+inline-asm LØST; R5-drift = ingen regressioner (kun stale tests). ÅBEN blokade: #316 static-frame inert → +57% bloat = rod under #314 (rcbios link-overflow + autoload over 2 KB). Analyse: llvm-z80/tasks/analysis-static-frame-regression-2026-09-11.md**
 - **[Upstream routing](feedback_upstream_routing_two_targets.md) — HARD: generic-LLVM bugs -> llvm/llvm-project; Z80-specific -> llvm-z80/llvm-z80 only**
 - **[MAME upstream routing](feedback_mame_upstream_routing.md) — HARD: never file in MAME without explicit per-issue permission**
 - **[No upstream sdcccall discrepancies](feedback_no_upstream_sdcccall_discrepancies.md) — HARD: ABI mismatches are known build-config issues, NOT upstream-fileable**
@@ -82,7 +79,7 @@
 - **[Short and concise](feedback_short_and_concise.md) — HARD: brief responses/write-ups/filings; deep detail goes in project docs, not the reply**
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
 - **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel ifeq COMPILER recipes must emit the SAME artifact set**
-- **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use -Cg-O2; verify const data in SHELL; build against classic not newlib**
+- **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use -Cg-O2; verify const data in SHELL; classic clib only (newlib abandoned)**
 - **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32 flag; auto-links fmath bridge + -mllvm -z80-float-sdcccall0**
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations; native llc/clang in llvm-z80/build-macos/bin
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
@@ -101,7 +98,6 @@
 
 ## 6. Before any MAME / boot / test run
 
-- **[rc759 CCP/M boots ~290s](reference_rc759_mame_c_verification.md) — HARD: -seconds_to_run 400; read LATE snapshot; early test banner = mid-boot not crash**
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: banner timestamp vs BUILD_INFO_STR before any diagnosis**
 - **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — first try make _kill-mpm; sleep 5-8; retry**
 - **[cpnos PIO netboot: NO -autoboot_script](feedback_cpnos_pio_netboot_no_autoboot.md) — HARD: any autoboot breaks wall-clock-coupled PIO netboot**
@@ -155,15 +151,10 @@
 ## 11. cpnos / cpnet / DRI facts
 
 - **[Long-term goal: finish rcbios + autoload + CP/NET + cpnos](project_finishing_firmware_components.md) — bias work toward advancing one of the four**
-- **[cpnos PARKED — awaiting physical parallel cable](project_cpnos_parked_awaiting_parallel_cable.md) — surface before acting on cpnos/PIO/polypascal tasks**
-- **[MP/M disks: local-only, library frozen](project_mpm_disks_local_only.md) — make mpm-disks builds into disks/local/; NEVER write disks/library/**
-- **[SDCC slave stack-room ceiling](project_sdcc_slave_stack_room.md) — cpnos SDCC PROM1 must end <=0xF60E or SP=0xF680 overruns resident SNIOS**
 - **[Never push/merge upstream remotes](feedback_never_push_or_merge_upstream_remotes.md) — HARD: cpnet-z80 origin is durgadas311/*; keep local commits FLAT**
 - **[CP/NET 1.2 only](feedback_cpnet_12_only.md) — HARD: BDOS-105 NOT forwardable under 1.2; time-from-master via BDOS-66/67+FN-105**
 - **[rcbios jump table is ABI](feedback_rcbios_jump_table_is_abi.md) — HARD: BIOS jump table at 0xDA00 is frozen ABI; new paths ADDITIVE only**
 - **[rcbios -flto: section-attrs required](feedback_rcbios_no_lto_boot_placement.md) — was ON+working 2026-07-06 (section attrs+KEEP+ASSERTs); RE-DISABLED 2026-09-10 due to codegen crashes (ravn/llvm-z80#312: Z80DanglingDebugCleanup on -g + addrspace(2) cannot-select), NOT boot-placement**
-- [MP/M II bakes RSPs at GENSYS time](reference_mpm_sys_baked_via_gensys.md) — .RSP edits inert until GENSYS regens MPM.SYS + re-installs on A:
-- [ravn/mame#6 — PIO-B slot regression](project_ravn_mame_6.md) — gates Option P; fix needed at chip/slot layer
 
 ## 12. Reference / standing reminders
 
@@ -175,9 +166,5 @@
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, /home/ravn/z80, headless; upstream LLVM at ~/llvm-upstream/
 - [Memory lives in tasks/memory/](feedback_no_claude_memory.md) — canonical here; NEVER ~/.claude/; also MEMORY_LAYOUT.md + MEMORY_CODEGEN.md + MEMORY_PARKED.md
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3**
-- [z88dk#3022 console-lost-after-fopen](project_z88dk_3022_console_after_fopen_bug.md) — newlib fopen corrupts stdout; maintainer-confirmed; PR #3031 open
-- [z88dk#3011 FP-under-interrupt EXX collision](reference_z88dk_3011_fp_interrupt_exx.md) — math48 uses EXX; shadow-set ISR -> corrupt; DI/EI around FP call
-- [z88dk runtime verify: ntvcm not ticks](reference_z88dk_runtime_verify_ntvcm.md) — +cpm .COM under ntvcm/ntvcm; z88dk-ticks does NOT emulate +test $ED$FE trap
-- [z88dk RC700 subtype build](reference_z88dk_rc700_subtype_build.md) — make -C libsrc TARGETS=rc700; -Cz+cpmdisk -f rc700-8dd; examples/rc700/
 
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->

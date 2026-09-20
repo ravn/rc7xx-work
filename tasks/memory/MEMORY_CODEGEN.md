@@ -18,6 +18,9 @@ Read this file before ANY llvm-z80 compiler/codegen/ABI change.
 - **[Verdict AFTER real pass output](feedback_verdict_after_real_pass_output.md) — HARD: show IR/asm the pass actually produces + contamination BEFORE stating verdict**
 - **[AVR density oracle](feedback_avr_density_oracle.md) — HARD: before blaming generic pass, compile for AVR; AVR-cheap+Z80-expensive = our gap**
 - **[double is float32 on z80](project_double_is_float32_retire_softfloat.md) — since #277: double==float==32-bit binary32; sf libcalls; math32 runtime; softfloat RETIRED**
+- [Z80 optimization patterns](reference_z80_optimization_patterns.md) — DJNZ countdowns, pointer-stepping, memcpy/restrict LDIR, -Rpass remarks
+- [Missed codegen patterns report](report_missed_codegen_patterns.md) — Loop reversal for DJNZ, copy loop aliasing vs LDIR, variable shifts
+- [Autoload missed remarks report](report_actual_missed_codegen_autoload.md) — Actual observed regalloc spills and LICM barriers in rom.c
 - [Z80AutoStaticStack cross-TU soundness](autostaticstack_cross_tu_soundness_2026-08-11.md) — auto-inject gated hasLocalLinkage()||!ReachesExternal; test_09 fixed
 
 ## Peepholes
