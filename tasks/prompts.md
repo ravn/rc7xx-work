@@ -1019,3 +1019,5 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 8. det var fordi der var nogen fejl der først viste sig ved meget store mængder kode.  Kan de reproduceres?
 9. jeg  mener bestemt at alle disse tests blev lavet af et program og derfor kan genskabes.  er det rigtigt?   Hvis ja, så lav et nyt issue på at teste igen med forklaring
 10. kan du ikke lave midlertidige filer i projektet så jeg ikke bliver spurgt hver gang om du må?
+11. du kan godt fjerne alle de midlertidige testfiler der kan regenereres som du fandt ud af før
+12. git log -S tager meget lang tid, nøjes med et år tilbage
