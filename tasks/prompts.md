@@ -1021,3 +1021,4 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 10. kan du ikke lave midlertidige filer i projektet så jeg ikke bliver spurgt hver gang om du må?
 11. du kan godt fjerne alle de midlertidige testfiler der kan regenereres som du fandt ud af før
 12. git log -S tager meget lang tid, nøjes med et år tilbage
+13. analyser, opsummer og opret issues efter behov, commit og push
