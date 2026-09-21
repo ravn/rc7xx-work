@@ -161,6 +161,8 @@
 ## 12. Reference / standing reminders
 
 - **[Canonical test aggregator](reference_run_all_tests.md) — tasks/tools/run-all-tests.sh; fast=A+C+D; run at merge/checkpoint**
+- **[llvmz80 + z88dk test scripts](reference_llvmz80_test_scripts.md) — `./run-llvmz80-tests.sh test` (810/841), `./run-z88dk-tests.sh`; 6 known fatals**
+- **[sdcc _memcpy stub fix](feedback_sdcc_memcpy_stub_fix.md) — z88dk z0.lib conflicts w/ z80_rt.lib; fixed via ___z80_memcpy_builtin + ___memcpy stubs**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — tasks/z88dk-llvmz80-evaluation-2026-07-21.md; update after bridge/benchmark/float change**
 - **[64-bit .quad split in backend](reference_quad_init_backend_split.md) — ravn/z88dk#27 FIXED: Data64bitsDirective=nullptr -> two .long; textual -S only**
 - **[Standing goal: z88dk full llvmz80 CP/M support](project_z88dk_llvmz80_full_support_goal.md) — prioritize closing evaluation-doc gaps + modern-C support**
