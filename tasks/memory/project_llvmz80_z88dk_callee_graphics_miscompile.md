@@ -1,9 +1,35 @@
 ---
 name: project_llvmz80_z88dk_callee_graphics_miscompile
-description: ravn/llvm-z80 #281 FIXED + #282 FIXED (Phase 3, clang composition) — llvmz80 miscompiled z88dk <graphics.h> calls (__smallc __z88dk_callee); #281=missing conflict diagnostic, #282=no combined smallc-order+callee-clean convention. z80_smallc+z80_callee now compose to cc133 (CC_Z80SmallCCallee). Phase 4 (MAME e2e) remains. 2026-08-07.
+description: RESOLVED 2026-08-07. Root cause was HL->DE return-register mismatch for getmaxx/getmaxy (ravn/z88dk#50), NOT the callee convention. Fixed with __z88dk_fastcall in graphics.h. MAME render byte-identical to sccz80. cc133 (#281+#282) valid but separate.
 metadata:
   type: project
 ---
+
+## STATUS: RESOLVED (2026-08-07)
+
+**Actual root cause (NOT callee convention):** `getmaxx()`/`getmaxy()` return
+16-bit int in HL (classic clib), but clang expects return in DE. Every downstream
+coordinate was garbage. Filed as ravn/z88dk#50 (HL->DE return-register class,
+same as #23/#26/#31/#41 — graphics.h missed by the #26 sweep).
+
+**Fix:** 4 lines in `z88dk/include/graphics.h` — add `__z88dk_fastcall` to
+`getx/gety/getmaxx/getmaxy`. MAME render byte-identical to sccz80 (7231==7231
+on-pixels, 0-pixel diff). Snapshot: `scratch/sine-demo/snap/gfxtest-llvmz80-noncallee.png`.
+
+**cc133 (#281+#282):** still a valid correctness fix (callee convention WAS
+broken), but it did NOT affect the graphics demo (callee-routed primitives
+rendered differently — reverted). cc133 sits in branch
+`origin/fix-282-smallc-callee-composition`, not yet merged.
+
+**Phase 4:** already executed — see `scratch/sine-demo/CALLEE_GRAPHICS_FINDING.md`
+for the full investigation log.
+
+**How to apply:** graphics.h miscompile is closed. If new `__LIB__` int-returning
+functions appear broken under llvmz80, add `__z88dk_fastcall` — same class as #50.
+
+---
+
+## Original investigation (archived below)
 
 **Candidate llvmz80 bug (found 2026-08-07, rc700 graphics demo):** the z88dk
 `<graphics.h>` primitives are declared `__smallc __z88dk_callee` (e.g.

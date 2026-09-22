@@ -39,6 +39,12 @@ SDCC_BUILD="$WORKSPACE/z88dk/src/sdcc-build/bin"
 if [ -x "$SDCC_BUILD/sdcc" ]; then
     PATH="$SDCC_BUILD:$PATH"
 fi
+
+# Auto-tilføj z80-utils Rust-binærer til PATH (elf2rel, rel2elf til utils-suiten)
+Z80UTILS_BIN="$WORKSPACE/llvm-z80/z80-utils/target/debug"
+if [ -x "$Z80UTILS_BIN/elf2rel" ]; then
+    PATH="$Z80UTILS_BIN:$PATH"
+fi
 export PATH
 
 echo "=== llvmz80 test-runner ==="
