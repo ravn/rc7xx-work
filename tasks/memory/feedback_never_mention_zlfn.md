@@ -25,8 +25,8 @@ Applies to every repo ravn owns: `ravn/llvm-z80`, `ravn/rc700-gensmedet`,
   `zlfn` and remove it.
 - The attribution line [[feedback_issue_attribution_line]] names `@ravn` only, so
   it is fine.
-- Chat replies to ravn in this session are not a repo and are unaffected, but
-  prefer "the fork owner" out of habit.
+- **Chat replies are also banned** (user tightened rule 2026-09-22: "aldrig nævne
+  zlfn i tekst"). Use "the fork owner" everywhere, no exceptions.
 
 Related collaboration rules: [[feedback_explain_before_filing]] (#77 PR
 retraction), [[feedback_upstream_routing_two_targets]].

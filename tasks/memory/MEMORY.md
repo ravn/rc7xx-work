@@ -52,7 +52,7 @@
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test for every clang Z80 codegen bug
 - [Attribution line on filed issues](feedback_issue_attribution_line.md) — append `--- / _Filed by GitHub Copilot on behalf of @ravn._`
-- **[Never mention zlfn in ravn's repos](feedback_never_mention_zlfn.md) — HARD: never write "zlfn"/@zlfn in any of ravn's repos; use "the fork owner"**
+- **[Never mention zlfn anywhere](feedback_never_mention_zlfn.md) — HARD: never write "zlfn"/@zlfn in repos OR chat; always "the fork owner"**
 - [Comment on issue when fix committed](feedback_issue_comment_on_fix.md) — AUTO: post comment with hash + what changed + verification
 - [Test before fix](feedback_test_before_fix.md) — failing test before implementing
 - [Plan thoroughly first](feedback_plan_thoroughly_first.md) — explicit step-by-step plan + confirm before non-trivial work
@@ -74,6 +74,7 @@
 - **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32 flag; auto-links fmath bridge + -mllvm -z80-float-sdcccall0**
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations; native llc/clang in llvm-z80/build-macos/bin
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
+- **[Parallel compiler builds](feedback_parallel_compiler_builds.md) — HARD: git worktree + rsync --link-dest; hardlinks sparer ~2 GB; build-macos = hoved, navngiv øvrige build-<name>**
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
 - **[Docker shim batch](feedback_docker_shim_batch.md) — HARD: batch multi-step Docker calls into ONE docker run sh -c "..."**

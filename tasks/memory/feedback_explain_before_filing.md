@@ -95,6 +95,10 @@ that isn't fully under the user's control:
 - Slack/Discord/forums posting that names a bug/claim — covered.
 - Closing comments on existing issues — covered (still a public post).
 
+**2026-09-23 rule (user-stated):** Things that go upstream to llvm-z80/llvm-z80
+MUST have a C example that demonstrates the problem. An .ll-only repro is
+not sufficient — it must be possible to show the bug from C source.
+
 **Scope excluded:**
 
 - Local commits within a feature branch (not pushed): not covered.
