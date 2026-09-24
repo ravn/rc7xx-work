@@ -1524,3 +1524,67 @@ for det næste.
 - Nye z88dk-ABI-huller (fopen/fread-familien m.v. fra
   `z88dk-submission-gap-2026-07-16.md`) — den analyse er fra FØR PR #40 og
   skal genkøres efter Trin 3, ikke stoles på as-is.
+
+### Trin 6 (tilføjet 2026-09-24, bruger-ønske) — Docker-image: z88dk + llvm-z80 samlet
+
+**Mål:** et Docker-image der ruller frisk z88dk (fuldt bygget) + frisk llvm-z80
+(clang/llc/lld) sammen, sådan at `zcc +cpm -compiler=llvmz80` virker out-of-the-box
+uden `LLVMZ80EXE`-pege-håndarbejde. Erstatter/supplerer det eksisterende
+`z88dk:2.4`-image (som kun er SDCC/klassisk sccz80-vejen).
+
+Forudsætninger (skal være grønne/målte først, jf. Trin 0-5 ovenfor):
+- Trin 0: frisk llvm-z80-build eksisterer og er verificeret.
+- Trin 3: z88dk's egen build er grøn igen (mingw-CI-fejlen + evt. flere,
+  jf. build-forsøg 2026-09-24: `testsuite`-fejl på `Issue_1466_float16.opt`
+  blokerer `make all` fordi `testsuite` er et hårdt prerequisite af `all` i
+  top-level Makefile — bygget uden om ved at target'e `$(BINS)` direkte og
+  udelade `testsuite`; #1466 float16-div/invf-codegen-diff bør registreres
+  som separat issue, ikke ignoreres stiltiende).
+
+Byggeplan (skitse, udfyldes når Trin 0/3 er grønne):
+1. Multi-stage Dockerfile: stage 1 bygger llvm-z80 (cmake Z80.cmake + ninja
+   clang/llc/lld), stage 2 bygger z88dk mod det llvm-z80-image (`LLVMZ80EXE`
+   sat til stage-1-clangen), stage 3 (runtime) kopierer kun de færdige
+   binaries+libs ind, ikke build-værktøj/kildetræer (image-størrelse).
+2. Verificer i imaget: `zcc +cpm -compiler=llvmz80 -O2 hello.c -o hello.com`
+   + kør resultatet i ntvcm/MAME fra selve CI'en (ikke kun "kompilerer uden
+   fejl").
+3. Tag/navngivning: følg samme mønster som `z88dk:2.4` (pinnet, ikke
+   `latest`) — nyt tag, fx `z88dk-llvmz80:<dato eller llvm-z80-sha>`.
+4. Placer Dockerfile/build-script i `z88dk/` (dev-fork) eller en ny
+   `docker/`-mappe i workspace-roden — afgør med bruger når vi når hertil.
+5. Dokumentér i `rc700-gensmedet/docs/` (parallelt med
+   `z88dk_docker_rebuild.md` for det eksisterende SDCC-image) + opdater
+   CLAUDE.md's "z88dk RETIRED" note til at nævne det nye llvmz80-image.
+
+**Ikke startet endnu** — kræver Trin 0/3 grønne først, ellers bager vi en
+kendt-brudt tilstand ind i imaget.
+
+### Status opdatering 2026-09-24/25 — Trin 0-1 DONE, Trin 3 delvist
+
+Fuld session-detalje: `llvm-z80/tasks/session-2026-09-24-25-z88dk-integration-baseline.md`.
+
+**Trin 0 (frisk build):** DONE. `llvm-z80/build-linux/` virker. ccache
+tilføjet til `Z80.cmake`. Ekstra worktree `llvm-z80-worktrees/upstream-main/`
+på ren `upstream/main` — build IKKE færdig ved sessionsafslutning, fortsæt her.
+Fund: `origin/main` indeholder 100% af `upstream/main` (0 bagud, 1177 foran).
+
+**Trin 1 (lit-baseline):** DONE, bedre end forventet: 278 PASS + 5 XPASS
+(forældede XFAIL, ikke fjernet endnu) + 1 XFAIL, **0 FAIL** af 284. PR#40-
+recovery er reelt landet på compiler-siden.
+
+**Trin 3 (z88dk-verifikation):** delvist. Fandt og rettede (committed +
+pushet) en case-sensitivity-bug i `z88dk/test/clang/*.sh` der gjorde suiten
+næsten ubrugelig på Linux (4/66 -> 48/66 PASS). De 15 resterende fejl er
+alle undersøgt og er **z88dk-side** (math32 fsdiv-algoritme, klassisk-clib
+%f-printf, kendt stdio-regression #54, test-harness-timeout) —
+**0 llvm-z80 backend-bugs fundet**.
+
+**Trin 2, 4, 5, 6:** ikke startet/afventer stadig (Trin 6 Docker-image
+afventer eksplicit brugergrønt lys, jf. tidligere "vent"-besked).
+
+Sidegevinster: `emu2-cpm86` og `dcc` .gitmodules rettet til de rigtige
+forks (`johnsonjh/emu2-cpm86` var forkert antaget `dmsc/emu2`; `ravn/dcc`
+var forkert `davidly/dcc`); `open-watcom-v2` fuldt build+Mandelbrot-testet;
+`ntvcm` bygget (var manglende) — **husk: `ntvcm`, ikke `emu2` (CP/M-86/x86),
+til klassiske Z80 CP/M `.com`-binaries**.

@@ -171,4 +171,6 @@
 - [z88dk runtime verify: ntvcm not ticks](reference_z88dk_runtime_verify_ntvcm.md) — +cpm .COM under ntvcm/ntvcm; z88dk-ticks does NOT emulate +test $ED$FE trap
 - [z88dk RC700 subtype build](reference_z88dk_rc700_subtype_build.md) — make -C libsrc TARGETS=rc700; -Cz+cpmdisk -f rc700-8dd; examples/rc700/
 
+- [llvmz80 classic printf("%f") broken](finding_llvmz80_classic_printf_f_broken_2026-09-25.md) — math32 double arithmetic correct, %f prints 0.000000 under classic clib (not investigated further)
+
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->
