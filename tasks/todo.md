@@ -1395,3 +1395,132 @@ count and `bytes_this_entry` diverge; it does not prove CRLF conversion.
    the frozen binary, and make one owning-layer fix.
 6. Re-run CCP/M, emu2, and host `unzip`/Python byte checks. Remove diagnostic
    code and update the reference note only after all three oracles agree.
+
+---
+
+## Plan: z88dk + llvm-z80 — bryde igennem post-PR#40 (2026-09-24)
+
+**Mål (bruger 2026-09-24):** få z88dk til at virke korrekt med llvm-z80 som
+backend. Fokus lige nu: lande det store upstream-arbejde (`llvm-z80/llvm-z80`
+PR #40 "z88dk calling conventions + llvmz80-23.1.0-r1", merged 2026-09-08)
+solidt igennem hele stakken (llvm-z80 -> z88dk zcc/bridges -> RC700-firmware).
+
+### Overblik (fund fra denne session)
+
+1. **`upstream-all-prs`** (ravn/llvm-z80) er den gren brugeren mente: den er
+   bygget oven på `llvm-z80/llvm-z80`s (zlfns) EGEN historik (merge-base helt
+   tilbage til LLVM's `cvs2svn`-rod), med alle indsendte/mergede PR'er
+   (#41-48, #346, #357, #267, #359 osv.) lagt ind, som om de allerede var
+   accepteret der. Den er 39 commits foran, men 1157 bagud ift. `main` (fordi
+   `main` er den langt mere aktive ravn-arbejdsgren rebaseret på fuld LLVM
+   monorepo). Brug den til at se "hvad ville zlfns upstream se ud som hvis alt
+   blev taget ind" — ikke som base for videre arbejde.
+
+2. **PR #40-mergen (2026-09-08) var stor og gav massivt fallout**, dokumenteret
+   i `llvm-z80/tasks/plan-pr40-fallout-recovery-2026-09-10.md` (R1-R5) og
+   `analysis-autoload-over-2kb-after-pr40-2026-09-16.md` (Class 1/2
+   kodedensitet). Status pr. seneste commits (21/9):
+   - R1 (memset.pattern legalisering) — genskabt.
+   - R2 (Z80-builtins/intrinsics ulegaliserede — PRODUKTIONSKRITISK, ramte
+     rcbios' `__builtin_z80_*`) — genskabt (#42/#4 virker igen ifølge
+     CLAUDE.md "Working LLVM-Z80 features").
+   - R3 (`-z80-unreserve-iy` omdøbt) — håndteret.
+   - R4 ("Found 2 machine code errors" i64/i128/arith-i32) — root cause
+     fundet (static-frame inert), fix landet, se seneste workspace-commit
+     `d333fdc`.
+   - R5 (26 lit-CHECK-drift) — løbende oprydning i commits frem til 21/9
+     (XFAIL-triage, C-source blocks til regressionstests, MachineCSE
+     genaktiveret).
+   - Class 1 (static-frame inert, +975 B på autoload) — RECOVERED.
+   - Class 2 (regalloc spilder call-krydsende loop-værdier til SP-frame i
+     stedet for callee-saved push/pop) — delvist genskabt (Fase 2b landet,
+     Fase 2c falsificeret, #331 lukket 17/9). Autoload-PROM er derfor
+     midlertidigt sat til 4 KB cap i stedet for 2 KB (se
+     `tasks/memory/project_rc702_2kb_prom_hard_limit.md`).
+
+3. **z88dk-siden havde SIN EGEN fallout** fra samme merge: seneste 3 commits
+   på `z88dk` master er `e55cbbf4b1` "restore zcc ABI glue",
+   `0ebc2e4c12` "correct byte division bridge ABI", merged via
+   `fix/llvmz80-zcc-abi-recovery` (2026-09-19/20). Dvs. calling-convention-
+   ændringerne i llvm-z80 PR #40 brækkede zcc's bro-lag (ABI-antagelser om
+   register-placering af returværdier m.v.), og det er kun DELVIST
+   genoprettet.
+
+4. **KRITISK GAP — ingen CI-verifikation af noget af dette:**
+   - `llvm-z80` GitHub Actions (`z80-ci.yml`) har IKKE kørt på en `push` til
+     `main` siden **2026-06-06**. De nyeste `workflow_dispatch`-kørsler
+     (12/13. juli) står stadig som "queued" 1700+ timer senere — reelt i
+     stykker/aldrig eksekveret. Hverken PR #40-mergen (8/9) eller de 10+
+     dages fallout-recovery (10-21/9) er nogensinde kørt gennem CI.
+   - Lokal build (`llvm-z80/build/`) er fra **2026-06-29** — ældre end PR
+     #40-mergen. `llvm-lit` crasher direkte (`lit.cfg.py` bruger
+     `config.osx_xcrun` som CMake-cachen ikke satte) — build-config er
+     forældet ift. kildekoden. **Der findes ingen frisk, grøn build at måle
+     "164 PASS + 6 XFAIL"-påstanden i CLAUDE.md imod lige nu.**
+   - `z88dk`s `build-mingw-on-ubuntu`-CI **FEJLER** på seneste master-commit
+     (`4ed62bd`, "pass -Cg-mdouble=32 in whetstone and runtime_libm",
+     2026-09-20).
+
+### Konklusion
+
+CLAUDE.md's headline ("clang beats SDCC... cheap levers exhausted") er
+formentlig forældet allerede fra FØR PR #40. Alt arbejde siden 8/9 er
+ubekræftet af nogen automatiseret gate. "At bryde igennem" betyder konkret:
+få en frisk build, en grøn lit-suite, en grøn z88dk-CI, og en re-målt
+produktions-baseline — i den rækkefølge, fordi hvert trin er en forudsætning
+for det næste.
+
+### Handlingsplan (rækkefølge betyder noget)
+
+**Trin 0 — Reproducerbar build (blocker for alt andet)**
+- Frisk `cmake -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build-linux`
+  + `ninja -C build-linux clang llc llvm-lit` på sonnyboy (Linux — undgår
+  `osx_xcrun`-grenen helt).
+- Verificer `llvm-lit` kan parse config uden crash.
+
+**Trin 1 — llvm-z80: mål ægte lit/test-runner-baseline**
+- `build-linux/bin/llvm-lit llvm/test/CodeGen/Z80/ -j$(nproc)` — notér reelt
+  PASS/XFAIL/FAIL, sammenlign med de 164+6 og med fallout-planens
+  189/64/32-baseline.
+- `cargo run` (test-runner, O1/O2/Os) — notér FATAL-tal, sammenlign med
+  fallout-planens 68 FATAL.
+- Skriv resultatet i en ny `tasks/session-<dato>-post-pr40-ci-baseline.md`
+  (ikke gæt — mål).
+
+**Trin 2 — Genopliv CI**
+- Undersøg hvorfor `z80-ci.yml` push-trigger ikke har kørt siden 6/6:
+  workflow-fil ændret util af sync med branch-beskyttelse? Runner-kø
+  proppet? `gh workflow view z80-ci.yml` + `gh api` for trigger-historik.
+- Ryd de fastlåste "queued" `workflow_dispatch`-kørsler (annullér, de blokerer
+  intet reelt men er støj).
+- Få en grøn `push`-kørsel på `main` HEAD, eller dokumentér roden til hvorfor
+  ikke, som et separat issue.
+
+**Trin 3 — z88dk: fix build-mingw-on-ubuntu-fejlen**
+- `gh run view` på den fejlende kørsel (`35492945026`) for fejllog.
+- Sandsynlig kobling til samme ABI-/mdouble-arbejde som
+  `fix/llvmz80-zcc-abi-recovery` — tjek om det er en direkte fortsættelse
+  af samme regression eller noget nyt i `-Cg-mdouble=32`-committen.
+- `test/clang/run_all.sh` lokalt mod frisk llvm-z80-build fra Trin 0, for at
+  få et reelt pass-tal for zcc+llvmz80-stien (ikke kun mingw-buildet, som
+  bare compilerer selve z88dk-værktøjerne, ikke kører target-tests).
+
+**Trin 4 — Produktions-genmåling**
+- Rebuild rcbios, autoload-in-c, cpnos-in-c, CP/NET med frisk clang fra
+  Trin 0. Sammenlign med CLAUDE.md's opgivne tal (BIOS 5462 B, autoload
+  1643 B, cpnos 2014 B) — disse tal er højst sandsynligt forældede
+  (fra før PR #40 og Class 2-regressionen).
+- MAME boot-gate på alle fire produktionskomponenter.
+- Afgør om autoload-in-c's midlertidige 4 KB-cap kan sættes tilbage til
+  2 KB nu, eller om Class 2-residualen (+23-39 B) stadig blokerer.
+
+**Trin 5 — Opdater CLAUDE.md + memory med de reelle, friske tal**
+- Kun efter Trin 1-4 er kørt og målt — ingen gæt.
+
+### Ikke del af denne plan (bevidst udeladt)
+- Selve `merge-upstream-2026-09-05`-planen (12.046 nye upstream-commits) —
+  IKKE startet, og separat fra PR #40-arbejdet. Vurderes efter Trin 0-5 er
+  landet, ikke før.
+- Nye z88dk-ABI-huller (fopen/fread-familien m.v. fra
+  `z88dk-submission-gap-2026-07-16.md`) — den analyse er fra FØR PR #40 og
+  skal genkøres efter Trin 3, ikke stoles på as-is.
