@@ -1,0 +1,3 @@
+# Generated from *.cfg.in by scripts/install-mame-cfg.sh — not committed.
+*.cfg
+!default.cfg

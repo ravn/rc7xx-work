@@ -6,14 +6,15 @@
 # The turnkey mandel.img autostarts 0:menu.cmd on boot. We install ZIP.CMD as
 # menu.cmd; built -DCPM86_AUTORUN it self-invokes `zip POEM.ZIP POEM.TXT`, and
 # built -DCPM86_KEEP_BADZIP it keeps the archive even on the size-mismatch that
-# aborts a stock build. NEVER search outside /Users/ravn/z80/.
+# aborts a stock build. NEVER search outside the workspace root.
 set -e
 
-MAME_DIR=/Users/ravn/z80/mame
-IMAGES=/Users/ravn/z80/scratch/rc759-pce/images
+WORKSPACE="$(cd "$(dirname "$0")/.." && pwd)"
+MAME_DIR="$WORKSPACE/mame"
+IMAGES="$WORKSPACE/scratch/rc759-pce/images"
 FMT=drc-rc759
-ZIP_CMD=/Users/ravn/z80/infozip-cpm86-builds/out-zip-cpm86/ZIP.CMD
-POEM=/Users/ravn/z80/scratch/rc759-unzip-demo/poem.txt
+ZIP_CMD="$WORKSPACE/infozip-cpm86-builds/out-zip-cpm86/ZIP.CMD"
+POEM="$WORKSPACE/scratch/rc759-unzip-demo/poem.txt"
 CPMCP=$HOME/.local/bin/cpmcp
 CPMRM=$HOME/.local/bin/cpmrm
 CPMLS=$HOME/.local/bin/cpmls
@@ -64,7 +65,7 @@ if "$CPMLS" -f "$FMT" "$IMG" | grep -qi "poem.zip"; then
   "$CPMCP" -f "$FMT" "$IMG" 0:poem.zip /tmp/ccpm_poem.zip
   echo "extracted -> /tmp/ccpm_poem.zip ($(stat -f%z /tmp/ccpm_poem.zip) B)"
   REF=/tmp/emu2_deflate.bin OUT=/tmp/ccpm_poem.zip \
-    python3 /Users/ravn/z80/scripts/_zip_decode_diff.py /tmp/ccpm_poem.zip /tmp/emu2_deflate.bin
+    python3 "$WORKSPACE/scripts/_zip_decode_diff.py" /tmp/ccpm_poem.zip /tmp/emu2_deflate.bin
 else
   echo "POEM.ZIP not present -- check snapshot for the KEEP_BADZIP line."
 fi

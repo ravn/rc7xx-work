@@ -11,8 +11,9 @@ cmake-build-debug/
 !.claude/settings.json
 
 # MAME auto-saved config (bitbanger paths, slot state).  Regenerated
-# every time MAME runs from this cwd.
-cfg/
+# every time MAME runs from this cwd.  Only the top-level cfg/ is excluded
+# so that scripts/cfg/*.cfg.in templates remain tracked.
+/cfg/
 
 # Unrelated project that landed here as a download cwd.
 tinypi-2024-11-04/

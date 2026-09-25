@@ -11,14 +11,15 @@
 # Build the variant first:
 #   cd infozip-cpm86-builds && \
 #     OUT="$PWD/out-cpm86-autorun" EXTRA_DEFS="-DCPM86_AUTORUN" bash build-cpm86.sh
-# NEVER search outside /Users/ravn/z80/.
+# NEVER search outside the workspace root.
 set -e
 
-MAME_DIR=/Users/ravn/z80/mame
-IMAGES=/Users/ravn/z80/scratch/rc759-pce/images
+WORKSPACE="$(cd "$(dirname "$0")/.." && pwd)"
+MAME_DIR="$WORKSPACE/mame"
+IMAGES="$WORKSPACE/scratch/rc759-pce/images"
 FMT=drc-rc759
-UNZIP_CMD=/Users/ravn/z80/infozip-cpm86-builds/out-cpm86-autorun/UNZIP.CMD
-BIGZIP=/Users/ravn/z80/scratch/rc759-unzip-demo/BIG.ZIP
+UNZIP_CMD="$WORKSPACE/infozip-cpm86-builds/out-cpm86-autorun/UNZIP.CMD"
+BIGZIP="$WORKSPACE/scratch/rc759-unzip-demo/BIG.ZIP"
 CPMCP=$HOME/.local/bin/cpmcp
 CPMRM=$HOME/.local/bin/cpmrm
 CPMLS=$HOME/.local/bin/cpmls
@@ -45,7 +46,7 @@ for f in menu.cmd comal80.cmd comal80.erm diskvedl.cmd filadm.cmd function.cmd \
          vcmode.cmd vindue.cmd; do
     "$CPMRM" -f "$FMT" "$IMG" "0:$f" 2>/dev/null || true
 done
-DEMO=/Users/ravn/z80/scratch/rc759-unzip-demo
+DEMO="$WORKSPACE/scratch/rc759-unzip-demo"
 "$CPMCP" -f "$FMT" "$IMG" "$UNZIP_CMD"    0:menu.cmd
 "$CPMCP" -f "$FMT" "$IMG" "$DEMO/HELLO.ZIP" 0:hello.zip
 "$CPMCP" -f "$FMT" "$IMG" "$DEMO/POEM.ZIP"  0:poem.zip
@@ -55,7 +56,7 @@ DEMO=/Users/ravn/z80/scratch/rc759-unzip-demo
 echo "== 2. boot MAME rc759 headless (autostart menu.cmd -> unzip -t BIG.ZIP) =="
 cd "$MAME_DIR"
 rm -f snap/rc759/*.png nvram/rc759/nvram 2>/dev/null || true
-SNAP_LUA=/Users/ravn/z80/scratch/rc759_unzip_snap.lua   # periodic snapshots across the ~290s boot
+SNAP_LUA="$WORKSPACE/scratch/rc759_unzip_snap.lua"  # periodic snapshots across the ~290s boot
 SDL_VIDEODRIVER=dummy ./regnecentralend rc759 -bios 0 -skip_gameinfo -rompath roms \
   -flop1 "$IMG" \
   -autoboot_script "$SNAP_LUA" \
