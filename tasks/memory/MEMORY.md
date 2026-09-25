@@ -160,7 +160,7 @@
 - **[Never push/merge upstream remotes](feedback_never_push_or_merge_upstream_remotes.md) — HARD: cpnet-z80 origin is durgadas311/*; keep local commits FLAT**
 - **[CP/NET 1.2 only](feedback_cpnet_12_only.md) — HARD: BDOS-105 NOT forwardable under 1.2; time-from-master via BDOS-66/67+FN-105**
 - **[rcbios jump table is ABI](feedback_rcbios_jump_table_is_abi.md) — HARD: BIOS jump table at 0xDA00 is frozen ABI; new paths ADDITIVE only**
-- **[rcbios -flto: section-attrs required](feedback_rcbios_no_lto_boot_placement.md) — RE-DISABLED 2026-09-10: codegen crashes (ravn/llvm-z80#312: Z80DanglingDebugCleanup on -g + addrspace(2))**
+- **[rcbios -flto: section-attrs required](feedback_rcbios_no_lto_boot_placement.md) — RE-ENABLED 2026-07-03 on main; STILL BROKEN on test/all-prs (LTO + P2 legalizer, root cause unknown)**
 
 ## 12. Reference / standing reminders
 
@@ -178,5 +178,7 @@
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3**
 
 - [llvmz80 classic printf("%f") broken](finding_llvmz80_classic_printf_f_broken_2026-09-25.md) — math32 double arithmetic correct, %f prints 0.000000 under classic clib (not investigated further)
+- **[Firmware builds BROKEN on test/all-prs](project_firmware_build_status_2026-09-25.md) — autoload: cherry-pick 95d2cd718a4f; cpnos: always_inline _port_out; rcbios: LTO+P2 unknown**
+- **[Plan: fix firmware builds](plan_upstream_main_firmware_fix_2026-09-25.md) — Trin 1 autoload (1 cherry-pick), Trin 2 cpnos (always_inline), Trin 3 rcbios LTO**
 
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->
