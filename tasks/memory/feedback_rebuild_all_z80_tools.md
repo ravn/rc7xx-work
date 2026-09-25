@@ -46,6 +46,18 @@ prints confirmed BOTH paths reach `Dir=LDDR` once the binaries match.
 test invoke?* and confirm it was in the last `ninja` target list.  LTO /
 PROM / `-flto` ⇒ `ld.lld`.  When in doubt, build all three.
 
+**Extended rule for LLVM core lib edits (2026-09-25):** If a commit touches
+`llvm/lib/Transforms/Utils/BuildLibCalls.cpp`, `llvm/lib/Analysis/TargetLibraryInfo.cpp`,
+or other core libs, ALSO rebuild `opt`:
+```
+ninja -C build-macos opt
+```
+Without this, `opt` crashes on `target triple = "z80-unknown-unknown"` IR
+because the old `libLLVMTransformUtils.a` is linked against a new `opt.cpp`.
+The lesson: `ninja -C build-macos` (build all) is always safer than a subset.
+
+See also: [[feedback_ccache_llvm_build]] (cmake reconfiguration + ccache).
+
 Related: [[feedback_revalidate_historical_compiler_claims]] (stale-rebuild
 trap), [[feedback_verify_matrix_before_theory]] (contradictory result =
 suspect stale state first).
