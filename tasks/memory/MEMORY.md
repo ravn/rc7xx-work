@@ -176,4 +176,6 @@
 - [Memory lives in tasks/memory/](feedback_no_claude_memory.md) — canonical here; NEVER ~/.claude/; also MEMORY_LAYOUT.md + MEMORY_CODEGEN.md + MEMORY_PARKED.md
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3**
 
+- [llvmz80 classic printf("%f") broken](finding_llvmz80_classic_printf_f_broken_2026-09-25.md) — math32 double arithmetic correct, %f prints 0.000000 under classic clib (not investigated further)
+
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->

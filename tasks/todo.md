@@ -1474,60 +1474,195 @@ count and `bytes_this_entry` diverge; it does not prove CRLF conversion.
 6. Re-run CCP/M, emu2, and host `unzip`/Python byte checks. Remove diagnostic
    code and update the reference note only after all three oracles agree.
 
-## Plan: complete `zcc +cpm -compiler=llvmz80` recovery (2026-09-12)
+---
 
-**Goal:** verify and complete the recovery from the PR #40 regression that
-removed the `-z80-float-sdcccall0` backend option required by zcc's llvmz80
-route. The production firmware oracle is autoload; rcbios is deliberately not
-a gate for this work.
+## Plan: z88dk + llvm-z80 — bryde igennem post-PR#40 (2026-09-24)
 
-**Verified starting point:** `llvm-z80` commit `b460205f7031` restores the
-backend option and its f32 arithmetic, comparison, and conversion call
-conventions. The focused note
-`tasks/memory/project_focus_zcc_llvmz80_2026_09_12.md` records a successful
-minimal `zcc +cpm -compiler=llvmz80 --math32` build. The full z88dk integration
-matrix has not yet been rerun against this compiler. `z88dk` commit
-`d910c45087` adds a per-test timeout because `nontrivial_demo` previously
-blocked the sequential runner.
+**Mål (bruger 2026-09-24):** få z88dk til at virke korrekt med llvm-z80 som
+backend. Fokus lige nu: lande det store upstream-arbejde (`llvm-z80/llvm-z80`
+PR #40 "z88dk calling conventions + llvmz80-23.1.0-r1", merged 2026-09-08)
+solidt igennem hele stakken (llvm-z80 -> z88dk zcc/bridges -> RC700-firmware).
 
-1. **Establish the full baseline.** Confirm `LLVMZ80EXE` resolves to the
-   `b460205f7031` clang binary and record its `--version` and
-   `--help-hidden` visibility of `z80-float-sdcccall0`. Run
-   `test/clang/run_all.sh` sequentially for `TEST_CLIB=classic` and
-   `TEST_CLIB=newlib_iy`, preserving each summary and the named failing test
-   outputs under the session directory. Expected healthy historical result is
-   24 PASS / 0 FAIL classic and 23 PASS / 0 FAIL newlib_iy; that is a
-   comparison point, not an oracle for current behavior.
-2. **Classify every non-pass from the first run.** Reproduce each failure
-   alone with the exact runner environment. Separate driver/configuration
-   errors (zcc command line, archive/link order, stale binary) from generated
-   code/runtime failures. For runtime claims, use each test's explicit exit
-   value or output assertion, not only a successful link. If the watchdog
-   fires, retain the captured output and reduce it to the smallest standalone
-   zcc command before inspecting zcc or compiler source.
-3. **Prove each confirmed defect red before editing.** Add or repair the
-   narrowest in-tree regression test in `z88dk/test/clang/` (and a compiler
-   lit test if the defect is in `llvm-z80`), execute it against the unmodified
-   failing state, and record the observed failure. Do not alter existing user
-   or Claude worktree changes.
-4. **Fix at the owning layer.** Make a surgical change in zcc, its library
-   integration, or LLVM-Z80 only after the red test identifies the layer.
-   Rebuild the affected artifact through its existing procedure. A backend
-   change requires `ninja -C build-macos clang llc lld`; a z88dk library change
-   uses its existing target-specific build/install command.
-5. **Validate the complete contract.** Rerun the red regression test, then
-   both full classic and newlib_iy matrices. Build the autoload firmware with
-   the repaired clang toolchain and run its documented floppy boot test as the
-   independent firmware gate. Compare failures to the recorded baseline and
-   inspect any newly generated artifact rather than inferring correctness from
-   a successful build.
-6. **Persist outcome.** Update the focused status note and the relevant z88dk
-   capability documentation with measured counts, the exact commands, and any
-   remaining verified gap. Commit only files belonging to this work after the
-   gates pass; do not push or open a pull request without a current explicit
-   instruction.
+### Overblik (fund fra denne session)
 
-**Decision points:** stop for direction if the full suite needs a policy choice
-between classic and newlib behavior, if a failure requires changing a public
-z88dk ABI, or if the compiler source is not at the recorded #277 commit.
-Otherwise follow the existing test procedures above.
+1. **`upstream-all-prs`** (ravn/llvm-z80) er den gren brugeren mente: den er
+   bygget oven på `llvm-z80/llvm-z80`s (zlfns) EGEN historik (merge-base helt
+   tilbage til LLVM's `cvs2svn`-rod), med alle indsendte/mergede PR'er
+   (#41-48, #346, #357, #267, #359 osv.) lagt ind, som om de allerede var
+   accepteret der. Den er 39 commits foran, men 1157 bagud ift. `main` (fordi
+   `main` er den langt mere aktive ravn-arbejdsgren rebaseret på fuld LLVM
+   monorepo). Brug den til at se "hvad ville zlfns upstream se ud som hvis alt
+   blev taget ind" — ikke som base for videre arbejde.
+
+2. **PR #40-mergen (2026-09-08) var stor og gav massivt fallout**, dokumenteret
+   i `llvm-z80/tasks/plan-pr40-fallout-recovery-2026-09-10.md` (R1-R5) og
+   `analysis-autoload-over-2kb-after-pr40-2026-09-16.md` (Class 1/2
+   kodedensitet). Status pr. seneste commits (21/9):
+   - R1 (memset.pattern legalisering) — genskabt.
+   - R2 (Z80-builtins/intrinsics ulegaliserede — PRODUKTIONSKRITISK, ramte
+     rcbios' `__builtin_z80_*`) — genskabt (#42/#4 virker igen ifølge
+     CLAUDE.md "Working LLVM-Z80 features").
+   - R3 (`-z80-unreserve-iy` omdøbt) — håndteret.
+   - R4 ("Found 2 machine code errors" i64/i128/arith-i32) — root cause
+     fundet (static-frame inert), fix landet, se seneste workspace-commit
+     `d333fdc`.
+   - R5 (26 lit-CHECK-drift) — løbende oprydning i commits frem til 21/9
+     (XFAIL-triage, C-source blocks til regressionstests, MachineCSE
+     genaktiveret).
+   - Class 1 (static-frame inert, +975 B på autoload) — RECOVERED.
+   - Class 2 (regalloc spilder call-krydsende loop-værdier til SP-frame i
+     stedet for callee-saved push/pop) — delvist genskabt (Fase 2b landet,
+     Fase 2c falsificeret, #331 lukket 17/9). Autoload-PROM er derfor
+     midlertidigt sat til 4 KB cap i stedet for 2 KB (se
+     `tasks/memory/project_rc702_2kb_prom_hard_limit.md`).
+
+3. **z88dk-siden havde SIN EGEN fallout** fra samme merge: seneste 3 commits
+   på `z88dk` master er `e55cbbf4b1` "restore zcc ABI glue",
+   `0ebc2e4c12` "correct byte division bridge ABI", merged via
+   `fix/llvmz80-zcc-abi-recovery` (2026-09-19/20). Dvs. calling-convention-
+   ændringerne i llvm-z80 PR #40 brækkede zcc's bro-lag (ABI-antagelser om
+   register-placering af returværdier m.v.), og det er kun DELVIST
+   genoprettet.
+
+4. **KRITISK GAP — ingen CI-verifikation af noget af dette:**
+   - `llvm-z80` GitHub Actions (`z80-ci.yml`) har IKKE kørt på en `push` til
+     `main` siden **2026-06-06**. De nyeste `workflow_dispatch`-kørsler
+     (12/13. juli) står stadig som "queued" 1700+ timer senere — reelt i
+     stykker/aldrig eksekveret. Hverken PR #40-mergen (8/9) eller de 10+
+     dages fallout-recovery (10-21/9) er nogensinde kørt gennem CI.
+   - Lokal build (`llvm-z80/build/`) er fra **2026-06-29** — ældre end PR
+     #40-mergen. `llvm-lit` crasher direkte (`lit.cfg.py` bruger
+     `config.osx_xcrun` som CMake-cachen ikke satte) — build-config er
+     forældet ift. kildekoden. **Der findes ingen frisk, grøn build at måle
+     "164 PASS + 6 XFAIL"-påstanden i CLAUDE.md imod lige nu.**
+   - `z88dk`s `build-mingw-on-ubuntu`-CI **FEJLER** på seneste master-commit
+     (`4ed62bd`, "pass -Cg-mdouble=32 in whetstone and runtime_libm",
+     2026-09-20).
+
+### Konklusion
+
+CLAUDE.md's headline ("clang beats SDCC... cheap levers exhausted") er
+formentlig forældet allerede fra FØR PR #40. Alt arbejde siden 8/9 er
+ubekræftet af nogen automatiseret gate. "At bryde igennem" betyder konkret:
+få en frisk build, en grøn lit-suite, en grøn z88dk-CI, og en re-målt
+produktions-baseline — i den rækkefølge, fordi hvert trin er en forudsætning
+for det næste.
+
+### Handlingsplan (rækkefølge betyder noget)
+
+**Trin 0 — Reproducerbar build (blocker for alt andet)**
+- Frisk `cmake -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build-linux`
+  + `ninja -C build-linux clang llc llvm-lit` på sonnyboy (Linux — undgår
+  `osx_xcrun`-grenen helt).
+- Verificer `llvm-lit` kan parse config uden crash.
+
+**Trin 1 — llvm-z80: mål ægte lit/test-runner-baseline**
+- `build-linux/bin/llvm-lit llvm/test/CodeGen/Z80/ -j$(nproc)` — notér reelt
+  PASS/XFAIL/FAIL, sammenlign med de 164+6 og med fallout-planens
+  189/64/32-baseline.
+- `cargo run` (test-runner, O1/O2/Os) — notér FATAL-tal, sammenlign med
+  fallout-planens 68 FATAL.
+- Skriv resultatet i en ny `tasks/session-<dato>-post-pr40-ci-baseline.md`
+  (ikke gæt — mål).
+
+**Trin 2 — Genopliv CI**
+- Undersøg hvorfor `z80-ci.yml` push-trigger ikke har kørt siden 6/6:
+  workflow-fil ændret util af sync med branch-beskyttelse? Runner-kø
+  proppet? `gh workflow view z80-ci.yml` + `gh api` for trigger-historik.
+- Ryd de fastlåste "queued" `workflow_dispatch`-kørsler (annullér, de blokerer
+  intet reelt men er støj).
+- Få en grøn `push`-kørsel på `main` HEAD, eller dokumentér roden til hvorfor
+  ikke, som et separat issue.
+
+**Trin 3 — z88dk: fix build-mingw-on-ubuntu-fejlen**
+- `gh run view` på den fejlende kørsel (`35492945026`) for fejllog.
+- Sandsynlig kobling til samme ABI-/mdouble-arbejde som
+  `fix/llvmz80-zcc-abi-recovery` — tjek om det er en direkte fortsættelse
+  af samme regression eller noget nyt i `-Cg-mdouble=32`-committen.
+- `test/clang/run_all.sh` lokalt mod frisk llvm-z80-build fra Trin 0, for at
+  få et reelt pass-tal for zcc+llvmz80-stien (ikke kun mingw-buildet, som
+  bare compilerer selve z88dk-værktøjerne, ikke kører target-tests).
+
+**Trin 4 — Produktions-genmåling**
+- Rebuild rcbios, autoload-in-c, cpnos-in-c, CP/NET med frisk clang fra
+  Trin 0. Sammenlign med CLAUDE.md's opgivne tal (BIOS 5462 B, autoload
+  1643 B, cpnos 2014 B) — disse tal er højst sandsynligt forældede
+  (fra før PR #40 og Class 2-regressionen).
+- MAME boot-gate på alle fire produktionskomponenter.
+- Afgør om autoload-in-c's midlertidige 4 KB-cap kan sættes tilbage til
+  2 KB nu, eller om Class 2-residualen (+23-39 B) stadig blokerer.
+
+**Trin 5 — Opdater CLAUDE.md + memory med de reelle, friske tal**
+- Kun efter Trin 1-4 er kørt og målt — ingen gæt.
+
+### Ikke del af denne plan (bevidst udeladt)
+- Selve `merge-upstream-2026-09-05`-planen (12.046 nye upstream-commits) —
+  IKKE startet, og separat fra PR #40-arbejdet. Vurderes efter Trin 0-5 er
+  landet, ikke før.
+- Nye z88dk-ABI-huller (fopen/fread-familien m.v. fra
+  `z88dk-submission-gap-2026-07-16.md`) — den analyse er fra FØR PR #40 og
+  skal genkøres efter Trin 3, ikke stoles på as-is.
+
+### Trin 6 (tilføjet 2026-09-24, bruger-ønske) — Docker-image: z88dk + llvm-z80 samlet
+
+**Mål:** et Docker-image der ruller frisk z88dk (fuldt bygget) + frisk llvm-z80
+(clang/llc/lld) sammen, sådan at `zcc +cpm -compiler=llvmz80` virker out-of-the-box
+uden `LLVMZ80EXE`-pege-håndarbejde. Erstatter/supplerer det eksisterende
+`z88dk:2.4`-image (som kun er SDCC/klassisk sccz80-vejen).
+
+Forudsætninger (skal være grønne/målte først, jf. Trin 0-5 ovenfor):
+- Trin 0: frisk llvm-z80-build eksisterer og er verificeret.
+- Trin 3: z88dk's egen build er grøn igen (mingw-CI-fejlen + evt. flere,
+  jf. build-forsøg 2026-09-24: `testsuite`-fejl på `Issue_1466_float16.opt`
+  blokerer `make all` fordi `testsuite` er et hårdt prerequisite af `all` i
+  top-level Makefile — bygget uden om ved at target'e `$(BINS)` direkte og
+  udelade `testsuite`; #1466 float16-div/invf-codegen-diff bør registreres
+  som separat issue, ikke ignoreres stiltiende).
+
+Byggeplan (skitse, udfyldes når Trin 0/3 er grønne):
+1. Multi-stage Dockerfile: stage 1 bygger llvm-z80 (cmake Z80.cmake + ninja
+   clang/llc/lld), stage 2 bygger z88dk mod det llvm-z80-image (`LLVMZ80EXE`
+   sat til stage-1-clangen), stage 3 (runtime) kopierer kun de færdige
+   binaries+libs ind, ikke build-værktøj/kildetræer (image-størrelse).
+2. Verificer i imaget: `zcc +cpm -compiler=llvmz80 -O2 hello.c -o hello.com`
+   + kør resultatet i ntvcm/MAME fra selve CI'en (ikke kun "kompilerer uden
+   fejl").
+3. Tag/navngivning: følg samme mønster som `z88dk:2.4` (pinnet, ikke
+   `latest`) — nyt tag, fx `z88dk-llvmz80:<dato eller llvm-z80-sha>`.
+4. Placer Dockerfile/build-script i `z88dk/` (dev-fork) eller en ny
+   `docker/`-mappe i workspace-roden — afgør med bruger når vi når hertil.
+5. Dokumentér i `rc700-gensmedet/docs/` (parallelt med
+   `z88dk_docker_rebuild.md` for det eksisterende SDCC-image) + opdater
+   CLAUDE.md's "z88dk RETIRED" note til at nævne det nye llvmz80-image.
+
+**Ikke startet endnu** — kræver Trin 0/3 grønne først, ellers bager vi en
+kendt-brudt tilstand ind i imaget.
+
+### Status opdatering 2026-09-24/25 — Trin 0-1 DONE, Trin 3 delvist
+
+Fuld session-detalje: `llvm-z80/tasks/session-2026-09-24-25-z88dk-integration-baseline.md`.
+
+**Trin 0 (frisk build):** DONE. `llvm-z80/build-linux/` virker. ccache
+tilføjet til `Z80.cmake`. Ekstra worktree `llvm-z80-worktrees/upstream-main/`
+på ren `upstream/main` — build IKKE færdig ved sessionsafslutning, fortsæt her.
+Fund: `origin/main` indeholder 100% af `upstream/main` (0 bagud, 1177 foran).
+
+**Trin 1 (lit-baseline):** DONE, bedre end forventet: 278 PASS + 5 XPASS
+(forældede XFAIL, ikke fjernet endnu) + 1 XFAIL, **0 FAIL** af 284. PR#40-
+recovery er reelt landet på compiler-siden.
+
+**Trin 3 (z88dk-verifikation):** delvist. Fandt og rettede (committed +
+pushet) en case-sensitivity-bug i `z88dk/test/clang/*.sh` der gjorde suiten
+næsten ubrugelig på Linux (4/66 -> 48/66 PASS). De 15 resterende fejl er
+alle undersøgt og er **z88dk-side** (math32 fsdiv-algoritme, klassisk-clib
+%f-printf, kendt stdio-regression #54, test-harness-timeout) —
+**0 llvm-z80 backend-bugs fundet**.
+
+**Trin 2, 4, 5, 6:** ikke startet/afventer stadig (Trin 6 Docker-image
+afventer eksplicit brugergrønt lys, jf. tidligere "vent"-besked).
+
+Sidegevinster: `emu2-cpm86` og `dcc` .gitmodules rettet til de rigtige
+forks (`johnsonjh/emu2-cpm86` var forkert antaget `dmsc/emu2`; `ravn/dcc`
+var forkert `davidly/dcc`); `open-watcom-v2` fuldt build+Mandelbrot-testet;
+`ntvcm` bygget (var manglende) — **husk: `ntvcm`, ikke `emu2` (CP/M-86/x86),
+til klassiske Z80 CP/M `.com`-binaries**.

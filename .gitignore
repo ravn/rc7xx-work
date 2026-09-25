@@ -56,3 +56,4 @@ scratch/*.log
 /dhry.err
 /whet.err
 /scratch/
+llvm-z80-worktrees/
