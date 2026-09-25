@@ -46,3 +46,6 @@
 [submodule "pce"]
 	path = pce
 	url = git@github.com:ravn/pce.git
+[submodule "ccache"]
+	path = ccache
+	url = https://github.com/ccache/ccache.git

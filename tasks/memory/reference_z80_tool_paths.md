@@ -11,7 +11,9 @@ metadata:
 
 | Tool | Full path |
 |---|---|
+| cmake (ARM Mac, from CLion bundle) | `/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake` |
 | ninja (ARM Mac, from CLion bundle) | `/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja` |
+| **ccache** (built from submodule, 2026-09-25) | `/Users/ravn/z80/ccache/install/bin/ccache` |
 | Native clang (post-build, ARM Mac) | `/Users/ravn/z80/llvm-z80/build-macos/bin/clang` |
 | Native llc | `/Users/ravn/z80/llvm-z80/build-macos/bin/llc` |
 | Native opt | `/Users/ravn/z80/llvm-z80/build-macos/bin/opt` |
@@ -99,14 +101,17 @@ no longer needed for runtime builds.)  cmake glob `file(GLOB RT_SOURCES
 *.asm)` in `llvm/lib/Target/Z80/CMakeLists.txt` auto-picks new runtime `.asm`
 files after a `cmake build-macos` reconfigure.
 
+**ccache** is wired into `build-macos` via `CMAKE_C/CXX_COMPILER_LAUNCHER` (set by Z80.cmake
+`find_program(CCACHE_PROGRAM ccache)`). Binary at `/Users/ravn/z80/ccache/install/bin/ccache`
+(built from `z80/ccache` submodule 2026-09-25). Ensure it is on PATH before cmake configure:
+`export PATH="/Users/ravn/z80/ccache/install/bin:$PATH"`.
+
 **Build size (for progress estimation, 2026-05-26):** a from-scratch `ninja clang llc`
 is **~2897 ninja edges / ~2992 object files** (full Release build of clang+lld+llc).
 So `[N/2897]` in ninja output tells you how far along.  Incremental relink after a
 single backend `.cpp` change is ~2 min; from-scratch is much longer (the long tail is
 LINKING the big static libs + executables, during which the .o count plateaus near the
-top — don't mistake a stalled .o count for a hung build, check `pgrep ninja`).  sccache
-(`/Users/ravn/.cargo/bin/sccache`) is wired in and gives heavy cache hits on the compile
-phase.
+top — don't mistake a stalled .o count for a hung build, check `pgrep ninja`).
 
 ### Assertions build (for miscompile hunting — debug-only / stats / stricter verifier)
 
@@ -120,9 +125,7 @@ NINJA=/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja
 cd /Users/ravn/z80/llvm-z80
 $CM -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build-macos-asserts \
   -DCMAKE_MAKE_PROGRAM=$NINJA -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_ENABLE_DUMP=ON \
-  -DCMAKE_C_COMPILER_LAUNCHER=/Users/ravn/.cargo/bin/sccache \
-  -DCMAKE_CXX_COMPILER_LAUNCHER=/Users/ravn/.cargo/bin/sccache
+  -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_ENABLE_DUMP=ON
 $NINJA -C build-macos-asserts clang llc
 ```
 
