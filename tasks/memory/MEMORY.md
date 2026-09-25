@@ -1,12 +1,15 @@
 <!-- CANONICAL: tasks/memory/MEMORY.md. Read at session start (CLAUDE.md §Memory).
      Separate files: MEMORY_LAYOUT.md (§3), MEMORY_CODEGEN.md (§5), MEMORY_PARKED.md (RC759/one-offs).
      Hard limit: ~180 lines. Every entry ≤130 chars. Never write to ~/.claude/. -->
+<!-- **HARD** = rule with documented damage or session-ending failure. Other rules: important but lower blast radius. -->
 
-## 0. ABSOLUTE BAN — read before EVERY find/ls/grep/glob/mdfind
+## 0. ABSOLUTE BAN — check before EVERY find/ls/grep/gh/git-push
 
 - **[NEVER traverse outside workspace root](feedback_no_home_search.md) — ABSOLUTE. Root: `/Users/ravn/z80/` (mac) `/home/ravn/z80/` (sonnyboy). No find/ls/mdfind outside.**
+- **[Temp files in scratch/tmp](feedback_temp_files_in_scratch.md) — HARD: all temp files in scratch/tmp/, NEVER /tmp/ (prompts user).**
+- **[NEVER post PR comments or create PRs on upstream repos without per-turn go-ahead](feedback_no_pull_requests.md) — SESSION-ENDING: no gh api .../comments POST, no gh pr create, no push to upstream PR branch without explicit go-ahead THIS turn.**
 
-## 1. Always-on (every response)
+## 1. Always-on (every response — genuinely frequent triggers only)
 
 - **[Check memory BEFORE coding](feedback_check_memory_before_coding.md) — HARD: scan MEMORY.md, READ linked files, NAME rules in first response, THEN code**
 - **[MEMORY.md size check](feedback_memory_size_check.md) — HARD: if read shows "Truncated … of N total" with N>210, flag to user immediately**
@@ -14,55 +17,42 @@
 - **[Rebuild ALL Z80 tools after backend edit](feedback_rebuild_all_z80_tools.md) — HARD: `ninja -C build-macos clang llc lld` after any Z80/ edit**
 - **[No-op control measurement](feedback_no_op_control_measurement.md) — HARD: baseline/no-op-control/feature-ON three cells; no-op must match baseline**
 - **[Token-efficiency](feedback_token_efficiency.md) — HARD: no raw logs in context; long builds in background; handoff file at boundaries**
-- **[Style](feedback_style.md) — tænk højt, ingen undskyldninger eller komplimenter, ingen aforismer, record prompts**
-- [Suggest model switch](feedback_suggest_model_switch.md) — flag Opus/Sonnet fit before and mid-task
-- **[Fix as close to the source as possible](reference_quad_init_backend_split.md) — HARD: fix in earliest/owning layer; never downstream band-aid**
-- **[Session-break phrasing](feedback_session_break_phrasing.md) — HARD: say exactly "This is a good place to start a new session."**
 - **[Show thinking — TIERED](feedback_show_thinking.md) — HARD: full narration at decisions/forks/surprises; one-liners in mechanical loops**
-- **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: instrument + bisect 30 min before declaring deferred**
-- **[Minimal repro BEFORE source dive](feedback_minimal_repro_before_source_dive.md) — HARD: 30s repro first; no "suggested fix" in filed issues without repro proof**
-- **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: after 2-3 fixes of one class, find the systemic cause unprompted**
-- **[Audit the oracle](feedback_audit_oracle_not_just_fix.md) — HARD: bug found by luck -> build the detector that would have caught it**
-- **[Verify process state by full enumeration](feedback_verify_process_state_full_enumeration.md) — HARD: never claim "clean" from ps|grep; enumerate fully**
-- [No Unicode arrows](feedback_no_unicode_arrows.md) — ASCII `->` not `→`
-- **[NEVER unquoted === in shell](feedback_no_double_equals.md) — HARD: zsh silently truncates; use `---` as separator**
 - **[State certainty](feedback_state_certainty.md) — HARD: fact only if verified this session; surface ALL doubt**
-- [Ask about design decisions](feedback_ask_about_design_decisions.md) — at non-obvious forks, lay options out
-- **[Replicate user's PR text verbatim](feedback_replicate_user_pr_text_verbatim.md) — HARD: copy revised body 1:1 when opening upstream twin**
-- **[Verify machine-specific facts before concluding](feedback_verify_machine_specific_before_concluding.md) — HARD: read OWN authoritative memory map FIRST**
-- **[Probe must not consume the resource](feedback_probe_must_not_consume_resource.md) — HARD: health-check that grabs single-use connection corrupts what it verifies**
+- [Style](feedback_style.md) — tænk højt, ingen undskyldninger eller komplimenter, ingen aforismer, record prompts
+- [Suggest model switch](feedback_suggest_model_switch.md) — flag Opus/Sonnet fit before and mid-task
 
 ## 1b. Multi-agent
 
 - **[Mistral Vibe agent](agent_mistralvibe_introduction.md) — capability profile + integration with Claude Code and Copilot**
 - **[Mistral Vibe project understanding](agent_mistralvibe_project_understanding.md) — technical baseline, status matrix, known issues, roadmap**
-- [RC750 Partner MAME boot](project_rc750_partner_boot_bringup.md) — ROD398/399 interleave; readable text DONE; 82730 mailbox DONE; NEXT: WD1797 floppy @0x200
-- [MAME loose-branch inventory](reference_mame_loose_branches.md) — rc759+rc750 merged; only unmerged = RC702 upstreaming line
-- [rc7xx MAME boot disks](reference_rc7xx_mame_boot_disks.md) — rc702=SW1711-I8.imd; rc750=SW1500_2.0.imd; rc759=sw1400_r31a_d1.img
 
 ## 2. Before any commit / PR / issue
 
-- **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no gh pr create unless asked this turn**
+- **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no gh pr create unless asked this turn (see §0 for comment ban)**
+- **[Upstream PRs always draft](feedback_upstream_prs_always_draft.md) — HARD: PRs against upstream repos must always be draft (`--draft`)**
 - **[Explain before filing](feedback_explain_before_filing.md) — HARD: root cause in chat + explicit per-filing go-ahead; check for duplicates first**
 - **[Self-caused bug? reflect](feedback_self_caused_bug_reflect_on_instructions.md) — HARD: if Co-Authored-By: anybody, identify which rule would have prevented it**
 - **[File bugs, not fixes](feedback_file_bugs_not_fixes.md) — HARD: upstream filings are BUG REPORTS only; maintainer decides how to fix**
 - **[Thorough tests for upstream bugs](feedback_thorough_tests_for_upstream_bugs.md) — HARD: matrix-grade (lit+runtime, negatives+positives+controls)**
+- **[Include C tests for regressions](feedback_include_c_code_in_tests.md) — HARD: PR tests must have C in comments + executable .c test in test-runner**
+- **[Run tests locally before pushing PR](feedback_run_tests_locally_before_pushing_pr.md) — HARD: never push to PR without running tests locally**
+- **[Monitor CI checks](feedback_monitor_ci_checks.md) — HARD: hold øje med CI-checks efter push; de indikerer reelle problemer**
 - **[Cross-machine workflow](feedback_cross_machine_workflow.md) — HARD: commit-push at end of every working segment; pull-with-submodules at start**
 - **[ravn/llvm-z80 Actions OFF](feedback_ravn_llvm_z80_ci_disabled.md) — HARD: no CI on ravn/llvm-z80; local oracle is the merge gate**
 - **[No commit on lit+size alone](feedback_no_commit_first_version.md) — HARD: value oracle (test-runner + MAME) required before commit**
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: search MEMORY.md before any fix; commit message includes Rules-checked:**
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep for *_REFERENCE.md before re-deriving encodings**
+- **[Replicate user's PR text verbatim](feedback_replicate_user_pr_text_verbatim.md) — HARD: copy revised body 1:1 when opening upstream twin**
 - [No UNSOLICITED Upstream Issues](feedback_no_upstream_issues.md) — default: file in ravn/* forks; curated submissions only on user direction
 - **[No external issues ever](feedback_no_external_issues.md) — HARD: external repos require explicit per-issue go-ahead**
-- [Upstream tracking issues](project_upstream_tracking_issues.md) — ravn/z88dk #64-68 + ravn/llvm-z80 #291-295 oprettet 2026-09-06
-- **[PR #40 fallout](project_pr40_fallout_2026_09_10.md) — R1/R2/R4+inline-asm LØST; R5-drift = ingen regressioner (kun stale tests). ÅBEN blokade: #316 static-frame inert → +57% bloat = rod under #314 (rcbios link-overflow + autoload over 2 KB). Analyse: llvm-z80/tasks/analysis-static-frame-regression-2026-09-11.md**
 - **[Upstream routing](feedback_upstream_routing_two_targets.md) — HARD: generic-LLVM bugs -> llvm/llvm-project; Z80-specific -> llvm-z80/llvm-z80 only**
 - **[MAME upstream routing](feedback_mame_upstream_routing.md) — HARD: never file in MAME without explicit per-issue permission**
 - **[No upstream sdcccall discrepancies](feedback_no_upstream_sdcccall_discrepancies.md) — HARD: ABI mismatches are known build-config issues, NOT upstream-fileable**
 - [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — with repro + test case
 - [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test for every clang Z80 codegen bug
 - [Attribution line on filed issues](feedback_issue_attribution_line.md) — append `--- / _Filed by GitHub Copilot on behalf of @ravn._`
-- **[Never mention zlfn in ravn's repos](feedback_never_mention_zlfn.md) — HARD: never write "zlfn"/@zlfn in any of ravn's repos; use "the fork owner"**
+- **[Never mention zlfn anywhere](feedback_never_mention_zlfn.md) — HARD: never write "zlfn"/@zlfn in repos OR chat; always "the fork owner"**
 - [Comment on issue when fix committed](feedback_issue_comment_on_fix.md) — AUTO: post comment with hash + what changed + verification
 - [Test before fix](feedback_test_before_fix.md) — failing test before implementing
 - [Plan thoroughly first](feedback_plan_thoroughly_first.md) — explicit step-by-step plan + confirm before non-trivial work
@@ -73,28 +63,35 @@
 
 ## 4. Before any build / compile / link flag change
 
+- **[ZX0 PROMs: optimize compressed, not raw](feedback_zx0_optimize_compressed_not_raw.md) — HARD: autoload metric is compressed B; raw codegen wins can grow the PROM (add a,a chains are ZX0-free)**
 - **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD: non-reentrant, SILENTLY miscompiles recursion**
-- **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — static-frame regression: prefer build-side (whole-program LTO+internalize) or upstream-submitted fix; NOT reinstating our old AutoStaticFrame as authority**
+- **[-ffreestanding unlocks Z80 static-frame promotion](reference_z80_ffreestanding_closed_world.md) — HARD: standard C flag; sets "Freestanding" module flag Z80NonReentrant reads; +~35% speed on div-heavy code**
+- **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — prefer build-side (whole-program LTO+internalize) or upstream fix; NOT reinstating old AutoStaticFrame**
 - **[Short and concise](feedback_short_and_concise.md) — HARD: brief responses/write-ups/filings; deep detail goes in project docs, not the reply**
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
 - **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel ifeq COMPILER recipes must emit the SAME artifact set**
-- **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use -Cg-O2; verify const data in SHELL; build against classic not newlib**
+- **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use -Cg-O2; verify const data in SHELL; classic clib only (newlib abandoned)**
 - **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32 flag; auto-links fmath bridge + -mllvm -z80-float-sdcccall0**
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations; native llc/clang in llvm-z80/build-macos/bin
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
+- **[Parallel compiler builds](feedback_parallel_compiler_builds.md) — HARD: git worktree + rsync --link-dest; hardlinks sparer ~2 GB; build-macos = hoved, navngiv øvrige build-<name>**
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
 - **[Docker shim batch](feedback_docker_shim_batch.md) — HARD: batch multi-step Docker calls into ONE docker run sh -c "..."**
 - **[zmac local labels are global](feedback_zmac_local_label_scope.md) — HARD: dotted locals collide across subroutines; prefix with initials**
 - **[Verify CMake fixes with compile_commands](feedback_verify_cmake_fixes.md) — HARD: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON + confirm actual -I flags**
+- **[Self-compact during long builds](feedback_self_compact_during_long_builds.md) — kør /compact selv mens ninja/docker/MAME kører i baggrund**
 
 ## 5. llvm-z80 compiler / codegen changes
 
 **-> Read [MEMORY_CODEGEN.md](MEMORY_CODEGEN.md) before any compiler/codegen/ABI change**
 
+- **[Priority: miscompiles first for upstream](project_priority_miscompiles_for_upstream.md) — HARD: rank miscompiles above density/missed-opts; density defers until correctness gate clears**
+- **[Z80 interrupt attr = bare RETI by design](reference_z80_interrupt_attr_bare_reti.md) — programmer controls EI via `__builtin_z80_ei()`; do NOT file "no EI" as compiler bug (see #317 closed 2026-09-17)**
+- **[Fix as close to the source as possible](reference_quad_init_backend_split.md) — HARD: fix in earliest/owning layer; never downstream band-aid**
+
 ## 6. Before any MAME / boot / test run
 
-- **[rc759 CCP/M boots ~290s](reference_rc759_mame_c_verification.md) — HARD: -seconds_to_run 400; read LATE snapshot; early test banner = mid-boot not crash**
 - **[Verify banner timestamp before trust](feedback_check_banner_timestamp.md) — HARD: banner timestamp vs BUILD_INFO_STR before any diagnosis**
 - **[Polypascal stage-1/2 flake = MP/M daemon state](feedback_polypascal_stage1_flake.md) — first try make _kill-mpm; sleep 5-8; retry**
 - **[cpnos PIO netboot: NO -autoboot_script](feedback_cpnos_pio_netboot_no_autoboot.md) — HARD: any autoboot breaks wall-clock-coupled PIO netboot**
@@ -116,6 +113,7 @@
 - **[cpmtools at ~/.local/bin](reference_rc759_mame_c_verification.md) — invoke by full path; reads diskdefs from CURRENT DIR (DISKDEFS env IGNORED)**
 - **[No stale dump files](feedback_no_stale_dump_files.md) — HARD: rm -f artifact BEFORE producer, every iteration**
 - **[No DOTALL backtracking on source](feedback_no_dotall_backtracking.md) — HARD: no re.DOTALL + non-greedy over multi-line source; kill scans >10s**
+- **[NEVER unquoted === in shell](feedback_no_double_equals.md) — HARD: zsh silently truncates; use `---` as separator**
 
 ## 8. Test / debug discipline
 
@@ -132,11 +130,20 @@
 - **[Extract rules from time-sinks](feedback_extract_rules_from_time_sinks.md) — HARD: after long debug sessions, propose new memory rules proactively**
 - **[Multi-pass marker interactions](feedback_multi_pass_marker_interactions.md) — HARD: -print-after-all when optimization "should fire" but doesn't**
 - **[ticks canonical exit = ED FE trap](reference_ticks_canonical_exit_trap.md) — HARD: ED FE syscall (A=CMD_EXIT, L=code); -output bypassed**
+- **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: instrument + bisect 30 min before declaring deferred**
+- **[Minimal repro BEFORE source dive](feedback_minimal_repro_before_source_dive.md) — HARD: 30s repro first; no "suggested fix" in filed issues without repro proof**
+- **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: after 2-3 fixes of one class, find the systemic cause unprompted**
+- **[Audit the oracle](feedback_audit_oracle_not_just_fix.md) — HARD: bug found by luck -> build the detector that would have caught it**
+- **[Verify process state by full enumeration](feedback_verify_process_state_full_enumeration.md) — HARD: never claim "clean" from ps|grep; enumerate fully**
+- **[Probe must not consume the resource](feedback_probe_must_not_consume_resource.md) — HARD: health-check that grabs single-use connection corrupts what it verifies**
 
 ## 9. Code & source style
 
 - **[Clarity in C code](feedback_clarity_in_c_code.md) — HARD: readable call shapes; compiler glue confined to hal.h/intrinsic.h**
 - [Size over speed for cold paths](feedback_size_over_speed_for_cold_paths.md) — bytes are permanent, T-states aren't
+- [Session-break phrasing](feedback_session_break_phrasing.md) — say exactly "This is a good place to start a new session."
+- [No Unicode arrows](feedback_no_unicode_arrows.md) — ASCII `->` not `→`
+- [Ask about design decisions](feedback_ask_about_design_decisions.md) — at non-obvious forks, lay options out
 
 ## 10. RC702 hardware facts
 
@@ -144,23 +151,23 @@
 - **[2 KB PROM hard limit](project_rc702_2kb_prom_hard_limit.md) — HARD: no A11 bridge; PROM0+PROM1 capped at 2048 B each**
 - **[User's RC702 HAS SEM702](project_user_rc702_has_sem702.md) — define_sextants() essential (~79 ms); don't gate/remove it**
 - [rcbios CP/NET PIO polypascal PASS](project_rcbios_cpnet_pio_race_parked.md) — FIXED: z80pio 2eb88cea + snios RECVBY_PIO timeout; #13 upstream candidate
+- **[Verify machine-specific facts before concluding](feedback_verify_machine_specific_before_concluding.md) — HARD: read OWN authoritative memory map FIRST**
 
 ## 11. cpnos / cpnet / DRI facts
 
 - **[Long-term goal: finish rcbios + autoload + CP/NET + cpnos](project_finishing_firmware_components.md) — bias work toward advancing one of the four**
-- **[cpnos PARKED — awaiting physical parallel cable](project_cpnos_parked_awaiting_parallel_cable.md) — surface before acting on cpnos/PIO/polypascal tasks**
-- **[MP/M disks: local-only, library frozen](project_mpm_disks_local_only.md) — make mpm-disks builds into disks/local/; NEVER write disks/library/**
-- **[SDCC slave stack-room ceiling](project_sdcc_slave_stack_room.md) — cpnos SDCC PROM1 must end <=0xF60E or SP=0xF680 overruns resident SNIOS**
 - **[Never push/merge upstream remotes](feedback_never_push_or_merge_upstream_remotes.md) — HARD: cpnet-z80 origin is durgadas311/*; keep local commits FLAT**
 - **[CP/NET 1.2 only](feedback_cpnet_12_only.md) — HARD: BDOS-105 NOT forwardable under 1.2; time-from-master via BDOS-66/67+FN-105**
 - **[rcbios jump table is ABI](feedback_rcbios_jump_table_is_abi.md) — HARD: BIOS jump table at 0xDA00 is frozen ABI; new paths ADDITIVE only**
-- **[rcbios -flto: section-attrs required](feedback_rcbios_no_lto_boot_placement.md) — was ON+working 2026-07-06 (section attrs+KEEP+ASSERTs); RE-DISABLED 2026-09-10 due to codegen crashes (ravn/llvm-z80#312: Z80DanglingDebugCleanup on -g + addrspace(2) cannot-select), NOT boot-placement**
-- [MP/M II bakes RSPs at GENSYS time](reference_mpm_sys_baked_via_gensys.md) — .RSP edits inert until GENSYS regens MPM.SYS + re-installs on A:
-- [ravn/mame#6 — PIO-B slot regression](project_ravn_mame_6.md) — gates Option P; fix needed at chip/slot layer
+- **[rcbios -flto: section-attrs required](feedback_rcbios_no_lto_boot_placement.md) — RE-DISABLED 2026-09-10: codegen crashes (ravn/llvm-z80#312: Z80DanglingDebugCleanup on -g + addrspace(2))**
 
 ## 12. Reference / standing reminders
 
 - **[Canonical test aggregator](reference_run_all_tests.md) — tasks/tools/run-all-tests.sh; fast=A+C+D; run at merge/checkpoint**
+- **[llvmz80 + z88dk test scripts](reference_llvmz80_test_scripts.md) — `./run-llvmz80-tests.sh test` (816/841); `full` adds torture+utils; rel2elf must be built**
+- **[sdcc _memcpy stub fix](feedback_sdcc_memcpy_stub_fix.md) — z88dk z0.lib conflicts w/ z80_rt.lib; fixed via ___z80_memcpy_builtin + ___memcpy stubs**
+- **[sdldz80 ar archives](feedback_sdldz80_ar_archives.md) — sdldz80 -k/-l CANNOT resolve ar archives; pass z80_rt.a as direct file arg (fixes #359)**
+- **[upstream-all-prs status](project_upstream_all_prs_status_2026-09-22.md) — correctness gate CLEARED; pi/CSE fix in main not yet merged; PR #360 open**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — tasks/z88dk-llvmz80-evaluation-2026-07-21.md; update after bridge/benchmark/float change**
 - **[64-bit .quad split in backend](reference_quad_init_backend_split.md) — ravn/z88dk#27 FIXED: Data64bitsDirective=nullptr -> two .long; textual -S only**
 - **[Standing goal: z88dk full llvmz80 CP/M support](project_z88dk_llvmz80_full_support_goal.md) — prioritize closing evaluation-doc gaps + modern-C support**
@@ -168,9 +175,7 @@
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, /home/ravn/z80, headless; upstream LLVM at ~/llvm-upstream/
 - [Memory lives in tasks/memory/](feedback_no_claude_memory.md) — canonical here; NEVER ~/.claude/; also MEMORY_LAYOUT.md + MEMORY_CODEGEN.md + MEMORY_PARKED.md
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3**
-- [z88dk#3022 console-lost-after-fopen](project_z88dk_3022_console_after_fopen_bug.md) — newlib fopen corrupts stdout; maintainer-confirmed; PR #3031 open
-- [z88dk#3011 FP-under-interrupt EXX collision](reference_z88dk_3011_fp_interrupt_exx.md) — math48 uses EXX; shadow-set ISR -> corrupt; DI/EI around FP call
-- [z88dk runtime verify: ntvcm not ticks](reference_z88dk_runtime_verify_ntvcm.md) — +cpm .COM under ntvcm/ntvcm; z88dk-ticks does NOT emulate +test $ED$FE trap
-- [z88dk RC700 subtype build](reference_z88dk_rc700_subtype_build.md) — make -C libsrc TARGETS=rc700; -Cz+cpmdisk -f rc700-8dd; examples/rc700/
+
+- [llvmz80 classic printf("%f") broken](finding_llvmz80_classic_printf_f_broken_2026-09-25.md) — math32 double arithmetic correct, %f prints 0.000000 under classic clib (not investigated further)
 
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->

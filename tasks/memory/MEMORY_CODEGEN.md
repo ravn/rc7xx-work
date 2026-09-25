@@ -18,6 +18,9 @@ Read this file before ANY llvm-z80 compiler/codegen/ABI change.
 - **[Verdict AFTER real pass output](feedback_verdict_after_real_pass_output.md) — HARD: show IR/asm the pass actually produces + contamination BEFORE stating verdict**
 - **[AVR density oracle](feedback_avr_density_oracle.md) — HARD: before blaming generic pass, compile for AVR; AVR-cheap+Z80-expensive = our gap**
 - **[double is float32 on z80](project_double_is_float32_retire_softfloat.md) — since #277: double==float==32-bit binary32; sf libcalls; math32 runtime; softfloat RETIRED**
+- [Z80 optimization patterns](reference_z80_optimization_patterns.md) — DJNZ countdowns, pointer-stepping, memcpy/restrict LDIR, -Rpass remarks
+- [Missed codegen patterns report](report_missed_codegen_patterns.md) — Loop reversal for DJNZ, copy loop aliasing vs LDIR, variable shifts
+- [Autoload missed remarks report](report_actual_missed_codegen_autoload.md) — Actual observed regalloc spills and LICM barriers in rom.c
 - [Z80AutoStaticStack cross-TU soundness](autostaticstack_cross_tu_soundness_2026-08-11.md) — auto-inject gated hasLocalLinkage()||!ReachesExternal; test_09 fixed
 
 ## Peepholes
@@ -42,6 +45,8 @@ Read this file before ANY llvm-z80 compiler/codegen/ABI change.
 - [Fork-local pass naming](feedback_fork_local_pass_naming.md) — Z80* prefix is locative; target-agnostic body -> name with operation
 - [#212-class HL borrow-save audit](project_212_class_borrow_save_pattern.md) — PUSH_HL without IMPLICIT_DEF trips verifier; 5+ latent sites #239
 - **[Z80Pseudo undersize -> far-jr under-relaxation](issue267_pseudo_undersize_class.md) — #266+#267 fixed; LDIR/IDX8/MUL8/DIV8/SAT8 still latent**
+- **[#331 spill->PUSH/POP unsound (multi-reload)](issue331_pushpop_unsound_multireload.md) — HARD: conversion needs single-reader proof; naive draft hangs recursion; PARKED**
+- **[-Oz dynamic-frame stack-arg wrong offset](oz_dynamic_frame_stackarg_offset.md) — pre-existing; test_33_Oz detector; production +static-frame SAFE; NOT a regression**
 - **[M6: narrow i16 EQ/NE of byte sext](reference_m6_sext_icmp_narrowing.md) — ravn/llvm-z80#259; IR-level narrowing chosen; no upstream report until verified**
 - [Sieve-gap passes](reference_sieve_gap_passes.md) — Z80SinkColdLoopIV(-2.3%) + Z80PinLoopPointer(net-regresses); trackers #256/#250/#251
 

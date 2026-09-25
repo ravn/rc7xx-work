@@ -15,3 +15,4 @@ metadata:
   - **If `===` is required** (e.g. echoing a literal banner): quote it (`echo "==="`) or escape (`echo \=\=\=`).
   - Applies to all Bash tool uses, heredocs, and any script content fed into the user's shell.
   - **Self-check before sending any Bash command**: scan for any unquoted `===` token, including inside multi-command chains joined by `&&` / `;` / `|`.  If found, replace with `---` or quote.
+  - **If `===` slips through to the shell**: treat it as a symptom that rules are being forgotten — stop, re-read MEMORY.md §0+§1, and investigate what else may have been overlooked before continuing.

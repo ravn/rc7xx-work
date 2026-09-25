@@ -24,7 +24,7 @@ CP/M BIOS, CP/NOS) booted in MAME.
   `llvm-z80/build-macos/bin`; `cmake`/`ninja` come from the CLion app bundle.
 - **The compiler is experimental and unfinished.** On any suspected miscompile,
   inspect the generated Z80 asm *before* blaming the source, runtime, or hardware.
-- **Production config is `+static-stack`** (BSS locals, non-reentrant). Test changes
+- **Production config is `+static-frame`** (BSS locals, non-reentrant via `-ffreestanding`). Test changes
   in that config, not just the default.
 - **Issues go in `ravn/*` forks only** (llvm-z80, mame, z88dk, …), never upstream
   LLVM. Every compiler bug found gets an XFAIL lit test.
@@ -86,8 +86,7 @@ build/bin/llvm-lit llvm/test/CodeGen/Z80/
 # Integration (needs z88dk-ticks on PATH)
 cd z80-utils/test-runner
 cargo run                    # default O1/O2/Os
-cargo run -- clang           # clang C suite
-cargo run -- clang -static-stack   # production config (exposes the #192 bug class)
+cargo run -- clang           # clang C suite (default runs with -ffreestanding +static-frame)
 cargo run -- bench           # clang-vs-SDCC size benchmark
 
 # PROM + MAME boot

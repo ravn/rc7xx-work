@@ -17,8 +17,15 @@ create pull requests for each issue"). Bug *fixes* are still NOT PR'd — they'r
 in issues as proposals. This exception is ONLY for user-directed submissions; the default
 below still holds for everything unsolicited.
 
+**Extension (2026-09-22): NEVER post comments on upstream PRs or issues.**
+Never use `gh api .../comments --method POST` or any equivalent to comment on
+upstream repos (llvm-z80/llvm-z80, llvm/llvm-project, etc.) without explicit
+per-turn go-ahead. Always draft the suggested comment in chat and let the user
+decide whether and how to post it.
+
 **How to apply:**
 - `gh pr create` is forbidden unless the user's current-turn message literally asks for a PR on this specific change.
+- `gh api .../comments --method POST` on any upstream repo requires explicit go-ahead.
 - `git push` to any branch whose name hints at PR intent (e.g. `feature/...`, `fix/...`) requires explicit per-turn authorization even if the user has granted general push access earlier.
 - Filing GitHub **issues** (`gh issue create`) is different and remains allowed in ravn/* fork repos when the user has asked for tasks/issues to be created — the no-PR rule does NOT extend to issues.
 - Committing locally and pushing to an already-tracked branch is OK when the user asks for "commit" — that's not a PR.

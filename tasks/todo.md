@@ -1,5 +1,83 @@
 # Z80 Code Density Optimization Todo
 
+## Plan: Systematisk genindførelse af tabte optimeringer (Z80 Code Density) (2026-09-14)
+
+**Mål:** Lukke det resterende overskud på **143 bytes** i RC702 autoload-firmwaren (`INIT_SEM702=1` med skærmfont) så den fysiske 2048-byte grænse på 2716 EPROM (IC66) overholdes, ved systematisk at genindføre de optimeringer fra `ravn/llvm-z80`, der faldt ud ved upstream PR #40 / PR #296 merget (`cbaa9835043a`).
+
+### Nuværende status & opnåede gevinster:
+- **Baseline før genindførelse:** Rå `.text` = 3879 B; komprimeret PROM = 2366 B (+318 B over 2048 B).
+- **1. Direct Global Addressing i ISel (`37f696f38ee5`):** `LD A,(nn)` / `LD (nn),A` direkte for globale symboler. Sparer 3 B pr. adgang. Resultat: `.text` -194 B, PROM -125 B.
+- **2. Comparison Narrowing i ISel (`ce20d2bdf6b2`):** Snævring af 16-bit zext/sext sammenligninger til 8-bit `cp`. `_check_sysfile` alene faldt fra 98 B til 45 B. Resultat: PROM -47 B.
+- **3. Peephole #116/#117 (`f93cacb36c02`):** i16 EQ/NE byte-XOR -> `AND A; SBC HL,rr` (3 B vs 6 B). Un-XFAIL'ede `issue-117-i16-eq-ne-neither-hl.mir`.
+- **4. In-Memory INC/DEC (`354d14db1273`):** `LD A,(addr); INC/DEC A; LD (addr),A` -> `LD HL,addr; INC/DEC (HL)` (4 B vs 7 B). Resultat: `.text` -3 B, PROM -3 B.
+- **5. Consecutive Stores #85 (`74b2f251529f`):** Folds >= 3 på hinanden følgende stores til en `LD HL,addr; LD (HL),n; INC HL...` pointer-kæde (sparer 4-6+ B). Testet i `store-chain-walk.ll`.
+- **6. CP (HL) / SUB (HL) Load Fusion (`b86e19774a85`):** Fold single-use `G_LOAD` ind i `CP (HL)` og `SUB (HL)` i `emitFusedCompareAndBranch` og `G_ICMP`. Inkluderer `isHLPreferred` så pointere med HL-affinitet bevares i HL, hvilket frigør `B` til hardware `DJNZ` i `compare_6bytes` og `check_sysfile`. Resultat: `.text` -11 B (3425 -> 3414 B), payload 1950 B, PROM total 2069 B (21 B over 2048 B loftet).
+- **Status nu (PARKERET 2026-09-16):** Rå `.text` = **3414 B**; komprimeret PROM = **2069 B** (21 B over 2048 B loftet). Samlet genvundet: **-465 B rå kode, -297 B komprimeret**. Lit: 249 PASS, 61 XFAIL, 0 FAIL. MAME boot & QR oracle: PASS.
+- **Tilknyttede issues:**
+  - `rc700-gensmedet#130`: `autoload-in-c: clang PROM build overflows 2048-byte EPROM ceiling by 21 bytes (2069 / 2048 B)`
+  - `llvm-z80#331`: `Dynamic SP stack frame allocated for callee-saved scratch instead of direct PUSH/POP in non-static-frame functions` (Class 2 regression, ~19 B i `_fdc_read_result`)
+  - `llvm-z80#332`: `-Oz miscompile: dynamic-SP-frame stack-argument read at wrong offset` (afsløret af `test_33_string_ops.c`)
+  - `llvm-z80#333`: `G_ZEXT(G_LOAD i1) in 8-bit comparison blocks CP (HL) memory fold` (afsløret i `rom.c` `_floppy_legacy_boot`)
+
+### Prioriteret eksekveringsplan for resterende optimeringer:
+
+1. **Peephole #18 / #206 (Konstant-genbrug på tværs af alle GR8-registre)**
+   - *Princip:* Når et 8-bit register (A, B, C, D, E, H, L) i en basisblok allerede holder en konstant `n`, erstattes en senere `LD r, n` (2 B, 7 T) med `LD r, r'` (1 B, 4 T).
+   - *Test:* `llvm/test/CodeGen/Z80/issue-206-const-reuse-non-a.mir` er p.t. XFAIL. Fjern XFAIL, verificér at testen passerer efter genindførelse.
+   - *Forventet gevinst:* 1 byte pr. forekomst.
+
+2. **In-Memory Bit Set/Reset (`SET b,(HL)` / `RES b,(HL)`) (Issue #147)**
+   - *Princip:* Mønstre `mem |= (1<<b)` eller `mem &= ~(1<<b)` foldes til `LD HL,addr; SET/RES b,(HL)` frem for `LD A,(addr); OR/AND; LD (addr),A` (sparer 3 bytes).
+   - *Test:* `llvm/test/CodeGen/Z80/issue-147-set-res-mem.ll`.
+
+3. **DJNZ-løkke transformationer (#185 / #221 / #92)**
+   - *Princip:* Udnyt Z80's hardware-løkkeinstruktion `DJNZ` (2 B, 13/8 T) i stedet for `DEC B; JR NZ` (3 B, 16/11 T) eller `DEC A; LD B,A; JR NZ`.
+   - *Inderste løkke prioritering (afgørende):*
+     - Da Z80 kun har ét `B`-register, er det altafgørende, at den *inderste* løkke vinder `B` (højeste trip count / mest eksekveringstid).
+     - Implementeres via `getRegAllocationHints`:
+       - **Self-back-edge (inderste løkke):** Positivt hint om `B`.
+       - **Latch til anden blok (ydre løkke):** Anti-hint for `B` (foretræk `D, E, H, L, C`), så `B` aldrig stjæles af den ydre løkke.
+   - *Peephole:* `DEC B; JR NZ -> DJNZ` og `DEC A; LD B,A; JR NZ -> DJNZ` i `Z80PreEmitPeephole.cpp` (med liveness-guard på `FLAGS`).
+   - *Test:* `llvm/test/CodeGen/Z80/djnz.ll`, `issue-92-nested-djnz.ll` og `issue-185-djnz-b-clobber.ll`.
+
+4. **BSS-spill til PUSH/POP konvertering (Issue #74 / BSS-spill suite)**
+   - *Princip:* I `+static-frame`/`+static-stack` gemmes registre i midlertidige statiske BSS-adresser: `LD (sym), HL; ...; LD HL, (sym)` (2 * 3 = 6 B). Når stakken er tilgængelig og uforstyrret, kan dette erstattes af `PUSH HL; ...; POP HL` (1 + 1 = 2 B), hvilket sparer 4 B pr. spill.
+   - *Test:* `issue-74-bss-spill-no-call.ll` og tilhørende MIR-tests.
+
+5. **Tail-call optimering (`CALL nn; RET` -> `JP nn`)**
+   - *Princip:* Erstat `CALL nn; RET` (3 B + 1 B = 4 B) med `JP nn` (3 B). Sparer 1 B og 17 T-states.
+   - *Krav:* Skal scopes så eksisterende lit-tests med eksplicitte `call; ret` forventninger ikke fejler (f.eks. ved at aktivere det specifikt under `-Oz` eller `-min-size` eller opdatere lit-tjek hvor semantikken er identisk).
+
+---
+
+
+**Observed state.** `issue-267-jr-out-of-range-textual.ll` currently fails
+because its `CHECK-NOT: jr z,.LBB0_22` matches a short, in-range branch. The
+same current object output contains a real far `jp nc`, and
+`Z80InstrInfo::getInstSizeInBytes()` still accounts for the variable-shift
+pseudos that caused the original #267 failure. The old test's label-specific
+negative checks therefore do not prove an active range failure.
+
+1. Capture the exact `.s`, object disassembly, and strict external-assembler
+   result from the real `sf_fix` repro. Assemble through the same
+   syntax-normalizing zcc/bridge path used in production: raw current llc
+   output is not z80asm syntax on its own. Record each checked branch's byte
+   displacement, not merely its label spelling.
+2. Dump MIR immediately after `BranchRelaxation` and after every later
+   branch-producing pass. Compare the reported pseudo sizes with the final
+   expanded byte spans, including all post-relaxation expansion paths.
+3. Audit the complete set of post-relaxation expansions against
+   `getInstSizeInBytes()`, using the former drift-guard inventory as a
+   checklist. Treat a missing/incorrect size as a separate candidate only
+   when it demonstrably causes an out-of-range final branch.
+4. Reclassify `issue-267-jr-out-of-range-textual.ll` under the PR #40 test
+   drift tracker if all current textual branches are in range. Retain a
+   range-sensitive regression oracle only when it proves a real out-of-range
+   textual branch and is accepted by the external z80 assembler.
+5. If step 1-3 finds a real out-of-range textual branch, produce a separate
+   bug analysis with the responsible pass, exact MIR delta, and external
+   assembler failure before selecting any repair.
+
 ## CP/M-86 Info-ZIP ZIP divergence (2026-08-25)
 
 **PLAN for the way forward:** `infozip-cpm86-builds/PLAN_zip_deflate_mame_2026-08-25.md`
@@ -1395,3 +1473,196 @@ count and `bytes_this_entry` diverge; it does not prove CRLF conversion.
    the frozen binary, and make one owning-layer fix.
 6. Re-run CCP/M, emu2, and host `unzip`/Python byte checks. Remove diagnostic
    code and update the reference note only after all three oracles agree.
+
+---
+
+## Plan: z88dk + llvm-z80 — bryde igennem post-PR#40 (2026-09-24)
+
+**Mål (bruger 2026-09-24):** få z88dk til at virke korrekt med llvm-z80 som
+backend. Fokus lige nu: lande det store upstream-arbejde (`llvm-z80/llvm-z80`
+PR #40 "z88dk calling conventions + llvmz80-23.1.0-r1", merged 2026-09-08)
+solidt igennem hele stakken (llvm-z80 -> z88dk zcc/bridges -> RC700-firmware).
+
+### Overblik (fund fra denne session)
+
+1. **`upstream-all-prs`** (ravn/llvm-z80) er den gren brugeren mente: den er
+   bygget oven på `llvm-z80/llvm-z80`s (zlfns) EGEN historik (merge-base helt
+   tilbage til LLVM's `cvs2svn`-rod), med alle indsendte/mergede PR'er
+   (#41-48, #346, #357, #267, #359 osv.) lagt ind, som om de allerede var
+   accepteret der. Den er 39 commits foran, men 1157 bagud ift. `main` (fordi
+   `main` er den langt mere aktive ravn-arbejdsgren rebaseret på fuld LLVM
+   monorepo). Brug den til at se "hvad ville zlfns upstream se ud som hvis alt
+   blev taget ind" — ikke som base for videre arbejde.
+
+2. **PR #40-mergen (2026-09-08) var stor og gav massivt fallout**, dokumenteret
+   i `llvm-z80/tasks/plan-pr40-fallout-recovery-2026-09-10.md` (R1-R5) og
+   `analysis-autoload-over-2kb-after-pr40-2026-09-16.md` (Class 1/2
+   kodedensitet). Status pr. seneste commits (21/9):
+   - R1 (memset.pattern legalisering) — genskabt.
+   - R2 (Z80-builtins/intrinsics ulegaliserede — PRODUKTIONSKRITISK, ramte
+     rcbios' `__builtin_z80_*`) — genskabt (#42/#4 virker igen ifølge
+     CLAUDE.md "Working LLVM-Z80 features").
+   - R3 (`-z80-unreserve-iy` omdøbt) — håndteret.
+   - R4 ("Found 2 machine code errors" i64/i128/arith-i32) — root cause
+     fundet (static-frame inert), fix landet, se seneste workspace-commit
+     `d333fdc`.
+   - R5 (26 lit-CHECK-drift) — løbende oprydning i commits frem til 21/9
+     (XFAIL-triage, C-source blocks til regressionstests, MachineCSE
+     genaktiveret).
+   - Class 1 (static-frame inert, +975 B på autoload) — RECOVERED.
+   - Class 2 (regalloc spilder call-krydsende loop-værdier til SP-frame i
+     stedet for callee-saved push/pop) — delvist genskabt (Fase 2b landet,
+     Fase 2c falsificeret, #331 lukket 17/9). Autoload-PROM er derfor
+     midlertidigt sat til 4 KB cap i stedet for 2 KB (se
+     `tasks/memory/project_rc702_2kb_prom_hard_limit.md`).
+
+3. **z88dk-siden havde SIN EGEN fallout** fra samme merge: seneste 3 commits
+   på `z88dk` master er `e55cbbf4b1` "restore zcc ABI glue",
+   `0ebc2e4c12` "correct byte division bridge ABI", merged via
+   `fix/llvmz80-zcc-abi-recovery` (2026-09-19/20). Dvs. calling-convention-
+   ændringerne i llvm-z80 PR #40 brækkede zcc's bro-lag (ABI-antagelser om
+   register-placering af returværdier m.v.), og det er kun DELVIST
+   genoprettet.
+
+4. **KRITISK GAP — ingen CI-verifikation af noget af dette:**
+   - `llvm-z80` GitHub Actions (`z80-ci.yml`) har IKKE kørt på en `push` til
+     `main` siden **2026-06-06**. De nyeste `workflow_dispatch`-kørsler
+     (12/13. juli) står stadig som "queued" 1700+ timer senere — reelt i
+     stykker/aldrig eksekveret. Hverken PR #40-mergen (8/9) eller de 10+
+     dages fallout-recovery (10-21/9) er nogensinde kørt gennem CI.
+   - Lokal build (`llvm-z80/build/`) er fra **2026-06-29** — ældre end PR
+     #40-mergen. `llvm-lit` crasher direkte (`lit.cfg.py` bruger
+     `config.osx_xcrun` som CMake-cachen ikke satte) — build-config er
+     forældet ift. kildekoden. **Der findes ingen frisk, grøn build at måle
+     "164 PASS + 6 XFAIL"-påstanden i CLAUDE.md imod lige nu.**
+   - `z88dk`s `build-mingw-on-ubuntu`-CI **FEJLER** på seneste master-commit
+     (`4ed62bd`, "pass -Cg-mdouble=32 in whetstone and runtime_libm",
+     2026-09-20).
+
+### Konklusion
+
+CLAUDE.md's headline ("clang beats SDCC... cheap levers exhausted") er
+formentlig forældet allerede fra FØR PR #40. Alt arbejde siden 8/9 er
+ubekræftet af nogen automatiseret gate. "At bryde igennem" betyder konkret:
+få en frisk build, en grøn lit-suite, en grøn z88dk-CI, og en re-målt
+produktions-baseline — i den rækkefølge, fordi hvert trin er en forudsætning
+for det næste.
+
+### Handlingsplan (rækkefølge betyder noget)
+
+**Trin 0 — Reproducerbar build (blocker for alt andet)**
+- Frisk `cmake -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build-linux`
+  + `ninja -C build-linux clang llc llvm-lit` på sonnyboy (Linux — undgår
+  `osx_xcrun`-grenen helt).
+- Verificer `llvm-lit` kan parse config uden crash.
+
+**Trin 1 — llvm-z80: mål ægte lit/test-runner-baseline**
+- `build-linux/bin/llvm-lit llvm/test/CodeGen/Z80/ -j$(nproc)` — notér reelt
+  PASS/XFAIL/FAIL, sammenlign med de 164+6 og med fallout-planens
+  189/64/32-baseline.
+- `cargo run` (test-runner, O1/O2/Os) — notér FATAL-tal, sammenlign med
+  fallout-planens 68 FATAL.
+- Skriv resultatet i en ny `tasks/session-<dato>-post-pr40-ci-baseline.md`
+  (ikke gæt — mål).
+
+**Trin 2 — Genopliv CI**
+- Undersøg hvorfor `z80-ci.yml` push-trigger ikke har kørt siden 6/6:
+  workflow-fil ændret util af sync med branch-beskyttelse? Runner-kø
+  proppet? `gh workflow view z80-ci.yml` + `gh api` for trigger-historik.
+- Ryd de fastlåste "queued" `workflow_dispatch`-kørsler (annullér, de blokerer
+  intet reelt men er støj).
+- Få en grøn `push`-kørsel på `main` HEAD, eller dokumentér roden til hvorfor
+  ikke, som et separat issue.
+
+**Trin 3 — z88dk: fix build-mingw-on-ubuntu-fejlen**
+- `gh run view` på den fejlende kørsel (`35492945026`) for fejllog.
+- Sandsynlig kobling til samme ABI-/mdouble-arbejde som
+  `fix/llvmz80-zcc-abi-recovery` — tjek om det er en direkte fortsættelse
+  af samme regression eller noget nyt i `-Cg-mdouble=32`-committen.
+- `test/clang/run_all.sh` lokalt mod frisk llvm-z80-build fra Trin 0, for at
+  få et reelt pass-tal for zcc+llvmz80-stien (ikke kun mingw-buildet, som
+  bare compilerer selve z88dk-værktøjerne, ikke kører target-tests).
+
+**Trin 4 — Produktions-genmåling**
+- Rebuild rcbios, autoload-in-c, cpnos-in-c, CP/NET med frisk clang fra
+  Trin 0. Sammenlign med CLAUDE.md's opgivne tal (BIOS 5462 B, autoload
+  1643 B, cpnos 2014 B) — disse tal er højst sandsynligt forældede
+  (fra før PR #40 og Class 2-regressionen).
+- MAME boot-gate på alle fire produktionskomponenter.
+- Afgør om autoload-in-c's midlertidige 4 KB-cap kan sættes tilbage til
+  2 KB nu, eller om Class 2-residualen (+23-39 B) stadig blokerer.
+
+**Trin 5 — Opdater CLAUDE.md + memory med de reelle, friske tal**
+- Kun efter Trin 1-4 er kørt og målt — ingen gæt.
+
+### Ikke del af denne plan (bevidst udeladt)
+- Selve `merge-upstream-2026-09-05`-planen (12.046 nye upstream-commits) —
+  IKKE startet, og separat fra PR #40-arbejdet. Vurderes efter Trin 0-5 er
+  landet, ikke før.
+- Nye z88dk-ABI-huller (fopen/fread-familien m.v. fra
+  `z88dk-submission-gap-2026-07-16.md`) — den analyse er fra FØR PR #40 og
+  skal genkøres efter Trin 3, ikke stoles på as-is.
+
+### Trin 6 (tilføjet 2026-09-24, bruger-ønske) — Docker-image: z88dk + llvm-z80 samlet
+
+**Mål:** et Docker-image der ruller frisk z88dk (fuldt bygget) + frisk llvm-z80
+(clang/llc/lld) sammen, sådan at `zcc +cpm -compiler=llvmz80` virker out-of-the-box
+uden `LLVMZ80EXE`-pege-håndarbejde. Erstatter/supplerer det eksisterende
+`z88dk:2.4`-image (som kun er SDCC/klassisk sccz80-vejen).
+
+Forudsætninger (skal være grønne/målte først, jf. Trin 0-5 ovenfor):
+- Trin 0: frisk llvm-z80-build eksisterer og er verificeret.
+- Trin 3: z88dk's egen build er grøn igen (mingw-CI-fejlen + evt. flere,
+  jf. build-forsøg 2026-09-24: `testsuite`-fejl på `Issue_1466_float16.opt`
+  blokerer `make all` fordi `testsuite` er et hårdt prerequisite af `all` i
+  top-level Makefile — bygget uden om ved at target'e `$(BINS)` direkte og
+  udelade `testsuite`; #1466 float16-div/invf-codegen-diff bør registreres
+  som separat issue, ikke ignoreres stiltiende).
+
+Byggeplan (skitse, udfyldes når Trin 0/3 er grønne):
+1. Multi-stage Dockerfile: stage 1 bygger llvm-z80 (cmake Z80.cmake + ninja
+   clang/llc/lld), stage 2 bygger z88dk mod det llvm-z80-image (`LLVMZ80EXE`
+   sat til stage-1-clangen), stage 3 (runtime) kopierer kun de færdige
+   binaries+libs ind, ikke build-værktøj/kildetræer (image-størrelse).
+2. Verificer i imaget: `zcc +cpm -compiler=llvmz80 -O2 hello.c -o hello.com`
+   + kør resultatet i ntvcm/MAME fra selve CI'en (ikke kun "kompilerer uden
+   fejl").
+3. Tag/navngivning: følg samme mønster som `z88dk:2.4` (pinnet, ikke
+   `latest`) — nyt tag, fx `z88dk-llvmz80:<dato eller llvm-z80-sha>`.
+4. Placer Dockerfile/build-script i `z88dk/` (dev-fork) eller en ny
+   `docker/`-mappe i workspace-roden — afgør med bruger når vi når hertil.
+5. Dokumentér i `rc700-gensmedet/docs/` (parallelt med
+   `z88dk_docker_rebuild.md` for det eksisterende SDCC-image) + opdater
+   CLAUDE.md's "z88dk RETIRED" note til at nævne det nye llvmz80-image.
+
+**Ikke startet endnu** — kræver Trin 0/3 grønne først, ellers bager vi en
+kendt-brudt tilstand ind i imaget.
+
+### Status opdatering 2026-09-24/25 — Trin 0-1 DONE, Trin 3 delvist
+
+Fuld session-detalje: `llvm-z80/tasks/session-2026-09-24-25-z88dk-integration-baseline.md`.
+
+**Trin 0 (frisk build):** DONE. `llvm-z80/build-linux/` virker. ccache
+tilføjet til `Z80.cmake`. Ekstra worktree `llvm-z80-worktrees/upstream-main/`
+på ren `upstream/main` — build IKKE færdig ved sessionsafslutning, fortsæt her.
+Fund: `origin/main` indeholder 100% af `upstream/main` (0 bagud, 1177 foran).
+
+**Trin 1 (lit-baseline):** DONE, bedre end forventet: 278 PASS + 5 XPASS
+(forældede XFAIL, ikke fjernet endnu) + 1 XFAIL, **0 FAIL** af 284. PR#40-
+recovery er reelt landet på compiler-siden.
+
+**Trin 3 (z88dk-verifikation):** delvist. Fandt og rettede (committed +
+pushet) en case-sensitivity-bug i `z88dk/test/clang/*.sh` der gjorde suiten
+næsten ubrugelig på Linux (4/66 -> 48/66 PASS). De 15 resterende fejl er
+alle undersøgt og er **z88dk-side** (math32 fsdiv-algoritme, klassisk-clib
+%f-printf, kendt stdio-regression #54, test-harness-timeout) —
+**0 llvm-z80 backend-bugs fundet**.
+
+**Trin 2, 4, 5, 6:** ikke startet/afventer stadig (Trin 6 Docker-image
+afventer eksplicit brugergrønt lys, jf. tidligere "vent"-besked).
+
+Sidegevinster: `emu2-cpm86` og `dcc` .gitmodules rettet til de rigtige
+forks (`johnsonjh/emu2-cpm86` var forkert antaget `dmsc/emu2`; `ravn/dcc`
+var forkert `davidly/dcc`); `open-watcom-v2` fuldt build+Mandelbrot-testet;
+`ntvcm` bygget (var manglende) — **husk: `ntvcm`, ikke `emu2` (CP/M-86/x86),
+til klassiske Z80 CP/M `.com`-binaries**.

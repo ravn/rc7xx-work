@@ -14,7 +14,7 @@ _Filed by GitHub Copilot on behalf of @ravn._
 This applies to all target repos (`ravn/llvm-z80`, `ravn/rc700-gensmedet`, any upstream, etc.).
 
 **How to apply:**
-- When writing the body file (`/tmp/issue_*.md`), append the separator and attribution line before running `gh issue create`.
+- When writing the body file (`scratch/tmp/issue_*.md`), append the separator and attribution line before running `gh issue create`.
 - If an issue was filed without it (e.g. this rule didn't exist yet), edit it immediately with `gh issue edit <num> --body-file ...`.
 
 **Example tail of every issue body file:**

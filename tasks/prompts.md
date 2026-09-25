@@ -969,3 +969,59 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 6. kør færdig og lav en fejlrapport
 7. lav et issue med alt relevant materiale
 8. commit og push
+
+## 2026-09-12
+
+1. claude var ved at fejlfinde zcc med llvm-z80 men løb tør for tokens. Kan du gøre arbejdet færdigt?
+
+## 2026-09-16
+
+1. Claude har arbejdet videre, og løb tør for tokens da den nåede til "[...]" (CP (HL) load-fusion analyse)
+2. ok
+3. ja
+4. jeg opgiver at nå 2048 byte målet for nu.  analyser, opsummer og lav issues, og commit
+5. **NO DISKETTE NOR LINEPROG** er en fejl
+6. ok så det var en del af testen. godt :)  fortsæt
+7. gem al relevant viden i projektet og gør klar til handover til claude
+## 2026-09-17
+
+1. vi er ved at gøre klar til at upstream kan få vores zcc integrationsarbejde.   Claude har lige lukket 318 og 331.
+2. 1
+3. åben 296 i browser
+4. jeg synes ikke 296 dækker opgaven.   Det jeg vil er at få llvm-z80 support - inklusiv de rettelser vi har lavet - upstream.   Jeg er derfor interesseret i at disse er så knivskarpe på det faktiske problem samlet som muligt inden jeg begynder at ulejlige andre.  Det kan godt være at de samlede rettelser vi har lavet indtil nu, kan forsimples yderligere nu det står klart hvad der er blevet rettet på.  Jeg vil gerne have din vurdering af hvad vi taler om her
+5. det er kun llvm-z80 upstream jeg skal have på plads nu, z88dk upstream kommer senere
+6. vær opmærksom på at vi allerede har fået nogen callingconventions skubbet upstream
+7. min forståelse er at +static-stack er helt forældet og erstattet af -ffreestanding logik, er det korrekt?  Jeg vil også gerne vide præcis hvad der er nødvendigt for at kunne understøtte float32 i zcc.
+8. jeg vil gerne fikse +static-stack så det ikke findes mere.
+9. understøtter upstream static-frame?
+10. fjern static-stack fuldstændigt
+11. hvad laver du?
+12. er mulsi3_fast en følgevirkning af z88dk ?
+13. jeg vil gerne have at det er styret af et flag om der bruges det normale float/double format, eller det z88dk optimerede 32-bit
+14. hvordan går det?
+15. bare for at være sikker - er der nogen af skip'erne der er vigtige?
+16. hvad nu?
+17. 1+2
+18. push,  og fortsæt
+19. opret pr i mit repo.  isoler derefter 2
+20. ja tak
+21. 1 2 3
+
+## 2026-09-20
+
+1. ja tak
+2. fakta: jeg vil gerne have c tests også når det giver mening for at fange regessioner
+3. jeg er bange for jeg har for mange regler og fakta til du kan huske dem allesammen.  er det rigtigt?
+4. er der brug for at rydde op?
+5. ja
+6. du må godt glemme alt om z88dk newlib
+7. hvor kom de edge-testfiler fra?
+8. det var fordi der var nogen fejl der først viste sig ved meget store mængder kode.  Kan de reproduceres?
+9. jeg  mener bestemt at alle disse tests blev lavet af et program og derfor kan genskabes.  er det rigtigt?   Hvis ja, så lav et nyt issue på at teste igen med forklaring
+10. kan du ikke lave midlertidige filer i projektet så jeg ikke bliver spurgt hver gang om du må?
+11. du kan godt fjerne alle de midlertidige testfiler der kan regenereres som du fandt ud af før
+12. git log -S tager meget lang tid, nøjes med et år tilbage
+13. analyser, opsummer og opret issues efter behov, commit og push
+14. kig på Oprydning i XFAIL-inventar (ravn/llvm-z80#338) og Static-frame kompatibilitet (#336, #337)
+15. lav et issue for hver kategori med fulde detaljer
+16. jeg vil gerne have du fjerner --z80-static-frames fra mine tests og programmer

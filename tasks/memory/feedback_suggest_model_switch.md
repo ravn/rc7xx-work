@@ -5,7 +5,7 @@ metadata:
   type: feedback
 ---
 
-**STANDING RULE (user 2026-09-08): be attentive to token cost AT ALL TIMES, not just at task start — never burn an unnecessarily expensive model (Opus) on work a cheaper one can do.** Tell the user when the current model is a poor fit for the task at hand, before starting AND whenever the character of the work shifts mid-session (e.g. analysis finished, now it's mechanical patching).
+**STANDING RULE (user 2026-09-08, confirmed 2026-09-23): Sonnet er standardmodellen. Brug ALDRIG Opus medmindre opgaven er for svær til Sonnet.** Be attentive to token cost AT ALL TIMES — never burn an unnecessarily expensive model (Opus) on work a cheaper one can do. Tell the user when the current model is a poor fit for the task at hand, before starting AND whenever the character of the work shifts mid-session (e.g. analysis finished, now it's mechanical patching).
 
 **Why:** User works multiple projects in parallel and pays per-model; an idle Opus session doing mechanical edits is pure waste. They want continuous vigilance, not a one-time check.
 

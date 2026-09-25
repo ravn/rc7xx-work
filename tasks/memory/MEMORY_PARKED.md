@@ -18,13 +18,6 @@
 - [xcc issue-filing process](xcc-issue-filing-process.md) — retro-vault/xyz issues DISABLED; file as PR from ravn/xyz fork
 - [simavr master required](reference_simavr_master_required.md) — distro 1.6 too old; build master in Docker
 - [emu2 TPA fidelity](reference_emu2_tpa_pool_fidelity.md) — emu2 default -m 210 > RC759 ~293 KB TPA; use -m 190 for byte-for-byte match
-- [llvmz80 clib speed benchmark](reference_llvmz80_clib_speed_benchmark.md) — classic qsort faster, newlib sprintf faster; full: tasks/benchmarks/
-- [newlib signed % fix](reference_newlib_signed_mod_z88dk_bug.md) — stale-prebuilt-lib bug; FIXED 2026-07-24 by rebuild
-- [newlib IEEE-754 %f printf fix](reference_llvmz80_newlib_ieee_printf_fix.md) — -D__LLVMZ80_IEEE_PRINTF; split __mulsi3; per-clib shim; __ZXNEXT trap
-- [newlib remaining gaps](reference_newlib_remaining_gaps_file_printf.md) — #34 FILE* WONTFIX; #37 libm WONTFIX; #35 %f FIXED
-- [llvmz80 qsort/strerror/bsearch classic fix](reference_llvmz80_qsort_strerror_classic_fix.md) — reversed-arg-alias-via-asm-label; __smallc comparator
-- [newlib sdcc_iy uses ix archive](reference_newlib_sdcc_iy_uses_ix_archive.md) — -clib=sdcc_iy links sdcc_ix workers; IX callee-saved; audit result: OK
-- [newlib integer helper gap closed](reference_newlib_integer_helper_gap.md) — llvmz80_imath.lib provides __mulhi3/__divsi3 etc; qsort/intdiv/long PASS
 - [z88dk lib rebuild is native](reference_z88dk_lib_toolchain_native.md) — bin/z88dk-{sccz80,zsdcc,z80asm} native arm64; make -C libsrc TARGETS=...
 - [TODO: zsdcc issues check upstream SDCC](todo_zsdcc_issues_check_upstream_sdcc.md) — 8 open ravn/z88dk bugs are upstream-SDCC problems; report upstream later
 - [Session handoff 2026-08-07](project_session_handoff_2026-08-07.md) — stale; archived
@@ -34,3 +27,21 @@
 - [copt is 32-bit-int engine](reference_copt_32bit_eval.md) — copt %eval is 32-bit; CANNOT split 64-bit .quad (verified 2026-08-05)
 - [RC703 TFj BIOS oracle](reference_rc703_tfj_bios_oracle.md) — datamuseum Bits:30003297; byte-level oracle for rcbios
 - [z88dk RC700 wiki TODO](reference_z88dk_rc700_wiki.md) — update z88dk/wiki/Platform-Regnecentralen-RC700; trigger ved upstream PR
+
+## Parked project status & legacy references (archived from MEMORY.md)
+
+- [PR #40 fallout](project_pr40_fallout_2026_09_10.md) — R1/R2/R4+inline-asm LØST; R5-drift = ingen regressioner. #316 static-frame analysis in llvm-z80
+- [Upstream tracking issues](project_upstream_tracking_issues.md) — ravn/z88dk #64-68 + ravn/llvm-z80 #291-295 oprettet 2026-09-06 (#291 now upstreamed)
+- [cpnos PARKED — awaiting physical parallel cable](project_cpnos_parked_awaiting_parallel_cable.md) — surface before acting on cpnos/PIO/polypascal tasks
+- [RC750 Partner MAME boot](project_rc750_partner_boot_bringup.md) — ROD398/399 interleave; readable text DONE; 82730 mailbox DONE; NEXT: WD1797 floppy @0x200
+- [MAME loose-branch inventory](reference_mame_loose_branches.md) — rc759+rc750 merged; only unmerged = RC702 upstreaming line
+- [rc7xx MAME boot disks](reference_rc7xx_mame_boot_disks.md) — rc702=SW1711-I8.imd; rc750=SW1500_2.0.imd; rc759=sw1400_r31a_d1.img
+- [rc759 CCP/M boots ~290s](reference_rc759_mame_c_verification.md) — HARD: -seconds_to_run 400; read LATE snapshot; early test banner = mid-boot not crash
+- [MP/M disks: local-only, library frozen](project_mpm_disks_local_only.md) — make mpm-disks builds into disks/local/; NEVER write disks/library/
+- [SDCC slave stack-room ceiling](project_sdcc_slave_stack_room.md) — cpnos SDCC PROM1 must end <=0xF60E or SP=0xF680 overruns resident SNIOS
+- [MP/M II bakes RSPs at GENSYS time](reference_mpm_sys_baked_via_gensys.md) — .RSP edits inert until GENSYS regens MPM.SYS + re-installs on A:
+- [ravn/mame#6 — PIO-B slot regression](project_ravn_mame_6.md) — gates Option P; fix needed at chip/slot layer
+- [z88dk#3011 FP-under-interrupt EXX collision](reference_z88dk_3011_fp_interrupt_exx.md) — math48 uses EXX; shadow-set ISR -> corrupt; DI/EI around FP call
+- [z88dk runtime verify: ntvcm not ticks](reference_z88dk_runtime_verify_ntvcm.md) — +cpm .COM under ntvcm/ntvcm; z88dk-ticks does NOT emulate +test $ED$FE trap
+- [z88dk RC700 subtype build](reference_z88dk_rc700_subtype_build.md) — make -C libsrc TARGETS=rc700; -Cz+cpmdisk -f rc700-8dd; examples/rc700/
+
