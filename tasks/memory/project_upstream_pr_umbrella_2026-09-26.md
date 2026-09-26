@@ -11,15 +11,15 @@ GitHub issue #379 er oversat til engelsk (2026-09-26). Tabel-mapping:
 
 | PR | Branch | Indhold | Issue |
 |---|---|---|---|
-| #366 | pr-366-float-sdcccall0-libcalls | float sdcccall0 libcalls | #365 |
-| #367 | pr-367-classic-libc-cc | classic libc CC | #? |
-| #368 | pr-368-quad-split | .quad 64-bit split | #? |
-| #369 | pr-369-divmod-fusion | i32 divmod fusion | #? |
-| #370 | pr-370-div-fast-o3 | i16 div fast at -O3 | #? |
-| #373 (af'-fix) | pr-fix-asmparser-ex-af-prime | AsmParser accept "ex af, af'" | #81 |
+| #371 | pr-366-float-sdcccall0-libcalls | float sdcccall0 libcalls | #366 |
+| #372 | pr-367-classic-libc-cc | classic libc CC | #367 |
+| ~#373~ | ~pr-368-quad-split~ | ~(lukket, erstattet af #382)~ | #368 |
+| #374 | pr-369-divmod-fusion | i32 divmod fusion | #369 |
+| #375 | pr-370-div-fast-o3 | i16 div fast at -O3 | #370 |
+| #378 (af'-fix) | pr-fix-asmparser-ex-af-prime | AsmParser accept "ex af, af'" | #377 |
 | #376 | pr-fix-z80-datalayout | Triple::computeDataLayout z80/sm83 | #380 |
 | #381 | pr-split-ascii-directive | Split long .ascii/.asciz to respect MaxAsciiLength | #? |
-| #? | pr-asm-format-z80asm | Native z80asm format (-z80-asm-format=z80asm) inkl. EXTERN | #? |
+| #382 | pr-asm-format-z80asm | Native z80asm format (-z80-asm-format=z80asm) inkl. EXTERN | #? |
 
 ## Branches: rene (2026-09-26)
 
