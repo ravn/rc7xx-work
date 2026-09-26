@@ -18,8 +18,8 @@ GitHub issue #379 er oversat til engelsk (2026-09-26). Tabel-mapping:
 | #375 | pr-370-div-fast-o3 | i16 div fast at -O3 | #370 |
 | #378 (af'-fix) | pr-fix-asmparser-ex-af-prime | AsmParser accept "ex af, af'" | #377 |
 | #376 | pr-fix-z80-datalayout | Triple::computeDataLayout z80/sm83 | #380 |
-| ~#381~ | ~pr-split-ascii-directive~ | ~(lukket, indlemmet i #382)~ | #383 |
-| #382 | pr-asm-format-z80asm | Native z80asm format (-z80-asm-format=z80asm) inkl. EXTERN og string-splitting | #383, #384 |
+| ~#381~ | ~pr-split-ascii-directive~ | ~(lukket, indlemmet i #382)~ | ~#383~ (lukket, indlemmet i #384) |
+| #382 | pr-asm-format-z80asm | Native z80asm format (-z80-asm-format=z80asm) inkl. EXTERN og linjelængde-limit | #384 |
 
 ## Branches: rene (2026-09-26)
 
