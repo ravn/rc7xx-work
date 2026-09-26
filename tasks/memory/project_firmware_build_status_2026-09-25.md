@@ -1,13 +1,24 @@
 ---
 name: project_firmware_build_status_2026-09-25
-description: Status for de tre firmware-builds med test/all-prs compileren (2026-09-25) — hvad mangler, hvad virker
+description: Status for de tre firmware-builds med test/all-prs compileren (sidst opdateret 2026-09-26) — hvad mangler, hvad virker
 metadata:
   type: project
 ---
 
-Status for firmware builds med `llvm-z80/build-macos` bygget fra `test/all-prs` (HEAD `ad02719112d6`), 2026-09-25.
+Status for firmware builds med `llvm-z80/build-macos` bygget fra `test/all-prs` (HEAD `aaa07fc9c96a`), opdateret 2026-09-26.
 
-## z88dk zcc integration tests
+## Compiler-tilstand (2026-09-26)
+
+`build-macos/bin/clang` og `build-macos/bin/llc` er rebuilt med `test/all-prs` HEAD `aaa07fc9c96a`.
+- **Lit suite: 123 PASS, 0 FAIL, 1 UNRESOLVED** (pre-existing: `issue-216-cp-sbc-and.s` har ingen `RUN:`-linje)
+- af'-fix (`b376e9610ab0`) er inkluderet — issue-81-ex-af-prime.ll PASS
+
+## autoload-in-c
+**IKKE VERIFICERET** — `build-macos` har nu af'-fix, men `make prom` i autoload-in-c er IKKE kørt endnu.
+
+**Forventet at virke** da af'-fix er i compileren. Kør `make prom COMPILER=clang` i autoload-in-c for at bekræfte.
+
+## z88dk zcc integration tests (fra 2026-09-25 — stadig gyldig)
 **64/66 PASS** (op fra 48/66 tidligere).
 - 1 FAIL: `runtime_printf_autoformat.sh` — `printf("%f")` printer 0.000000 (z88dk classic clib dtoa-bug, ikke compiler-relateret)
 - 1 XFAIL: `xfail_tmpfile.sh` (forventet)

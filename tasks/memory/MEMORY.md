@@ -169,6 +169,7 @@
 - **[sdcc _memcpy stub fix](feedback_sdcc_memcpy_stub_fix.md) — z88dk z0.lib conflicts w/ z80_rt.lib; fixed via ___z80_memcpy_builtin + ___memcpy stubs**
 - **[sdldz80 ar archives](feedback_sdldz80_ar_archives.md) — sdldz80 -k/-l CANNOT resolve ar archives; pass z80_rt.a as direct file arg (fixes #359)**
 - **[upstream-all-prs status](project_upstream_all_prs_status_2026-09-22.md) — correctness gate CLEARED; pi/CSE fix in main not yet merged; PR #360 open**
+- **[PR umbrella #379 status (2026-09-26)](project_upstream_pr_umbrella_2026-09-26.md) — 7 PR-branches rene; test/all-prs HEAD aaa07fc9c96a; lit 123 PASS; #380 oprettet**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — tasks/z88dk-llvmz80-evaluation-2026-07-21.md; update after bridge/benchmark/float change**
 - **[64-bit .quad split in backend](reference_quad_init_backend_split.md) — ravn/z88dk#27 FIXED: Data64bitsDirective=nullptr -> two .long; textual -S only**
 - **[Standing goal: z88dk full llvmz80 CP/M support](project_z88dk_llvmz80_full_support_goal.md) — prioritize closing evaluation-doc gaps + modern-C support**
@@ -178,7 +179,7 @@
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3**
 
 - [llvmz80 classic printf("%f") broken](finding_llvmz80_classic_printf_f_broken_2026-09-25.md) — math32 double arithmetic correct, %f prints 0.000000 under classic clib (not investigated further)
-- **[Firmware builds BROKEN on test/all-prs](project_firmware_build_status_2026-09-25.md) — autoload: cherry-pick 95d2cd718a4f; cpnos: always_inline _port_out; rcbios: LTO+P2 unknown**
-- **[Plan: fix firmware builds](plan_upstream_main_firmware_fix_2026-09-25.md) — Trin 1 autoload (1 cherry-pick), Trin 2 cpnos (always_inline), Trin 3 rcbios LTO**
+- **[Firmware build status (2026-09-26)](project_firmware_build_status_2026-09-25.md) — autoload: compileren klar (af'-fix i), make prom IKKE kørt; cpnos+rcbios: uændret FEJL**
+- **[Plan: fix firmware builds](plan_upstream_main_firmware_fix_2026-09-25.md) — Trin 1 delvist (compiler ok, make prom mangler), Trin 2 cpnos always_inline, Trin 3 rcbios LTO**
 
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->

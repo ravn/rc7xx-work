@@ -7,16 +7,13 @@ metadata:
 
 Næste session: gør alle tre firmware-builds til at oversætte med `test/all-prs` compileren.
 
-## Trin 1 — autoload (nemt, ~5 min)
+## Trin 1 — autoload (**DELVIST GJORT** 2026-09-26)
 
-Cherry-pick `95d2cd718a4f` til `upstream-main`:
-```bash
-cd /Users/ravn/z80/llvm-z80
-git checkout upstream-main
-git cherry-pick 95d2cd718a4f   # [Z80] AsmParser: accept "ex af, af'" inline asm (#81)
-```
+**Hvad skete:** af'-fix (`b376e9610ab0`) er nu et selvstændigt PR-branch `pr-fix-asmparser-ex-af-prime` i paraplyen (#379). `test/all-prs` HEAD er `aaa07fc9c96a` og inkluderer det. `build-macos/bin/clang` + `llc` er rebuilt med det. Lit: 123 PASS.
 
-Derefter rebase alle PR-branches og test/all-prs, rebuild clang, test autoload.
+**Mangler:** `make prom COMPILER=clang` i `autoload-in-c/` er IKKE kørt endnu — kør det for at bekræfte build.
+
+Bemærk: `upstream-main` er IKKE ændret (stadig `01c80da67276`). af'-fix er i test/all-prs som PR, ikke cherry-picket til upstream-main.
 
 ## Trin 2 — cpnos (firmware-fix, ~15 min)
 
