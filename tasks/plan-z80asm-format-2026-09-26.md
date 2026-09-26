@@ -79,3 +79,22 @@ Ved at introducere **`Z80AsmFormat_Z80ASM`** under flaget **`-z80-asm-format=z80
 1. Afprøv `-mllvm -z80-asm-format=z80asm` direkte med `zcc` i `z88dk`.
 2. Verificer `sem702-flip-test` og kørsel under `ntvcm`.
 3. Forenkl `bridge_postproc.sh` / udfas `fixlabels.pl` og tilhørende `copt`-regler.
+
+---
+
+## Status: GENNEMFØRT (2026-09-26)
+
+- **llvm-z80 (`pr-asm-format-z80asm`, HEAD `b0640118e8cf`):**
+  - Trin 1: `Z80MCAsmInfoZ80ASM` implementeret med alle `z80asm`-direktiver.
+  - Trin 2: Dotless mangling i `Z80MCAsmInfoZ80ASM` og dotless labels.
+  - Trin 3: C- og LLVM-lit tests i `clang/test/CodeGen/z80-asm-z80asm.c` og `llvm/test/CodeGen/Z80/z80-asm-format-z80asm.ll`.
+  - Ekstra: `MCAsmInfo::ExternDirective` + `Z80AsmPrinter::emitEndOfAsmFile` emitter native `EXTERN` for alle udefinerede symboler.
+  - Ekstra: `.addrsig` undertrykt for `isZ80ASM()`.
+  - **Lit test suite:** 123/123 PASS (100%).
+- **z88dk (`fix/zcc-revert-split-quad-flag`, HEAD `0ff6da0d9e0c`):**
+  - Clang skriver `.asm` direkte fra `.i`.
+  - `OPTFILE`-fasen forbigås fuldstændigt for `CC_LLVMZ80`.
+  - `llvmz80_postprocess()` fjernet fra `zcc`.
+  - `bridge_postproc.sh`, `llvmz80_rules.1` og `fixlabels.pl` slettet.
+  - **Runtime integration tests (`test/clang/run_all.sh`):** 66 PASS, 0 FAIL, 1 XFAIL (103s).
+

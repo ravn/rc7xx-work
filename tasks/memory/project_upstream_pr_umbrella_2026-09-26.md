@@ -18,20 +18,21 @@ GitHub issue #379 er oversat til engelsk (2026-09-26). Tabel-mapping:
 | #370 | pr-370-div-fast-o3 | i16 div fast at -O3 | #? |
 | #373 (af'-fix) | pr-fix-asmparser-ex-af-prime | AsmParser accept "ex af, af'" | #81 |
 | #376 | pr-fix-z80-datalayout | Triple::computeDataLayout z80/sm83 | #380 |
+| #381 | pr-split-ascii-directive | Split long .ascii/.asciz to respect MaxAsciiLength | #? |
+| #? | pr-asm-format-z80asm | Native z80asm format (-z80-asm-format=z80asm) inkl. EXTERN | #? |
 
 ## Branches: rene (2026-09-26)
 
-Alle 7 PR-branches indeholder KUN egne commits, rebased direkte på `upstream-main`:
+Alle PR-branches indeholder KUN egne commits, rebased direkte på `upstream-main`:
 - **upstream-main** HEAD: `01c80da67276` (uændret)
 - `pr-fix-asmparser-ex-af-prime`: 1 commit (`b376e9610ab0`) over upstream-main
-- `pr-366`..`pr-370`, `pr-fix-z80-datalayout`: egne commits, INGEN af'-fix-tilhæng
-
-**Why:** Branches var tidligere rebased på `pr-fix-asmparser-ex-af-prime` (fejlagtigt). Alle ryddet op 2026-09-26 og force-pushet.
+- `pr-366`..`pr-370`, `pr-fix-z80-datalayout`, `pr-split-ascii-directive`: egne commits, INGEN af'-fix-tilhæng
+- `pr-asm-format-z80asm`: native z80asm dialect output, dotless labels, EXTERN emission, .addrsig undertrykkelse
 
 ## test/all-prs
 
-HEAD: `aaa07fc9c96a` (16 commits over upstream-main)
-Rækkefølge: af'-fix → pr-366 → pr-367 → pr-368 → pr-369 → pr-370 → pr-fix-z80-datalayout
+HEAD: `b0640118e8cf` (23 commits over upstream-main)
+Rækkefølge: af'-fix → pr-366 → pr-367 → pr-368 → pr-369 → pr-370 → pr-fix-z80-datalayout → pr-split-ascii-directive → pr-asm-format-z80asm
 
 **Lit:** 123 PASS, 0 FAIL, 1 UNRESOLVED (pre-existing `issue-216-cp-sbc-and.s` — ingen `RUN:`-linje)
 
