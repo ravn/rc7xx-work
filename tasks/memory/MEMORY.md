@@ -115,6 +115,7 @@
 - **[No stale dump files](feedback_no_stale_dump_files.md) — HARD: rm -f artifact BEFORE producer, every iteration**
 - **[No DOTALL backtracking on source](feedback_no_dotall_backtracking.md) — HARD: no re.DOTALL + non-greedy over multi-line source; kill scans >10s**
 - **[NEVER unquoted === in shell](feedback_no_double_equals.md) — HARD: zsh silently truncates; use `---` as separator**
+- **[NEVER use sed to view files](feedback_no_sed_to_view_files.md) — HARD: use view_file with StartLine/EndLine, NEVER sed shell pipes**
 
 ## 8. Test / debug discipline
 

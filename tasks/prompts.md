@@ -1025,3 +1025,42 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 14. kig på Oprydning i XFAIL-inventar (ravn/llvm-z80#338) og Static-frame kompatibilitet (#336, #337)
 15. lav et issue for hver kategori med fulde detaljer
 16. jeg vil gerne have du fjerner --z80-static-frames fra mine tests og programmer
+
+## 2026-09-27
+
+1. vi nåede til at have skubbet zpragma arbejdet upstream. Målet er stadig at få zcc med llvmz80 i mål med færrest mulige små, rene rettelser.
+2. lav et issue for trin 1 i ravn/z88dk og et tilhørende minimalt pr.
+3. does the pr have test coverage?
+4. åben testcase i clionn
+5. er det korrekt forstået at du har merget arbejdet på #78 til main?
+6. nej, det er fint. Jeg skal bare forstå det, og jeg så ikke hvsi du sagde det
+7. godt, du lavede en plan tidligere og vi er nu færdige med trin 1
+8. jeg vil gerne have at du - ovenpå pr#78 - bygger trin 2 fra bunden så enkelt og simpelt som muligt, ikke bare slæbe commits over. Kun den funktionalitet der er nødvendig. Lav en plan først
+9. du bruger sed igen, check din hukommelse.
+10. jeg vil gerne have du fastslår du ikke bruger sed til at se udsnit af filer med, men noget andet der betyder du ikke behøver spørge om lov hver gang. det er ikke første gang jeg beder om det
+11. vi skal slet ikke bruge zproto til noget tænker jeg
+12. du må ikke ændre sys/proto.h sådan.   du skal lave en elif i stedet for hvis nødvendigt
+13. vi har ikke mandat til at ændre sådan i sys/proto.h hvad betyder __LIB__ ?
+14. hvis __SDCC og __LLVMZ80 ekspanderer til samme ZPROTO definition må de godt slås sammen i proto.h
+15. jheg tror du har glemt nogen kommaer i ZPROTO5 fx
+16. kan du kigge i historikken for at se om du kan finde beslutningsgrundlaget for at port i/o er adressespace 2?
+17. kan du finde dokumentationen på jacobly0/llvm-project eZ80 backend af dette?
+18. godt.  hvor nåede vi til?
+19. trin 3 skal lige afvente noget llvmz80 arbejde.   https://github.com/llvm-z80/llvm-z80/issues/39#issuecomment-5856127302 melder at the fork owner har besluttet navnet på target triple og hvad det skal gøre.  undersøg
+20. vi skal kode z80-unknown-none-z88dk i et pr
+21. hvorfor er du i gang med at implementere triple::sdcc?
+22. jatak
+23. hvordan går det?
+24. kan du se om the fork owner bruger ccache?
+25. hvordan skal jeg sætte ccache op her, jeg er træt af fulde rebuilds og mine forsøg forsvinder igen (formentligt på en branch et sted)
+26. ccache burde være lokalt i projektet, se efter.  Er din hukommelse ved at være fuld?
+27. hvordan hæver man cache grænsen en gang for alle?
+28. jeg vil gerne have cache grænsen på 10 gb
+29. jeg vil gerne have at du , efter hvert byg, giver statistik på effektivteten af ccache
+30. push og lav et lokalt pr i mit eget repo
+31. du nævnte [the fork owner] - det er der en udtrykkelig regel på du ikke må.  Hvorfor har du glemt det?
+32. står der i AGENTS.md at den skal læse CLAUDE.md?
+33. kan du ikke forklare mig hvad jeg skal instruere dig om for at du husker at læse AGENTS.md grundigt?
+34. gør det tak
+35. jeg vil gerne have du laver en branch der samler upstream funktionalitet  #68+#69+#70 som beskrevet i https://github.com/llvm-z80/llvm-z80/issues/39#issuecomment-5856127302 og så laver dette PR ud fra den.
+36. analyser, opsummer, opret issues som relevant, commit og push
