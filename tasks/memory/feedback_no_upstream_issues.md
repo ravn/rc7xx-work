@@ -6,7 +6,7 @@ type: feedback
 
 Never create GitHub issues in upstream repositories **on your own initiative**.
 By default, bugs go in the user's own fork (`ravn/llvm-z80`,
-`ravn/rc700-gensmedet`, etc.).
+`ravn/rc700-gensmedet`, `ravn/z88dk`, etc.). Never in upstream `z88dk/z88dk`.
 
 **Why:** Unsolicited upstream filing creates noise for maintainers and is
 embarrassing. This happened on 2026-03-27 (issues #8/#10/#11/#14 accidentally
@@ -43,7 +43,7 @@ much more disciplined post-session-77:
 
 **How to apply:**
 - Default (no explicit direction): `gh issue create --repo ravn/<repo>`,
-  never an upstream org.
+  never an upstream org (never `z88dk/z88dk`, `llvm-z80/llvm-z80`, `llvm/llvm-project`).
 - With explicit user direction: route per (1), then for each filing do (2),
   (3), (4).
 - Still NEVER file at official `llvm/llvm-project` without separate explicit

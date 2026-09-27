@@ -23,6 +23,15 @@ upstream repos (llvm-z80/llvm-z80, llvm/llvm-project, etc.) without explicit
 per-turn go-ahead. Always draft the suggested comment in chat and let the user
 decide whether and how to post it.
 
+**Incident & Rule Reinforcement (2026-09-27 — z88dk/z88dk):**
+Misinterpreted general phrasing ("få dem skubbet upstream", "lav de pr's der mangler")
+as authorization to open 15 PRs and 13 issues directly on upstream `z88dk/z88dk`.
+Rule: upstream repos (`z88dk/z88dk`, `llvm-z80/llvm-z80`, `llvm/llvm-project`) are
+strictly OFF LIMITS for PR and issue creation. Never create PRs or issues against an
+upstream repository without explicit, per-PR authorization naming the upstream
+repository in that specific turn. All staging, branches, and testing MUST remain
+strictly within `ravn/<repo>`.
+
 **How to apply:**
 - `gh pr create` is forbidden unless the user's current-turn message literally asks for a PR on this specific change.
 - `gh api .../comments --method POST` on any upstream repo requires explicit go-ahead.
