@@ -23,11 +23,9 @@
 - **[State certainty](feedback_state_certainty.md) — HARD: fact only if verified this session; surface ALL doubt**
 - [Style](feedback_style.md) — tænk højt, ingen undskyldninger eller komplimenter, ingen aforismer, record prompts
 - [Suggest model switch](feedback_suggest_model_switch.md) — flag Opus/Sonnet fit before and mid-task
-- **[Mistral Vibe agent](agent_mistralvibe_introduction.md) — capability profile + integration with Claude Code and Copilot**
 
 ## 2. Before any commit / PR / issue
 
-- **[ALL PRs ALWAYS draft](feedback_upstream_prs_always_draft.md) — se §0 — ABSOLUTE**
 - **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no gh pr create unless asked this turn**
 - **[Explain before filing](feedback_explain_before_filing.md) — HARD: root cause in chat + explicit per-filing go-ahead; check for duplicates first**
 - **[Self-caused bug? reflect](feedback_self_caused_bug_reflect_on_instructions.md) — HARD: if Co-Authored-By: anybody, identify which rule would have prevented it**
@@ -128,16 +126,11 @@
 - **[Minimal repro BEFORE source dive](feedback_minimal_repro_before_source_dive.md) — HARD: 30s repro first; no "suggested fix" in filed issues without repro proof**
 - **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: after 2-3 fixes of one class, find the systemic cause unprompted**
 - **[Audit the oracle](feedback_audit_oracle_not_just_fix.md) — HARD: bug found by luck -> build the detector that would have caught it**
-- **[Verify process state by full enumeration](feedback_verify_process_state_full_enumeration.md) — HARD: never claim "clean" from ps|grep; enumerate fully**
-- **[Probe must not consume the resource](feedback_probe_must_not_consume_resource.md) — HARD: health-check that grabs single-use connection corrupts what it verifies**
 
 ## 9. Code & source style
 
 - **[Clarity in C code](feedback_clarity_in_c_code.md) — HARD: readable call shapes; compiler glue confined to hal.h/intrinsic.h**
 - [Size over speed for cold paths](feedback_size_over_speed_for_cold_paths.md) — bytes are permanent, T-states aren't
-- [Session-break phrasing](feedback_session_break_phrasing.md) — say exactly "This is a good place to start a new session."
-- [No Unicode arrows](feedback_no_unicode_arrows.md) — ASCII `->` not `→`
-- [Ask about design decisions](feedback_ask_about_design_decisions.md) — at non-obvious forks, lay options out
 
 ## 10. RC702 hardware facts
 
@@ -160,13 +153,12 @@
 - **[llvmz80 + z88dk test scripts](reference_llvmz80_test_scripts.md) — `./run-llvmz80-tests.sh test` (816/841); `full` adds torture+utils; rel2elf must be built**
 - **[sdcc _memcpy stub fix](feedback_sdcc_memcpy_stub_fix.md) — z88dk z0.lib conflicts w/ z80_rt.lib; fixed via ___z80_memcpy_builtin + ___memcpy stubs**
 - **[sdldz80 ar archives](feedback_sdldz80_ar_archives.md) — sdldz80 -k/-l CANNOT resolve ar archives; pass z80_rt.a as direct file arg (fixes #359)**
-- **[upstream-all-prs status](project_upstream_all_prs_status_2026-09-22.md) — correctness gate CLEARED; pi/CSE fix in main not yet merged; PR #360 open**
-- **[PR umbrella #379 status (2026-09-26)](project_upstream_pr_umbrella_2026-09-26.md) — 9 PRs; test/all-prs HEAD b0640118e8cf; z80asm native format; lit 123 PASS**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — tasks/z88dk-llvmz80-evaluation-2026-07-21.md; update after bridge/benchmark/float change**
 - **[Standing goal: z88dk full llvmz80 CP/M support](project_z88dk_llvmz80_full_support_goal.md) — prioritize closing evaluation-doc gaps + modern-C support**
 - [User Profile](user_profile.md) — experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, /home/ravn/z80, headless; upstream LLVM at ~/llvm-upstream/
 - [Memory lives in tasks/memory/](feedback_no_claude_memory.md) — canonical here; NEVER ~/.claude/; also MEMORY_LAYOUT.md + MEMORY_CODEGEN.md + MEMORY_PARKED.md
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3**
+- **[Mistral Vibe agent](agent_mistralvibe_introduction.md) — capability profile + integration with Claude Code and Copilot**
 
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->
