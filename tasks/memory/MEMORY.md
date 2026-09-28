@@ -7,8 +7,9 @@
 
 - **[NEVER traverse outside workspace root](feedback_no_home_search.md) — ABSOLUTE. Root: `/Users/ravn/z80/` (mac) `/home/ravn/z80/` (sonnyboy). No find/ls/mdfind outside.**
 - **[Temp files in scratch/tmp](feedback_temp_files_in_scratch.md) — HARD: all temp files in scratch/tmp/, NEVER /tmp/ (prompts user).**
-- **[NEVER post PR comments or create PRs on upstream repos without per-turn go-ahead](feedback_no_pull_requests.md) — SESSION-ENDING: no gh api .../comments POST, no gh pr create, no push to upstream PR branch without explicit go-ahead THIS turn.**
+- **[NEVER post PR comments or create PRs without per-turn go-ahead](feedback_no_pull_requests.md) — SESSION-ENDING: no gh api .../comments POST, no gh pr create, no push to upstream PR branch without explicit go-ahead THIS turn.**
 - **[ALL PRs ALWAYS draft](feedback_upstream_prs_always_draft.md) — ABSOLUTE: `gh pr create` SKAL have `--draft`. ALTID. Ingen undtagelser. Ingen repo-undtagelser. Aldrig non-draft.**
+- **AGENTS.md + lignende meta-filer må ALDRIG inkluderes i upstream PRs** — de er lokale arbejdsaftaler, ikke kodeændringer.
 
 ## 1. Always-on (every response — genuinely frequent triggers only)
 
@@ -22,16 +23,12 @@
 - **[State certainty](feedback_state_certainty.md) — HARD: fact only if verified this session; surface ALL doubt**
 - [Style](feedback_style.md) — tænk højt, ingen undskyldninger eller komplimenter, ingen aforismer, record prompts
 - [Suggest model switch](feedback_suggest_model_switch.md) — flag Opus/Sonnet fit before and mid-task
-
-## 1b. Multi-agent
-
 - **[Mistral Vibe agent](agent_mistralvibe_introduction.md) — capability profile + integration with Claude Code and Copilot**
-- **[Mistral Vibe project understanding](agent_mistralvibe_project_understanding.md) — technical baseline, status matrix, known issues, roadmap**
 
 ## 2. Before any commit / PR / issue
 
-- **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no gh pr create unless asked this turn (see §0 for comment ban)**
-- **[ALL PRs always draft](feedback_upstream_prs_always_draft.md) — se §0 — ABSOLUTE**
+- **[ALL PRs ALWAYS draft](feedback_upstream_prs_always_draft.md) — se §0 — ABSOLUTE**
+- **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no gh pr create unless asked this turn**
 - **[Explain before filing](feedback_explain_before_filing.md) — HARD: root cause in chat + explicit per-filing go-ahead; check for duplicates first**
 - **[Self-caused bug? reflect](feedback_self_caused_bug_reflect_on_instructions.md) — HARD: if Co-Authored-By: anybody, identify which rule would have prevented it**
 - **[File bugs, not fixes](feedback_file_bugs_not_fixes.md) — HARD: upstream filings are BUG REPORTS only; maintainer decides how to fix**
@@ -45,18 +42,12 @@
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: search MEMORY.md before any fix; commit message includes Rules-checked:**
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep for *_REFERENCE.md before re-deriving encodings**
 - **[Replicate user's PR text verbatim](feedback_replicate_user_pr_text_verbatim.md) — HARD: copy revised body 1:1 when opening upstream twin**
-- [No UNSOLICITED Upstream Issues](feedback_no_upstream_issues.md) — default: file in ravn/* forks; curated submissions only on user direction
 - **[No external issues ever](feedback_no_external_issues.md) — HARD: external repos require explicit per-issue go-ahead**
 - **[Upstream routing](feedback_upstream_routing_two_targets.md) — HARD: generic-LLVM bugs -> llvm/llvm-project; Z80-specific -> llvm-z80/llvm-z80 only**
 - **[MAME upstream routing](feedback_mame_upstream_routing.md) — HARD: never file in MAME without explicit per-issue permission**
 - **[No upstream sdcccall discrepancies](feedback_no_upstream_sdcccall_discrepancies.md) — HARD: ABI mismatches are known build-config issues, NOT upstream-fileable**
-- [File dep bugs in ravn/* forks](feedback_file_issues_in_forks.md) — with repro + test case
-- [Always test compiler bugs](feedback_compiler_bug_test.md) — XFAIL lit test for every clang Z80 codegen bug
-- [Attribution line on filed issues](feedback_issue_attribution_line.md) — append `--- / _Filed by GitHub Copilot on behalf of @ravn._`
 - **[Never mention zlfn anywhere](feedback_never_mention_zlfn.md) — HARD: never write "zlfn"/@zlfn in repos OR chat; always "the fork owner"**
-- [Comment on issue when fix committed](feedback_issue_comment_on_fix.md) — AUTO: post comment with hash + what changed + verification
-- [Test before fix](feedback_test_before_fix.md) — failing test before implementing
-- [Plan thoroughly first](feedback_plan_thoroughly_first.md) — explicit step-by-step plan + confirm before non-trivial work
+- [Attribution line on filed issues](feedback_issue_attribution_line.md) — append `--- / _Filed by GitHub Copilot on behalf of @ravn._`
 
 ## 3. Memory layout / linker / address changes
 
@@ -74,7 +65,7 @@
 - **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use -Cg-O2; verify const data in SHELL; classic clib only (newlib abandoned)**
 - **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32 flag; auto-links fmath bridge + -mllvm -z80-float-sdcccall0**
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations; native llc/clang in llvm-z80/build-macos/bin
-- [ccache + cmake rekonfiguration](feedback_ccache_llvm_build.md) — Z80.cmake har ccache-støtte; brug altid `cmake -C Z80.cmake` ved rekonfiguration; opt kræver rebuild ved core-lib-ændringer
+- [ccache + cmake rekonfiguration](feedback_ccache_llvm_build.md) — Z80.cmake har ccache-støtte; brug altid `cmake -C Z80.cmake` ved rekonfiguration
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
 - **[Parallel compiler builds](feedback_parallel_compiler_builds.md) — HARD: git worktree + rsync --link-dest; hardlinks sparer ~2 GB; build-macos = hoved, navngiv øvrige build-<name>**
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
@@ -153,7 +144,6 @@
 - **[RC700 family + PROM inventory](reference_rc700_family_proms.md) — RC701/702/703; target RC702/ROA375; RC701 has DIFFERENT ports + NO semigraphics**
 - **[2 KB PROM hard limit](project_rc702_2kb_prom_hard_limit.md) — HARD: no A11 bridge; PROM0+PROM1 capped at 2048 B each**
 - **[User's RC702 HAS SEM702](project_user_rc702_has_sem702.md) — define_sextants() essential (~79 ms); don't gate/remove it**
-- [rcbios CP/NET PIO polypascal PASS](project_rcbios_cpnet_pio_race_parked.md) — FIXED: z80pio 2eb88cea + snios RECVBY_PIO timeout; #13 upstream candidate
 - **[Verify machine-specific facts before concluding](feedback_verify_machine_specific_before_concluding.md) — HARD: read OWN authoritative memory map FIRST**
 
 ## 11. cpnos / cpnet / DRI facts
@@ -173,15 +163,10 @@
 - **[upstream-all-prs status](project_upstream_all_prs_status_2026-09-22.md) — correctness gate CLEARED; pi/CSE fix in main not yet merged; PR #360 open**
 - **[PR umbrella #379 status (2026-09-26)](project_upstream_pr_umbrella_2026-09-26.md) — 9 PRs; test/all-prs HEAD b0640118e8cf; z80asm native format; lit 123 PASS**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — tasks/z88dk-llvmz80-evaluation-2026-07-21.md; update after bridge/benchmark/float change**
-- **[64-bit .quad split in backend](reference_quad_init_backend_split.md) — ravn/z88dk#27 FIXED: Data64bitsDirective=nullptr -> two .long; textual -S only**
 - **[Standing goal: z88dk full llvmz80 CP/M support](project_z88dk_llvmz80_full_support_goal.md) — prioritize closing evaluation-doc gaps + modern-C support**
 - [User Profile](user_profile.md) — experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, /home/ravn/z80, headless; upstream LLVM at ~/llvm-upstream/
 - [Memory lives in tasks/memory/](feedback_no_claude_memory.md) — canonical here; NEVER ~/.claude/; also MEMORY_LAYOUT.md + MEMORY_CODEGEN.md + MEMORY_PARKED.md
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3**
-
-- [llvmz80 classic printf("%f") broken](finding_llvmz80_classic_printf_f_broken_2026-09-25.md) — math32 double arithmetic correct, %f prints 0.000000 under classic clib (not investigated further)
-- **[Firmware build status (2026-09-26)](project_firmware_build_status_2026-09-25.md) — autoload: compileren klar (af'-fix i), make prom IKKE kørt; cpnos+rcbios: uændret FEJL**
-- **[Plan: fix firmware builds](plan_upstream_main_firmware_fix_2026-09-25.md) — Trin 1 delvist (compiler ok, make prom mangler), Trin 2 cpnos always_inline, Trin 3 rcbios LTO**
 
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->
