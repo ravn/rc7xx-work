@@ -1065,3 +1065,16 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 35. jeg vil gerne have du laver en branch der samler upstream funktionalitet  #68+#69+#70 som beskrevet i https://github.com/llvm-z80/llvm-z80/issues/39#issuecomment-5856127302 og så laver dette PR ud fra den.
 36. analyser, opsummer, opret issues som relevant, commit og push
 37. ja
+38. vis planen igen
+39. er arbejdet ikke gjort for trin 3 nu?
+40. har du tokens nok til at løfte trin 4?  Opgaven må være beskedent.
+41. hvorfor er mdouble=32 ikke med i --target=z80-unknown-none-z88dk ?
+42. ja
+
+## 2026-09-28
+
+1. antigravity and copilot has done quite a lot of work
+2. trin 3
+3. er der allerede en pr?
+4. jatak
+5. vi kan ikke fikse firmware da linkningen er radikalt anderledes for zcc end clang selv
