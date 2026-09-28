@@ -146,9 +146,10 @@ Similar integration pattern:
 
 ### Known Limitations
 
-1. **No prior session memory:** Each session starts fresh (no context from previous)
-2. **Tool access:** Full CLI, but must be explicit about paths
-3. **No GUI:** Cannot interact with MAME GUI directly (headless testing only)
+1. **Token budget is small — runs dry quickly.** Mistral Vibe exhausts its context window much faster than Claude or Copilot. Long sessions with broad project context will hit the limit mid-task. **Assign short, well-scoped tasks only** — one file analysis, one concrete fix, one search query. Never assign open-ended "investigate everything" tasks.
+2. **No prior session memory:** Each session starts fresh (no context from previous)
+3. **Tool access:** Full CLI, but must be explicit about paths
+4. **No GUI:** Cannot interact with MAME GUI directly (headless testing only)
 
 ## Quick Reference: Key Files
 
@@ -215,16 +216,15 @@ cargo run -- bench           # size benchmark
 ## How to Use Me Effectively
 
 ### Task Assignment
-Provide:
-- Clear, specific task description
-- Reference to relevant files/directories
-- Acceptance criteria
-- Any constraints or requirements
 
-### Best Practices
-1. **Start with exploration:** "Investigate X and report back"
-2. **Then implement:** "Fix Y in file Z"
-3. **Always verify:** "Prove it works with tests"
+Mistral Vibe's token budget is limited — assign **one small, concrete task per session**:
+- ✅ "Analyze function X in file Y and report what it does"
+- ✅ "Fix the off-by-one in Z80NonReentrant.cpp line 42"
+- ✅ "Search for all uses of symbol X in the z88dk tree"
+- ❌ "Investigate the whole static-frame situation and figure out what to do"
+- ❌ "Review this session and suggest next steps"
+
+Provide: exact file paths, acceptance criteria, and any hard constraints up front — context costs tokens.
 
 ### Example Workflow
 
