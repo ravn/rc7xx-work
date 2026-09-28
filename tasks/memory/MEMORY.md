@@ -8,6 +8,7 @@
 - **[NEVER traverse outside workspace root](feedback_no_home_search.md) — ABSOLUTE. Root: `/Users/ravn/z80/` (mac) `/home/ravn/z80/` (sonnyboy). No find/ls/mdfind outside.**
 - **[Temp files in scratch/tmp](feedback_temp_files_in_scratch.md) — HARD: all temp files in scratch/tmp/, NEVER /tmp/ (prompts user).**
 - **[NEVER post PR comments or create PRs on upstream repos without per-turn go-ahead](feedback_no_pull_requests.md) — SESSION-ENDING: no gh api .../comments POST, no gh pr create, no push to upstream PR branch without explicit go-ahead THIS turn.**
+- **[ALL PRs ALWAYS draft](feedback_upstream_prs_always_draft.md) — ABSOLUTE: `gh pr create` SKAL have `--draft`. ALTID. Ingen undtagelser. Ingen repo-undtagelser. Aldrig non-draft.**
 
 ## 1. Always-on (every response — genuinely frequent triggers only)
 
@@ -30,7 +31,7 @@
 ## 2. Before any commit / PR / issue
 
 - **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no gh pr create unless asked this turn (see §0 for comment ban)**
-- **[Upstream PRs always draft](feedback_upstream_prs_always_draft.md) — HARD: PRs against upstream repos must always be draft (`--draft`)**
+- **[ALL PRs always draft](feedback_upstream_prs_always_draft.md) — se §0 — ABSOLUTE**
 - **[Explain before filing](feedback_explain_before_filing.md) — HARD: root cause in chat + explicit per-filing go-ahead; check for duplicates first**
 - **[Self-caused bug? reflect](feedback_self_caused_bug_reflect_on_instructions.md) — HARD: if Co-Authored-By: anybody, identify which rule would have prevented it**
 - **[File bugs, not fixes](feedback_file_bugs_not_fixes.md) — HARD: upstream filings are BUG REPORTS only; maintainer decides how to fix**
