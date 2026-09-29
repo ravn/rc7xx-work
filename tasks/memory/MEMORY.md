@@ -9,6 +9,7 @@
 - **[Temp files in scratch/tmp](feedback_temp_files_in_scratch.md) — HARD: all temp files in scratch/tmp/, NEVER /tmp/ (prompts user).**
 - **[NEVER post PR comments or create PRs without per-turn go-ahead](feedback_no_pull_requests.md) — SESSION-ENDING: no gh api .../comments POST, no gh pr create, no push to upstream PR branch without explicit go-ahead THIS turn.**
 - **[ALL PRs ALWAYS draft](feedback_upstream_prs_always_draft.md) — ABSOLUTE: `gh pr create` SKAL have `--draft`. ALTID. Ingen undtagelser. Ingen repo-undtagelser. Aldrig non-draft.**
+- **[Upstream feedback løses lokalt først](feedback_upstream_review_local_first.md) — HARD: reviewer-feedback løses lokalt, vises i chat, bruger godkender FØR push til PR-branch.**
 - **AGENTS.md + lignende meta-filer må ALDRIG inkluderes i upstream PRs** — de er lokale arbejdsaftaler, ikke kodeændringer.
 
 ## 1. Always-on (every response — genuinely frequent triggers only)
