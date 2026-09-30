@@ -8,9 +8,8 @@ Host has **no brew, no cmake, no ninja on PATH**.  Working binaries:
 
 - **CLion-bundled cmake**: `/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake`
 - **CLion-bundled ninja**: `/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja`
-- **llvm-z80 asserts build dir (PRIMARY for testing)**: `/Users/ravn/z80/llvm-z80/build-macos-asserts/`
-- **llvm-z80 host clang/llc (testing)**: `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang`, `…/bin/llc`
-- **llvm-z80 Release build (firmware only)**: `/Users/ravn/z80/llvm-z80/build-macos/` (no assertions)
+- **llvm-z80 asserts build (PRIMARY — testing + firmware)**: `/Users/ravn/z80/llvm-z80/build-macos-asserts/`
+- **llvm-z80 host clang/llc**: `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang`, `…/bin/llc`
 - **zmac**: `/Users/ravn/z80/rc700-gensmedet/zmac/bin/zmac` (build with `make` in zmac/ if missing)
 
 To rebuild for testing after editing the Z80 backend:

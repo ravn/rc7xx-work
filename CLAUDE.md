@@ -74,7 +74,7 @@ ninja -C build          # full  (or: clang / llc)
 
 ### Firmware builds (each component: `make help` lists its real targets)
 The native llvm-z80 toolchain is **auto-detected** in every firmware Makefile
-(`$(firstword $(wildcard .../build-linux/bin .../build-macos/bin .../build/bin))`)
+(`$(firstword $(wildcard .../build-linux/bin .../build-macos-asserts/bin .../build/bin))`)
 — no `LLVM_Z80=` or path args needed on any host. Run `make help` in a component
 dir for the authoritative target list.
 
@@ -98,7 +98,7 @@ clang build is `make prom` (autoload) — COMPILER defaults to clang.
 
 ### Tests
 
-**Use `build-macos-asserts` (not `build-macos`) for all testing** — assertions catch IR/MIR invariant violations early, before they silently corrupt output. `build-macos` (optimized, no assertions) is for production firmware builds only.
+**Use `build-macos-asserts` for all testing and firmware builds** — assertions catch IR/MIR invariant violations early, before they silently corrupt output.
 
 ```bash
 # Always build these before running lit (stale opt/FileCheck cause false failures):
@@ -152,7 +152,7 @@ Sources use **C23 features that work in both clang and z88dk zsdcc 4.5.0**.
 - **Always `--no-ff` for git merges.**
 - **Only push to origin at merges.** Commit locally freely; push only at merge points (feature→main, `--no-ff`) or when asked. Exception: the workspace repo is commit-pushed at the end of every working segment (cross-machine rule).
 - **Keep GitHub Actions green.** Run lit/checks locally BEFORE committing; after any merge/push check `gh run list`/`view` and fix failures promptly. Z80 CI = `.github/workflows/z80-ci.yml`.
-- **Run both test tiers before and after any compiler merge or branch merge** (2026-09-30 incident: `upstream-div-fast-o3` merge silently regressed zlfn's G_SDIVREM fix because only lit was run, not the cargo runtime suite): `build-macos/bin/llvm-lit llvm/test/CodeGen/Z80/` **and** `cd z80-utils && BUILD_DIR=../build-macos cargo run -- clang`. Lit catches codegen structure; cargo catches runtime correctness. Neither alone is sufficient.
+- **Run both test tiers before and after any compiler merge or branch merge** (2026-09-30 incident: `upstream-div-fast-o3` merge silently regressed zlfn's G_SDIVREM fix because only lit was run, not the cargo runtime suite): `build-macos-asserts/bin/llvm-lit llvm/test/CodeGen/Z80/` **and** `cd z80-utils && BUILD_DIR=../build-macos-asserts cargo run -- clang`. Lit catches codegen structure; cargo catches runtime correctness. Neither alone is sufficient.
 
 ## Workflow
 

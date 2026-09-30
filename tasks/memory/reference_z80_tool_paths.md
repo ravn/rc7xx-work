@@ -15,7 +15,7 @@ metadata:
 | ninja (ARM Mac, from CLion bundle) | `/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja` |
 | **ccache** (built from submodule, 2026-09-25) | `/Users/ravn/z80/ccache/install/bin/ccache` |
 | **PRIMARY testing: clang/llc/opt/lit (asserts)** | `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/` |
-| Production firmware clang (Release, no asserts) | `/Users/ravn/z80/llvm-z80/build-macos/bin/clang` |
+| build-macos (Release, no asserts — unused) | `/Users/ravn/z80/llvm-z80/build-macos/bin/clang` |
 | llvm-nm | `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/llvm-nm` |
 | z88dk-ticks (Z80 emulator for runtime verification) | `/Users/ravn/z80/z88dk/bin/z88dk-ticks` |
 | zcc (z88dk C compiler driver) | `/Users/ravn/z80/z88dk/bin/zcc` |
@@ -55,9 +55,8 @@ After backend changes ALWAYS rebuild clang+llc together (the clang symlink would
 
 ### Asserts build — PRIMARY for all testing (2026-09-30)
 
-**Use `build-macos-asserts/` for ALL testing** (lit, cargo test-runner, debug).
-Assertions catch IR/MIR invariant violations early. `build-macos/` (Release) is
-for production firmware builds only (firmware Makefiles auto-detect it).
+**Use `build-macos-asserts/` for ALL testing and firmware builds** (lit, cargo test-runner, firmware, debug).
+Assertions catch IR/MIR invariant violations early.
 
 ```
 $NINJA -C build-macos-asserts clang llc opt FileCheck   # rebuild before testing
@@ -112,12 +111,13 @@ single backend `.cpp` change is ~2 min; from-scratch is much longer (the long ta
 LINKING the big static libs + executables, during which the .o count plateaus near the
 top — don't mistake a stalled .o count for a hung build, check `pgrep ninja`).
 
-### Assertions build (for miscompile hunting — debug-only / stats / stricter verifier)
+### Asserts build — PRIMARY for everything (2026-09-30)
 
-The default `build-macos` is Release, `LLVM_ENABLE_ASSERTIONS=OFF` — so `-mllvm -debug`,
-`-mllvm -debug-only=<pass>`, `-mllvm -stats` are all silent no-ops there.  For bug-hunting
-use a parallel asserts build (`build-macos-asserts/`, first created 2026-05-26):
+`build-macos-asserts/` is the **only** build used for testing, firmware, and debug.
+`-mllvm -debug-only=<pass>`, `-mllvm -stats`, and assertion checks all work here.
+`build-macos/` (Release, no asserts) is no longer used day-to-day.
 
+To configure `build-macos-asserts/` from scratch:
 ```
 CM=/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake
 NINJA=/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja
@@ -128,7 +128,6 @@ $CM -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build-macos-asserts \
 $NINJA -C build-macos-asserts clang llc
 ```
 
-Release `build-macos/` stays the production/size-measurement compiler (matches shipping).
 Asserts build is for `-debug-only=<DEBUG_TYPE>`, `-stats`, and assert-fires-at-the-pass
 during miscompile hunts.  These flags need `-mllvm`-prefix from clang (e.g.
 `-mllvm -debug-only=machine-cse`).

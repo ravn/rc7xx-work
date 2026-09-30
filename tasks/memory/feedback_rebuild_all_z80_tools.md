@@ -57,9 +57,8 @@ stale `opt` made `infer-data-layout.ll` appear to fail after zlfn's
 `TargetDataLayout.cpp` change was in-tree but `opt` was not yet rebuilt).
 The lesson: `ninja -C build-macos-asserts` (build all) is always safer than a subset.
 
-**Use `build-macos-asserts` for all testing** (2026-09-30, user instruction).
-Assertions catch IR/MIR invariant violations early; `build-macos` (optimized,
-no assertions) is for production firmware builds only.
+**Use `build-macos-asserts` for all testing and firmware builds** (updated 2026-09-30).
+Assertions catch IR/MIR invariant violations early.
 
 See also: [[feedback_ccache_llvm_build]] (cmake reconfiguration + ccache).
 
