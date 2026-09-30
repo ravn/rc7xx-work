@@ -9,7 +9,7 @@ metadata:
 backend library compiled into `LLVMZ80CodeGen`), rebuild **all three** tools:
 
 ```
-ninja -C build-macos clang llc lld
+ninja -C build-macos-asserts clang llc lld opt FileCheck
 ```
 
 (or just `ninja -C build-macos` — default builds everything).
@@ -50,11 +50,16 @@ PROM / `-flto` ⇒ `ld.lld`.  When in doubt, build all three.
 `llvm/lib/Transforms/Utils/BuildLibCalls.cpp`, `llvm/lib/Analysis/TargetLibraryInfo.cpp`,
 or other core libs, ALSO rebuild `opt`:
 ```
-ninja -C build-macos opt
+ninja -C build-macos-asserts opt FileCheck
 ```
-Without this, `opt` crashes on `target triple = "z80-unknown-unknown"` IR
-because the old `libLLVMTransformUtils.a` is linked against a new `opt.cpp`.
-The lesson: `ninja -C build-macos` (build all) is always safer than a subset.
+Without this, `opt` crashes or silently uses stale code (2026-09-30 incident:
+stale `opt` made `infer-data-layout.ll` appear to fail after zlfn's
+`TargetDataLayout.cpp` change was in-tree but `opt` was not yet rebuilt).
+The lesson: `ninja -C build-macos-asserts` (build all) is always safer than a subset.
+
+**Use `build-macos-asserts` for all testing** (2026-09-30, user instruction).
+Assertions catch IR/MIR invariant violations early; `build-macos` (optimized,
+no assertions) is for production firmware builds only.
 
 See also: [[feedback_ccache_llvm_build]] (cmake reconfiguration + ccache).
 

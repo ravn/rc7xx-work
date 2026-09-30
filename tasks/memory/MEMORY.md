@@ -17,7 +17,7 @@
 - **[Check memory BEFORE coding](feedback_check_memory_before_coding.md) — HARD: scan MEMORY.md, READ linked files, NAME rules in first response, THEN code**
 - **[MEMORY.md size check](feedback_memory_size_check.md) — HARD: if read shows "Truncated … of N total" with N>210, flag to user immediately**
 - **[Revalidate historical compiler claims](feedback_revalidate_historical_compiler_claims.md) — HARD: re-run before acting on any historical size/speed/miscompile claim**
-- **[Rebuild ALL Z80 tools after backend edit](feedback_rebuild_all_z80_tools.md) — HARD: `ninja -C build-macos clang llc lld` after any Z80/ edit**
+- **[Rebuild ALL Z80 tools after backend edit](feedback_rebuild_all_z80_tools.md) — HARD: `ninja -C build-macos-asserts clang llc lld opt FileCheck` after any Z80/ edit; use asserts build for ALL testing**
 - **[No-op control measurement](feedback_no_op_control_measurement.md) — HARD: baseline/no-op-control/feature-ON three cells; no-op must match baseline**
 - **[Token-efficiency](feedback_token_efficiency.md) — HARD: no raw logs in context; long builds in background; handoff file at boundaries**
 - **[Show thinking — TIERED](feedback_show_thinking.md) — HARD: full narration at decisions/forks/surprises; one-liners in mechanical loops**

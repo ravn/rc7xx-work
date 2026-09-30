@@ -14,12 +14,9 @@ metadata:
 | cmake (ARM Mac, from CLion bundle) | `/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake` |
 | ninja (ARM Mac, from CLion bundle) | `/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja` |
 | **ccache** (built from submodule, 2026-09-25) | `/Users/ravn/z80/ccache/install/bin/ccache` |
-| Native clang (post-build, ARM Mac) | `/Users/ravn/z80/llvm-z80/build-macos/bin/clang` |
-| Native llc | `/Users/ravn/z80/llvm-z80/build-macos/bin/llc` |
-| Native opt | `/Users/ravn/z80/llvm-z80/build-macos/bin/opt` |
-| Native llvm-nm | `/Users/ravn/z80/llvm-z80/build-macos/bin/llvm-nm` |
-| Native llvm-lit | `/Users/ravn/z80/llvm-z80/build-macos/bin/llvm-lit` |
-| **Asserts llc/clang** (supports `-debug-only=<pass>`) | `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/llc` |
+| **PRIMARY testing: clang/llc/opt/lit (asserts)** | `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/` |
+| Production firmware clang (Release, no asserts) | `/Users/ravn/z80/llvm-z80/build-macos/bin/clang` |
+| llvm-nm | `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/llvm-nm` |
 | z88dk-ticks (Z80 emulator for runtime verification) | `/Users/ravn/z80/z88dk/bin/z88dk-ticks` |
 | zcc (z88dk C compiler driver) | `/Users/ravn/z80/z88dk/bin/zcc` |
 | **ntvcm** (CP/M emulator for FILE* / stdio runtime tests, arm64 native) | `/Users/ravn/z80/ntvcm/ntvcm` |
@@ -56,14 +53,16 @@ $NINJA -C build-macos clang llc opt        # both clang+llc per feedback_ninja_c
 
 After backend changes ALWAYS rebuild clang+llc together (the clang symlink would otherwise reference stale libLLVM if you `ninja llc` alone).
 
-### Debug/asserts build (for `-debug-only`, pass tracing)
+### Asserts build — PRIMARY for all testing (2026-09-30)
 
-`build-macos/` is a **Release** build — it rejects `-debug-only=<pass>` ("Unknown
-command line argument"). Use `build-macos-asserts/` for `llc -debug-only=branch-relaxation`
-(and any assertion-checked / pass-debug run). It is NOT always current — rebuild first:
+**Use `build-macos-asserts/` for ALL testing** (lit, cargo test-runner, debug).
+Assertions catch IR/MIR invariant violations early. `build-macos/` (Release) is
+for production firmware builds only (firmware Makefiles auto-detect it).
 
 ```
-$NINJA -C build-macos-asserts llc     # (or clang), ~1-2 min incremental
+$NINJA -C build-macos-asserts clang llc opt FileCheck   # rebuild before testing
+BUILD_DIR=../build-macos-asserts cargo run -- clang     # runtime tests
+build-macos-asserts/bin/llvm-lit llvm/test/CodeGen/Z80/ # lit
 ```
 
 ### zcc with the llvmz80 backend (ravn/llvm-z80 GlobalISel clang)

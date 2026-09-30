@@ -97,14 +97,15 @@ Note: the old `make clang` / `make clang_prom` names never existed here; the
 clang build is `make prom` (autoload) — COMPILER defaults to clang.
 
 ### Tests
-```bash
-build/bin/llvm-lit llvm/test/CodeGen/Z80/          # LLVM lit
-cargo run                  # test-runner default (O1,O2,Os); also: clang / bench
-```
 
-**Before running lit, always build all lit-used tools** to avoid stale-binary false failures (2026-09-30 incident: `opt` was stale, `infer-data-layout.ll` appeared to fail):
+**Use `build-macos-asserts` (not `build-macos`) for all testing** — assertions catch IR/MIR invariant violations early, before they silently corrupt output. `build-macos` (optimized, no assertions) is for production firmware builds only.
+
 ```bash
-ninja -C build-macos llc clang opt FileCheck
+# Always build these before running lit (stale opt/FileCheck cause false failures):
+ninja -C build-macos-asserts llc clang opt FileCheck
+
+build-macos-asserts/bin/llvm-lit llvm/test/CodeGen/Z80/   # LLVM lit
+cd z80-utils && BUILD_DIR=../build-macos-asserts cargo run -- clang  # runtime tests
 ```
 
 ## Architecture
