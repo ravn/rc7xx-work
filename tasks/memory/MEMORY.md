@@ -148,6 +148,11 @@
 - **[rcbios jump table is ABI](feedback_rcbios_jump_table_is_abi.md) — HARD: BIOS jump table at 0xDA00 is frozen ABI; new paths ADDITIVE only**
 - **[rcbios -flto: section-attrs required](feedback_rcbios_no_lto_boot_placement.md) — RE-ENABLED 2026-07-03 on main; STILL BROKEN on test/all-prs (LTO + P2 legalizer, root cause unknown)**
 
+## 11b. z88dk llvmz80 bridge-eliminering
+
+- **[EXX-protokol: 32-bit kerne-ABI + legalizer-mønster](reference_exx_protocol_z88dk_32bit.md) — HARD: addSym (ikke addExternalSymbol); PUSH_IX bryder stack-offsets; IX behøves ikke gemmes (+static-frame)**
+- [llvmz80 bridge-status (2026-09-30)](project_llvmz80_bridge_elimination.md) — 13→3 broer; resterende = float-broer til math32
+
 ## 12. Reference / standing reminders
 
 - **[Canonical test aggregator](reference_run_all_tests.md) — tasks/tools/run-all-tests.sh; fast=A+C+D; run at merge/checkpoint**
