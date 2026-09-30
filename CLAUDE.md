@@ -146,6 +146,7 @@ Sources use **C23 features that work in both clang and z88dk zsdcc 4.5.0**.
 - **Always `--no-ff` for git merges.**
 - **Only push to origin at merges.** Commit locally freely; push only at merge points (feature→main, `--no-ff`) or when asked. Exception: the workspace repo is commit-pushed at the end of every working segment (cross-machine rule).
 - **Keep GitHub Actions green.** Run lit/checks locally BEFORE committing; after any merge/push check `gh run list`/`view` and fix failures promptly. Z80 CI = `.github/workflows/z80-ci.yml`.
+- **Run both test tiers before and after any compiler merge or branch merge** (2026-09-30 incident: `upstream-div-fast-o3` merge silently regressed zlfn's G_SDIVREM fix because only lit was run, not the cargo runtime suite): `build-macos/bin/llvm-lit llvm/test/CodeGen/Z80/` **and** `cd z80-utils && BUILD_DIR=../build-macos cargo run -- clang`. Lit catches codegen structure; cargo catches runtime correctness. Neither alone is sufficient.
 
 ## Workflow
 
