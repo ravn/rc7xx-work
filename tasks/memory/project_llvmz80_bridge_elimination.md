@@ -22,8 +22,8 @@ Fra 13 broer → **3 resterende** (kun float, arkitektonisk nødvendige).
 | `__strerror_table` | — | Newlib-only gap, ikke nødvendig på classic CP/M |
 | `__itoa` | — | `#define itoa(a,b,c) itoa_callee(a,b,c)` omgår den altid |
 
-**Resterende** (strukturelt nødvendige):
-- `__addsf3.asm`, `__cmpsf2.asm`, `__floatsisf.asm` — float-broer til math32 via sdcccall(0); math32 bruger SDCC's native ABI, Clang emitter sdcccall(0) — inkompatible uden bro.
+**Resterende** (strukturelt nødvendigt — 1 fil):
+- `__cmpsf2.asm` — rigtig kode: NaN-detektion + GCC tri-state (-1/0/+1) konvertering. Kan ikke erstattes af navne-remap. `__addsf3.asm` og `__floatsisf.asm` slettet 2026-09-30 (pure JP-aliases → backend kalder cm32_sdcc_* direkte via MCSymbol i Z80MCInstLower.cpp).
 
 ## Tilhørende llvm-z80 branch
 `z88dk-native-libcalls` — commits:
