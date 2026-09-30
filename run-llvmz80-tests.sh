@@ -18,7 +18,7 @@ TESTRUNNER_DIR="$WORKSPACE/llvm-z80/z80-utils/test-runner"
 # Auto-detekter BUILD_DIR
 if [ -z "$BUILD_DIR" ]; then
     for candidate in \
-        "$WORKSPACE/llvm-z80/build-macos" \
+        "$WORKSPACE/llvm-z80/build-macos-asserts" \
         "$WORKSPACE/llvm-z80/build-linux" \
         "$WORKSPACE/llvm-z80/build"; do
         if [ -x "$candidate/bin/clang" ]; then

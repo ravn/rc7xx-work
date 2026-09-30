@@ -17,7 +17,7 @@ TEST_DIR="$Z88DK_DIR/test/clang"
 # Auto-detekter LLVMZ80EXE
 if [ -z "$LLVMZ80EXE" ]; then
     for candidate in \
-        "$WORKSPACE/llvm-z80/build-macos/bin/clang" \
+        "$WORKSPACE/llvm-z80/build-macos-asserts/bin/clang" \
         "$WORKSPACE/llvm-z80/build-linux/bin/clang" \
         "$WORKSPACE/llvm-z80/build/bin/clang"; do
         if [ -x "$candidate" ] && "$candidate" --version 2>&1 | grep -qi "z80"; then

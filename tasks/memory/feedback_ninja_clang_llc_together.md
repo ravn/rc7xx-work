@@ -5,8 +5,8 @@ type: feedback
 originSessionId: 90f5a17f-7f0a-47da-8820-66f3b9c19063
 ---
 **Rule:** Any change to a pass in `llvm/lib/Target/Z80/` requires
-`ninja -C build-macos clang llc` (both binaries).  `ninja llc` alone
-is not enough.
+`ninja -C build-macos-asserts-asserts clang llc` (both binaries).  `ninja llc` alone
+is not enough. **Use `build-macos-asserts-asserts` for ALL testing** (2026-09-30).
 
 **Why:**
 - `clang` and `llc` are linked from separate ninja targets against
@@ -23,8 +23,8 @@ is not enough.
 - When running any size or correctness check that uses the clang
   driver (cpnos-rom build, rcbios build, autoload build, or any
   Makefile that invokes `$(LLVMZ80)/build*/bin/clang`), always
-  precede with `ninja -C build-macos clang llc`.
-- `build-macos/bin/llc` direct invocation is fine after `ninja llc`
+  precede with `ninja -C build-macos-asserts clang llc`.
+- `build-macos-asserts/bin/llc` direct invocation is fine after `ninja llc`
   alone — but those are llvm-lit lit tests and isolated llc runs,
   NOT downstream multi-stage builds.
 
@@ -40,6 +40,6 @@ is not enough.
   payload (1906 → 1904 B).
 
 **Verification short-cut when in doubt:**
-- Compare timestamps: `ls -la build-macos/bin/clang-23
-  build-macos/bin/llc lib/libLLVMZ80CodeGen.a`.  If `clang-23` is
+- Compare timestamps: `ls -la build-macos-asserts/bin/clang-23
+  build-macos-asserts/bin/llc lib/libLLVMZ80CodeGen.a`.  If `clang-23` is
   older than `libLLVMZ80CodeGen.a`, clang is stale.

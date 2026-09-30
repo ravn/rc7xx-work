@@ -24,7 +24,7 @@ binaries on PATH.
 ./run-llvmz80-tests.sh clang -opt Os -native-oracle
 ```
 
-Auto-detects `BUILD_DIR` (`build-macos` -> `build-linux` -> `build`).
+Auto-detects `BUILD_DIR` (`build-macos-asserts` -> `build-linux` -> `build`). Updated 2026-09-30 to prefer asserts build.
 Adds to PATH:
 - `z88dk/src/sdcc-build/bin` — sdcc, sdasz80, sdldz80
 - `llvm-z80/z80-utils/target/debug/` — elf2rel, rel2elf (needed by utils suite)
@@ -44,7 +44,7 @@ TEST_CLIB=newlib_iy ./run-z88dk-tests.sh  # newlib via llvmz80
 TEST_TIMEOUT=60 ./run-z88dk-tests.sh      # longer per-test timeout
 ```
 
-Both scripts auto-detect clang (`build-macos/bin/clang`), z88dk, and ntvcm.
+Both scripts auto-detect clang (`build-macos-asserts/bin/clang`), z88dk, and ntvcm.
 
 ## Known test-runner results (2026-09-22)
 

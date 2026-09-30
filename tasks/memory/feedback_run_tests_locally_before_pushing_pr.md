@@ -14,5 +14,5 @@ An agent added `test_67_fcmp_double.c` directly to PR #50 and force-pushed it to
 
 **How to apply:**
 1. **Never push to a PR or remote branch without local test verification.**
-2. If changing compiler code or lit tests: run `ninja -C build-macos check-llvm-codegen-z80` (or the specific lit test).
-3. If adding or modifying a C runtime test: run `BUILD_DIR=build-macos cargo run --manifest-path z80-utils/test-runner/Cargo.toml -- clang <test_name>` locally and verify `PASS` across all optimization levels before committing and pushing.
+2. If changing compiler code or lit tests: run `ninja -C build-macos-asserts check-llvm-codegen-z80` (or the specific lit test).
+3. If adding or modifying a C runtime test: run `BUILD_DIR=build-macos-asserts cargo run --manifest-path z80-utils/test-runner/Cargo.toml -- clang <test_name>` locally and verify `PASS` across all optimization levels before committing and pushing.
