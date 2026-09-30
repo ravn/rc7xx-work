@@ -102,6 +102,11 @@ build/bin/llvm-lit llvm/test/CodeGen/Z80/          # LLVM lit
 cargo run                  # test-runner default (O1,O2,Os); also: clang / bench
 ```
 
+**Before running lit, always build all lit-used tools** to avoid stale-binary false failures (2026-09-30 incident: `opt` was stale, `infer-data-layout.ll` appeared to fail):
+```bash
+ninja -C build-macos llc clang opt FileCheck
+```
+
 ## Architecture
 
 GlobalISel backend (not SelectionDAG). Key files:
