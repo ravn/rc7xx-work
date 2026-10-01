@@ -17,9 +17,16 @@ DCC_DIR=/Users/ravn/z80/dcc/build
 mkdir -p "$OUTDIR"
 
 ticks_cycles() {
-    # Kør .COM med ticks_cpm.py, returner cycle-antal (kun stderr-linje).
-    python3 "$BENCH_DIR/ticks_cpm.py" "$1" 2>&1 1>/dev/null \
-        | awk '/^\[ticks\]/{print $2}'
+    # Kør .COM med z88dk-ticks' indbyggede CP/M-emulering (.com-extension
+    # injecter automatisk ED FE ved adresse 5 og starter ved 0x100).
+    # -end 0 stopper ved warm-boot (JP 0 / RET fra main via CRT0).
+    # Output: "Ticks: N" på stdout.
+    com=$1
+    base=$(basename "$com")
+    tmp=$(mktemp /tmp/bench_XXXXXX.com)
+    cp "$com" "$tmp"
+    z88dk-ticks -end 0 -w 4 "$tmp" 2>/dev/null | grep -v 'counter limit' | tail -1
+    rm -f "$tmp"
 }
 
 printf "\ndcc vs zcc+llvmz80  (-%s, z88dk-ticks cycle-accurate)\n\n" "$OPT"
