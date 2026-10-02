@@ -1078,3 +1078,21 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 3. er der allerede en pr?
 4. jatak
 5. vi kan ikke fikse firmware da linkningen er radikalt anderledes for zcc end clang selv
+
+## 2026-10-03
+
+1. jeg var ved at kigge på at få llvm-z80 til at fungere med z88dk runtime uden broer, og løb tør for tokens. undersøg hvor vi er
+2. det må gerne være en eksisterende adapter i z88dk, men vi må ikke skrive nye bridges/wrappere for at få det til at virke
+3. jeg vil gerne have to scripts i ~/z80 der kører henholdsvis llvm-z80 test suiten for sig selv, og z88dk suiten med zcc mod llvm-z80, uden tilretninger.
+4. for nu: testen følge en politik om, at NaN ikke understøttes på denne runtime?
+5. kig på z88dk fails
+6. hvad finder du ud af?
+7. qsort laver en callback til en rutine der skal have den rigtige calling convention
+8. qsort testcasen skal også checke dette
+9. forklar planen
+10. start
+11. hvordan går det?
+12. hvordan går det?
+13. hvordan går det?
+14. forklar hvad du har gjort
+15. analyser, opsummer og commit

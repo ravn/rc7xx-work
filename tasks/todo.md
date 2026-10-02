@@ -1,5 +1,44 @@
 # Z80 Code Density Optimization Todo
 
+## Implementation: native z88dk runtime (2026-10-03)
+
+- [x] Ret i16 quotient/remainder efter observerede røde lit/runtime-tests.
+- [x] Integrer direkte i32-kerner med eksplicit EXX-liveness og IX-preservation;
+  verificer small/fast-kerner med stackdata ved O0/O2/O3/Oz.
+- [x] Bevar z88dk-headernes builtin calling conventions i frontend;
+  verificer default-target-kontrol og bevaret builtin constant-folding.
+- [x] Opdater begge benchmarks uden nye adaptere eller ændret måleprincip.
+- [x] Dæk den resterende i8 Oz-sti med eksisterende native div/rem-kerne.
+- [x] Forklar survey-timeout med måling: 91 builds tager 62,3s mod hardkodet
+  60s. Ret watchdog-budget/rapportering uden ændrede oracle-forventninger.
+- [x] Verificer begge root-launchers samlet efter sidste ændring:
+  llvm-z80 426 runtime PASS/0 FAIL/6 SKIP og 151 lit PASS/0 FAIL;
+  z88dk 69 PASS/0 FAIL/0 SKIP/1 XFAIL (tmpfile).
+
+Lokalt committed efter brugerens anmodning:
+llvm-z80 `8af124e7fab0`, z88dk `63a1cf7193`.
+Ingen pushes, merges eller filings. Ingen nye bridges/wrappere.
+
+Review: resultatregistre, EXX-afhængigheder, IX-preservation og frontendens
+target-afgrænsning gennemgået; ingen yderligere bevist korrekthedsfejl fundet.
+NaN/SM83 og surveyens LINK_ERROR-resultater er ikke dækket af runtime-beviset.
+
+## Undersøgelse: z88dk suite FAILs (2026-10-03)
+
+- [x] Reproducer de 13 FAILs med assertions-clang og gem fulde logs i scratch/tmp.
+- [x] Reducer link-, integer- og stdio-symptomer til minimale reproer; følg faktisk IR/asm.
+- [x] Adskil beviste årsager fra hypoteser og registrer resultater i integrationsplanen.
+- [x] Udvid qsort-testcasen med uafhængig fixed-data callback-ABI-check;
+  bevis positive og negative kontroller uden at skjule LCG-fejlen.
+
+13 FAILs klassificeret: 7 builtin-ABI, 2 i16 quotient/remainder, 2 manglende
+i32-integration og 2 forældede benchmarks. Qsort-callbacken passer både faktisk
+stack/retur-ABI og fixed-data runtime-kontrol; LCG-inputdata fejler uden qsort.
+Se `llvm-z80/tasks/plan-z88dk-native-runtime-2026-10.md` sektion 8.
+
+Ingen nye bridges/wrappers, ændringer af eksisterende forventninger eller
+compiler-fixes som del af denne undersøgelse.
+
 ## Plan: Systematisk genindførelse af tabte optimeringer (Z80 Code Density) (2026-09-14)
 
 **Mål:** Lukke det resterende overskud på **143 bytes** i RC702 autoload-firmwaren (`INIT_SEM702=1` med skærmfont) så den fysiske 2048-byte grænse på 2716 EPROM (IC66) overholdes, ved systematisk at genindføre de optimeringer fra `ravn/llvm-z80`, der faldt ud ved upstream PR #40 / PR #296 merget (`cbaa9835043a`).

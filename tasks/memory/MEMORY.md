@@ -152,8 +152,8 @@
 
 ## 11b. z88dk llvmz80 bridge-eliminering
 
-- **[EXX-protokol: 32-bit kerne-ABI + legalizer-mønster](reference_exx_protocol_z88dk_32bit.md) — HARD: addSym (ikke addExternalSymbol); PUSH_IX bryder stack-offsets; IX behøves ikke gemmes (+static-frame)**
-- [llvmz80 bridge-status (2026-09-30)](project_llvmz80_bridge_elimination.md) — 13→3 broer; resterende = float-broer til math32
+- **[EXX-protokol: kerne-ABI + legalizer](reference_exx_protocol_z88dk_32bit.md) — addSym; EXX uses/defs; gem IX ved dynamic frames**
+- [llvmz80 bridge-status (2026-10-03)](project_llvmz80_bridge_elimination.md) — eksisterende runtime-indgange; ingen nye bridges; FCMP finite-only, NaN uafklaret
 
 ## 12. Reference / standing reminders
 
