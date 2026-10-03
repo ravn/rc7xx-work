@@ -1,5 +1,16 @@
 # Z80 Code Density Optimization Todo
 
+## Replacing fork zpragma scanner with upstream (2026-10-03)
+
+1. [x] Establish current behavior: fork scanner 67/67, llvmz80 printf
+   autoformat PASS, and nonliteral diagnostic PASS. Upstream scanner also
+   passes its 67-case unit test before adoption.
+2. [x] Replace only `src/zpragma/zpragma.c` with `upstream/master`; retain
+   zcc's llvmz80 `-autoformat` routing.
+3. [x] Rebuild upstream zpragma into scratch and run both integration
+   regressions against that binary; both PASS. Source and Makefile match
+   `upstream/master`, `zcc.c` is unchanged, scratch outputs removed.
+
 ## Math32 test placement (2026-10-03)
 
 1. [x] Move the llvmz80/math32 runtime, archive-dependency, triple, and

@@ -1220,3 +1220,23 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 ## 2026-10-03 (z88dk branch comparison)
 
 > what is then the difference from the branch we did the work on?
+
+## 2026-10-03 (z88dk upstream merge feasibility)
+
+> undersøg om vi kan no-ff merge origin/master med upstream/master
+
+## 2026-10-03 (AGENTS.md origin)
+
+> vi må IKKE lægge vores egen AGENTS.md oven i deres. Hvornår er den introduceret?
+
+## 2026-10-03 (restore z88dk project AGENTS)
+
+> vi skal erstatte z88dk/AGENTS.md med den der hører til projektet selv.  Vores hører til i ~/z80/AGENTS.md
+
+## 2026-10-03 (adopt upstream zpragma)
+
+> upstream besluttede at lave deres egen version af zpragma --auto-format.  Det vil sige at vi godt kan fjerne vores arbejde på zpragma og skifte til upstreams version
+
+## 2026-10-03 (commit, push, and reset master tracking)
+
+> commit og push.  Skift derefter master over til ravn-main, og genopret master som upstream/master
