@@ -1,5 +1,13 @@
 # Prompts
 
+## 2026-10-03 (CP/M test isolation)
+
+> det burde være i en tempfolder der blev slettet automatisk
+
+> tilret til tempfolder og find ud af hvilken test
+
+> commit og push
+
 ## 2026-10-03 (z88dk AGENTS.md)
 
 > AGENTS.md i z88dk skal være den der hører til z88dk projektet.

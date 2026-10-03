@@ -1,5 +1,22 @@
 # Z80 Code Density Optimization Todo
 
+## CP/M test-file isolation (2026-10-03)
+
+1. [x] Identify producers by filename and payload in preserved test history.
+   `ravn-main:test/clang/issue22_stdio_abi.c` writes `hello\n` to A.DAT;
+   `issue23_fcntl_write.c` writes XYZ to WP.DAT. Both wrappers lack a cwd change.
+2. [x] Demonstrate missing cwd isolation with a failing harness regression.
+   `runtime_workdir.sh` failed on `runtime_float` before the cwd change.
+3. [x] Restore these file-I/O fixtures on the active integration branch,
+   isolate all active runtime wrappers, and verify cleanup on success/failure.
+   Nine wrappers passed the injected success/build-failure/runtime-failure
+   matrix. Both restored file-I/O fixtures also passed under real ntvcm.
+4. [x] Run the real file-I/O tests and active suite; remove the four known
+   leftover DAT artifacts after verifying their contents.
+   All 14 scripts passed. The four leftovers matched their exact 128-byte
+   payloads/padding before removal; the final suite recreated none of them
+   and leaked no temporary directories.
+
 ## Plan: Genintegrer llvmz80-backend oven på upstream/master (2026-10-03)
 
 **Mål:** gøre det eksisterende z88dk-arbejde for direkte `zcc

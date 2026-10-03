@@ -1,5 +1,24 @@
 # Lessons Learned
 
+## 2026-10-03: Isolate the emulator working directory
+
+CP/M test data must stay in a per-run temporary directory under
+`scratch/tmp/`, removed automatically on exit. Keeping the executable and
+compiler temporaries there is insufficient: run the emulator with that
+directory as its current working directory as well. Check isolation and
+cleanup on both successful and failed runs; do not leave test data in the
+workspace or repository root.
+
+The exact producers were found in `ravn-main:test/clang`:
+`issue22_stdio_abi.c` writes `hello\n` to A.DAT and
+`issue23_fcntl_write.c` writes XYZ to WP.DAT. Their wrappers lacked a cwd
+change. The restored `test/llvmz80` fixtures and five math32 wrappers now
+run in their per-run directories. `runtime_workdir.sh` exercises nine
+wrappers on success, build failure, and emulator failure, including an
+emulator that prints successful results before exiting unsuccessfully.
+Check the emulator's exit status before filtering stdout: a pipeline ending
+in `tr` hides failure in portable shell.
+
 ## 2026-10-03: z88dk math32 runtime tests require a fresh archive
 
 `lib/clibs/math32.lib` is ignored generated output. The math32 archive rule
