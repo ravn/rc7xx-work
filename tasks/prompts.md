@@ -1,5 +1,17 @@
 # Prompts
 
+## 2026-10-03 (math32 implementeringsplan)
+
+> lav en implementationsplan.  Vi behøver ikke understøtte tidligere versioner af z88dk.
+
+> start
+
+> ntvcm findes i workspacet
+
+> hvordan går det??
+
+> er printf-autoformat tricket med at zpragma tilføjer #pragma så %f virker?
+
 ## 2026-10-03 (NaN contract)
 
 > undersøg om math32 understøtter nan i det hele taget
@@ -1176,3 +1188,27 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 13. hvordan går det?
 14. forklar hvad du har gjort
 15. analyser, opsummer og commit
+
+## 2026-10-03 (canonical AGENTS sync)
+
+> start med at få canonical AGENTS.md på plads
+
+## 2026-10-03 (local z88dk wiki)
+
+> vi har en lokal kopi af z88dk wikien
+
+## 2026-10-03 (math32 2.4 -> 2.5)
+
+> bemærk at der er sket et løft af math32 fra z88dk 2.4 til 2.5.  Mange tidliger ebeslutninger i dette projekt blev truffet inden.
+
+## 2026-10-03 (printf-autoformat revalidation)
+
+> genverificer printf-autoformat
+
+## 2026-10-03 (math32 build dependencies)
+
+> er der mere vi mangler?
+
+## 2026-10-03 (commit and CI)
+
+> commit og push.  se ci lykkes

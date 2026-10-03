@@ -1,5 +1,28 @@
 # Lessons Learned
 
+## 2026-10-03: z88dk math32 runtime tests require a fresh archive
+
+`lib/clibs/math32.lib` is ignored generated output. The math32 archive rule
+depends on its C text objects, while the assembly lists are assembled inside
+the recipe rather than declared as source prerequisites. On 2026-10-03 the
+archive predated the current special-case assembly by several weeks: 13
+NaN/Inf assertions failed against the stale library, then the same emitted C
+program passed after rebuilding and relinking the current archive. Before
+blaming the Z80 ABI, compiler, or math32 semantics, verify which archive was
+linked and refresh it from the checked-out assembly sources.
+
+The zcc printf-autoformat runtime also depends on a current `cpm_clib.lib`.
+After refreshing math32, the installed CP/M archive still lacked the current
+`__stdio_printf_sign_0` helper and failed at link time. Rebuilding that archive
+made the official zcc/ntvcm test pass. zcc hardcodes `/tmp` for its temporary
+files, so `TMPDIR` alone is insufficient; use a scratch-built test driver with
+those paths redirected into `scratch/tmp`.
+
+The math32 build rule now declares its assembly and `.lst` files as
+prerequisites for all 13 archive variants. `test/clang/math32_archive_deps.sh`
+checks this dependency graph, and `make -W <assembly-source> <math32.lib>`
+verifies the real archive recipe rebuilds when an assembly input changes.
+
 ## 2026-10-03: Distinguish test language/location from compiler selection
 
 For this printf regression, "only llvm-z80" means a z88dk C test run with

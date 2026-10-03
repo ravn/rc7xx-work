@@ -1,5 +1,55 @@
 # Z80 Code Density Optimization Todo
 
+## Implementeringsplan: z88dk 2.5 math32 uden llvmz80-broer (2026-10-03)
+
+**Mål:** verificere og færdiggøre `z80-unknown-none-z88dk`'s direkte brug af
+z88dk math32 i den lokale 2.5-udviklingslinje. Ældre z88dk-versioner er
+udtrykkeligt uden for scope. Brug `--math32` eksplicit i kommandoer og tests.
+
+**Fast integrationskontrakt:** backend emitterer direkte kald til eksisterende
+`cm32_sdcc_*`-indgange med `Z80_SDCCCall0`. De eksisterende runtime-adaptere i
+math32 er tilladte; ingen nye wrapper-/bridge-symboler, filer eller arkiver må
+tilføjes i llvm-z80 eller z88dk. Hvis en eksisterende entry mangler, stop og
+registrér gap'et i stedet for at skabe en adapter.
+
+1. [x] Registrerede revisions/dirty-state og byggede fire eksisterende
+   baseline-programmer før ændring. De gemte pre-change `.COM`-filer passerede
+   alle med `ntvcm -m:50`: float, fconv, libm og fcmp gav `ALL PASS`.
+2. [x] Verbose zcc-link viser, at den direkte `--math32`-vej vælger
+   `-lmath32` for +cpm/llvmz80 på den aktuelle z88dk-linje. Emit assembly
+   kalder direkte `cm32_sdcc_*` for arithmetic/conversion/compare og de
+   eksisterende `*_fastcall`-indgange til math32 libm.
+3. [x] Opdatér alle relevante `test/clang` runtime-, smoke- og benchmark-
+   invokationer til `--math32`, herunder `runtime_float.sh`,
+   `runtime_fconv.sh`, `runtime_libm.sh`, compare-tests, `issue81_target_triple`
+   og math32-vs-compiler-rt scripts. Fjern gamle float-bridge-påstande,
+   bridge-afhængigheder og manuelle `-L/-lmath32`-valg.
+4. [x] Udvidede arithmetic-oraklet med NaN/Inf i begge operandpositioner og
+   ugyldige operationer. Math32-dokumentationen angiver canonical qNaN;
+   denormaler understøttes ikke, og ingen ny denormal-semantik er antaget.
+5. [x] Første special-value-kørsel gav 13 failures, fordi linkeren brugte det
+   ignorerede `lib/clibs/math32.lib` fra 11. august, mens math32-assemblykilderne
+   var fra 27. september. Math32-kernen blev genbygget fra aktuelle kilder;
+   samme float-assembly genlinket mod det nye arkiv gav `ALL PASS`. Friske
+   relinks af fconv, libm og strict/fast fcmp gav også `ALL PASS`. Ved
+   genverifikation af printf-autoformat manglede `__stdio_printf_sign_0` i
+   det installerede `cpm_clib.lib` fra 11. august. Genbygning af CP/M-arkivet
+   fra de aktuelle kilder og genkørsel af den officielle zcc-test gav
+   `PASS: stock printf("%f") auto-selects classic converters (no #pragma)`.
+   zcc's hardcodede `/tmp`-stier blev i testværktøjet omdirigeret til
+   `scratch/tmp`; ingen compiler- eller runtime-kilde blev ændret.
+   Den manglende afhængighedsgraf blev også rettet: alle 13 math32-arkiver
+   sporer nu de assembly- og `.lst`-inputs, deres recipe assemblerer. Den nye
+   `test/clang/math32_archive_deps.sh` fejlede før Makefile-rettelsen og
+   passerer nu for samtlige arkivvarianter; `make -W` genbyggede det primære
+   math32-arkiv fra den simuleret ændrede assemblykilde. Den installerede
+   `lib/clibs/math32.lib` blev synkroniseret byte-identisk med outputtet, og
+   printf-autoformat runtime-testen blev genkørt og bestod igen.
+6. [x] Ingen backend-mapping blev ændret; derfor ingen ny lit-test nødvendig.
+7. [x] Opdaterede math32-testbeskrivelser og `--math32`-recipes.
+   Historiske bridge-designnoter forbliver eksplicit historiske. Ingen commit,
+   push eller PR.
+
 ## Removing implicit z88dk no-NaN contract (2026-10-03)
 
 - [x] Observe lit and actual math32 comparison regressions fail before edits.
