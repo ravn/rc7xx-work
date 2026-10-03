@@ -63,7 +63,7 @@
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
 - **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel ifeq COMPILER recipes must emit the SAME artifact set**
 - **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use -Cg-O2; verify const data in SHELL; classic clib only (newlib abandoned)**
-- **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32 flag; auto-links fmath bridge + -mllvm -z80-float-sdcccall0**
+- **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32; triple-native calls to existing math32 entries; 2.4 facts are not 2.5**
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations; native llc/clang in llvm-z80/build-macos/bin
 - [ccache + cmake rekonfiguration](feedback_ccache_llvm_build.md) — Z80.cmake har ccache-støtte; brug altid `cmake -C Z80.cmake` ved rekonfiguration
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**

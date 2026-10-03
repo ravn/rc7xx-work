@@ -7,16 +7,63 @@ metadata:
 
 ## Status (2026-10-03)
 
-Historisk blev `llvmz80.lst` reduceret fra 13 broer til 3 float-broer
-(status pr. 2026-09-30). Den aktuelle målsætning er ingen llvmz80-specifikke
-wrapper-/bridge-stubs. For float betyder det, at backend'en kalder z88dk's
-eksisterende `cm32_sdcc_*` runtime-indgange med `sdcccall(0)`; de er en del af
-den almindelige z88dk-runtime og ikke llvmz80-broer. Allerede eksisterende
-adaptere i z88dk er acceptable; der må ikke skrives nye bridges/wrappere i
-hverken llvm-z80 eller z88dk. Manglende runtime-indgange skal markeres som gaps,
-ikke udfyldes med nye adaptere. Compare-stien bruger eksisterende z88dk
-math32-predicate-indgange for finite værdier; den aktuelle testpolicy
-udelukker NaN, og faktisk NaN-adfærd er ikke verificeret.
+### Version baseline
+
+Genbrug ikke beslutninger fra før math32-løftet som om de beskrev den aktuelle
+runtime. I z88dk v2.4 lå math32 under `libsrc/_DEVELOPMENT/`, og `zcc` havde
+`genmath@{ZCC_LIBCPU}` som standard; math32 skulle vælges eksplicit. I den
+aktuelle v2.5-udviklingslinje ligger det under `libsrc/math/float/math32/`,
+`-lm` og `--math32` vælger math32, og changelog'en lister math32 som default.
+Det lokale checkout har endnu ikke et `v2.5` git-tag.
+
+Den konkrete adapter-ABI er ikke automatisk blevet ugyldig: sammenlignede
+v2.4- og aktuelle adapterfiler for `fsadd/fssub/fsmul/fsdiv`, integer/float
+konverteringer og alle fire compare-predicates er byte-identiske. Det beviser
+ikke, at math32's numeriske adfærd er uændret: runtime-kernen er blevet
+omarbejdet efter v2.4. Genverificér derfor både biblioteksvalg/linking og
+runtime-værdier mod den aktuelle v2.5-udviklingslinje; brug ikke v2.4 Docker-
+resultater som bevis for den.
+
+Ingen llvmz80-specifikke float bridge-aliases er nødvendige. Under
+`z80-unknown-none-z88dk` kalder backend'en z88dk's almindelige
+`cm32_sdcc_*` math32-indgange med `CallingConv::Z80_SDCCCall0`. De eksisterende
+runtime-adaptere konverterer stack-argumenterne til math32-kernens ABI; de er
+normale medlemmer af `math32_sdcc.lst`, ikke llvmz80-broer. Den lokale
+wiki-kopi `z88dk-wiki/Math32.md` beskriver math32 som den fulde IEEE single
+library og dokumenterer `--math32`-linkvalget. Runtime README'en
+`z88dk/libsrc/math/float/math32/readme.md` beskriver math32's calling
+convention og kerneformatet. Der må ikke skrives nye bridges/wrappere i
+llvm-z80 eller z88dk; manglende indgange registreres som gaps.
+
+Før runtime-konklusioner skal det linkede `lib/clibs/math32.lib` verificeres
+mod assemblykilderne. Arkivet er ignoreret build-output. Den 2026-10-03 var
+det linkede arkiv fra 11. august, mens special-case-kilderne var ændret
+27. september; de tilsyneladende 13 NaN/Inf-fejl forsvandt efter genbygning og
+relink af samme testprogram.
+
+Math32-Makefile sporer nu alle `.asm`- og `.lst`-inputs for samtlige 13
+arkivvarianter. `test/clang/math32_archive_deps.sh` kontrollerer
+afhængighedsgrafen og fejlede før rettelsen. Behold kontrol af, at den
+installerede `lib/clibs/math32.lib` matcher det genbyggede `libsrc/math32.lib`,
+før runtime-resultater bruges til at vurdere compilerens ABI eller
+math32-semantik.
+
+Float-mappingen er:
+- aritmetik: `cm32_sdcc_fsadd`, `fssub`, `fsmul`, `fsdiv`
+- konverteringer: `cm32_sdcc___fs2sint`, `___fs2uint`, `___slong2fs`,
+  `___ulong2fs`
+- sammenligninger: `cm32_sdcc___fseq`, `___fsneq`, `___fslt`, `___fsgt`
+  samt `cm32_sdcc_fpclassify`
+
+math32 bruger IEEE-754 binary32-format, men understøtter ikke denormaler.
+README'en dokumenterer NaN-kodning og klassifikation. Dens predicate-rutiner
+ordner NaN-bitmønstre som tal, så strict LLVM-sammenligninger klassificerer
+begge operander og retter resultatet; kun eksplicit `nnan` må udelade dette.
+NaN-policyen er derfor ikke finite-only. Runtime-matricen med NaN i begge
+operandpositioner og de registrerede resultater står i
+`llvm-z80/tasks/plan-z88dk-native-runtime-2026-10.md` afsnit 9; se også
+`z88dk/test/clang/runtime_fcmp.c` og
+`llvm-z80/llvm/test/CodeGen/Z80/z88dk-fcmp-runtime.ll`.
 
 **Eliminerede** (backend kalder z88dk-kerner direkte via MCSymbol/addSym):
 | Bridge | Erstatning | Metode |
@@ -31,14 +78,13 @@ udelukker NaN, og faktisk NaN-adfærd er ikke verificeret.
 | `__strerror_table` | — | Newlib-only gap, ikke nødvendig på classic CP/M |
 | `__itoa` | — | `#define itoa(a,b,c) itoa_callee(a,b,c)` omgår den altid |
 
-**Compare-status:** Backendens Z88DK lowering kalder `cm32_sdcc___fseq`,
-`___fsneq`, `___fslt` og `___fsgt` med `sdcccall(0)`; `ORD`/`UNO` er
-konstanter inden for finite-only testkontrakten. 142/142 Z80 lit-tests og de
-to finite-only zcc/ntvcm compare-tests passerer. Den lokale z88dk
-`llvmz80.lst`-ændring udelader `__cmpsf2.asm`; ingen ny wrapper er tilføjet.
-NaN-semantik forbliver uafklaret og uverificeret. Den første root z88dk-suite gav
-44 PASS/13 FAIL/11 XFAIL; de 13 ikke-FCMP-fejl mangler en før-baseline og er
-ikke tilskrevet denne compare-ændring.
+**Compare-status:** Backendens Z88DK lowering kalder de eksisterende
+`cm32_sdcc___fseq`, `___fsneq`, `___fslt`, `___fsgt` og
+`cm32_sdcc_fpclassify`-indgange med `sdcccall(0)`. Lit- og runtime-matricerne
+dækker strict/unordered predicates, eksplicit `nnan` samt 20 NaN-kombinationer
+i begge operandpositioner. De registrerede resultater er i
+`llvm-z80/tasks/plan-z88dk-native-runtime-2026-10.md` afsnit 9. Der tilføjes
+ingen llvmz80 bridge eller ny z88dk-adapter.
 
 ## Tilhørende llvm-z80 branches
 
