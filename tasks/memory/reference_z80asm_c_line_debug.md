@@ -7,6 +7,11 @@ metadata:
 
 ## C_LINE emission (ravn/llvm-z80, 2026-10-01)
 
+The operand is a raw z80asm string, not a C-escaped string. Quotes and LF/CR
+in debug filenames or function names are rejected with a compiler error when
+C_LINE is emitted. Backslashes are preserved literally. ELF output and
+locations that emit no C_LINE are unaffected.
+
 `Z80AsmPrinter::emitInstruction()` emits `C_LINE <line>, "<file::func::level::scope>"`
 before each instruction when targeting z80asm format AND the instruction carries
 `DebugLoc`. Requires `-g` (via `-Cg-g` under zcc).

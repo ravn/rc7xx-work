@@ -1,5 +1,41 @@
 # Prompts
 
+## 2026-10-03 (review fixes commit)
+
+> analyser og commit
+
+## 2026-10-03 (remove runtime optimization adaptation)
+
+> Kan du rydde det kode op der forsøgte at tage sig af det?
+
+## 2026-10-03 (clarified z88dk C regression scope)
+
+> Jeg vil have en test i z88dk i c , der kun fyrer for llvm-z80, som checker at - trods optimale betngelser - så bliver printf ikke til puts
+
+## 2026-10-03 (LLVM-only printf regression)
+
+> dette skal være en ren llvm-z80 test, ikke clang
+
+## 2026-10-03 (keep printf ABI optimization gate)
+
+> Så ret testen til at checke at der _ikke_ optimeres
+
+## 2026-10-03 (printf folding diagnosis)
+
+> undersøg hvad problemet er
+
+## 2026-10-03 (C printf-to-puts regression)
+
+> lav en test i c der viser printf -> puts optimeringen virker som den skal
+
+## 2026-10-03 (remaining PR review comments)
+
+> kig på resten
+
+## 2026-10-03 (C_LINE unsupported characters)
+
+> jeg tænker vi tager linjeskift med, det bør der ikke være i filnavne
+
 ## 2026-10-03 (scoped cleanup)
 
 > ryd op

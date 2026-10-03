@@ -1,5 +1,82 @@
 # Z80 Code Density Optimization Todo
 
+## Removing synthesized-libcall CC stamping (2026-10-03)
+
+- [x] Observe convention-preservation regression fail before removal.
+- [x] Remove Z88DK-specific BuildLibCalls stamping without touching header ABI
+  or direct native runtime calls; update integration decision.
+- [x] Rebuild assertions tools; 144 codegen lit PASS and z88dk C no-fold/value
+  regression PASS at O2/O3/Oz.
+
+Existing C declarations and calls now retain C convention after InstCombine.
+Non-C header calls remain blocked from printf-to-puts simplification.
+No commit or push requested.
+
+Pre-commit analysis (user subsequently requested commit): compiler default
+launcher gives 426 runtime PASS, 0 FAIL, 6 SKIP; curated lit 152 PASS.
+z88dk suite gives 71 PASS, 0 FAIL, 0 SKIP, 1 XFAIL.
+An initial erroneous `run-llvmz80-tests.sh test` invocation selected a different
+suite and reported 29 cross-compiler link failures; the documented no-argument
+clang/lit entry point was then used successfully. No claim that the cross-
+compiler suite passes. Remaining PR findings are outside this commit scope.
+
+## C printf-to-puts regression (2026-10-03)
+
+Final location per clarified user request: `z88dk/test/clang/runtime_printf_puts.c`
+and `.sh`. The script selects `-compiler=llvmz80` explicitly and checks one
+puts/one retained printf call plus exact runtime output at O2/O3/Oz, all PASS.
+The format is constant, the result unused and the argument a dynamic pointer;
+no builtin-disabling flags. The provisional LLVM-only test was removed.
+
+Isolated-pass investigation: real header-generated input and output saved in
+`scratch/tmp/printf-puts-real-{input,instcombine}.ll`. printf uses
+z80_sdcccall0, puts uses cc129; InstCombine preserves printf. A C-convention
+printf control with an already-correct cc129 puts declaration folds to cc129
+puts. The block is `SimplifyLibCalls.cpp:4350` -> compatibility check in
+`TargetLibraryInfo.cpp:66-95`, whose accepted cases exclude Z80 conventions.
+User chose to retain this conservative ABI gate for initial integration.
+The separate shared-declaration mutation repro remains valid.
+
+Added `z88dk/test/clang/runtime_printf_puts.c` and `.sh`: real stdio headers,
+direct puts followed by printf("%s\n", dynamic pointer), exact output and
+one-puts/one-printf codegen assertions at O2/O3/Oz; all three levels PASS.
+Initially tested for folding and observed RED; user clarified that different
+calling conventions must block this optimization for now.
+TLI's calling-convention compatibility check rejects the header's non-C ABI,
+so the hand-authored C-convention IR repro does not demonstrate this folding
+on the ordinary header path. No compiler fix made; the regression now protects
+the intentional absence of this optimization and both runtime ABIs.
+
+## Remaining review investigation (2026-10-03)
+
+- [x] Reproduce frontend stale expectations and verify missing registration.
+- [x] Reproduce symbol collision from ordinary C: global `example_counter`
+  versus function-local static `example.counter`.
+- [x] Observe dynamic ORD/UNO compile to constants on Z88DK without nnan;
+  default-target controls call `__unordsf2`.
+- [x] Reproduce e2e exit-0 SKIP with all three prerequisites present and valid
+  LLVMZ80EXE, but no PATH clang.
+- [x] Observe scope IDs change from 3 to 4 to 5 within one lexical block;
+  downstream variable-visibility effects remain unverified.
+- [x] Reproduce shared libcall declaration convention mismatch with isolated
+  instcombine: pre-existing puts call stays C, declaration/new call become
+  cc129. Codegen passes one pointer in HL and the other on the stack.
+  New-declaration and default-target controls behave consistently;
+  runtime impact and natural Clang-source reproduction were not tested.
+
+Investigation only; C_LINE validation remains the sole pending compiler fix.
+
+## C_LINE raw-string validation (2026-10-03)
+
+- [x] Observe failing lit regression before implementation.
+- [x] Reject quotes, LF and CR with explicit diagnostics in C_LINE operands;
+  preserve raw backslashes and valid UTF-8, with ELF/line-zero controls.
+- [x] Verify a real C filename diagnostic and full Z80 codegen suite:
+  quoted filename fails with debug emission but compiles without it;
+  all 144 codegen lit tests pass.
+
+No escaping or z80asm parser changes; no commits or pushes requested.
+
 ## Cleanup: shared test setup and stale comments (2026-10-03)
 
 - [x] Observe a failing discovery test before changing `test_env.sh`.

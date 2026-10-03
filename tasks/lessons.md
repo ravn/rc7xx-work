@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## 2026-10-03: Distinguish test language/location from compiler selection
+
+For this printf regression, "only llvm-z80" means a z88dk C test run with
+`-compiler=llvmz80`, not an LLVM IR test. Preserve the requested C source and
+runtime integration when narrowing compiler coverage.
+
+## 2026-10-03: C_LINE strings do not decode assembler escapes
+
+z80asm `scan2.re:521-526` selects raw-string parsing for C_LINE.
+An octal-escaped quote assembles, but the map stores literal `\042`, not the
+original quote; source lookup therefore receives a different filename.
+Verify the decoded filename in the map, not merely assembler success.
+Normal data-string escape support does not establish filename escape support.
+
 ## 2026-10-03: Symbol spelling transformations need collision controls
 
 The native-runtime branch rewrites `.` to `_` in private symbol names.
