@@ -1,5 +1,20 @@
 # Z80 Code Density Optimization Todo
 
+## Length-encoded z88dk symbols (2026-10-03)
+
+- [x] Observe new lit regression fail and actual C link fail with duplicate
+  `_test_counter` before changing the compiler.
+- [x] Length-encode dotted names after LLVM prefixes; leave undotted names
+  and non-z88dk output unchanged. Update existing checks and integration docs.
+- [x] Cover references, definitions, aliases, private strings, empty parts,
+  underscores, digits, multi-digit lengths and ordinary C controls in lit.
+- [x] Rebuild assertions clang/llc/lld/opt/FileCheck; 145 Z80 codegen lit PASS.
+- [x] Run C collision regression at O2/O3/Oz and complete z88dk suite:
+  72 PASS, 0 FAIL, 0 SKIP, 1 existing tmpfile XFAIL.
+
+Guarantee covers ordinary C symbols, not explicit user asm names.
+Commit subsequently requested; no push requested.
+
 ## Removing synthesized-libcall CC stamping (2026-10-03)
 
 - [x] Observe convention-preservation regression fail before removal.

@@ -1,5 +1,15 @@
 # Prompts
 
+## 2026-10-03 (length-encoded z88dk symbols)
+
+> undersøg om det bliver kollisionsfrit
+
+> det er tilstrækkeligt med c symboler
+
+> ret det
+
+> commit
+
 ## 2026-10-03 (review fixes commit)
 
 > analyser og commit
