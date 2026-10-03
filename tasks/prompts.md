@@ -1,5 +1,15 @@
 # Prompts
 
+## 2026-10-03 (NaN contract)
+
+> undersøg om math32 understøtter nan i det hele taget
+
+> kan vi bruge en anden kaldemåde der virker bedre?
+
+> hvordan fortæller vi llvmz80 at math32 har den opførsel
+
+> så træk det implicit “ingen NaN”-løfte tilbage
+
 ## 2026-10-03 (analysis, summary, commit and push)
 
 > analyser, opsummer, og foreslå issues hvis nødvendigt.  commit og pusg

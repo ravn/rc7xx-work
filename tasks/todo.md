@@ -1,5 +1,18 @@
 # Z80 Code Density Optimization Todo
 
+## Removing implicit z88dk no-NaN contract (2026-10-03)
+
+- [x] Observe lit and actual math32 comparison regressions fail before edits.
+  Lit fails; 20 NaN input combinations fail, finite controls pass.
+- [x] Preserve NaN semantics using existing classification entries only;
+  retain the explicit nnan path and unchanged default-target behavior.
+- [x] Rebuild assertion tools and verify all predicate shapes, NaN operands
+  in either position, finite controls, and explicit nnan controls.
+  Backend/MC/frontend lit: 150 PASS; runtime matrix O0/O2/O3/Oz PASS;
+  no-honor-nans/fast-math finite controls PASS. Existing comparison,
+  arithmetic and conversion scripts PASS.
+- [x] Update current runtime integration documentation.
+
 ## Bounded emulation and utils investigation (2026-10-03)
 
 - [x] Linked-list cause proven by independent direct/stale/rebuilt artifact
