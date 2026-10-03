@@ -1,5 +1,49 @@
 # Z80 Code Density Optimization Todo
 
+## Plan: Genintegrer llvmz80-backend oven på upstream/master (2026-10-03)
+
+**Mål:** gøre det eksisterende z88dk-arbejde for direkte `zcc
+-compiler=llvmz80` brugbart oven på den nye upstream-baserede `master` med
+mindst mulig overlap og uden at genindføre forkens gamle zpragma-scanner.
+
+**Afgrænsning:** Bevar `ravn-main` urørt som historisk reference. Arbejd på en
+ny lokal gren fra `master` (= `upstream/master`). Medtag kun ændringer, der
+kræves for zcc/llvmz80-driveren, dens ABI/runtime-integration og tests/docs.
+Uafhængige RC700- og øvrige forkændringer kommer ikke automatisk med.
+
+1. [x] Færdiggør inventaret af backend-deltaet: zcc-driveren, ABI-headers,
+   math32-arkivafhængigheder og målrettede tests/docs er nødvendige; upstreams
+   zpragma og uafhængige RC700-/forkændringer er ikke. Hele `ravn-main` har 87
+   patch-unike commits mod upstream, så en blind merge eller rebase ville
+   trække uvedkommende arbejde med.
+2. [x] Opret `reintegrate-llvmz80-on-upstream-20261003` fra præcis
+   `upstream/master` (`e67ef86a93`); `master` og `ravn-main` står urørte.
+3. [x] Port de relevante tests under `test/llvmz80`: zcc-target/TMPDIR,
+   upstream-scannerdiagnostik, callback-ABI, math32 arithmetic/conversions/
+   compares/libm, printf-autoformat og arkivafhængigheder.
+4. [x] Port driver- og ABI-headerændringerne samt math32-arkivafhængighederne.
+   Float-path bruger eksisterende math32-indgange med `--math32`; ingen nye
+   llvmz80-broer eller scannerændringer blev indført.
+5. [x] Bekræft de oprindelige baseline-fejl for TMPDIR/backendvalg og
+   arkivafhængigheder. Kør derefter `make -C test llvmz80`: alle 11 tests
+   bestod, herunder runtime-tests under ntvcm.
+6. [x] Gennemgå ændringsomfanget. Upstreams scanner/Makefile er urørt; den
+   dedikerede teststi er `make -C test llvmz80` og indgår ikke i standard-
+   `test`-target. z88dk-koden er lokalt committet som `495db0b18a`; dette
+   workspace-commit registrerer testarbejdet og submodule-pinnen. Ingen push.
+
+**Bekræftet udgangspunkt:** `native-llvmz80-runtime-20261003` indeholder syv
+arbejdskommits oven på den bevarede gamle master samt den seneste zpragma-
+adoption. De syv dækker native math32, testflytning, NaN-test, symbol- og
+printf-ABI-regressioner, testværktøjsopdagelse og runtime-verifikation.
+Grundintegrationen (`-compiler=llvmz80`, ABI-headers, CRT/runtime og den
+oprindelige testsuite) ligger allerede i den gamle fork-baseline, ikke i de
+syv commits. Upstream har sin egen zpragma-scanner, `Makefile`-testtarget og
+scanner-unit-tests; de skal beholdes. `runtime_printf_autoformat` findes
+allerede under `test/llvmz80` på featuregrenen. `autoformat_nonliteral_note`
+findes på den gamle gren og skal genafprøves mod upstream-scanneren før
+eventuel portering.
+
 ## Replacing fork zpragma scanner with upstream (2026-10-03)
 
 1. [x] Establish current behavior: fork scanner 67/67, llvmz80 printf
@@ -13,13 +57,13 @@
 
 ## Math32 test placement (2026-10-03)
 
-1. [x] Move the llvmz80/math32 runtime, archive-dependency, triple, and
-   benchmark scripts with their fixtures into `z88dk/test/llvmz80`; leave the
-   zsdcc-specific printf test in `test/clang`.
-2. [x] Update environment resolution and the existing master runner so direct
-   invocations and `test/clang/run_all.sh` both find the relocated tests.
-3. [x] Document the entry points and verify shell syntax, test discovery, and
-   relocated runtime and archive-dependency regression tests.
+1. [x] Place the llvmz80/math32 runtime, archive-dependency, target-triple,
+   callback, and autoformat tests with their fixtures in `z88dk/test/llvmz80`.
+2. [x] Add a dedicated runner and `make -C test llvmz80` entry point. The
+   suite is intentionally separate from the default upstream tests.
+3. [x] Document tool discovery and the test entry point; verify shell syntax
+   and run all 11 discovered tests successfully. No benchmark scripts were
+   added to this dedicated regression suite.
 
 ## Implementeringsplan: z88dk 2.5 math32 uden llvmz80-broer (2026-10-03)
 

@@ -1,5 +1,13 @@
 # Prompts
 
+## 2026-10-03 (z88dk AGENTS.md)
+
+> AGENTS.md i z88dk skal være den der hører til z88dk projektet.
+
+## 2026-10-03 (reintegrate llvmz80 backend on upstream master)
+
+> jeg har lavet noget arbejde på at tilføje funktionalitet der gør det muligt at bruge den reviderede llvm-z80 som backend direkte med "zcc". Det forrige arbejde med zpragma er blevet tilføjet af upstream og er bedre end mit men jeg vil gerne bruge testtene dertil hvis de passer. Jeg vil gerne rulle det arbejde vi har lavet ovenpå den nye master med så få og elegante rettelser som muligt. Det kræver nok en plan
+
 ## 2026-10-03 (math32 implementeringsplan)
 
 > lav en implementationsplan.  Vi behøver ikke understøtte tidligere versioner af z88dk.
@@ -1217,9 +1225,15 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 
 > jeg vil hellere have at de nye tests i z88dk test/clang lander i test/llvmz80. Hvordan bliver de kaldt?
 
+> hvordan går det?
+
 ## 2026-10-03 (z88dk branch comparison)
 
 > what is then the difference from the branch we did the work on?
+
+## 2026-10-03 (commit integrated changes)
+
+> lav et samlet commit af ændringerne
 
 ## 2026-10-03 (z88dk upstream merge feasibility)
 
