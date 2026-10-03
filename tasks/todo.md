@@ -1,5 +1,61 @@
 # Z80 Code Density Optimization Todo
 
+## Bounded emulation and utils investigation (2026-10-03)
+
+- [x] Linked-list cause proven by independent direct/stale/rebuilt artifact
+  comparison: stale elf2rel emitted _BSS, placing the pool at zero.
+  Rebuilt unchanged converters restore 000F; all six link statuses were zero.
+  Evidence: scratch/tmp/linked-list-analysis-20261003/analysis.txt.
+- [x] Minimal strcmp C repro links before conversion, fails afterwards.
+  Relocation at offset 0x7 changes from _strcmp to _strcmp__sdcc in rel2elf.
+  Unconditional renaming predates current integration (7de40b8e5e19).
+  Both test_66 linker errors share that missing symbol; REL additionally
+  reports duplicate _memcmp/_strncmp across native and SDCC runtime archives.
+- [x] Stop old full-suite runs that used 900-second emulator deadlines.
+- [x] Observe 30-second policy regression fail at 900 seconds; reduce both
+  emulator paths to 30 seconds and join output readers after kill/reap.
+- [x] Actual JP 0 loop times out in both paths; positive halt/value control
+  passes. Combined regression run completes in 30.01 seconds.
+- [x] Observe failed REL link accepted with existing IHX, then reject nonzero
+  status with diagnostics before emulation. Actual missing-symbol test passes.
+- [x] Minimal strcmp conversion changes undefined `_strcmp` to
+  `_strcmp__sdcc`; native runtime defines only `_strcmp`.
+- [x] Guarded test_66 now reports two link FATALs, not emulator timeout.
+- [x] Full utils Z80 finishes: 409 PASS, 0 FAIL, 2 FATAL, 7 SKIP.
+
+Newlib and SDCC SM83 are outside the requested scope. Total suite duration
+is not bounded by the per-emulator deadline. The original full/torture run
+and subsequent broad runtime run were stopped; no complete full-suite PASS.
+All new timeout/linker tests pass. Existing cleanup unit test
+`keeps_dirs_owned_by_a_live_process` fails both parallel and serial;
+no change to that unrelated implementation.
+
+Commit/push subsequently authorized. Pre-commit recheck: Clang runtime
+426 PASS / 6 SKIP, curated lit 153 PASS; Rust 5 PASS with the independently
+observed existing cleanup failure explicitly filtered out.
+
+Issue candidates, not filed:
+
+- rel2elf unconditionally changes LLVM roundtrip symbols to __sdcc;
+  native-runtime linking then fails. Minimal original-vs-roundtrip link and
+  symbol/relocation output prove this. Existing #359 concerns a different
+  archive-linking cause, not this renaming.
+- macOS cleanup considers live processes dead: owner_is_running checks
+  /proc/<pid> only; its own live-process unit test fails. This threatens
+  concurrent runs by allowing active temporary directories to be deleted.
+  No new implementation proposed or applied.
+
+Duplicate searches in ravn/llvm-z80 and llvm-z80/llvm-z80 returned no matching
+issue for either candidate; search absence is not proof of no duplicate.
+Linked-list required only rebuilding stale converters, not a source fix.
+No new issue proposed for the two mitigated runner failures in this commit.
+
+Push encountered new origin commit c69f039b4fd7 registering the frontend
+triple test. Merged --no-ff; observed lit fail on remaining stale fcmp,
+conversion and double-add compiler-rt checks. Updated only Z88DK expectations
+to the independently runtime-tested native math32 entries. All five frontend
+RUN lines now pass; post-merge runtime 426 PASS / 6 SKIP and lit 154 PASS.
+
 ## Length-encoded z88dk symbols (2026-10-03)
 
 - [x] Observe new lit regression fail and actual C link fail with duplicate

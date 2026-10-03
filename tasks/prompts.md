@@ -1,5 +1,18 @@
 # Prompts
 
+## 2026-10-03 (analysis, summary, commit and push)
+
+> analyser, opsummer, og foreslå issues hvis nødvendigt.  commit og pusg
+
+## 2026-10-03 (bounded tests and utils analysis)
+
+> jeg ønsker at garantere afslutning i fornuftig tid
+
+> mens vi venter på resten af testen så undersøg de tre
+
+> du skal ikke køre testen hvis der er linkerfejl (det er fatalt)
+
+
 ## 2026-10-03 (length-encoded z88dk symbols)
 
 > undersøg om det bliver kollisionsfrit
