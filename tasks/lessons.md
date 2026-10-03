@@ -1,5 +1,14 @@
 # Lessons Learned
 
+## 2026-10-03: Symbol spelling transformations need collision controls
+
+The native-runtime branch rewrites `.` to `_` in private symbol names.
+The distinct LLVM globals `@.str.1` and `@.str_1` both become `L__str_1`;
+assertions llc reports `symbol 'L__str_1' is already defined`.
+When adapting symbol spelling for an assembler, test pairs that differ only
+in an escaped character versus its replacement. Successful assembly of one
+ordinary string literal does not prove that distinct names remain distinct.
+
 ## 2026-03-27: Direct addressing has cascading benefits
 
 Phase 1 (direct global addressing) saved 234 bytes — more than double the 100B estimate. The cascade effect is real: eliminating register pair usage for address computation reduces spill pressure, which makes IX unused in more functions, which triggers the existing unused-IX-removal pass. When estimating optimization savings, account for second-order effects on register pressure.

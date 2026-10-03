@@ -1,5 +1,47 @@
 # Z80 Code Density Optimization Todo
 
+## Cleanup: shared test setup and stale comments (2026-10-03)
+
+- [x] Observe a failing discovery test before changing `test_env.sh`.
+- [x] Centralize benchmark toolchain discovery; prefer assertions build,
+  preserve compiler/build overrides and reject invalid explicit selections.
+- [x] Update stale bridge/EXX/status comments without changing compiler ABI,
+  C_LINE scope, symbol rewriting or finite-only policy.
+- [x] Verify discovery controls, both triple-test prefixes and the complete
+  z88dk suite: 70 PASS, 0 FAIL, 0 SKIP, 1 XFAIL (tmpfile), 125 seconds.
+
+New `test_env_test.sh` uses fake tools to check discovery independently of
+installed compilers. No build directories deleted; no commits or pushes.
+
+## Review: cumulative native-runtime changes (2026-10-03)
+
+- [x] Review llvm-z80 `main...HEAD`: ownership, target gating, ABI machinery,
+  reuse and unnecessary special cases.
+- [x] Review z88dk `master...HEAD` (its default branch) and workspace
+  `main...HEAD`: test oracles, duplicated setup and stale documentation.
+- [x] Report substantiated findings separately from optional cleanup;
+  locate the existing C_LINE scope format in source.
+
+Read-only implementation review; no compiler/runtime edits, commits or pushes.
+
+Runtime review: no new adapters; production diff only removes the compare
+object from `llvmz80.lst`. Toolchain discovery is duplicated in the two
+benchmarks and omits the assertions build in the newly tracked `test_env.sh`.
+The benchmark harness is tracked in the workspace, not the z88dk repository;
+both benchmark headers still reference the removed `MATH32_BRIDGE.md`.
+The integer fixtures cover distinct failure modes and should remain separate.
+C_LINE's packed scope format is emitted in sccz80 `codegen.c:5412` and parsed
+in ticks `syms.c:37-55`; no wiki claim was made.
+
+Compiler review: native-call helpers and EXX/IX dependencies are justified;
+no new runtime wrappers. Private-symbol `.` -> `_` rewriting is non-injective:
+`@.str.1` and `@.str_1` both become `L__str_1`, independently reproduced with
+assertions llc (exit 1: symbol already defined). LLVM C_LINE uses source line
+as a lexical-block proxy, unlike sccz80's block counter; downstream variable
+scope effects were not tested. Finite-only FCMP remains an unenforced target
+assumption, not standard unrestricted NaN semantics. Some test/status comments
+and e2e compiler discovery need cleanup. No implementation fixes made.
+
 ## Implementation: native z88dk runtime (2026-10-03)
 
 - [x] Ret i16 quotient/remainder efter observerede røde lit/runtime-tests.

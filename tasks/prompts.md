@@ -1,5 +1,16 @@
 # Prompts
 
+## 2026-10-03 (scoped cleanup)
+
+> ryd op
+> punktet "Oprydning"
+> commit og push
+
+## 2026-10-03 (cumulative native-runtime review)
+
+> undersøg om de samlede rettelser i forhold til main er så enkle og rene som de kan blive
+> hvor er c_line med scope definieret i wiki eller kildetekst
+
 ## 2026-06-24 (B17 carry-chain fix)
 
 > do b17
