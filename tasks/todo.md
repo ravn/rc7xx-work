@@ -1,5 +1,15 @@
 # Z80 Code Density Optimization Todo
 
+## Math32 test placement (2026-10-03)
+
+1. [x] Move the llvmz80/math32 runtime, archive-dependency, triple, and
+   benchmark scripts with their fixtures into `z88dk/test/llvmz80`; leave the
+   zsdcc-specific printf test in `test/clang`.
+2. [x] Update environment resolution and the existing master runner so direct
+   invocations and `test/clang/run_all.sh` both find the relocated tests.
+3. [x] Document the entry points and verify shell syntax, test discovery, and
+   relocated runtime and archive-dependency regression tests.
+
 ## Implementeringsplan: z88dk 2.5 math32 uden llvmz80-broer (2026-10-03)
 
 **Mål:** verificere og færdiggøre `z80-unknown-none-z88dk`'s direkte brug af

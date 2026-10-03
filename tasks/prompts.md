@@ -1212,3 +1212,11 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 ## 2026-10-03 (commit and CI)
 
 > commit og push.  se ci lykkes
+
+## 2026-10-03 (math32 test location)
+
+> jeg vil hellere have at de nye tests i z88dk test/clang lander i test/llvmz80. Hvordan bliver de kaldt?
+
+## 2026-10-03 (z88dk branch comparison)
+
+> what is then the difference from the branch we did the work on?
