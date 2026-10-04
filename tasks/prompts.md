@@ -1,5 +1,21 @@
 # Prompts
 
+## 2026-10-04 (calling-convention A/B plan)
+
+> commit og push
+
+> start
+
+> du skal ikke svare, jeg ønsker vi går efter en A/B måling.  Vil det kunne gøres ved at kunne angive standard callling convention fra kommandolinjen i llvm-z80?
+
+> lav en plan mens vi venter.  arbejdet skal ske i en branch
+
+## 2026-10-04 (LLVM-Z80 squash rebuild)
+
+> jeg har opdateret llvm-z80 med et squash af z88dk arbejdet
+
+> genbyg med ccache og test
+
 ## 2026-10-03 (CP/M test isolation)
 
 > det burde være i en tempfolder der blev slettet automatisk

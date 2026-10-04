@@ -1,5 +1,41 @@
 # Z80 Code Density Optimization Todo
 
+## Calling-convention A/B plan (2026-10-04)
+
+- [x] Write `tasks/plan-default-calling-convention-ab-20261004.md`.
+- [x] Create `experiment-default-cc-ab-20261004` in llvm-z80 from
+  `cdf7fbabe800`, without switching checkout during the ongoing build.
+- [x] Implement driver/cc1 options and ABI fixtures; run final 32-cell matrix.
+  Report: `llvm-z80/z80-utils/benchmarks/default-cc/RESULTS.md`.
+  Final gates: clang 438 PASS / 6 SKIP; lit 155 PASS; SDCC ABI 174 PASS;
+  z88dk 14/14 PASS. Two broader Rust unit-test failures remain documented.
+  Work remains on the experiment branch; commit/push authorized below.
+
+## LLVM-Z80 squash rebuild and tests (2026-10-04)
+
+**Corrected run:** The first run below built upstream/main without the squash.
+After updating local main to origin/main, `cdf7fbabe800` was rebuilt with
+ccache/assertions (clang, llc, lld, opt, FileCheck and inspection tools).
+Clang's version confirms that SHA. Runtime: 426 PASS, 6 SM83-only SKIP;
+SDCC ABI: 174 PASS; lit: 154 PASS; active z88dk suite: all 14 scripts PASS.
+Logs: `scratch/tmp/squash-{compiler,sdcc,z88dk}-tests.log`.
+The earlier 11 target-triple failures do not occur with the squash build.
+
+1. [x] Reconfigure `build-macos-asserts` using `Z80.cmake`,
+   `LLVM_CCACHE_BUILD=ON`, assertions and the CommandLineTools environment.
+   Verify ccache in actual Ninja compiler commands; rebuild clang, llc, lld,
+   opt, FileCheck and assembler/object inspection tools at `24afb830878c`.
+2. [x] Run compiler runtime and lit suites with the rebuilt tools.
+   Clang runtime: 426 PASS, 0 FAIL, 6 SKIP (SM83-only inline asm on Z80).
+   SDCC cross-compiler ABI runtime: 174 PASS, 0 FAIL, 0 SKIP.
+   Runner lit: 141 PASS; additional Z80 Clang lit selection: 11 PASS.
+   Logs: `scratch/tmp/rebuild-20261004-{compiler-tests,sdcc-tests,clang-lit}.log`.
+3. [x] Run all 14 active z88dk integration scripts.
+   3 PASS, 11 FAIL: every failing script reports that the compiler rejects
+   `z80-unknown-none-z88dk` as an invalid target triple.
+   No integration fix was made; rebuilding and measuring the failure set
+   were the requested scope. The integration is not green.
+
 ## CP/M test-file isolation (2026-10-03)
 
 1. [x] Identify producers by filename and payload in preserved test history.
