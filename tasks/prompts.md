@@ -1,5 +1,11 @@
 # Prompts
 
+## 2026-10-04 (zcc llvmz80 default ABI)
+
+> det ser rigtigt ud, commit og push
+
+> jeg vil gerne have "-Cg-fdefault-calling-conv=sdcccall0" i z88dk for llvm-z80
+
 ## 2026-10-04 (calling-convention A/B plan)
 
 > commit og push

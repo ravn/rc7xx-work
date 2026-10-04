@@ -1,5 +1,17 @@
 # Z80 Code Density Optimization Todo
 
+## zcc llvmz80 default ABI (2026-10-04)
+
+- [x] Default the llvmz80 compilation command to sdcccall0 before user
+  `-Cg` flags, retaining an explicit sdcccall1 override.
+- [x] Observe the smoke regression fail before the change; rebuild zcc.
+  Verify real emitted IR for default0 and explicit1 and option ordering.
+  All 14 active integration scripts pass with the new default.
+  Mixed-ABI assembly/runtime spot check passes 1000 iterations under both
+  defaults; commit/push authorized. Historical benchmark no-flag controls
+  measured zcc's former default1; reruns of those harnesses must account
+  for the new zcc default0 rather than expecting no-flag to match A.
+
 ## Calling-convention A/B plan (2026-10-04)
 
 - [x] Write `tasks/plan-default-calling-convention-ab-20261004.md`.
