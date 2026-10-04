@@ -11,9 +11,12 @@
 - [x] Assess issue need: no unresolved integration failure observed.
   Missing pkg-config and stale generated dependencies were local build
   blockers, resolved without a source fix; no issue filed.
-- [ ] Commit and push scoped documentation and compiler/z88dk pointers;
+- [x] Commit and push scoped documentation and compiler/z88dk pointers;
   ensure child commits are on origin first, then publish the workspace.
   Check post-push remote parity and CI.
+  Published z88dk 73ffe423a3 and workspace summary dcd87d0;
+  LLVM 210143489a25 was already on origin. z88dk CI run 37219170554
+  passed; no workflow runs returned for the compiler/workspace branches.
 
 Closure supersedes historical "no commit/push" checkpoint notes below:
 LLVM changes through 210143489a25 and z88dk changes through 9be09aaf2c
