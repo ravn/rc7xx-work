@@ -1,5 +1,201 @@
 # Z80 Code Density Optimization Todo
 
+## Minimizing z88dk integration (2026-10-04)
+
+Commit authorization received: "commit". Local commits:
+- Compiler builtin ABI correction/tests/CI: `60abe413da58`.
+- z88dk attribute mapping: `8351f7527c`; builtin varargs: `3de629493d`.
+- wcmatch invocation: `907b927f78`; calloc alias: `a228e307f2`.
+- Minimal driver/runtime tests: `6bf4fb40c3`; TMPDIR: `1bc6512706`.
+The z88dk worktree remains on `minimal-llvmz80-20261004`; the main z88dk
+checkout/pin is unchanged. Compiler and minimal integration targeted gates
+were rerun before committing and passed. No pushes, merges or PRs.
+Unrelated benchmark changes remain uncommitted.
+
+Implemented in the isolated upstream worktree. Keep sdcccall(0) as the program
+default and use existing runtime entries without new bridges. Start from
+upstream headers, not the accumulated local workarounds. Attribute and
+prototype exceptions must be justified by actual compile/link/runtime evidence.
+Hard constraint: `__ZPROTO*` macros must match upstream exactly. Restore
+`sys/proto.h` to the chosen upstream version; no LLVM-Z80 macro branch,
+rewrites or replacement macros. Compatibility must be established without
+changing those definitions.
+Primary acceptance criterion: minimize source divergence from upstream.
+Do not retain local workarounds merely because they currently pass tests.
+Prepare small, single-purpose changes with their directly related tests and
+documentation. Keep independent fixes separate from LLVM-Z80 integration;
+avoid broad comment rewrites or formatting churn.
+Suggested change boundaries, adjusted only by observed dependencies:
+- Restore upstream prototypes/macros and remove dependent local-only uses.
+- Remove obsolete per-header ABI workarounds in independently verified groups.
+- Reduce compiler identification/attribute glue to demonstrated necessities.
+- Keep any required stdarg adaptation as a separate, minimal change.
+- Separate unrelated build/tooling fixes and accidental source differences.
+Do not combine these with compiler experiments or benchmark additions.
+Actual commits/pushes still require authorization; this records the desired
+patch structure, not permission to commit.
+
+Execution evidence (2026-10-04):
+- Fresh baseline: all 14 integration scripts pass at `e3b080b0ad`.
+  Log: `scratch/tmp/minimal-z88dk-baseline-20261004.log`.
+- Worktree: `scratch/z88dk-minimal-20261004`, branch
+  `minimal-llvmz80-20261004`, upstream base `e67ef86a93`.
+  Compiler: `68ec61b0a209`, assertions build. No commits or pushes.
+- Driver smoke fails on upstream with "Unknown compiler type: llvmz80".
+  The minimal driver passes default0, override and emitted-IR checks.
+  Driver-only patch: `scratch/tmp/minimal-zcc-driver-only.patch`.
+  TMPDIR support is carried separately for workspace-local test artefacts.
+- `sys/proto.h` remains byte-identical to upstream. Current header delta is
+  six lines of LLVM-Z80 attribute mapping in `sys/compiler.h` and a small
+  builtin varargs branch in `stdarg.h`. Other headers remain upstream.
+- Isolated varargs repro: sum(3,10,20,30) returned 10 with upstream stdarg,
+  then 60 with builtin stdarg. This test uses -fno-builtin as a control.
+- Installed z80_crt0.lib was contaminated: ___strcmp was at offset 9,
+  whereas upstream source aliases it to offset 0. Freshly built upstream
+  Z80/CPM/math32 archives now live only in the worktree. Fresh ___strcmp
+  is offset 0. Repeated source-level wrapper test yields compare=1, sum=60.
+  Earlier installed-archive results are not upstream compatibility evidence.
+- With fresh archives and -fno-builtin control: FILE*, fd-write, float compare
+  strict/fast, conversions, libm and printf formatting tests pass.
+  Arithmetic fails only sub.zero: 0x80000000 versus expected 0x00000000.
+  The same failure occurs with the reference integration headers against the
+  fresh library. It is not evidence of a regression from header minimisation.
+- Default0 still loses ABI in printf("ALL PASS\n") -> puts optimisation:
+  generated puts call has default C/register CC and emits garbage.
+  -fno-builtin preserves sdcccall0 printf and prints ALL PASS.
+  Small repro and IR: `scratch/tmp/minimal-zcc-inspect/console*`.
+  Do not add -fno-builtin to production as a silent workaround.
+- Upstream stdlib's wcmatch macro invocation expands *wildname as an argument
+  in its clang branch and fails type checking. Macro definitions are unchanged.
+  The existing callback fixture also uses the local-only __z88dk_callback token.
+  Need a plain default0 callback fixture, not restoration of that workaround.
+  Full results: `scratch/tmp/minimal-z88dk-fresh-tests/`.
+  Compiler builtin ABI correction is outside the currently approved scope.
+- Subsequent scope-limited trial retains two explicit console ABIs in
+  stdio.h and fixes only the malformed wcmatch invocation in stdlib.h.
+  No `__ZPROTO*` definition has changed.
+  New fixtures are `test/llvmz80/{varargs,header_abi}.c` and `run_minimal.sh`
+  in the isolated worktree. They are uncommitted drafts, not passing gates.
+- The broader varargs forwarding fixture exposed the same systemic problem:
+  an unannotated vsnprintf declaration emits default C/register CC, despite
+  default0. IR: `scratch/tmp/minimal-zcc-inspect/varargs-red.ll`.
+  `clang/lib/Sema/SemaDecl.cpp:3907-3911` inherits the old declaration's CC
+  when the new declaration has no explicit CC attribute. Explicitly attributed
+  z88dk declarations have separate handling immediately below that branch.
+  This explains why default0 does not replace all old builtin annotations.
+  Stop adding per-function workarounds. Resolving the compiler scope is needed
+  before the minimal patch can be considered complete.
+- Scope approval was requested through the interaction tool, but the user
+  was unavailable. No compiler changes were made. Execution is paused at
+  that boundary, with the fresh math32 signed-zero failure separately recorded.
+
+Final evidence after the user's instruction to continue autonomously:
+- Corrected `ASTContext::GetBuiltinType` for Z80 default0 library builtins,
+  including explicit __builtin_ aliases. Six added implementation lines.
+  No changes to the backend runtime or to other targets/default1.
+  Frontend IR test failed before the change and passes after it.
+  Cross-TU runtime fixture failed at all six optimisation levels without
+  the correction, then passed all six with it (expected 0x00D9).
+  Tests: `clang/test/CodeGen/z80-default-calling-conv-builtins.c`,
+  `llvm/test/CodeGen/Z80/default0-builtin-call.ll`, and
+  `z80-utils/test-runner/testcases/clang/test_74_default_cc_builtins.c`.
+  The frontend test is explicitly wired into the existing compiler CI job.
+- Final header delta: `sys/compiler.h` (6 added lines of attribute mapping),
+  `stdarg.h` (builtin varargs, including C23), and `stdlib.h` (one corrected
+  malformed wcmatch invocation). All eight other previously changed headers,
+  including `sys/proto.h`, are byte-identical to upstream.
+- Expanded allocation test initially failed to link ___calloc. Added that
+  standard clang alias at the existing calloc worker address, not a bridge.
+  The archive member remains 12 code bytes; all three names are offset 0.
+  `malloc.h` remains unchanged. calloc/realloc now pass the value tests.
+- Negative control without the attribute mapping fails at runtime.
+  Restoring the six lines passes again. Varargs and declaration regressions
+  have corresponding red/green evidence.
+- Persistent minimal test target: `make -C test llvmz80` in the worktree.
+  Driver smoke/override and six C23 runtime cells pass (O0, O2, Os).
+  Runtime coverage: va_start/va_arg/va_copy, C23 one-argument va_start,
+  vsnprintf forwarding, qsort/bsearch callbacks, malloc/free/calloc/realloc,
+  strcmp/strlen, smallc+callee, fastcall, wcmatch and setjmp/longjmp.
+  Calls repeat 100 times. No -fno-builtin workaround remains.
+- The same header fixture also passes under sccz80 with the fresh library.
+  Actual z80_outp assembly with the unchanged uint8_t prototype pushes two
+  bytes for both constant and dynamic data; no arch/z80.h exception needed.
+- Final compiler suites: 444 PASS, 6 SKIP, no failures; lit 156 PASS.
+  SDCC cross-compiler ABI 174 PASS. Five focused frontend tests pass.
+  The original integration suite remains 14/14 PASS after the compiler fix.
+- Fresh upstream functional fixtures pass for FILE*, fd-write, strict/fast
+  float comparisons, conversions, libm and printf formatting. Full arithmetic
+  still has the separately reproduced negative-zero baseline discrepancy.
+  Direct cm32_sdcc_fssub(4,4) yields 0x80000000. This change set does not
+  modify math32 or weaken the existing arithmetic expectation.
+- Driver and independent TMPDIR source patches are separated in
+  `scratch/tmp/minimal-zcc-{driver,tmpdir}-only.patch`; reverse-apply checks
+  pass against the worktree. TMPDIR has a separate passing test target.
+  The math32 dependency fix is not imported. No benchmark work is included.
+- Final review: diff/whitespace checks pass, original branch preserved,
+  no new wrappers or bridges, ZPROTO definitions unchanged.
+  Changes remain uncommitted. No pushes, merges or PRs were made.
+  Commit units: compiler builtin correction; driver/test infrastructure;
+  attribute mapping; varargs; wcmatch invocation; calloc alias; TMPDIR.
+  Build artifacts and evidence remain inside the workspace.
+- Logs: `scratch/tmp/minimal-final-gate.log`, `minimal-compiler-final-suite.log`,
+  `minimal-final-sdcc.log`, `minimal-final-frontend.log`,
+  `default0-builtins-runtime-red.log`, `minimal-z88dk-fixed-compiler/`.
+  The C99 attempt exposed the existing driver's fixed gnu23 preprocessing:
+  -Cg-std alone does not change header selection. This is documented rather
+  than expanded into a separate driver-language refactor.
+
+1. [x] Capture a fresh baseline on z88dk `e3b080b0ad` and the current
+   assertion-enabled compiler. Record SHAs, all integration results and
+   selected emitted calls. No missing-tool SKIP counts as a PASS.
+   Inventory the delta against upstream `e67ef86a93`, separating integration,
+   independent fixes, tests and obsolete comments.
+2. [x] Create a fresh local integration branch/worktree from upstream's
+   default branch (`upstream/master`, verified locally; no upstream/main).
+   Pin the chosen upstream SHA. Preserve the existing integration branch,
+   untracked files and unrelated workspace/compiler changes.
+   Bring in only the llvmz80 driver path and sdcccall(0) default initially.
+   Reuse existing regression fixtures as an external workspace-local harness
+   before selecting tests for the new patch series. Keep build outputs and
+   installed tools isolated so old local changes cannot mask missing pieces.
+   Capture compile/link failures and runtime differences before adding glue.
+   Do not cherry-pick the broad historical integration commits wholesale.
+3. [x] Keep `sys/proto.h` byte-for-byte at the chosen upstream version.
+   Establish compatibility with its unchanged `__ZPROTO*` definitions.
+   Capture which upstream branches are selected and their emitted symbols,
+   argument order and ABIs; do not assume default0 alone makes them correct.
+   Evaluate necessary compiler/preprocessor integration separately, without
+   adding bridges or modifying the macros. If this requires a compiler
+   change outside the current scope, report the blocker before proceeding.
+   Keep any necessary attribute mapping confined to `sys/compiler.h`.
+4. [x] Test remaining headers individually from their upstream versions.
+   Retain an exception only with a reproducer failing without it and passing
+   with it. Cover stdarg builtins, FILE* cleanup, setjmp/longjmp, narrow
+   smallc stack slots and math32 declarations. Remove duplicate fallback
+   branches, local `__ZPROTO3N` uses (restore upstream `__ZPROTO3`), redundant
+   default0 callback/varargs annotations
+   where safe, and stale bridge/register-ABI comments.
+   Check both header include orders and explicit sdcccall1 program override:
+   library declarations must still describe the fixed library ABI.
+5. [x] Separate unrelated deltas from the minimal integration patch.
+   Identify `errno.h`'s ERANGE/ANGE discrepancy against the chosen upstream
+   baseline. Keep the math32 archive-dependency fix and zcc TMPDIR fix as
+   separately identified work; do not discard their regression protection.
+   Keep the llvmz80 driver, native runtime selection and relevant tests.
+6. [x] Verify the reduced patch with all integration scripts and focused
+   runtime fixtures: varargs/vfprintf, FILE*, allocation, strings, qsort and
+   bsearch callbacks, setjmp/longjmp, mixed fastcall/callee/smallc calls and
+   math32 values. Use independent expected values, real library calls and
+   repeated calls to detect stack drift. Confirm each retained exception
+   has a negative control and preserve non-LLVM compiler behavior with
+   available upstream tests.
+7. [x] Review the final upstream diff and report retained changes, removed
+   changes, independent fixes, exact results and any uncovered gaps.
+   Verify `sys/proto.h` is byte-identical to the chosen upstream version.
+   Explicitly verify every item above. The subsequent continuation instruction
+   included the necessary compiler builtin correction. No new bridges,
+   commits, pushes, merges or PRs are part of this implementation segment.
+
 ## zcc llvmz80 default ABI (2026-10-04)
 
 - [x] Default the llvmz80 compilation command to sdcccall0 before user

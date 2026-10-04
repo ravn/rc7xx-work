@@ -1,5 +1,38 @@
 # Prompts
 
+## 2026-10-04 (minimizing z88dk integration)
+
+> hvor er math32 afvigelsen
+
+> er det en reel fejl?
+
+> commit
+
+> nu vil jeg gerne minimere ændringen i z88dk, min formodning er at alle headerne kan ændres tilbage.  er der andre?
+
+> standard konventionen i z88dk runtime er sdcccall0, dvs at hvis vi bruger denne er vi kompatible
+
+> lab en plan
+
+> du må ikke pille ved ZPROTO* makroerne, de skal være 100% som upstream har lavet dem
+
+> jeg er som nævnt interesseret i at z88dk kildeteksterne kommer så tæt på upstream som muligt.  små, rene commits
+
+> måske er det nemmere at starte på upstream/main og kun trække det nødvendigste ind.
+
+> start
+
+> hvordan går det
+
+> You have not yet marked the task as complete using the task_complete tool. If you were planning, stop planning and start implementing. You aren't done until you have fully completed the task.
+>
+> IMPORTANT: Do NOT call task_complete if:
+> - You have open questions or ambiguities - make good decisions and keep working
+> - You encountered an error - try to resolve it or find an alternative approach
+> - There are remaining steps - complete them first
+>
+> Keep working autonomously until the task is truly finished, then call task_complete.
+
 ## 2026-10-04 (zcc llvmz80 default ABI)
 
 > det ser rigtigt ud, commit og push
