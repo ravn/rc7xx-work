@@ -81,8 +81,11 @@ zcc +cpm -subtype=rc700 -compiler=llvmz80 -O2 file.c -o out -create-app
 Without `LLVMZ80EXE` set it fails with `sh: llvmz80-clang: command not found`.
 The other two z88dk C compilers need no such env: `zcc +cpm -subtype=rc700`
 (default sccz80) and `... -compiler=sdcc -SO2 ...`.  For `double`/`float`/`%f`
-programs just add `--math32` (the `llvmz80_fmath.lib` bridge is auto-linked; the
-old `LLVMZ80RTLIB` softfloat archive is retired, ravn/z88dk#44).
+programs add `--math32` to select the z88dk math32 runtime. On the current
+`z80-unknown-none-z88dk` path, float calls go directly to existing
+`cm32_sdcc_*` entries; no `llvmz80_fmath.lib` bridge is linked. The old
+`LLVMZ80RTLIB` softfloat archive is retired (ravn/z88dk#44). The results here
+must use the current z88dk 2.5 development line, not the pinned 2.4 image.
 
 
 ### SDCC runtime assembler/archiver — native, no Docker (since 2026-06-30)

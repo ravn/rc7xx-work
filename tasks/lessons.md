@@ -1,5 +1,37 @@
 # Lessons Learned
 
+## 2026-10-04: Distinguish stale build dependencies from source failures
+
+An incremental build can retain generated `.d` files naming a list file
+deleted by a branch change. Inspect make's dependency diagnostics before
+changing source or running a broad clean. Regenerate only the identified
+stale files, then complete the normal build and runtime checks.
+
+Here eight crt0 dependency files still referenced `l/llvmz80.lst`.
+Deleting only those generated files allowed the CP/M build to complete.
+The separate missing-pkg-config link failure was resolved by building the
+SVG tool with the SDK libxml include path and `-lxml2 -lm`.
+
+## 2026-10-04: Avoid formatting-only churn in functional diffs
+
+Preserve existing line wrapping outside code that changes for the task.
+Review both the working diff and the PR-base diff before publishing;
+formatting inherited from an earlier local commit can still create noise.
+
+## 2026-10-04: Resolve builtin ABIs through the selected program default
+
+Do not translate a command-line calling-convention choice with a
+target-specific hardcoded branch. Library builtin types must use
+`ASTContext::getDefaultCallingConvention(Variadic, false)`, the same
+resolver used for program defaults. It interprets all supported flag
+values and retains variadic restrictions. Non-library builtins retain
+their target convention.
+
+The earlier Z80/default0 branch passed Z80 coverage but left x86
+`__builtin_strlen` at cdecl under fastcall, stdcall and vectorcall.
+The generic regression failed before the change and passed afterwards;
+it also checks variadic fallback and explicit-declaration overrides.
+
 ## 2026-10-03: Isolate the emulator working directory
 
 CP/M test data must stay in a per-run temporary directory under

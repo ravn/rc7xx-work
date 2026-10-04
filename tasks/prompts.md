@@ -1,6 +1,51 @@
 # Prompts
 
+## 2026-10-04 (toolchain refresh and session closure)
+
+> sikr z88dm og llvm-z80 er opdateret og genbygget
+
+> analyser, ryd op, opsummer, opret issues efter behov, commit og push
+
 ## 2026-10-04 (minimizing z88dk integration)
+
+> jatak
+
+Accepted the two remaining local cleanups: remove redundant FCMP calling
+convention variables and S32 entries shadowed by integer custom rules.
+
+> jatak
+
+Accepted local readability cleanup: merge the five binary i32 operations
+and replace the comma-expression return with explicit failure/success paths.
+
+> hvis det er en lille opgave så gør det.  Sæt evt opus til det
+
+> start
+
+> jeg ser lige at llvm/test/CodeGen/Z80/z80asm-c-line-e2e.test kræver z88dk, hvilket vi ikke kan i llvm-z80.  Flyt denne og andre tests der kræver z80asm over i z88dk integration
+
+> fortsæt
+
+> commit først, før du starter
+
+> det er fint kun at systematisere de almindelige hjælpekald.  lav en plan.
+
+> du skal ikke lave runner pr, lige nu trimmer vi bare denne her
+
+> jeg vil gerne have vores ændringer til test runneren trukket ud i en separat pr, så vi hér bare tester mod testrunneren som den er upstream så diffen bliver mindre
+
+> kan du også lave en test der checker om sdcccall(0) conventionen er overholdt (nu qsort er smallc)
+
+> jeg vil gerne lave et eksperiment på en ny branch oven på cdf7fbabe8000fa55f056e64ceb42b1e6f0d868f. Jeg vil gerne have du på dén laver den rettelse du lige har lavet med target-abi
+
+> lige nu vil jeg gerne have at z88dk skal have sdcccall(0) som target abi
+
+> dette er ikke en generel løsning: "  // Library declarations must match default0 program calls on Z80.
+> // Otherwise an implicit printf declaration overrides the header's ABI.
+> if (Target->getTriple().getArch() == llvm::Triple::z80 &&
+> LangOpts.getDefaultCallingConv() == LangOptions::DCC_Z80SDCCCall0 &&
+> (BuiltinInfo.isPredefinedLibFunction(Id) || BuiltinInfo.isLibFunction(Id)))
+> EI = EI.withCallingConv(CC_Z80SDCCCall0);" - den skal sættes til det som kommandolinjeflaget sagde
 
 > hvor er math32 afvigelsen
 
@@ -38,6 +83,10 @@
 > det ser rigtigt ud, commit og push
 
 > jeg vil gerne have "-Cg-fdefault-calling-conv=sdcccall0" i z88dk for llvm-z80
+
+## 2026-10-04 (Whetstone/Dhrystone ABI comparison)
+
+> udfør abc sammenligning på whetstone og dhrystone
 
 ## 2026-10-04 (calling-convention A/B plan)
 
@@ -1297,6 +1346,21 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 ## 2026-10-03 (commit integrated changes)
 
 > lav et samlet commit af ændringerne
+
+## 2026-10-03 (tighten source comments)
+
+> opstram kommentarer i kildetekst meget, fx
+> /* z80_outp_callee.asm pops "af = data" (topmost slot) then "hl = port" (deeper)
+>  * and reads a full 2-byte slot per argument.  Under z80_smallc (ravn/llvm-z80
+>  * #279) __smallc pushes args LEFT-TO-RIGHT, so a NATURAL (port, data)
+>  * declaration already puts port deepest and data topmost -- matching the
+>  * worker, so NO parameter reversal is needed (that was only required before
+>  * #279, when __smallc meant sdcccall(0) = right-to-left).
+>  *
+>  * One mismatch remains: clang still narrows a uint8_t arg to a 1-byte push
+>  * (`ld a,x; push af; inc sp`) under z80_smallc, so `data` must be WIDENED to
+>  * uint16_t to emit a full 2-byte slot matching the worker's `pop bc`.
+>  * Verified with `clang --target=z80 -S`: uint16_t data -> `ld hl,x; push hl`. */
 
 ## 2026-10-03 (z88dk upstream merge feasibility)
 

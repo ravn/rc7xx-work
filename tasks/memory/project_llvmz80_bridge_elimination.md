@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-## Status (2026-10-03)
+## Status (2026-10-04)
 
 ### Version baseline
 
@@ -42,7 +42,7 @@ det linkede arkiv fra 11. august, mens special-case-kilderne var ændret
 relink af samme testprogram.
 
 Math32-Makefile sporer nu alle `.asm`- og `.lst`-inputs for samtlige 13
-arkivvarianter. `test/clang/math32_archive_deps.sh` kontrollerer
+arkivvarianter. `test/llvmz80/math32_archive_deps.sh` kontrollerer
 afhængighedsgrafen og fejlede før rettelsen. Behold kontrol af, at den
 installerede `lib/clibs/math32.lib` matcher det genbyggede `libsrc/math32.lib`,
 før runtime-resultater bruges til at vurdere compilerens ABI eller
@@ -62,7 +62,7 @@ begge operander og retter resultatet; kun eksplicit `nnan` må udelade dette.
 NaN-policyen er derfor ikke finite-only. Runtime-matricen med NaN i begge
 operandpositioner og de registrerede resultater står i
 `llvm-z80/tasks/plan-z88dk-native-runtime-2026-10.md` afsnit 9; se også
-`z88dk/test/clang/runtime_fcmp.c` og
+`z88dk/test/llvmz80/runtime_fcmp.c` og
 `llvm-z80/llvm/test/CodeGen/Z80/z88dk-fcmp-runtime.ll`.
 
 **Eliminerede** (backend kalder z88dk-kerner direkte via MCSymbol/addSym):
@@ -88,11 +88,21 @@ ingen llvmz80 bridge eller ny z88dk-adapter.
 
 ## Tilhørende llvm-z80 branches
 
-Aktiv integration: `upstream-z88dk-native-runtime`. i8/i16 og separate/fused
+Aktiv integration: `experiment-z88dk-target-abi-20261004` i llvm-z80 og
+`reintegrate-llvmz80-on-upstream-20261003` i z88dk. Compilerens target-ABI er
+nu `sdcccall(0)` på z88dk-triplen; zcc injicerer ikke et default-CC-flag.
+Almindelige helper-navne og calling conventions vælges gennem LLVM RTLIB;
+EXX, FCMP og direkte memory-workers beholder deres specialiserede lowering.
+i8/i16 og separate/fused
 i32-kerner er nu runtime-verificeret; i32 bruger eksplicit EXX-liveness og
 PUSH/POP IX. Builtin-header-ABI bevares på Z88DK-triplen uden `-fno-builtin`.
 Endelige suite-resultater registreres i
 `llvm-z80/tasks/plan-z88dk-native-runtime-2026-10.md` afsnit 9.
+
+Efter native genbygning den 2026-10-04: 145 backend-lit PASS; upstream
+runtime-runner 426 PASS, 6 SKIP, ingen FAIL/FATAL; alle 15 scripts i
+`z88dk/test/llvmz80/` PASS. SM83-fallbacks bevarer tidligere codegen, men
+dette er ikke en verificering af et SM83-runtime-bibliotek.
 
 Historisk kildebranch `z88dk-native-libcalls` havde commits:
 - `[Z80] z88dk triple: call l_* cores directly for i16 div/mod/mul`

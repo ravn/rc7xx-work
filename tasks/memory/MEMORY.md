@@ -153,7 +153,7 @@
 ## 11b. z88dk llvmz80 bridge-eliminering
 
 - **[EXX-protokol: kerne-ABI + legalizer](reference_exx_protocol_z88dk_32bit.md) — addSym; EXX uses/defs; gem IX ved dynamic frames**
-- [llvmz80 bridge-status (2026-10-03)](project_llvmz80_bridge_elimination.md) — eksisterende runtime-indgange; ingen nye bridges; FCMP finite-only, NaN uafklaret
+- [llvmz80 native runtime](project_llvmz80_bridge_elimination.md) — RTLIB + sdcccall(0); ingen nye broer; strict NaN-tests PASS
 
 ## 12. Reference / standing reminders
 

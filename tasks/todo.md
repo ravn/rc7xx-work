@@ -1,5 +1,200 @@
 # Z80 Code Density Optimization Todo
 
+## Closing native math32 integration (2026-10-04)
+
+- [x] Review source state, remote parity and the written plan against evidence.
+  LLVM source is clean; tracked z80-utils matches upstream/main.
+  z88dk source is clean after the human's 78033cf4c4 driver cleanup.
+- [x] Correct stale ABI/bridge/test-path documentation and record the
+  session summary in tasks/handoff/2026-10-04-native-math32.md.
+  Preserve unrelated rules, build configuration, projects and artifacts.
+- [x] Assess issue need: no unresolved integration failure observed.
+  Missing pkg-config and stale generated dependencies were local build
+  blockers, resolved without a source fix; no issue filed.
+- [ ] Commit and push scoped documentation and compiler/z88dk pointers;
+  ensure child commits are on origin first, then publish the workspace.
+  Check post-push remote parity and CI.
+
+Closure supersedes historical "no commit/push" checkpoint notes below:
+LLVM changes through 210143489a25 and z88dk changes through 9be09aaf2c
+were already published on explicit user authorization. The current zcc
+cleanup is the human's 78033cf4c4; this closure publishes it, rather than
+recreating or amending that commit. General builtin-ABI experiments and
+standalone runner work remain preserved separately, not part of this PR.
+
+## Refreshing native toolchains (2026-10-04)
+
+- [x] Fetch llvm-z80 and z88dk; current feature branches match origin
+  (both HEAD...origin comparisons are 0/0). Preserve local zcc edits.
+- [x] Rebuild LLVM asserts clang, llc, lld, opt and FileCheck.
+- [x] Rebuild z88dk binaries and install CP/M/classic/math32 libraries.
+  Built SVG with SDK libxml flags because pkg-config is missing.
+  Removed eight stale generated crt0 dependency files referencing the
+  deleted l/llvmz80.lst, then completed build.sh -p cpm without cleaning.
+- [x] Verify refreshed artifacts: 145 backend lit PASS; runtime 426 PASS,
+  6 SKIP, zero FAIL/FATAL; all 15 llvmz80 integration scripts PASS,
+  including math32 arithmetic, conversions, comparisons and C_LINE.
+  Evidence: scratch/tmp/toolchains-refresh-{llvm,z88dk-final,lit,runtime,
+  integration}.log. No source edits, commits or pushes for this refresh.
+
+## Centralizing ordinary runtime calls (2026-10-04)
+
+Goal: centralize operation -> symbol + calling convention for ordinary
+helpers, preserving emitted code and runtime behavior. Prefer LLVM's existing
+RTLIB implementation/availability/CC machinery; do not add parallel bespoke
+tables or change Clang's target-default handling.
+
+- [x] Inventory ordinary helpers in Z80LegalizerInfo.cpp: i32 fallback
+  multiply/divide/remainder/divmod, f32 arithmetic and i32/f32 conversions.
+  Record current name bytes (including no-mangle marker), CC and applicability
+  for bare Z80, Z80/z88dk, SM83 and SM83/z88dk. Preserve fast-math variants.
+  Existing fallbacks are behavior baselines, not proof the runtime supplies
+  every symbol; do not introduce new support claims.
+- [x] Trace existing RTLIB selection and Z80 system-library definitions in
+  RuntimeLibcalls.td/RuntimeLibcallsImpl.td and SystemLibraries.td.
+  Use existing implementations where correct; add only required z88dk
+  implementations and scoped availability/CC rules. Verify name lifetime,
+  exact assembler spelling and helper signatures, especially divmod's pointer.
+  The verified TableGen mechanism supports target predicates, LibcallsWithCC
+  and DefaultLibcallCallingConv; choose the smallest scoped configuration.
+- [x] Capture pre-change assembly and runtime results. Extend CI-gated lit
+  coverage for all affected operations and target profiles, including explicit
+  smallc/sdcccall(1) callers whose runtime calls must retain the runtime ABI.
+  Check exact symbols, stack argument order/cleanup and return registers.
+  Use existing runtime fixtures and independent expected values. New missing
+  coverage must pass the baseline; this is a behavior-preserving refactor,
+  not a bug fix requiring deliberately failing behavior tests.
+- [x] Configure runtime lookup and replace repeated name/CC ternaries with
+  a shared RTLIB-based call helper. Keep operand preparation and result
+  handling unchanged. Preserve existing unsupported-call error propagation.
+  Do not globally change all z88dk runtime CCs without checking exceptions.
+- [x] Verify generated lookup results and TableGen tests; rebuild clang, llc,
+  lld, opt and FileCheck in build-macos-asserts with ccache. Compare before/after
+  assembly for affected fixtures; run frontend/backend lit and runtime gates
+  using the unchanged upstream runner. Recheck diff for unrelated formatting.
+- [x] Assess the final PR delta: accept only if repeated policy is removed
+  without greater unrelated machinery or behavior shifts. Record evidence.
+  No commit, push or PR update without renewed authorization.
+
+Out of scope: EXX integer worker protocol, register-bank/IX preservation,
+FCMP NaN/classification/predicate logic, direct asm_mem* workers, test-runner
+changes and runtime-library fixes. Leave custom f32 min/max handling unchanged
+unless inventory proves it is an ordinary helper covered by existing RTLIB.
+Before implementation, commit the existing literal-name cleanup separately
+per user direction. Pre-commit validation: 145 backend lit PASS; unchanged
+upstream runner: 426 runtime PASS, 6 SKIP, no FAIL/FATAL. This checkpoint
+contains only the cleanup, not the runtime-lookup refactor; no push requested.
+
+Implementation notes: system-library definitions live in RuntimeLibcalls.td,
+not a separate SystemLibraries.td. TableGen rejects octal string escapes, so
+the central names omit the no-mangle byte; one Z80 helper adds it through
+MachineFunction::createExternalSymbolName for stable storage. The two profiles
+replace only the listed ordinary calls. Min/max remain out of scope.
+Integer helpers reuse existing RTLIB implementations; only math32 names and
+the existing compiler-rt fast variants need new entries. One shared helper
+is the deliberate deviation from the plain RTLIB createLibcall overload:
+it preserves z88dk's no-mangle marker without generic TableGen changes.
+Argument/result construction and divmod's byte-aligned remainder slot stay
+unchanged. Unsupported lookup returns UnableToLegalize, as the RTLIB overload
+does. No EXX, FCMP, memory-worker, min/max or runner edits were made.
+Baseline: four target-profile assembly snapshots, profile/ABI lit coverage,
+426 runtime PASS and 6 SKIP; math32 arithmetic and conversion scripts PASS.
+
+Additional requested scope: move external z80asm tests into z88dk integration.
+Only z80asm-c-line-e2e.test invokes external tools; the other matching tests
+use llc/FileCheck only. Relocated to test/llvmz80/z80asm_c_line_e2e.sh, with
+shared environment discovery and isolated workspace temp files; direct run
+checks Hello World execution and C_LINE entries for lines 4 and 5.
+
+Final evidence (2026-10-04): 163 lit PASS (Z80 backend, five frontend ABI
+fixtures and all RuntimeLibcallEmitter tests); eight before/after assembly
+snapshots byte-identical across bare/z88dk Z80/SM83 profiles. Upstream runner:
+426 PASS, 6 SKIP, zero FAIL/FATAL. Existing z88dk math32 arithmetic/conversion
+value tests and relocated C_LINE map/execution test PASS with final tools.
+No tracked z80-utils difference from upstream/main. Diff reviewed for scope
+and whitespace; only changed call expressions were realigned. The central
+policy adds 48 net TableGen lines and removes 3 net legalizer lines; no
+generic emitter/API changes or duplicate integer implementations. New backend
+coverage is included by the existing build-and-lit CI directory target;
+TableGen coverage was run locally. No commit or push of this refactor.
+
+Follow-up RTLIB consumer check: affected scalar operations are custom before
+generic GlobalISel libcalls; vector arithmetic scalarizes into that path and
+saturating conversions lower into it. Observed exact math32 call spelling on
+Z80/SM83 at O0/O2; added permanent lit coverage for both alternate paths.
+Other GlobalISel name consumers use memory, atomic or stack-protector calls,
+not changed math32 entries. PreISel's named calls are Objective-C; LTO collects
+names without emitting calls. declare-runtime-libcalls creates declarations,
+not calls (observed sdcccall0 math32 declaration). This is not proof of arbitrary
+hand-written IR calls to unprefixed math32 declarations, which are ordinary
+program calls rather than compiler-generated helpers. No production fix needed.
+
+## Separating test-runner changes (2026-10-04)
+
+- [x] Preserve timeout, emulator cleanup and failed-link rejection on an
+  independent branch from `upstream/main`.
+- [x] Restore all tracked `z80-utils` files in the compiler branch to upstream;
+  remove its timeout CI argument and the workspace wrapper argument.
+- [x] Verify upstream-runner identity and compiler runtime behavior; validate
+  the standalone runner without depending on new compiler lit tests.
+- [x] Do not create a runner PR; user narrowed scope to trimming the current PR.
+  Runner branch: `test-runner-hardening-20261004`, based on `upstream/main`
+  (`24afb830878c`), worktree `scratch/llvm-test-runner-20261004`.
+  Scope: README, emulator, CLI, REL linker and runtime CI; no compiler-only
+  lit-path additions. CI installs SDCC and runs the unit tests.
+  Compiler branch has no tracked `z80-utils` difference from upstream.
+  Validation: 150 lit PASS; upstream-runner runtime 426 PASS, 6 SKIP,
+  no FAIL/FATAL. Standalone runner: seven unit tests PASS, six CLI runtime
+  cells PASS. The linker test fails with upstream's ignored exit status.
+  The macOS cleanup test also fails on the exact upstream runner and is
+  excluded from local standalone validation, not modified by this split.
+  Draft body: `scratch/tmp/test-runner-hardening-pr-20261004.txt`.
+  Publication cancelled by user: "du skal ikke lave runner pr, lige nu
+  trimmer vi bare denne her". Runner changes are preserved locally only.
+  No commits, pushes or new PR; remote compiler PR remains unchanged.
+
+## Isolated target-ABI experiment (2026-10-04)
+
+- [x] Create `experiment-z88dk-target-abi-20261004` at exactly
+  `cdf7fbabe8000fa55f056e64ceb42b1e6f0d868f` in
+  `scratch/llvm-z88dk-target-abi-20261004`.
+- [x] Build the unmodified experiment baseline and observe the new test fail.
+- [x] Apply only the target override, add CI coverage and adjust affected
+  return-register expectations; no general builtin/default-flag patches.
+- [x] Build and validate the experiment itself, including no-flag runtime.
+  Per user direction, switched the main llvm-z80 checkout to this branch
+  and reused build-macos-asserts with verified ccache. Prior tracked changes
+  and ABI tests are preserved in the named stash
+  "Preserve pending general ABI work before target-only experiment 20261004".
+  The spare worktree is detached at the requested base.
+  Baseline regression failed; after the six-line target override,
+  148 frontend/codegen lit tests and all six no-flag CP/M runtime cells pass.
+  ASTContext.cpp is unchanged from cdf7fbabe800. No commits or pushes.
+
+## z88dk target ABI (2026-10-04)
+
+- [x] Observe no-flag z88dk ordinary/builtin ABI regressions failing.
+- [x] Set the Z88DK environment's target convention to sdcccall(0);
+  preserve bare Z80 and explicit program-default overrides.
+- [x] Verify frontend, emitted assembly and no-flag runtime behavior.
+  153 frontend/codegen lit tests pass. z88dk integer returns now use HL;
+  bare Z80 still uses DE. The six varargs/header runtime cells pass with
+  the zcc default-convention flag removed before invoking clang.
+  Explicit sdcccall(1) overrides ordinary functions and library builtins;
+  main retains its pre-existing CC_C entry-point exception.
+  Six cross-TU builtin runtime controls also pass. No commit or push.
+
+## General library builtin calling convention (2026-10-04)
+
+- [x] Capture a failing non-Z80 builtin-alias test on the existing compiler.
+- [x] Replace the Z80/default0 special case with the existing command-line
+  calling-convention resolver, preserving its variadic restrictions.
+- [x] Rebuild and verify generic/Z80 frontend, lit and runtime coverage.
+  Six focused lit tests pass; the generic test covers fastcall, stdcall,
+  vectorcall and no flag, plus variadic fallback and explicit attributes.
+  Default0 cross-TU runtime passes at all six optimization levels.
+  Minimal z88dk smoke and six runtime cells pass. No commit or push.
+
 ## Minimizing z88dk integration (2026-10-04)
 
 Commit authorization received: "commit". Local commits:
@@ -207,6 +402,18 @@ Final evidence after the user's instruction to continue autonomously:
   defaults; commit/push authorized. Historical benchmark no-flag controls
   measured zcc's former default1; reruns of those harnesses must account
   for the new zcc default0 rather than expecting no-flag to match A.
+
+## Whetstone/Dhrystone ABI comparison (2026-10-04)
+
+- [x] Measure baseline/A/B/C at Os/O2 on the experiment compiler.
+  All 16 cells pass correctness and completion checks; no-flag equals A.
+  Whetstone: LOOP=10, II=1, math32; Dhrystone: 20,000 runs.
+  Preserve Whetstone's module-6 loop and P3 calls in all cells.
+- [x] Record sizes/cycles and fixed annotation policy in
+  `llvm-z80/z80-utils/benchmarks/default-cc/RESULTS.md`.
+  Raw evidence: `scratch/tmp/default-cc-whet-dhry-final-isolated.json`.
+  180-second subprocess timeout and 500-million-cycle cap; neither hit.
+  No compiler changes, commits or pushes in this extension.
 
 ## Calling-convention A/B plan (2026-10-04)
 
