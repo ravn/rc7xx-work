@@ -31,7 +31,10 @@ esac
     -o "$out" "$SRC/$name.c" 2>/dev/null
 
 size=$(wc -c < "$out")
-# z88dk-ticks er cycle-præcis (korrekte DD/FD/ED T-states); ntvcm er IKKE.
-cyc=$(python3 "$BENCH_DIR/ticks_cpm.py" "$out" 2>&1 1>/dev/null \
-      | awk '/^\[ticks\]/{print $2}')
+# z88dk-ticks built-in CP/M emulation: .com extension injecter ED FE ved
+# adresse 5 automatisk og starter ved 0x100. -end 0 stopper ved warm-boot.
+tmp=$(mktemp /tmp/bench_XXXXXX.com)
+cp "$out" "$tmp"
+cyc=$(z88dk-ticks -end 0 -w 4 "$tmp" 2>/dev/null | grep -v 'counter limit' | tail -1)
+rm -f "$tmp"
 echo "$name zcc-llvmz80 $opt: ${size} B, ${cyc} cycles"

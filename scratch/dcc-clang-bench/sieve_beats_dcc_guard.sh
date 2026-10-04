@@ -21,9 +21,13 @@ rc=0
 measure() { # opt -> prints "cycles<TAB>stdout"
   local opt=$1 com="$OUT/sieve_$1"
   "$ZCC" +cpm -compiler=llvmz80 -Cg-"$opt" -o "$com" "$SRC" 2>/dev/null
-  local cyc so
-  so=$(python3 "$BENCH_DIR/ticks_cpm.py" "$com" 2>/dev/null | head -1)
-  cyc=$(python3 "$BENCH_DIR/ticks_cpm.py" "$com" 2>&1 1>/dev/null | awk '/^\[ticks\]/{print $2}')
+  local cyc so tmp
+  tmp=$(mktemp /tmp/bench_XXXXXX.com)
+  cp "$com" "$tmp"
+  output=$(z88dk-ticks -end 0 -w 4 "$tmp" 2>/dev/null)
+  so=$(echo "$output" | grep -v 'counter limit' | head -1)
+  cyc=$(echo "$output" | grep -v 'counter limit' | tail -1)
+  rm -f "$tmp"
   printf '%s\t%s' "$cyc" "$so"
 }
 

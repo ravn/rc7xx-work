@@ -1,5 +1,102 @@
 # Lessons Learned
 
+## 2026-10-04: Distinguish stale build dependencies from source failures
+
+An incremental build can retain generated `.d` files naming a list file
+deleted by a branch change. Inspect make's dependency diagnostics before
+changing source or running a broad clean. Regenerate only the identified
+stale files, then complete the normal build and runtime checks.
+
+Here eight crt0 dependency files still referenced `l/llvmz80.lst`.
+Deleting only those generated files allowed the CP/M build to complete.
+The separate missing-pkg-config link failure was resolved by building the
+SVG tool with the SDK libxml include path and `-lxml2 -lm`.
+
+## 2026-10-04: Avoid formatting-only churn in functional diffs
+
+Preserve existing line wrapping outside code that changes for the task.
+Review both the working diff and the PR-base diff before publishing;
+formatting inherited from an earlier local commit can still create noise.
+
+## 2026-10-04: Resolve builtin ABIs through the selected program default
+
+Do not translate a command-line calling-convention choice with a
+target-specific hardcoded branch. Library builtin types must use
+`ASTContext::getDefaultCallingConvention(Variadic, false)`, the same
+resolver used for program defaults. It interprets all supported flag
+values and retains variadic restrictions. Non-library builtins retain
+their target convention.
+
+The earlier Z80/default0 branch passed Z80 coverage but left x86
+`__builtin_strlen` at cdecl under fastcall, stdcall and vectorcall.
+The generic regression failed before the change and passed afterwards;
+it also checks variadic fallback and explicit-declaration overrides.
+
+## 2026-10-03: Isolate the emulator working directory
+
+CP/M test data must stay in a per-run temporary directory under
+`scratch/tmp/`, removed automatically on exit. Keeping the executable and
+compiler temporaries there is insufficient: run the emulator with that
+directory as its current working directory as well. Check isolation and
+cleanup on both successful and failed runs; do not leave test data in the
+workspace or repository root.
+
+The exact producers were found in `ravn-main:test/clang`:
+`issue22_stdio_abi.c` writes `hello\n` to A.DAT and
+`issue23_fcntl_write.c` writes XYZ to WP.DAT. Their wrappers lacked a cwd
+change. The restored `test/llvmz80` fixtures and five math32 wrappers now
+run in their per-run directories. `runtime_workdir.sh` exercises nine
+wrappers on success, build failure, and emulator failure, including an
+emulator that prints successful results before exiting unsuccessfully.
+Check the emulator's exit status before filtering stdout: a pipeline ending
+in `tr` hides failure in portable shell.
+
+## 2026-10-03: z88dk math32 runtime tests require a fresh archive
+
+`lib/clibs/math32.lib` is ignored generated output. The math32 archive rule
+depends on its C text objects, while the assembly lists are assembled inside
+the recipe rather than declared as source prerequisites. On 2026-10-03 the
+archive predated the current special-case assembly by several weeks: 13
+NaN/Inf assertions failed against the stale library, then the same emitted C
+program passed after rebuilding and relinking the current archive. Before
+blaming the Z80 ABI, compiler, or math32 semantics, verify which archive was
+linked and refresh it from the checked-out assembly sources.
+
+The zcc printf-autoformat runtime also depends on a current `cpm_clib.lib`.
+After refreshing math32, the installed CP/M archive still lacked the current
+`__stdio_printf_sign_0` helper and failed at link time. Rebuilding that archive
+made the official zcc/ntvcm test pass. zcc hardcodes `/tmp` for its temporary
+files, so `TMPDIR` alone is insufficient; use a scratch-built test driver with
+those paths redirected into `scratch/tmp`.
+
+The math32 build rule now declares its assembly and `.lst` files as
+prerequisites for all 13 archive variants. `test/clang/math32_archive_deps.sh`
+checks this dependency graph, and `make -W <assembly-source> <math32.lib>`
+verifies the real archive recipe rebuilds when an assembly input changes.
+
+## 2026-10-03: Distinguish test language/location from compiler selection
+
+For this printf regression, "only llvm-z80" means a z88dk C test run with
+`-compiler=llvmz80`, not an LLVM IR test. Preserve the requested C source and
+runtime integration when narrowing compiler coverage.
+
+## 2026-10-03: C_LINE strings do not decode assembler escapes
+
+z80asm `scan2.re:521-526` selects raw-string parsing for C_LINE.
+An octal-escaped quote assembles, but the map stores literal `\042`, not the
+original quote; source lookup therefore receives a different filename.
+Verify the decoded filename in the map, not merely assembler success.
+Normal data-string escape support does not establish filename escape support.
+
+## 2026-10-03: Symbol spelling transformations need collision controls
+
+The native-runtime branch rewrites `.` to `_` in private symbol names.
+The distinct LLVM globals `@.str.1` and `@.str_1` both become `L__str_1`;
+assertions llc reports `symbol 'L__str_1' is already defined`.
+When adapting symbol spelling for an assembler, test pairs that differ only
+in an escaped character versus its replacement. Successful assembly of one
+ordinary string literal does not prove that distinct names remain distinct.
+
 ## 2026-03-27: Direct addressing has cascading benefits
 
 Phase 1 (direct global addressing) saved 234 bytes — more than double the 100B estimate. The cascade effect is real: eliminating register pair usage for address computation reduces spill pressure, which makes IX unused in more functions, which triggers the existing unused-IX-removal pass. When estimating optimization savings, account for second-order effects on register pressure.

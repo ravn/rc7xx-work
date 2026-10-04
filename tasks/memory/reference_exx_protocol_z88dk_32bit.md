@@ -38,7 +38,9 @@ EXX                ; arg → alt bank; Defs=[HL,DE,BC]
 ; Arg2 / divisor i main-bank:
 COPY DE ← arg2_hi
 COPY HL ← arg2_lo
+PUSH IX
 CALL l_mulu_32_32x32  (via addSym, INGEN underscore-mangling)
+POP IX
 
 ; Hent resultat:
 buildCopy(S16, HL)  ; lo
@@ -46,25 +48,30 @@ buildCopy(S16, DE)  ; hi
 buildMergeLikeInstr(Dst, {lo, hi})
 ```
 
-EXX i `Z80InstrInfo.td`:
+Den native legalizer-helper `exchangeZ88DKBanks` tilføjer implicitte
+registeroperander til EXX; den globale instruction-definition ændres ikke:
 ```
-def EXX : Inst8<"exx", 0xD9> {
-  let Uses = [HL, DE];       // HL+DE læses (gem til alt-bank); BC nødvendes ikke
-  let Defs = [HL, DE, BC];   // friske værdier fra alt-bank (BC ukendt)
-}
+EXX implicit HL, implicit DE,
+    implicit-def HL, implicit-def DE, implicit-def BC
 ```
+
+Disse Uses er nødvendige for at holde dividendens registerkopier levende.
+Uden dem blev opsætningen slettet i det observerede første integrationsforsøg
+(2026-10-03), og `1000000/7` gav 1.
 
 ## IX-håndtering
 
-Kernerne tramper IX (bruges som frame pointer i z88dk). **PUSH_IX/POP_IX må IKKE bruges** i legalizer-kode:
-- `PUSH_IX` mangler `Defs=[SP]`, så RA's stack-offset-beregning til stack-passerede argumenter (fx `b` i `sfuse(a, b, r)`) bliver FORKERT med 2 bytes.
-- Resulterer i at divisor/multiplikand læses fra forkert stackadresse → stille forkerte tal.
+Fast-kernerne tramper IX. Den aktuelle integration gemmer IX umiddelbart før
+CALL, markerer kaldets IX-clobber og gendanner IX umiddelbart efter kaldet.
+Prologens callee-save alene er ikke nok: en dynamic-frame caller kan læse
+locals gennem IX mellem kaldet og epilogen.
 
-**Korrekt løsning**: slet PUSH_IX/POP_IX. Begrundelse:
-1. Funktionsprologen gemmer allerede IX som callee-saved (`push ix`).
-2. Med `+static-frame` (BSS-locals) bruges IX IKKE til frame-adgang efter prologen.
-3. Kernen tramper IX; epilogen (`pop ix`) retablerer caller's IX korrekt.
-4. Ingen kode mellem vores kald og epilogen bruger IX → ingen skade.
+Det historiske råd om at undgå PUSH_IX/POP_IX gjaldt et ældre forsøg og må ikke
+genbruges som en generel sikkerhedsregel. Den aktuelle
+`Z80InstrInfo::getSPAdjust` håndterer PUSH_IX som +2 og POP_IX som -2 ved
+stack-offset-korrektion. `runtime_i32_frames` er verificeret ved O0/O2/O3/Oz
+med både small- og IX-clobberende fast-kerner, tvungen frame-pointer,
+levende volatile stacklocals og stack-passed output-pointere.
 
 ## Navnemangling
 

@@ -59,7 +59,7 @@ Root is per-host (`/Users/ravn/z80/` macbook, `/home/ravn/z80/` sonnyboy):
   - `cpnos-in-c/` — CP/NOS slave PROM1-only line program (production, PROM 1)
   - `cpnos-rom/`, `cpnos-in-asm/` — parked predecessors
   - `z88dk/` — **RETIRED 2026-08-10.** Was a pinned prebuilt stock z88dk 2.4 (479 MB unzip of `z88dk-osx-2.4.zip`). Deleted; SDCC builds now run through the **`z88dk:2.4` Docker image** (pull `z88dk/z88dk:2.4` + `docker tag ... z88dk:2.4`, or build from the fork per `rc700-gensmedet/docs/z88dk_docker_rebuild.md`). Only the `z88dk:2.4` Docker image ships the classic `sdcc_iy/z80.lib`; newer official images (`latest`/nightlies) do NOT, so stay pinned to `2.4`. Makefiles auto-select Docker when no native z88dk with `sdcc_iy/z80.lib` is present.
-- `z88dk/` — the **development fork** (github.com/ravn/z88dk, own repo). All bridge/newlib/clang-integration work (`libsrc/l/llvmz80/`, `include/_DEVELOPMENT/`). Built from source. The sole on-disk z88dk tree in the workspace now (classic sccz80 + zx0 + clang integration); it does NOT ship the classic `sdcc_iy/z80.lib` — that lives only in the Docker image.
+- `z88dk/` — the **development fork** (github.com/ravn/z88dk, own repo). Native clang integration uses existing runtime entries, headers and `test/llvmz80/`; the old `libsrc/l/llvmz80/` bridge directory is gone. Built from source. The sole on-disk z88dk tree in the workspace now (classic sccz80 + zx0 + clang integration); it does NOT ship the classic `sdcc_iy/z80.lib` — that lives only in the Docker image.
 
 The autoload Makefile references `LLVM_Z80` via `$(CURDIR)/../../llvm-z80`.
 
@@ -138,7 +138,7 @@ Sources use **C23 features that work in both clang and z88dk zsdcc 4.5.0**.
 
 **How `-std` is set on the clang path (three routes):**
 - **Production firmware drives clang directly** (`--target=z80 ... -std=c23`) — authoritative, already C23.
-- **`zcc +cpm -compiler=llvmz80`**: hardcodes `-std` in `src/zcc/zcc.c`; **default `gnu23`** (2026-08-06). Override per build with `-Cg-std=<std>` (clang honours the LAST `-std`). Also auto-injects `-mllvm -z80-float-sdcccall0` so 32-bit-`double` (float32-math32, ravn/llvm-z80#277) libcalls use the sdcccall(0) ABI bridging to z88dk math32 (`[[project_double_is_float32_retire_softfloat]]`, `[[feedback_use_math32_flag]]`).
+- **`zcc +cpm -compiler=llvmz80`**: hardcodes `-std` in `src/zcc/zcc.c`; **default `gnu23`** (2026-08-06). Override per build with `-Cg-std=<std>` (clang honours the LAST `-std`). The driver selects `z80-unknown-none-z88dk`; the compiler target defaults to `sdcccall(0)` without a driver-injected convention flag. Float libcalls use native math32 lowering, not the historical `-z80-float-sdcccall0`/fmath-bridge route. Use `--math32` to select the library (`-lm` also selects it on the current z88dk 2.5 development line). See `[[project_llvmz80_bridge_elimination]]` and `[[feedback_use_math32_flag]]`.
 - **Bare `clang --target=z80`** (no `-std`): default `gnu17`, lacks C23 keywords.
 
 **GCC builtins operate on 16-bit `int` here — never assume 32-bit.** `__builtin_clz`/`ctz`/`popcount`/`ffs` count over **16 bits**; `__builtin_*_overflow`/`bswap` follow 16-bit `int`. Before relying on a width-sensitive builtin (or a flag routing to one), verify operand width in emitted asm. This caused ravn/llvm-z80#273 (`-DSOFTFLOAT_BUILTIN_CLZ` → 16-bit clz → every `(double)int` corrupt); fixed by width-matching the builtin (`__builtin_clzl` for 32-bit clz) in `opts-GCC.h`, NOT a backend change. Corollary: a runtime closure isn't verified until every entry point runs AND its result is observed **losslessly** (a lossy `(long)` cast hid the 2¹⁶ error).
@@ -178,9 +178,12 @@ Recently fixed (full writeups in the cited files; kept as pointers):
 
 ## z88dk `+cpm -compiler=llvmz80` stdlib status (2026-07-17)
 
-CP/M stdlib surface is largely complete and verified (compiled + run under ntvcm/MAME); bridge layer in `z88dk/libsrc/l/llvmz80/` (ABI: `CALLING_CONVENTION.md`).
+The active native integration uses classic CP/M headers and existing z88dk
+runtime entries, with no llvmz80-specific bridge archive. Current integration
+coverage is in `z88dk/test/llvmz80/`; historical ntvcm/MAME results below are
+not a complete revalidation of every stdlib entry on the active branches.
 
-- **Works:** `string.h`, `ctype`, `stdlib` (atoi/itoa/strtol/qsort/rand/getenv/getopt…), `malloc` family, full `stdio` **FILE\*** layer (16/16 MAME). Non-variadic classic-clib calls bridge the HL→DE 16-bit-return mismatch via `__ZPROTO`.
-- **`double`/`float` runtime:** on z80 `double`==`float`==`long double`==32-bit IEEE-754 binary32 (#277), so clang emits only single-precision (`sf`) soft-float libcalls, never `df`. These are resolved by the auto-linked `llvmz80_fmath.lib` math32 bridge (pass `--math32`); no env var. The old 64-bit Berkeley-SoftFloat closure (`softfloat_cpm_z80.lib`/`LLVMZ80RTLIB`, tree `llvmz80-softfloat/`) is **RETIRED** (ravn/z88dk#44, `[[project_double_is_float32_retire_softfloat]]`).
+- **Current coverage:** arithmetic/conversions/comparisons and libm through math32, printf autoformat, qsort callbacks, and selected classic file I/O pass the native integration suite (2026-10-04). Classic headers retain explicit library/callback ABIs; the target's `sdcccall(0)` default returns 16-bit values in HL, without the old HL→DE bridge.
+- **`double`/`float` runtime:** on z80 `double`==`float`==`long double`==32-bit IEEE-754 binary32 (#277), so clang emits only single-precision (`sf`) operations. On `z80-unknown-none-z88dk`, the backend calls existing `cm32_sdcc_*` entries with `Z80_SDCCCall0`; no llvmz80-specific math32 bridge is linked. Pass `--math32` to select the z88dk runtime. This integration targets the current z88dk 2.5 development line; the pinned z88dk:2.4 environment is not proof of its linking or numerical behavior. The old 64-bit Berkeley-SoftFloat closure (`softfloat_cpm_z80.lib`/`LLVMZ80RTLIB`, tree `llvmz80-softfloat/`) is **RETIRED** (ravn/z88dk#44, `[[project_double_is_float32_retire_softfloat]]`).
 - **Fixed:** variadic stdio return value (z88dk header, ravn/z88dk#31); `va_start`/`va_arg` in user functions (ravn/z88dk `bb914a18`, #270); `printf("%f")` on newlib with `-D__LLVMZ80_IEEE_PRINTF` (ravn/z88dk#35, see `tasks/memory/reference_llvmz80_newlib_ieee_printf_fix.md`).
 - **WONTFIX / out of scope:** disk FILE\* on newlib (ravn/z88dk#34 — CP/M newlib ships no file-open driver; classic is the forward direction). POSIX fd-layer (open/read/write…) resolves to no-op stubs on classic `+cpm` by design — real CP/M file I/O is the FILE\* layer under classic.

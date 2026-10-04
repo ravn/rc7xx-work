@@ -57,12 +57,13 @@
 - **[ZX0 PROMs: optimize compressed, not raw](feedback_zx0_optimize_compressed_not_raw.md) — HARD: autoload metric is compressed B; raw codegen wins can grow the PROM (add a,a chains are ZX0-free)**
 - **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD: non-reentrant, SILENTLY miscompiles recursion**
 - **[-ffreestanding unlocks Z80 static-frame promotion](reference_z80_ffreestanding_closed_world.md) — HARD: standard C flag; sets "Freestanding" module flag Z80NonReentrant reads; +~35% speed on div-heavy code**
+- **[-z80-assume-no-callbacks: static frames for hosted CP/M main](reference_z80_assume_no_callbacks.md) — codegen-only; no language-mode change; +5.8% speed on mandelbrot; use with +static-frame**
 - **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — prefer build-side (whole-program LTO+internalize) or upstream fix; NOT reinstating old AutoStaticFrame**
 - **[Short and concise](feedback_short_and_concise.md) — HARD: brief responses/write-ups/filings; deep detail goes in project docs, not the reply**
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
 - **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel ifeq COMPILER recipes must emit the SAME artifact set**
 - **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use -Cg-O2; verify const data in SHELL; classic clib only (newlib abandoned)**
-- **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32 flag; auto-links fmath bridge + -mllvm -z80-float-sdcccall0**
+- **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32; triple-native calls to existing math32 entries; 2.4 facts are not 2.5**
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations; native llc/clang in llvm-z80/build-macos/bin
 - [ccache + cmake rekonfiguration](feedback_ccache_llvm_build.md) — Z80.cmake har ccache-støtte; brug altid `cmake -C Z80.cmake` ved rekonfiguration
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
@@ -123,6 +124,7 @@
 - **[Extract rules from time-sinks](feedback_extract_rules_from_time_sinks.md) — HARD: after long debug sessions, propose new memory rules proactively**
 - **[Multi-pass marker interactions](feedback_multi_pass_marker_interactions.md) — HARD: -print-after-all when optimization "should fire" but doesn't**
 - **[ticks canonical exit = ED FE trap](reference_ticks_canonical_exit_trap.md) — HARD: ED FE syscall (A=CMD_EXIT, L=code); -output bypassed**
+- [ticks CP/M harness: ticks_cpm.py](reference_ticks_cpm_harness.md) — `scratch/dcc-clang-bench/ticks_cpm.py`; BDOS stub; ntvcm cycle counts wrong for prefixed opcodes
 - **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: instrument + bisect 30 min before declaring deferred**
 - **[Minimal repro BEFORE source dive](feedback_minimal_repro_before_source_dive.md) — HARD: 30s repro first; no "suggested fix" in filed issues without repro proof**
 - **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: after 2-3 fixes of one class, find the systemic cause unprompted**
@@ -150,11 +152,13 @@
 
 ## 11b. z88dk llvmz80 bridge-eliminering
 
-- **[EXX-protokol: 32-bit kerne-ABI + legalizer-mønster](reference_exx_protocol_z88dk_32bit.md) — HARD: addSym (ikke addExternalSymbol); PUSH_IX bryder stack-offsets; IX behøves ikke gemmes (+static-frame)**
-- [llvmz80 bridge-status (2026-09-30)](project_llvmz80_bridge_elimination.md) — 13→3 broer; resterende = float-broer til math32
+- **[EXX-protokol: kerne-ABI + legalizer](reference_exx_protocol_z88dk_32bit.md) — addSym; EXX uses/defs; gem IX ved dynamic frames**
+- [llvmz80 native runtime](project_llvmz80_bridge_elimination.md) — RTLIB + sdcccall(0); ingen nye broer; strict NaN-tests PASS
 
 ## 12. Reference / standing reminders
 
+- [cmake after Xcode removal](reference_cmake_after_xcode_removal.md) — `-DCMAKE_LIBTOOL` + `-DLLVM_ENABLE_LIBEDIT=OFF` + `DEVELOPER_DIR=CommandLineTools` required
+- [C_LINE debug + z88dk-dis -c](reference_z80asm_c_line_debug.md) — z80asm source maps; z88dk-dis -c shows source in disassembly
 - **[Canonical test aggregator](reference_run_all_tests.md) — tasks/tools/run-all-tests.sh; fast=A+C+D; run at merge/checkpoint**
 - **[llvmz80 + z88dk test scripts](reference_llvmz80_test_scripts.md) — `./run-llvmz80-tests.sh test` (816/841); `full` adds torture+utils; rel2elf must be built**
 - **[sdcc _memcpy stub fix](feedback_sdcc_memcpy_stub_fix.md) — z88dk z0.lib conflicts w/ z80_rt.lib; fixed via ___z80_memcpy_builtin + ___memcpy stubs**

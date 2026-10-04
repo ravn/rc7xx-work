@@ -1,5 +1,217 @@
 # Prompts
 
+## 2026-10-04 (toolchain refresh and session closure)
+
+> sikr z88dm og llvm-z80 er opdateret og genbygget
+
+> analyser, ryd op, opsummer, opret issues efter behov, commit og push
+
+## 2026-10-04 (minimizing z88dk integration)
+
+> jatak
+
+Accepted the two remaining local cleanups: remove redundant FCMP calling
+convention variables and S32 entries shadowed by integer custom rules.
+
+> jatak
+
+Accepted local readability cleanup: merge the five binary i32 operations
+and replace the comma-expression return with explicit failure/success paths.
+
+> hvis det er en lille opgave så gør det.  Sæt evt opus til det
+
+> start
+
+> jeg ser lige at llvm/test/CodeGen/Z80/z80asm-c-line-e2e.test kræver z88dk, hvilket vi ikke kan i llvm-z80.  Flyt denne og andre tests der kræver z80asm over i z88dk integration
+
+> fortsæt
+
+> commit først, før du starter
+
+> det er fint kun at systematisere de almindelige hjælpekald.  lav en plan.
+
+> du skal ikke lave runner pr, lige nu trimmer vi bare denne her
+
+> jeg vil gerne have vores ændringer til test runneren trukket ud i en separat pr, så vi hér bare tester mod testrunneren som den er upstream så diffen bliver mindre
+
+> kan du også lave en test der checker om sdcccall(0) conventionen er overholdt (nu qsort er smallc)
+
+> jeg vil gerne lave et eksperiment på en ny branch oven på cdf7fbabe8000fa55f056e64ceb42b1e6f0d868f. Jeg vil gerne have du på dén laver den rettelse du lige har lavet med target-abi
+
+> lige nu vil jeg gerne have at z88dk skal have sdcccall(0) som target abi
+
+> dette er ikke en generel løsning: "  // Library declarations must match default0 program calls on Z80.
+> // Otherwise an implicit printf declaration overrides the header's ABI.
+> if (Target->getTriple().getArch() == llvm::Triple::z80 &&
+> LangOpts.getDefaultCallingConv() == LangOptions::DCC_Z80SDCCCall0 &&
+> (BuiltinInfo.isPredefinedLibFunction(Id) || BuiltinInfo.isLibFunction(Id)))
+> EI = EI.withCallingConv(CC_Z80SDCCCall0);" - den skal sættes til det som kommandolinjeflaget sagde
+
+> hvor er math32 afvigelsen
+
+> er det en reel fejl?
+
+> commit
+
+> nu vil jeg gerne minimere ændringen i z88dk, min formodning er at alle headerne kan ændres tilbage.  er der andre?
+
+> standard konventionen i z88dk runtime er sdcccall0, dvs at hvis vi bruger denne er vi kompatible
+
+> lab en plan
+
+> du må ikke pille ved ZPROTO* makroerne, de skal være 100% som upstream har lavet dem
+
+> jeg er som nævnt interesseret i at z88dk kildeteksterne kommer så tæt på upstream som muligt.  små, rene commits
+
+> måske er det nemmere at starte på upstream/main og kun trække det nødvendigste ind.
+
+> start
+
+> hvordan går det
+
+> You have not yet marked the task as complete using the task_complete tool. If you were planning, stop planning and start implementing. You aren't done until you have fully completed the task.
+>
+> IMPORTANT: Do NOT call task_complete if:
+> - You have open questions or ambiguities - make good decisions and keep working
+> - You encountered an error - try to resolve it or find an alternative approach
+> - There are remaining steps - complete them first
+>
+> Keep working autonomously until the task is truly finished, then call task_complete.
+
+## 2026-10-04 (zcc llvmz80 default ABI)
+
+> det ser rigtigt ud, commit og push
+
+> jeg vil gerne have "-Cg-fdefault-calling-conv=sdcccall0" i z88dk for llvm-z80
+
+## 2026-10-04 (Whetstone/Dhrystone ABI comparison)
+
+> udfør abc sammenligning på whetstone og dhrystone
+
+## 2026-10-04 (calling-convention A/B plan)
+
+> commit og push
+
+> start
+
+> du skal ikke svare, jeg ønsker vi går efter en A/B måling.  Vil det kunne gøres ved at kunne angive standard callling convention fra kommandolinjen i llvm-z80?
+
+> lav en plan mens vi venter.  arbejdet skal ske i en branch
+
+## 2026-10-04 (LLVM-Z80 squash rebuild)
+
+> jeg har opdateret llvm-z80 med et squash af z88dk arbejdet
+
+> genbyg med ccache og test
+
+## 2026-10-03 (CP/M test isolation)
+
+> det burde være i en tempfolder der blev slettet automatisk
+
+> tilret til tempfolder og find ud af hvilken test
+
+> commit og push
+
+## 2026-10-03 (z88dk AGENTS.md)
+
+> AGENTS.md i z88dk skal være den der hører til z88dk projektet.
+
+## 2026-10-03 (reintegrate llvmz80 backend on upstream master)
+
+> jeg har lavet noget arbejde på at tilføje funktionalitet der gør det muligt at bruge den reviderede llvm-z80 som backend direkte med "zcc". Det forrige arbejde med zpragma er blevet tilføjet af upstream og er bedre end mit men jeg vil gerne bruge testtene dertil hvis de passer. Jeg vil gerne rulle det arbejde vi har lavet ovenpå den nye master med så få og elegante rettelser som muligt. Det kræver nok en plan
+
+## 2026-10-03 (math32 implementeringsplan)
+
+> lav en implementationsplan.  Vi behøver ikke understøtte tidligere versioner af z88dk.
+
+> start
+
+> ntvcm findes i workspacet
+
+> hvordan går det??
+
+> er printf-autoformat tricket med at zpragma tilføjer #pragma så %f virker?
+
+## 2026-10-03 (NaN contract)
+
+> undersøg om math32 understøtter nan i det hele taget
+
+> kan vi bruge en anden kaldemåde der virker bedre?
+
+> hvordan fortæller vi llvmz80 at math32 har den opførsel
+
+> så træk det implicit “ingen NaN”-løfte tilbage
+
+## 2026-10-03 (analysis, summary, commit and push)
+
+> analyser, opsummer, og foreslå issues hvis nødvendigt.  commit og pusg
+
+## 2026-10-03 (bounded tests and utils analysis)
+
+> jeg ønsker at garantere afslutning i fornuftig tid
+
+> mens vi venter på resten af testen så undersøg de tre
+
+> du skal ikke køre testen hvis der er linkerfejl (det er fatalt)
+
+
+## 2026-10-03 (length-encoded z88dk symbols)
+
+> undersøg om det bliver kollisionsfrit
+
+> det er tilstrækkeligt med c symboler
+
+> ret det
+
+> commit
+
+## 2026-10-03 (review fixes commit)
+
+> analyser og commit
+
+## 2026-10-03 (remove runtime optimization adaptation)
+
+> Kan du rydde det kode op der forsøgte at tage sig af det?
+
+## 2026-10-03 (clarified z88dk C regression scope)
+
+> Jeg vil have en test i z88dk i c , der kun fyrer for llvm-z80, som checker at - trods optimale betngelser - så bliver printf ikke til puts
+
+## 2026-10-03 (LLVM-only printf regression)
+
+> dette skal være en ren llvm-z80 test, ikke clang
+
+## 2026-10-03 (keep printf ABI optimization gate)
+
+> Så ret testen til at checke at der _ikke_ optimeres
+
+## 2026-10-03 (printf folding diagnosis)
+
+> undersøg hvad problemet er
+
+## 2026-10-03 (C printf-to-puts regression)
+
+> lav en test i c der viser printf -> puts optimeringen virker som den skal
+
+## 2026-10-03 (remaining PR review comments)
+
+> kig på resten
+
+## 2026-10-03 (C_LINE unsupported characters)
+
+> jeg tænker vi tager linjeskift med, det bør der ikke være i filnavne
+
+## 2026-10-03 (scoped cleanup)
+
+> ryd op
+> punktet "Oprydning"
+> commit og push
+
+## 2026-10-03 (cumulative native-runtime review)
+
+> undersøg om de samlede rettelser i forhold til main er så enkle og rene som de kan blive
+> hvor er c_line med scope definieret i wiki eller kildetekst
+
 ## 2026-06-24 (B17 carry-chain fix)
 
 > do b17
@@ -1078,3 +1290,94 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 3. er der allerede en pr?
 4. jatak
 5. vi kan ikke fikse firmware da linkningen er radikalt anderledes for zcc end clang selv
+
+## 2026-10-03
+
+1. jeg var ved at kigge på at få llvm-z80 til at fungere med z88dk runtime uden broer, og løb tør for tokens. undersøg hvor vi er
+2. det må gerne være en eksisterende adapter i z88dk, men vi må ikke skrive nye bridges/wrappere for at få det til at virke
+3. jeg vil gerne have to scripts i ~/z80 der kører henholdsvis llvm-z80 test suiten for sig selv, og z88dk suiten med zcc mod llvm-z80, uden tilretninger.
+4. for nu: testen følge en politik om, at NaN ikke understøttes på denne runtime?
+5. kig på z88dk fails
+6. hvad finder du ud af?
+7. qsort laver en callback til en rutine der skal have den rigtige calling convention
+8. qsort testcasen skal også checke dette
+9. forklar planen
+10. start
+11. hvordan går det?
+12. hvordan går det?
+13. hvordan går det?
+14. forklar hvad du har gjort
+15. analyser, opsummer og commit
+
+## 2026-10-03 (canonical AGENTS sync)
+
+> start med at få canonical AGENTS.md på plads
+
+## 2026-10-03 (local z88dk wiki)
+
+> vi har en lokal kopi af z88dk wikien
+
+## 2026-10-03 (math32 2.4 -> 2.5)
+
+> bemærk at der er sket et løft af math32 fra z88dk 2.4 til 2.5.  Mange tidliger ebeslutninger i dette projekt blev truffet inden.
+
+## 2026-10-03 (printf-autoformat revalidation)
+
+> genverificer printf-autoformat
+
+## 2026-10-03 (math32 build dependencies)
+
+> er der mere vi mangler?
+
+## 2026-10-03 (commit and CI)
+
+> commit og push.  se ci lykkes
+
+## 2026-10-03 (math32 test location)
+
+> jeg vil hellere have at de nye tests i z88dk test/clang lander i test/llvmz80. Hvordan bliver de kaldt?
+
+> hvordan går det?
+
+## 2026-10-03 (z88dk branch comparison)
+
+> what is then the difference from the branch we did the work on?
+
+## 2026-10-03 (commit integrated changes)
+
+> lav et samlet commit af ændringerne
+
+## 2026-10-03 (tighten source comments)
+
+> opstram kommentarer i kildetekst meget, fx
+> /* z80_outp_callee.asm pops "af = data" (topmost slot) then "hl = port" (deeper)
+>  * and reads a full 2-byte slot per argument.  Under z80_smallc (ravn/llvm-z80
+>  * #279) __smallc pushes args LEFT-TO-RIGHT, so a NATURAL (port, data)
+>  * declaration already puts port deepest and data topmost -- matching the
+>  * worker, so NO parameter reversal is needed (that was only required before
+>  * #279, when __smallc meant sdcccall(0) = right-to-left).
+>  *
+>  * One mismatch remains: clang still narrows a uint8_t arg to a 1-byte push
+>  * (`ld a,x; push af; inc sp`) under z80_smallc, so `data` must be WIDENED to
+>  * uint16_t to emit a full 2-byte slot matching the worker's `pop bc`.
+>  * Verified with `clang --target=z80 -S`: uint16_t data -> `ld hl,x; push hl`. */
+
+## 2026-10-03 (z88dk upstream merge feasibility)
+
+> undersøg om vi kan no-ff merge origin/master med upstream/master
+
+## 2026-10-03 (AGENTS.md origin)
+
+> vi må IKKE lægge vores egen AGENTS.md oven i deres. Hvornår er den introduceret?
+
+## 2026-10-03 (restore z88dk project AGENTS)
+
+> vi skal erstatte z88dk/AGENTS.md med den der hører til projektet selv.  Vores hører til i ~/z80/AGENTS.md
+
+## 2026-10-03 (adopt upstream zpragma)
+
+> upstream besluttede at lave deres egen version af zpragma --auto-format.  Det vil sige at vi godt kan fjerne vores arbejde på zpragma og skifte til upstreams version
+
+## 2026-10-03 (commit, push, and reset master tracking)
+
+> commit og push.  Skift derefter master over til ravn-main, og genopret master som upstream/master

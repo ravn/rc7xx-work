@@ -13,7 +13,7 @@ metadata:
 |---|---|
 | cmake (ARM Mac, from CLion bundle) | `/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake` |
 | ninja (ARM Mac, from CLion bundle) | `/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja` |
-| **ccache** (built from submodule, 2026-09-25) | `/Users/ravn/z80/ccache/install/bin/ccache` |
+| **ccache** (verified 2026-10-04) | `/Users/ravn/z80/ccache/build/ccache` |
 | **PRIMARY testing: clang/llc/opt/lit (asserts)** | `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/` |
 | build-macos (Release, no asserts — unused) | `/Users/ravn/z80/llvm-z80/build-macos/bin/clang` |
 | llvm-nm | `/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/llvm-nm` |
@@ -81,8 +81,11 @@ zcc +cpm -subtype=rc700 -compiler=llvmz80 -O2 file.c -o out -create-app
 Without `LLVMZ80EXE` set it fails with `sh: llvmz80-clang: command not found`.
 The other two z88dk C compilers need no such env: `zcc +cpm -subtype=rc700`
 (default sccz80) and `... -compiler=sdcc -SO2 ...`.  For `double`/`float`/`%f`
-programs just add `--math32` (the `llvmz80_fmath.lib` bridge is auto-linked; the
-old `LLVMZ80RTLIB` softfloat archive is retired, ravn/z88dk#44).
+programs add `--math32` to select the z88dk math32 runtime. On the current
+`z80-unknown-none-z88dk` path, float calls go directly to existing
+`cm32_sdcc_*` entries; no `llvmz80_fmath.lib` bridge is linked. The old
+`LLVMZ80RTLIB` softfloat archive is retired (ravn/z88dk#44). The results here
+must use the current z88dk 2.5 development line, not the pinned 2.4 image.
 
 
 ### SDCC runtime assembler/archiver — native, no Docker (since 2026-06-30)
@@ -99,10 +102,12 @@ no longer needed for runtime builds.)  cmake glob `file(GLOB RT_SOURCES
 *.asm)` in `llvm/lib/Target/Z80/CMakeLists.txt` auto-picks new runtime `.asm`
 files after a `cmake build-macos` reconfigure.
 
-**ccache** is wired into `build-macos` via `CMAKE_C/CXX_COMPILER_LAUNCHER` (set by Z80.cmake
-`find_program(CCACHE_PROGRAM ccache)`). Binary at `/Users/ravn/z80/ccache/install/bin/ccache`
-(built from `z80/ccache` submodule 2026-09-25). Ensure it is on PATH before cmake configure:
-`export PATH="/Users/ravn/z80/ccache/install/bin:$PATH"`.
+**ccache** is active in `build-macos-asserts`: both CMakeCache's
+`CCACHE_PROGRAM` and the generated Ninja compile rules point to
+`/Users/ravn/z80/ccache/build/ccache` (verified 2026-10-04).
+The obsolete `ccache/install/` copy was removed during artifact cleanup.
+Ensure the build binary is on PATH before cmake configure:
+`export PATH="/Users/ravn/z80/ccache/build:$PATH"`.
 
 **Build size (for progress estimation, 2026-05-26):** a from-scratch `ninja clang llc`
 is **~2897 ninja edges / ~2992 object files** (full Release build of clang+lld+llc).

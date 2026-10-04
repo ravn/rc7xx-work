@@ -5,11 +5,16 @@ metadata:
   type: project
 ---
 
-**STATUS: DONE (2026-08-09, ravn/z88dk#44).** The `llvmz80-softfloat/` tree has
-been deleted (workspace commit), the `LLVMZ80RTLIB` auto-link wiring removed from
-`z88dk/src/zcc/zcc.c` (z88dk `bfe7390094`), and all docs/tests updated. The sole
-FP runtime on z80 is now the auto-linked `llvmz80_fmath.lib` math32 bridge (via
-`--math32`). Kept below as the rationale record.
+**STATUS: DONE (2026-08-09, ravn/z88dk#44).** The `llvmz80-softfloat/` tree was
+deleted (workspace commit), and the `LLVMZ80RTLIB` auto-link wiring was removed
+from `z88dk/src/zcc/zcc.c` (z88dk `bfe7390094`). The later triple-native
+integration supersedes the original float bridge wiring: on the current
+`z80-unknown-none-z88dk` triple, llvm-z80 calls z88dk's existing
+`cm32_sdcc_*` math32 entries directly with `Z80_SDCCCall0`; it does not link
+`llvmz80_fmath.lib`. The original 2026-08 bridge decision is retained below
+as history, not the current integration recipe. The current z88dk runtime is
+the 2.5 development line; v2.4 results do not establish its library
+resolution or numeric behavior.
 
 Since the `float32-math32` merge (`4d3a32eff207` into llvm-z80 main, 2026-08-05;
 tracking ravn/llvm-z80 #277), on the z80/sm83 target **`double` == `long double`

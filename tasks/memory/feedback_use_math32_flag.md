@@ -1,6 +1,6 @@
 ---
 name: feedback_use_math32_flag
-description: For llvmz80 float/double builds use the literal `--math32` flag; do not substitute your own interpretation. Bridge complete + auto-linked (#44, 2026-08-09).
+description: For llvmz80 float/double builds use the literal `--math32` flag; do not substitute your own interpretation.
 metadata:
   type: feedback
 ---
@@ -16,19 +16,18 @@ binary32) float runtime, which is the chosen FP path now that `double` is 32-bit
 z88dk math32 runtime is the reuse target (it has a full libm). `--math32` is the
 user-facing selector, so use it as the interface rather than its internals.
 
-**How to apply:** put `--math32` on the zcc line for any FP build. As of
-ravn/z88dk#44 (2026-08-09) `zcc` **auto-links the fmath bridge** for every
-`-compiler=llvmz80` program (config var `LLVMZ80FMATH`) and auto-injects the
-sdcccall0 float ABI gate (`-mllvm -z80-float-sdcccall0`), so a plain `--math32`
-is now enough — no manual `-L<z88dk>/libsrc/l/llvmz80 -lllvmz80_fmath` needed.
+**Current triple integration:** pass `--math32` to select the z88dk runtime.
+For `z80-unknown-none-z88dk`, llvm-z80 calls existing `cm32_sdcc_*` entries
+directly with `Z80_SDCCCall0`; do not add the historical `llvmz80_fmath.lib`
+aliases or `-z80-float-sdcccall0` gate. See
+`[[project_z88dk_math32_direct]]`.
 
-**Bridge now COMPLETE (2026-08-09, ravn/z88dk#44):** `llvmz80_fmath.lib` was
-rebuilt from all three sources (via `build_fmath_lib.sh`) and now exports the
-full family — arith `__addsf3`/`__subsf3`/`__mulsf3`/`__divsf3`, compares
-`__cmpsf2`/`__gtsf2`/`__gesf2`/`__unordsf2` (+ `__cmpsf2_fast`), conversions
-`__fixsfsi`/`__fixunssfsi`/`__floatsisf`/`__floatunsisf`. A comprehensive
-arith+compare+conv program links with plain `--math32` and runs correctly on
-z88dk-ticks. This CLEARS the #44 blocker: `--math32` is a complete FP runtime,
-so softfloat's role can now be retired (the tree deletion itself is the
-remaining #44 work). Bridge coverage doc:
-`z88dk/libsrc/l/llvmz80/MATH32_BRIDGE.md` §4/§4a.
+**Version note:** this advice predates z88dk's math32 lift from 2.4 to 2.5.
+In v2.4, math32 lived under `_DEVELOPMENT/` and `-lm` defaulted to genmath.
+The current v2.5 development line makes math32 the default `-lm`; use the
+explicit `--math32` selector when the build must state its runtime choice.
+
+The 2026-08-09 `llvmz80_fmath.lib` / `LLVMZ80FMATH` description is historical:
+it records the earlier generic `-compiler=llvmz80` path, not the current
+triple-native integration. Do not use it as evidence for the active ABI or
+link recipe.

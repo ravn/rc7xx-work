@@ -8,7 +8,7 @@ metadata:
 ccache er konfigureret i `clang/cmake/caches/Z80.cmake` via `CMAKE_C_COMPILER_LAUNCHER` / `CMAKE_CXX_COMPILER_LAUNCHER` (no-op hvis ccache ikke er installeret). **Z80.cmake er commit `1c475cd1630e` fra sonnyboy 2026-09-25.**
 
 **Aktuel tilstand (2026-09-25/30):**
-- macOS testing (`build-macos-asserts/`): **PRIMARY for all testing** (asserts, ccache AKTIV). `export PATH="/Users/ravn/z80/ccache/install/bin:$PATH"` nødvendigt.
+- macOS testing (`build-macos-asserts/`): **PRIMARY for all testing** (asserts, ccache AKTIV). `export PATH="/Users/ravn/z80/ccache/build:$PATH"` før konfigurering; Ninja bruger denne binær (verificeret 2026-10-04).
 - macOS firmware (`build-macos/`): Release build, firmware builds only, ccache AKTIV.
 - Linux/sonnyboy (`build-linux/`): antages korrekt konfigureret (frisk cmake-kørsel med ny Z80.cmake).
 
