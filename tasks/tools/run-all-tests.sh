@@ -19,7 +19,20 @@ set -u
 
 WS="$(cd "$(dirname "$0")/../.." && pwd)"     # workspace root (tasks/tools/..)
 LLVM="$WS/llvm-z80"
-BUILD="${BUILD_DIR:-$LLVM/build-macos}"
+if [ -z "${BUILD_DIR:-}" ]; then
+    for candidate in \
+        "$LLVM/build-macos-asserts" \
+        "$LLVM/build-linux" \
+        "$LLVM/build-macos" \
+        "$LLVM/build"; do
+        if [ -x "$candidate/bin/clang" ]; then
+            BUILD="$candidate"
+            break
+        fi
+    done
+else
+    BUILD="$BUILD_DIR"
+fi
 export LLVMZ80EXE="${LLVMZ80EXE:-$BUILD/bin/clang}"
 export NTVCM="${NTVCM:-$WS/ntvcm/ntvcm}"
 export PATH="$WS/z88dk/bin:$PATH"
@@ -53,12 +66,14 @@ fi
 # run_matrix.sh runs the suite against every clib (classic + newlib sdcc_iy);
 # fall back to run_all.sh (classic only) if the matrix runner is absent.
 if want z88dk; then
-  hdr "C. z88dk clang integration (test/clang/run_matrix.sh: classic + newlib)"
-  if [ -f "$WS/z88dk/test/clang/run_matrix.sh" ]; then
-    sh "$WS/z88dk/test/clang/run_matrix.sh" 2>&1 | tail -30
+  hdr "C. z88dk clang integration"
+  Z88DK_TEST_DIR="$WS/z88dk/test/llvmz80"
+  [ ! -d "$Z88DK_TEST_DIR" ] && Z88DK_TEST_DIR="$WS/z88dk/test/clang"
+  if [ -f "$Z88DK_TEST_DIR/run_matrix.sh" ]; then
+    sh "$Z88DK_TEST_DIR/run_matrix.sh" 2>&1 | tail -30
     mark "z88dk" "${PIPESTATUS[0]}"
-  elif [ -f "$WS/z88dk/test/clang/run_all.sh" ]; then
-    sh "$WS/z88dk/test/clang/run_all.sh" 2>&1 | tail -22
+  elif [ -f "$Z88DK_TEST_DIR/run_all.sh" ]; then
+    sh "$Z88DK_TEST_DIR/run_all.sh" 2>&1 | tail -22
     mark "z88dk" "${PIPESTATUS[0]}"
   else echo "SKIP: run_all.sh missing"; mark "z88dk" 77; fi
 fi

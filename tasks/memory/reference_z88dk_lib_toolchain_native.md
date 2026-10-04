@@ -27,3 +27,10 @@ Gotcha fixed en route: ravn's `libsrc/stdlib/c/sccz80/strtol.asm` used IX under 
 bare `IF __CLASSIC`, breaking 8080/8085/gbz80 classic builds; now guarded
 `IF !__CPU_INTEL__ && !__CPU_GBZ80__`. See
 [[reference_newlib_signed_mod_z88dk_bug]].
+
+**Full toolchain build (Linux, verified 2026-10-04):**
+- From the z88dk root, run
+  `PATH="$PWD/bin:$PATH" ZCCCFG="$PWD/lib/config" make -j4 all`.
+- The PATH/ZCCCFG values are needed by the `testsuite` target in `all`.
+- The top-level Makefile automatically prefixes C/C++ compiler commands with
+  `ccache` when it is installed; verify the emitted compile commands.

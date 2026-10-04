@@ -6,28 +6,34 @@ metadata:
 ---
 
 **HARD rule.** After ANY edit under `llvm-z80/llvm/lib/Target/Z80/` (or any
-backend library compiled into `LLVMZ80CodeGen`), rebuild **all three** tools:
+backend library compiled into `LLVMZ80CodeGen`), rebuild **all** tools via:
 
+```bash
+make toolchain
 ```
-ninja -C build-macos-asserts clang llc lld opt FileCheck
+from workspace root, or explicitly:
+```bash
+ninja -C <build-dir> clang llc lld llvm-nm llvm-objcopy llvm-objdump opt FileCheck
 ```
-
-(or just `ninja -C build-macos` — default builds everything).
 
 **NEVER build a subset — not even "just this once to save build time."** That
 optimization is always net-negative (it caused the 2026-07-08 incident below AND
 a 2026-09-11 repeat: rebuilt `clang llc`, then rcbios `-flto` linked with a stale
 `ld.lld` still carrying the pre-fix Z80DanglingDebugCleanup → LTO crash). If a
-backend file changed, run all three (or default `ninja`) — full stop. Citing this
+backend file changed, run `make toolchain` (or default `ninja`) — full stop. Citing this
 rule in a commit's `Rules-checked:` is not compliance; running the aggregate is.
 
 **Why.** `LLVMZ80CodeGen` is statically linked into `clang`, `llc`, AND
-`lld`.  Different tests invoke different tools:
+`lld`. Different tests invoke different tools:
 - `llc` — standalone codegen lit tests.
 - `clang` — non-LTO `.c` compiles.
 - **`ld.lld`** — **LTO codegen** (`-flto` compiles emit bitcode; the backend
   runs at link time inside lld) AND the RC700 PROM builds, which call
-  `build-macos/bin/ld.lld` directly for the final link.
+  `bin/ld.lld` directly for the final link.
+- **`llvm-nm`** — **runtime oracle test-runner** (`z80-test-runner` inspects
+  the compiled ELF with `llvm-nm` to locate `_halt` and `_exitcode`; if `llvm-nm`
+  is missing or stale, 100% of runtime tests fail).
+- **`opt` + `FileCheck`** — IR transform passes and lit test verification.
 
 Naming a subset (`ninja ... clang llc`) leaves `ld.lld` STALE.  A stale
 `ld.lld` silently runs the OLD legalizer on the LTO path, so `-flto` builds

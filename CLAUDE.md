@@ -65,11 +65,10 @@ The autoload Makefile references `LLVM_Z80` via `$(CURDIR)/../../llvm-z80`.
 
 ## Build Commands
 
-### LLVM-Z80 compiler (Docker image `llvm-z80-build`)
+### Toolchain builds (from workspace root — uses ccache + Ninja, auto-detects host)
 ```bash
-cd llvm-z80
-cmake -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build
-ninja -C build          # full  (or: clang / llc)
+make toolchain            # Build native LLVM-Z80 toolchain (clang, llc, lld, llvm-nm, llvm-objcopy, llvm-objdump)
+make -C z88dk all         # Build native z88dk tools with ccache
 ```
 
 ### Firmware builds (each component: `make help` lists its real targets)
@@ -98,14 +97,21 @@ clang build is `make prom` (autoload) — COMPILER defaults to clang.
 
 ### Tests
 
-**Use `build-macos-asserts` for all testing and firmware builds** — assertions catch IR/MIR invariant violations early, before they silently corrupt output.
+**Canonical test aggregators (run from workspace root):**
+```bash
+./run-llvmz80-tests.sh              # clang C value suite (all opt levels) + lit tests
+./run-z88dk-tests.sh                # z88dk + llvmz80 integration suite
+./tasks/tools/run-all-tests.sh fast # lit + z88dk integration (~1 min)
+./tasks/tools/run-all-tests.sh      # full workspace test suite (lit, runtime oracle, z88dk)
+```
+
+Use `build-macos-asserts` (macOS) or `build-linux` (Linux) for all testing and firmware builds.
+Always ensure `TOOLS` (`clang`, `llc`, `lld`, `llvm-nm`, `llvm-objcopy`, `opt`, `FileCheck`) are rebuilt via `make toolchain`.
 
 ```bash
-# Always build these before running lit (stale opt/FileCheck cause false failures):
-ninja -C build-macos-asserts llc clang opt FileCheck
-
-build-macos-asserts/bin/llvm-lit llvm/test/CodeGen/Z80/   # LLVM lit
-cd z80-utils && BUILD_DIR=../build-macos-asserts cargo run -- clang  # runtime tests
+# Standalone direct tool invocations (if not using the runners above):
+llvm-lit llvm/test/CodeGen/Z80/                           # LLVM lit
+cd z80-utils/test-runner && cargo run -- clang            # runtime tests
 ```
 
 ## Architecture

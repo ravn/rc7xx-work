@@ -34,6 +34,12 @@ if [ -z "$BUILD_DIR" ]; then
 fi
 export BUILD_DIR
 
+# Auto-tilføj z88dk bin til PATH (indeholder z88dk-ticks, zcc osv.)
+Z88DK_BIN="$WORKSPACE/z88dk/bin"
+if [ -d "$Z88DK_BIN" ]; then
+    PATH="$Z88DK_BIN:$PATH"
+fi
+
 # Auto-tilføj z88dk sdcc-build til PATH (indeholder sdcc, sdasz80, sdldz80 osv.)
 SDCC_BUILD="$WORKSPACE/z88dk/src/sdcc-build/bin"
 if [ -x "$SDCC_BUILD/sdcc" ]; then

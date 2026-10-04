@@ -26,7 +26,7 @@ PROM_DIR = $(CURDIR)/rc700-gensmedet/autoload-in-c
 
 LLVM_BUILD = $(LLVM_Z80)/$(BUILD_DIR)
 
-TOOLS = clang lld llvm-objcopy llvm-objdump llvm-nm llc
+TOOLS = clang lld llvm-objcopy llvm-objdump llvm-nm llc opt FileCheck
 
 # Native z88dk + bundled zsdcc toolchain.  See `make z88dk-toolchain`
 # section below for the macOS prereqs.
@@ -35,28 +35,42 @@ Z88DK_ZSDCC  = $(Z88DK_DIR)/bin/z88dk-zsdcc
 Z88DK_BOOST  = $(Z88DK_DIR)/third_party/boost
 Z88DK_PATCH  = $(CURDIR)/z88dk-macos.patch
 
-.PHONY: toolchain bios prom test clean-toolchain z88dk-toolchain z88dk-clean
+.PHONY: toolchain bios prom test clean-toolchain z88dk-toolchain z88dk-clean \
+        test-llvmz80 test-z88dk test-all
 
 # ================================================================
 # Z80 clang toolchain (native build)
 # ================================================================
 
-toolchain: $(LLVM_BUILD)/bin/clang
-
-$(LLVM_BUILD)/bin/clang: $(LLVM_Z80)/clang/cmake/caches/Z80.cmake
-	@echo "=== Configuring LLVM-Z80 for $(UNAME_S) in $(BUILD_DIR) ==="
-	$(CMAKE) -C $(LLVM_Z80)/clang/cmake/caches/Z80.cmake \
-		-G Ninja \
-		-DCMAKE_MAKE_PROGRAM=$(NINJA) \
-		-S $(LLVM_Z80)/llvm -B $(LLVM_BUILD)
+toolchain: $(LLVM_BUILD)/build.ninja
 	@echo "=== Building Z80 clang toolchain ==="
 	$(NINJA) -C $(LLVM_BUILD) $(TOOLS)
 	@echo "=== Verifying ==="
 	$(LLVM_BUILD)/bin/clang --version
 	@echo "=== Z80 clang toolchain ready ==="
 
+$(LLVM_BUILD)/build.ninja: $(LLVM_Z80)/clang/cmake/caches/Z80.cmake
+	@echo "=== Configuring LLVM-Z80 for $(UNAME_S) in $(BUILD_DIR) ==="
+	$(CMAKE) -C $(LLVM_Z80)/clang/cmake/caches/Z80.cmake \
+		-G Ninja \
+		-DCMAKE_MAKE_PROGRAM=$(NINJA) \
+		-S $(LLVM_Z80)/llvm -B $(LLVM_BUILD)
+
 clean-toolchain:
 	rm -rf $(LLVM_BUILD)
+
+# ================================================================
+# Tests
+# ================================================================
+
+test-llvmz80:
+	./run-llvmz80-tests.sh
+
+test-z88dk:
+	./run-z88dk-tests.sh
+
+test-all:
+	./tasks/tools/run-all-tests.sh
 
 # ================================================================
 # BIOS and PROM builds

@@ -13,6 +13,9 @@ set -e
 WORKSPACE=$(cd "$(dirname "$0")" && pwd)
 Z88DK_DIR="$WORKSPACE/z88dk"
 TEST_DIR="$Z88DK_DIR/test/clang"
+if [ ! -d "$TEST_DIR" ] && [ -d "$Z88DK_DIR/test/llvmz80" ]; then
+    TEST_DIR="$Z88DK_DIR/test/llvmz80"
+fi
 
 # Auto-detekter LLVMZ80EXE
 if [ -z "$LLVMZ80EXE" ]; then

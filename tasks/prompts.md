@@ -1282,6 +1282,9 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 40. har du tokens nok til at løfte trin 4?  Opgaven må være beskedent.
 41. hvorfor er mdouble=32 ikke med i --target=z80-unknown-none-z88dk ?
 42. ja
+43. ret og byg
+44. kan du sætte en kortere timeout på det der fejler
+45. lav det til en xfail
 
 ## 2026-09-28
 
@@ -1381,3 +1384,35 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 ## 2026-10-03 (commit, push, and reset master tracking)
 
 > commit og push.  Skift derefter master over til ravn-main, og genopret master som upstream/master
+
+## 2026-10-04
+
+1. skift z88dk til reintegrate-llvmz80-on-upstream-20261003
+2. byg z88dk igen
+3. byg z88dk igen, husk at ccache skal være aktiv.
+4. git repos have new commits
+5. merge, commit og push
+6. jeg er lige nu interesseret i llvm-z80 og z88dk
+7. dette er et projekt jg har arbejdet på et stykke tid, senest med copilot for at få z88dk og llvm-z80 til at arbejde sammen.   Jeg har lige rykket herover for at sikre det kan bygge på linux.  Der gik kludder i noget arbejde, men det skulle være på plads nu.  Genbyg z88dk og llvm-z80 med ccache
+8. kør det fulde testsæt
+9. hvorfor er llvm-z80 ikke nyeste der ikke længere understøtter add_option_to_compiler("-fdefault-calling-conv=sdcccall0");
+10. så du har rettet det?
+11. det burde bare have været nyeste z88dk branch.  er du på reintegrate-llvmz80-on-upstream-20261003?
+12. opdateret på github
+13. kør det fulde testsæt
+14. z88dk-ticks er i projektet
+15. der burde være et byggescript du bare kan køre
+16. det ser bare ud som om du har forsøgt igen og igen, i stedet for bare at køre den rigtige komamndoe.  Hvorfor?
+17. hvordan skulle dine instrukser have været for at du havde gjort det rigtigt?
+18. jatak
+19. A.DAT og WP.DAT var rester fra en emulatorkørsel, det er rykket i en underfolder
+20. synes du der manglr noget?
+21. ja
+22. 3 ryd op
+23. jeg har pushet fra mac til github
+24. var vi ikke på den branch i forvejen?
+25. der er flere git repositories med hver sin branch i spil her
+26. er der sket en fejl med origin/native-runtime-summary-20261003=
+27. ok, så hvis det kun er på rod z80, er det fint at merge -no-ff
+28. ja
+

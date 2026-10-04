@@ -14,14 +14,14 @@ CP/M BIOS, CP/NOS) booted in MAME.
 
 - `llvm-z80/` — LLVM/clang fork with the Z80 GlobalISel backend.
 - `rc700-gensmedet/` — RC700 CP/M system sources (autoload PROM, BIOS, cpnos).
-- `z88dk/` — z88dk toolchain (SDCC/sccz80) for the reference build, via Docker.
+- `z88dk/` — z88dk development fork for clang-integration (built natively from source); stock SDCC 2.4 reference build via Docker.
 
 ## Hard constraints (violating these breaks the build or the hardware)
 
 - **2 KB PROM cap.** The user's RC702 has no A11 bridge: PROM0 and PROM1 are each
   hard-capped at 2048 B. Never propose "use a 2732 / close A11" as a workaround.
 - **No `brew`.** Docker for missing CLI tools; native `clang`/`llc` live in
-  `llvm-z80/build-macos/bin`; `cmake`/`ninja` come from the CLion app bundle.
+  `llvm-z80/build-macos/bin` (macOS) or `llvm-z80/build-linux/bin` (Linux); `cmake`/`ninja` come from the CLion app bundle (macOS) or system packages (Linux).
 - **The compiler is experimental and unfinished.** On any suspected miscompile,
   inspect the generated Z80 asm *before* blaming the source, runtime, or hardware.
 - **Production config is `+static-frame`** (BSS locals, non-reentrant via `-ffreestanding`). Test changes
@@ -44,8 +44,9 @@ CP/M BIOS, CP/NOS) booted in MAME.
   `rc700-gensmedet/tasks/timeline.md` (tag Easy/Medium/Hard/Painful); plans in
   `tasks/todo.md`; lessons in `tasks/lessons.md`. **All persistent notes live in the
   repo**, never in `~/.claude/`.
-- After a Z80 backend change, build **`ninja clang llc` together** (llc alone leaves
-  the clang symlink stale); add a lit test under `llvm/test/CodeGen/Z80/`.
+- After a Z80 backend change, build via **`make toolchain`** from workspace root
+  (uses ccache + Ninja, rebuilds clang, llc, lld, llvm-nm, llvm-objcopy, opt, FileCheck,
+  auto-detecting macOS/Linux); add a lit test under `llvm/test/CodeGen/Z80/`.
 - Favor upstream fixes (GISel combiner, regalloc cost model, MIR DCE) over post-RA
   peepholes; question prior design decisions rather than band-aiding an immature
   backend.
@@ -76,21 +77,22 @@ first wastes time and risks breaking established workflows.
 ## Build & test quick reference
 
 ```bash
-# Compiler (Docker; image llvm-z80-build)
-cd llvm-z80 && cmake -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build
-ninja -C build clang llc
+# Toolchain builds (from workspace root — uses ccache + Ninja, auto-detects host)
+make toolchain            # Build native LLVM-Z80 toolchain (clang, llc, lld, llvm-nm, opt, FileCheck, ...)
+make -C z88dk all         # Build native z88dk tools with ccache
 
-# Lit
-build/bin/llvm-lit llvm/test/CodeGen/Z80/
+# Canonical test aggregators (run from workspace root)
+./run-llvmz80-tests.sh              # clang C value suite (all opt levels) + lit tests
+./run-z88dk-tests.sh                # z88dk + llvmz80 integration suite
+./tasks/tools/run-all-tests.sh fast # lit + z88dk integration (~1 min)
+./tasks/tools/run-all-tests.sh      # full workspace test suite (lit, runtime oracle, z88dk)
 
-# Integration (needs z88dk-ticks on PATH)
-cd z80-utils/test-runner
-cargo run                    # default O1/O2/Os
-cargo run -- clang           # clang C suite (default runs with -ffreestanding +static-frame)
-cargo run -- bench           # clang-vs-SDCC size benchmark
+# Standalone direct tool invocations (if not using the runners above)
+llvm-lit llvm/test/CodeGen/Z80/
+cd llvm-z80/z80-utils/test-runner && cargo run -- clang
 
 # PROM + MAME boot
-cd ../../rc700-gensmedet/autoload-in-c && make clang_prom && make mame
+cd rc700-gensmedet/autoload-in-c && make prom && make mame
 ```
 
 ## Key backend files

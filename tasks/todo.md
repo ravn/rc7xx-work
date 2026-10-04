@@ -2494,3 +2494,35 @@ forks (`johnsonjh/emu2-cpm86` var forkert antaget `dmsc/emu2`; `ravn/dcc`
 var forkert `davidly/dcc`); `open-watcom-v2` fuldt build+Mandelbrot-testet;
 `ntvcm` bygget (var manglende) — **husk: `ntvcm`, ikke `emu2` (CP/M-86/x86),
 til klassiske Z80 CP/M `.com`-binaries**.
+
+### 2026-10-04 — Fix Linux z88dk tests and build compiler-rt benchmark objects
+
+1. Fix all test scripts that run lowercase `.com` paths although zcc emits
+   uppercase `.COM`; baseline repro captured in `scratch/tmp/case-baseline.log`.
+2. Build the six generic Z80 compiler-rt objects required by the two
+   math32-vs-compiler-rt benchmark scripts into the expected build directory.
+3. Run all affected tests, both benchmarks, and the full z88dk integration
+   suite; preserve unrelated worktree/submodule changes.
+
+**Status (2026-10-04):** the 12 Linux `.COM` path tests pass; `ninja
+Z80Runtime` succeeds; both math32/compiler-rt benchmarks pass. The timing
+benchmark caps math32 `ticks_cpm.py` runs at 25M cycles (verified with a
+forced 100k-cycle cutoff) and gives compiler-rt `z88dk-ticks` runs a 10-second
+wall-clock timeout (verified by forcing a 1 ms timeout). Its separate 500M
+cycle limit allows the measured 254.5M-cycle compiler-rt divide to complete.
+The full suite reports 72 PASS, 1 XFAIL, and 1 FAIL: `runtime_float.sh` reports
+15 float-value mismatches. That remaining runtime test is not modified by the
+Linux path or benchmark fixes and remains unresolved.
+
+**Follow-up:** the `math32.lib` used by zcc was dated 2026-09-25, while
+`f32_fsdiv.asm` and `d32_fsadd.asm` in the checked-out z88dk source were dated
+2026-10-04. Rebuild the math32 archive from the current branch, rerun the
+runtime float test and full integration suite, and only edit the test/compiler
+if the mismatch persists with current runtime objects.
+
+### 2026-10-04 — Merge active llvm-z80 and z88dk branches
+
+1. Verify updated llvm-z80 backend build, Z80 lit tests, and value tests.
+2. Run the updated z88dk llvmz80 integration tests with the rebuilt compiler.
+3. Create non-fast-forward merge commits from the active feature branches into
+   `origin/main` (llvm-z80) and `origin/master` (z88dk); push only after checks.

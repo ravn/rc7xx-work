@@ -8,12 +8,16 @@ is **https://github.com/ravn/AGENTS.md**; the copy in any project root is a mirr
 When a genuinely cross-project rule emerges, edit the canonical first and then
 propagate the same edit to each project root.
 
-## Session startup protocol (MANDATORY)
+**Staleness check.** At the start of a coding session — or whenever something in
+this file feels out of step with how I'm asking you to work today — fetch
+`https://raw.githubusercontent.com/ravn/AGENTS.md/main/AGENTS.md` and diff it
+against the local copy. If they differ, surface the diff and let me decide
+whether to sync before continuing.
 
-Before taking ANY action, running ANY command, writing ANY code, or answering any task:
-1. **Durable project constraints:** Check if `CLAUDE.md` exists in the workspace root. If so, read it immediately.
-2. **Durable memory:** Check if `tasks/memory/` (specifically `tasks/memory/MEMORY.md`) exists. If so, read it immediately and respect all recorded feedback, hard constraints, and rules. If neither is present, `PROJECT.md` or this file is the whole brief.
-3. **Staleness check:** At the start of a coding session — or whenever something in this file feels out of step with how I'm asking you to work today — fetch `https://raw.githubusercontent.com/ravn/AGENTS.md/main/AGENTS.md` and diff it against the local copy. If they differ, surface the diff and let me decide whether to sync before continuing.
+**Project-specific setup, constraints, build commands, and status — when the project
+has them — live in a `PROJECT.md` alongside this file** (and in `CLAUDE.md`, which
+Claude Code reads for the fullest live detail). If neither is present, this file is
+the whole brief.
 
 ---
 
@@ -263,13 +267,3 @@ Before taking ANY action, running ANY command, writing ANY code, or answering an
   producer runs); never read a `/tmp` file without confirming it's from this run.
 - **No `re.DOTALL` + non-greedy `.*?` across multi-line source** — use awk/grep or a
   char-state machine; kill any scan exceeding ~10s.
-
-## Filing discipline (PRs, issues, comments)
-
-These rules apply to every agent tool (Claude Code, Copilot, Antigravity, etc.).
-
-- **Every PR must be created as draft** (`--draft` / "Create as draft"). No exceptions — not for small changes, not for "obvious" fixes, not for any repo. The human marks it ready for review when they decide it is. If you accidentally created a non-draft PR, convert it immediately with `gh pr ready <num> --undo`.
-- **Never create a PR or issue without explicit per-item go-ahead.** "Analyze and file issues as needed" is NOT a go-ahead. Stop, explain the proposed filing in plain language (what, why, which repo), and wait for "go ahead" for that specific item.
-- **Explain the root cause before filing.** State the observable symptom and the suspected cause separately. Never present an unverified cause as established fact in a filed issue.
-- **AGENTS.md and similar meta-files must never be included in upstream PRs.** They are local working agreements between the human and their AI tools — not code changes for the upstream project.
-- **Temp files go in `scratch/tmp/` inside the workspace, never in `/tmp/`.**
