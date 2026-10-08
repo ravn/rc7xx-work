@@ -7,9 +7,9 @@
 
 - **[NEVER traverse outside workspace root](feedback_no_home_search.md) — ABSOLUTE. Root: `/Users/ravn/z80/` (mac) `/home/ravn/z80/` (sonnyboy). No find/ls/mdfind outside.**
 - **[Temp files in scratch/tmp](feedback_temp_files_in_scratch.md) — HARD: all temp files in scratch/tmp/, NEVER /tmp/ (prompts user).**
-- **[NEVER post PR comments or create PRs without per-turn go-ahead](feedback_no_pull_requests.md) — SESSION-ENDING: no gh api .../comments POST, no gh pr create, no push to upstream PR branch without explicit go-ahead THIS turn.**
+- **[NEVER POST ANYTHING EXTERNALLY WITHOUT EXPLICIT "JA POST DET"](feedback_no_pull_requests.md) — SESSION-ENDING ×2: `gh api .../comments POST`, `gh pr create`, push til upstream = FORBIDDEN indtil brugeren i DENNE tur skriver ordene. "Naturlig næste skridt", "åbenlyst svar", "tak for review" er IKKE tilladelse. Draft i chat → vent → ALDRIG post selv.**
 - **[ALL PRs ALWAYS draft](feedback_upstream_prs_always_draft.md) — ABSOLUTE: `gh pr create` SKAL have `--draft`. ALTID. Ingen undtagelser. Ingen repo-undtagelser. Aldrig non-draft.**
-- **[INTET udenfor ravn/* uden tilladelse](feedback_upstream_review_local_first.md) — HARD: push, kommentarer, force-push, PR-opdateringer til eksterne repos kræver udtrykkelig go-ahead. Mindste tvivl → spørg.**
+- **[INTET udenfor ravn/* uden tilladelse](feedback_upstream_review_local_first.md) — HARD: push, kommentarer, force-push, PR-opdateringer til ALLE repos (inkl. ravn/*) kræver udtrykkelig go-ahead. Mindste tvivl → draft i chat + vent.**
 - **AGENTS.md + lignende meta-filer må ALDRIG inkluderes i upstream PRs** — de er lokale arbejdsaftaler, ikke kodeændringer.
 
 ## 1. Always-on (every response — genuinely frequent triggers only)
@@ -67,7 +67,7 @@
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations; native llc/clang in llvm-z80/build-macos/bin
 - [ccache + cmake rekonfiguration](feedback_ccache_llvm_build.md) — Z80.cmake har ccache-støtte; brug altid `cmake -C Z80.cmake` ved rekonfiguration
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
-- **[Parallel compiler builds](feedback_parallel_compiler_builds.md) — HARD: git worktree + rsync --link-dest; hardlinks sparer ~2 GB; build-macos = hoved, navngiv øvrige build-<name>**
+- **[Compiler builds](feedback_parallel_compiler_builds.md) — genbrug builddir + ccache efter branchskift; separat kun til samtidige versioner**
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
 - **[Docker shim batch](feedback_docker_shim_batch.md) — HARD: batch multi-step Docker calls into ONE docker run sh -c "..."**

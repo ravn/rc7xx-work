@@ -1,5 +1,25 @@
 # Lessons Learned
 
+## 2026-10-08: Target temporary prefix ('L') suppresses MC EXTERN emission
+
+In LLVM Z80 (Mach-O mangling mode `m:o`), `PrivateGlobalPrefix` is `"L"`.
+Any symbol name starting with `"L"` causes `MCSymbol::isTemporary()` to return
+true. `Z80AsmPrinter::emitEndOfAsmFile()` explicitly skips temporaries when
+emitting `EXTERN <sym>`, causing external symbols that contain dots (e.g.
+referenced via LLVM IR or `__asm__`) to be silently dropped from the external
+symbol list and fail to link with undefined symbol errors in z80asm.
+
+Using `"_"` as the mangling prefix (`_5__test7_counter`) avoids the temporary
+prefix, ensures `EXTERN` is emitted, and remains completely collision-free with
+standard C identifiers because C identifiers in assembly always start with
+`_[a-zA-Z_]`, never `_[0-9]`.
+
+When splitting and rebuilding symbols in LLVM, use idiomatic
+`StringRef::split(SmallVectorImpl<StringRef>&, char)` with stack-allocated
+`SmallVector<StringRef, 4>` (zero heap allocation, handles empty parts) and
+stream directly into `raw_svector_ostream`. Keep in-tree source comments tight
+(1-2 lines on WHAT/WHY) without historical essays or large worked examples.
+
 ## 2026-10-04: Distinguish stale build dependencies from source failures
 
 An incremental build can retain generated `.d` files naming a list file

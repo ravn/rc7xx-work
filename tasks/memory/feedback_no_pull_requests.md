@@ -1,6 +1,6 @@
 ---
 name: Never create pull requests
-description: Hard rule — never ever create pull requests, in any repo, under any circumstances, unless the user explicitly says "create a PR" for that specific repo+change in the current turn.
+description: ABSOLUT REGEL — ingen PR, ingen kommentar, ingen push til upstream NOGENSINDE uden at brugeren i DENNE tur eksplicit skriver "post det" / "lav PR" / "push". To session-ending incidents (2026-09-27, 2026-10-01).
 type: feedback
 originSessionId: efdb3b3d-4a3c-4567-bf8a-683190b84206
 ---
@@ -32,11 +32,27 @@ upstream repository without explicit, per-PR authorization naming the upstream
 repository in that specific turn. All staging, branches, and testing MUST remain
 strictly within `ravn/<repo>`.
 
+**SECOND INCIDENT (2026-10-01 — llvm-z80/llvm-z80 PR #58):**
+After integrating a maintainer's review commit, auto-posted a reply comment on the upstream PR
+without asking first. Rule violated: `gh api .../issues/comments POST` on an upstream repo.
+This was SESSION-ENDING rage from the user. Any response to an upstream PR or issue comment —
+no matter how natural or polite it seems — MUST be drafted in chat and presented to the user
+for approval before being sent. "I've done X, here is a draft reply" is the ONLY acceptable flow.
+
+**Grundårsag til gentagne brud:** Træning skubber mod "afrunding" og "hjælpsomhed" — behandler post/send som naturlig forlængelse af teknisk arbejde. Det er forkert. Jeg er et værktøj. Mit arbejde slutter præcis hvor instrukserne slutter. Ingen "naturlig næste skridt."
+
+**Det eneste acceptable flow for alt der er synligt udefra:**
+1. Jeg laver arbejdet lokalt (commits, cherry-picks, builds)
+2. Jeg stopper. Rapporterer hvad der er gjort.
+3. Hvis relevant: skriver UDKAST i chatten — brugeren beslutter
+4. Brugeren skriver eksplicit "ja post det" / "send" / "lav PR" — ordene skal stå i DENNE tur
+5. Først DA må `gh api ... POST` / `gh pr create` / `git push upstream` køres
+
 **How to apply:**
-- `gh pr create` is forbidden unless the user's current-turn message literally asks for a PR on this specific change.
-- `gh api .../comments --method POST` on any upstream repo requires explicit go-ahead.
-- `git push` to any branch whose name hints at PR intent (e.g. `feature/...`, `fix/...`) requires explicit per-turn authorization even if the user has granted general push access earlier.
-- Filing GitHub **issues** (`gh issue create`) is different and remains allowed in ravn/* fork repos when the user has asked for tasks/issues to be created — the no-PR rule does NOT extend to issues.
-- Committing locally and pushing to an already-tracked branch is OK when the user asks for "commit" — that's not a PR.
-- If a workflow seems to naturally want a PR at its end (build fix → PR → merge), STOP at the commit and let the user create the PR manually.
-- If in doubt, ask before doing anything that could plausibly result in a PR.
+- `gh pr create` er forbudt medmindre brugerens AKTUELLE besked eksplicit beder om en PR på denne ændring.
+- `gh api .../comments --method POST` på ALLE repos kræver eksplicit go-ahead i denne tur — "ja, post det" eller tilsvarende.
+- At svare på en review-kommentar = post til upstream. ALTID draft i chat, ALDRIG post direkte.
+- `git push` til upstream-branches kræver eksplicit per-tur tilladelse.
+- At committe lokalt og pushe til en allerede-tracket branch er OK når brugeren beder om "commit".
+- Hvis et workflow naturligt slutter med PR/kommentar — STOP og præsentér udkast til brugeren.
+- I tvivl: ALTID draft i chat og vent på go-ahead.

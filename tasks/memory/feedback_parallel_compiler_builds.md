@@ -1,11 +1,22 @@
 ---
 name: feedback_parallel_compiler_builds
-description: Use git worktree + rsync --link-dest to maintain multiple Z80 clang builds simultaneously without duplicating disk space
+description: Reuse the existing ccache-enabled build across branch switches; separate builds only for simultaneous comparisons
 metadata:
   type: feedback
 ---
 
-Brug dette mønster til at sammenligne to compiler-versioner side om side uden at ødelægge hoved-buildet og uden at bruge unødigt diskplads:
+Standard: bevar lokale ændringer, skift branch i det eksisterende checkout,
+og genbrug det eksisterende builddir med ccache aktiveret. Kontrollér den
+genererede compilerkommando og cache-hits; en separat worktree kan ændre
+cache-nøgler og udløse et fuldt rebuild.
+
+Den 2026-10-04 gav branchskift i det eksisterende build 792 nye cache-hits
+og kun 3 nye misses mod målingen før skiftet. Det separate build havde
+ingen nye hits. Brug derfor ikke et separat builddir til sekventielle
+branch-eksperimenter.
+
+Kun når to compiler-versioner faktisk skal bruges samtidigt, kan dette
+mønster anvendes:
 
 ```bash
 # 1. Worktree — separat checkout af branchen
@@ -31,4 +42,5 @@ ninja -C /Users/ravn/z80/llvm-z80/build-<name> clang llc
 **How to apply:**
 - Brug altid `--link-dest` når du opretter et parallelt LLVM-byg til sammenligning
 - Ryd op bagefter: `git worktree remove ../llvm-z80-<name>` + `rm -rf build-<name>`
-- build-macos er altid hoved-buildet (vores main branch). Andre builds navngives `build-<prname>` eller `build-<feature>`
+- Genbrug normalt `build-macos-asserts` efter branchskift. Separate builds
+  navngives `build-<prname>` eller `build-<feature>` og kræver aktiv ccache.

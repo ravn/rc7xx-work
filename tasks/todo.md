@@ -1,6 +1,21 @@
 # Z80 Code Density Optimization Todo
 
-## Closing native math32 integration (2026-10-04)
+## Symbol encoding PR isolation and review updates (2026-10-08)
+
+- [x] Extracted "Brik 1" symbol mangling from large PR into clean upstream PR #84.
+- [x] Switched mangling prefix from 'L' to '_' to prevent LLVM MC temporary
+  suppression of EXTERN directives on external dotted symbols.
+- [x] Adopted idiomatic StringRef::split with SmallVector<StringRef, 4> and
+  raw_svector_ostream per code review from the fork owner.
+- [x] Kept source code comments concise (1-2 lines); dropped redundant comment
+  in Z80MCAsmInfo.
+- [x] PR #62: removed benchmark script file per review; verified tests and force-pushed.
+- [x] Upstream issues tracked on llvm-z80:
+  - #85: C_LINE debug directives for z80asm
+  - #86: Target triple z80-unknown-none-z88dk and default sdcccall(0)
+  - #87: z88dk runtime helper interfaces (EXX 32-bit registers, math32, fcmp flags)
+- [x] All 135 Z80 lit tests pass locally.
+
 
 - [x] Review source state, remote parity and the written plan against evidence.
   LLVM source is clean; tracked z80-utils matches upstream/main.

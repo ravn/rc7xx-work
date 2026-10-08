@@ -109,6 +109,19 @@ For macOS:
 
 * cmake + ninja come from the CLion bundle (`reference_build_binaries`).
 * No brew — see memory.
+* ccache lives at `~/z80/ccache/build/ccache` (built from source in the workspace).
+  Add to `~/.zshrc`:
+  ```sh
+  export CMAKE_C_COMPILER_LAUNCHER=/Users/ravn/z80/ccache/build/ccache
+  export CMAKE_CXX_COMPILER_LAUNCHER=/Users/ravn/z80/ccache/build/ccache
+  alias llvmcmake='cmake -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON -DLLVM_CCACHE_BUILD=ON'
+  ```
+  Then configure llvm-z80 with:
+  ```sh
+  llvmcmake -C clang/cmake/caches/Z80.cmake -G Ninja -S llvm -B build-macos-asserts -DLLVM_ENABLE_ASSERTIONS=ON
+  ```
+  `-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON` prevents ~45% of compile calls from
+  being uncacheable (PCH cannot be cached via `RULE_LAUNCH_COMPILE`).
 
 For the `runtime-tests` job locally (test-runner against z88dk-ticks):
 `setup-ubuntu.sh` installs `rustup` + the dev deps for `z88dk-ticks`.
