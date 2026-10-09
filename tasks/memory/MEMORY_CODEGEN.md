@@ -39,6 +39,10 @@ Read this file before ANY llvm-z80 compiler/codegen/ABI change.
 - **[zeroext is ABI, not source-narrow](feedback_zeroext_is_abi_not_source.md) — HARD: use computeKnownBits before narrowing**
 - **[TruncInstCombine: swap before probe](feedback_truncinstcombine_swap_before_probe.md) — HARD: modify IR users BEFORE getBestTruncatedType; rollback on failure**
 
+## Z80IndexIV / register pressure
+
+- **[Z80IndexIV: pressure check, not stride guard](feedback_z80indexiv_pressure_not_stride.md) — HARD: unit-stride skip (79ea93e4) is heuristic; principled fix = skip if 2×N_GEPs > 3 register pairs; stride-2 with 2 pointers ALSO broken**
+
 ## Known issues / parked
 
 - [pi CSE / branch-fold miscompile PARKED](project_pi_cse_branchfold_parked.md) — don't flip -z80-enable-cse default ON until upstream fix

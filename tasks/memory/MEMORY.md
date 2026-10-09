@@ -42,6 +42,7 @@
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep for *_REFERENCE.md before re-deriving encodings**
 - **[Replicate user's PR text verbatim](feedback_replicate_user_pr_text_verbatim.md) — HARD: copy revised body 1:1 when opening upstream twin**
 - **[No external issues ever](feedback_no_external_issues.md) — HARD: external repos require explicit per-issue go-ahead**
+- **[Issues on own repo first](feedback_issues_own_repo_first.md) — HARD: "lav et issue" → ravn/* fork, ALDRIG direkte upstream uden eksplicit go-ahead**
 - **[Upstream routing](feedback_upstream_routing_two_targets.md) — HARD: generic-LLVM bugs -> llvm/llvm-project; Z80-specific -> llvm-z80/llvm-z80 only**
 - **[MAME upstream routing](feedback_mame_upstream_routing.md) — HARD: never file in MAME without explicit per-issue permission**
 - **[No upstream sdcccall discrepancies](feedback_no_upstream_sdcccall_discrepancies.md) — HARD: ABI mismatches are known build-config issues, NOT upstream-fileable**
@@ -54,6 +55,7 @@
 
 ## 4. Before any build / compile / link flag change
 
+- **[+shadow-isr: EXX/EX AF,AF' ISR context save](reference_shadow_isr_feature.md) — autoload only; rcbios/cpnos unsafe (EXX in division legalizer)**
 - **[ZX0 PROMs: optimize compressed, not raw](feedback_zx0_optimize_compressed_not_raw.md) — HARD: autoload metric is compressed B; raw codegen wins can grow the PROM (add a,a chains are ZX0-free)**
 - **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD: non-reentrant, SILENTLY miscompiles recursion**
 - **[-ffreestanding unlocks Z80 static-frame promotion](reference_z80_ffreestanding_closed_world.md) — HARD: standard C flag; sets "Freestanding" module flag Z80NonReentrant reads; +~35% speed on div-heavy code**
@@ -145,6 +147,7 @@
 ## 11. cpnos / cpnet / DRI facts
 
 - **[Long-term goal: finish rcbios + autoload + CP/NET + cpnos](project_finishing_firmware_components.md) — bias work toward advancing one of the four**
+- [autoload 2 KB recovery progress](project_autoload_2kb_progress.md) — 2216/2048 B (168 B gap); CP(HL) + static frames needed; branch autoload-2kb-recovery-20261009
 - **[Never push/merge upstream remotes](feedback_never_push_or_merge_upstream_remotes.md) — HARD: cpnet-z80 origin is durgadas311/*; keep local commits FLAT**
 - **[CP/NET 1.2 only](feedback_cpnet_12_only.md) — HARD: BDOS-105 NOT forwardable under 1.2; time-from-master via BDOS-66/67+FN-105**
 - **[rcbios jump table is ABI](feedback_rcbios_jump_table_is_abi.md) — HARD: BIOS jump table at 0xDA00 is frozen ABI; new paths ADDITIVE only**
