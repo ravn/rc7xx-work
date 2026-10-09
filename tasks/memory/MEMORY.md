@@ -72,6 +72,8 @@
 - **[Compiler builds](feedback_parallel_compiler_builds.md) — genbrug builddir + ccache efter branchskift; separat kun til samtidige versioner**
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
+- **[ld.lld LTO bypasses addIRPasses](reference_lld_lto_bypasses_addIRPasses.md) — HARD: `-flto` under ld.lld does NOT run custom Z80PassConfig passes (incl. NonReentrant) → silent static-frame regression**
+- **[Machine outliner breaks timing asm](feedback_machine_outliner_breaks_timing_asm.md) — HARD: cycle-counted C delays MUST live in `.s`; LTO outlines inner loops with __asm__ volatile("") and corrupts timing**
 - **[Docker shim batch](feedback_docker_shim_batch.md) — HARD: batch multi-step Docker calls into ONE docker run sh -c "..."**
 - **[zmac local labels are global](feedback_zmac_local_label_scope.md) — HARD: dotted locals collide across subroutines; prefix with initials**
 - **[Verify CMake fixes with compile_commands](feedback_verify_cmake_fixes.md) — HARD: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON + confirm actual -I flags**
@@ -84,6 +86,7 @@
 - **[Priority: miscompiles first for upstream](project_priority_miscompiles_for_upstream.md) — HARD: rank miscompiles above density/missed-opts; density defers until correctness gate clears**
 - **[Z80 interrupt attr = bare RETI by design](reference_z80_interrupt_attr_bare_reti.md) — programmer controls EI via `__builtin_z80_ei()`; do NOT file "no EI" as compiler bug (see #317 closed 2026-09-17)**
 - **[Fix as close to the source as possible](reference_quad_init_backend_split.md) — HARD: fix in earliest/owning layer; never downstream band-aid**
+- [Memory-fold pseudo template](reference_memory_fold_pseudo_template.md) — four-file recipe for CP(HL)/LOAD8_ABS-style folds (td class + pseudo + AccPseudos entry + selector fold)
 
 ## 6. Before any MAME / boot / test run
 
