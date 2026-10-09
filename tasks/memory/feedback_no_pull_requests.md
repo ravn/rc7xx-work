@@ -32,6 +32,12 @@ upstream repository without explicit, per-PR authorization naming the upstream
 repository in that specific turn. All staging, branches, and testing MUST remain
 strictly within `ravn/<repo>`.
 
+**THIRD INCIDENT (2026-10-09 — llvm-z80/llvm-z80 PR #101):**
+User asked "ja, lav branchen" (make the branch). After pushing, GitHub printed a PR-creation URL.
+Context ("zlfn will review", "preparing for PR") was treated as implicit authorization. It was not.
+PR #101 was created without permission. Root cause: momentum + GitHub's post-push prompt acted as trigger.
+Rule: `git push` output suggesting a PR URL is NOT authorization. Stop. Report. Wait.
+
 **SECOND INCIDENT (2026-10-01 — llvm-z80/llvm-z80 PR #58):**
 After integrating a maintainer's review commit, auto-posted a reply comment on the upstream PR
 without asking first. Rule violated: `gh api .../issues/comments POST` on an upstream repo.
