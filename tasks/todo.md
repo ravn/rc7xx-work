@@ -1,5 +1,116 @@
 # Z80 Code Density Optimization Todo
 
+## Same-source c863c55 autoload codegen comparison (2026-10-10)
+
+- [x] Rebuild the exact archived `c863c55` autoload source with current
+  compiler `d6658ad`, retaining the historical build flags and recording
+  tool/dependency revisions. The temporary address-space-2 patch is isolated;
+  the current PROM exceeds the production cap, so a widened-cap inspection ELF
+  is clearly marked non-production.
+- [x] Preserve the current-compiler ELF, source-annotated listing, raw and
+  compressed payloads beside the pre-PR-40 artifacts.
+- [x] Compare listing/code-size outputs and document observed differences
+  without assigning unverified causes in
+  `scratch/pre-pr40-firmware-archive/reproductions/autoload-c863c55/COMPARISON.md`.
+
+## Attributing c863c55 autoload size delta (2026-10-10)
+
+- [x] Compare the old `+static-stack` and new `+static-frame` pipelines as
+  distinct mechanisms; do not infer equivalence from feature names.
+- [x] Trace the largest matched-function size deltas through emitted
+  instructions and compiler behavior, marking semantic/measurement caveats.
+- [x] Record verified causes and remaining hypotheses in the comparison report;
+  do not implement a codegen change during this attribution pass.
+
+## Measuring static-frame eligibility impact (2026-10-10)
+
+- [x] Confirm a candidate function has no self-recursion, indirect entry, or
+  interrupt-context caller before asserting `no-recurse`.
+- [x] Produce a matched baseline/diagnostic object for that function with only
+  the analysis assertion changed; record code-size delta and limits.
+- [x] Do not treat a per-function isolated result as a full PROM/compressed-size
+  attribution or as a production-safe change.
+- [x] Repeat the `check_sysfile` diagnostic as a complete same-source inspection
+  image with the exact baseline banner and current `+static-frame` options.
+- [x] Preserve the raw/compressed counterfactual, verify its ZX0 roundtrip,
+  remove the temporary backend patch, and rebuild the unpatched compiler tools.
+- [x] Run a pass-only FDC probe to distinguish whole-module eligibility from
+  extracted-function size estimates.
+- [x] Confirm from historical/current listings that several bodies now
+  emitted as helpers were present inside historical `_main_relocated`.
+- [x] Measure matched machine-outliner enabled/disabled full-image builds,
+  preserve both outputs, and verify their ZX0 roundtrips.
+- [x] Measure actual helper inlining using a matched IR-to-image control:
+  forced inline saves 16 B raw / 12 B compressed; verify both ZX0 round-trips
+  and document why the source `always_inline` probe alone did not inline.
+- [x] Reconcile the complete +292 B raw `.text` growth by symbol/region:
+  helper extraction nets −117 B, the boot-path changes +155 B, and remaining
+  pre-table symbols +214 B; record the separate +40 B post-table region.
+- [x] Bound the remaining +174 B compressed gap after the `check_sysfile`
+  counterfactual. ZX0 encodes one continuous payload, so this structural
+  comparison does not claim a unique per-function or causal attribution.
+
+## Full pre-PR-40 compiler on c863c55 autoload source (2026-10-09)
+
+- [x] Create isolated compiler and firmware worktrees at the exact requested
+  revisions; preserve existing checkouts and firmware artifacts.
+- [x] Build the complete pre-PR-40 compiler/toolchain using the configured
+  ccache, recording actual cache deltas and monitoring free disk.
+- [x] Initial attempt with `199178...` failed in GlobalISel on the port
+  `G_STORE`; later verified this revision was already post-merge and lacked
+  the address-space-2 mapping, so this was not the correct historical control.
+- [x] Record revisions, commands, ccache totals, the intermediate-tree failure,
+  and its correction in
+  `rc700-gensmedet/autoload-in-c/tasks/codegen-regression-vs-c863c55.md`.
+- [x] Keep the exact-source attempt unmodified; do not adapt port I/O.
+
+## Correct pre-merge compiler endpoint for c863c55 (2026-10-09)
+
+- [x] Verify that the failed `199178...` tree lacks `AS_IO` and the selector
+  mapping, while `48c1b4b^1` contains both.
+- [x] Tag the corrected compiler revision as local annotated tag
+  `compiler-pre-pr40` at `d52e23342de460f4512a52fe8e0941b50bc2d526`
+  (2026-09-05; first parent of merge `48c1b4b`).
+- [x] Build the full compiler/toolchain (3418/3418 steps). Ccache was
+  configured and the cache warm, but recorded 0 hits / 2794 misses.
+- [x] Build the exact `c863c55` PROM without source adaptation. It emitted
+  `IN A,(4)` / `OUT (5),A`; PROM 2034 B, raw `.text` 3393 B, ZX0 1915 B.
+  The ZX0 roundtrip matched the raw `.text` byte-for-byte.
+- [x] Update the report with the corrected endpoint and supersede the
+  intermediate-tree failure as an invalid port-I/O control.
+- [x] Remove the verified-clean disposable worktrees/build after preserving
+  the PROM, listing, raw/compressed payloads, and build logs under
+  `scratch/premerge-c863c55/`.
+
+## Pre-PR-40 firmware source/build archive (2026-10-10)
+
+- [x] Anchor the three production component sources to the firmware repository
+  snapshot `2951f96` from 2026-09-05, before compiler merge `48c1b4b`.
+- [x] Collect exact source trees and pre-existing tracked artifacts for
+  autoload-in-c, rcbios-in-c, and cpnos-in-c in
+  `scratch/pre-pr40-firmware-archive/source-snapshot/`.
+- [x] Build each component with the tagged pre-PR-40 compiler and preserve
+  objects, ELF files, listings, maps/symbols, compressed payloads, and final
+  binaries under `scratch/pre-pr40-firmware-archive/generated/`.
+- [x] Include the separate c863c55 autoload source and input/output evidence
+  under `scratch/pre-pr40-firmware-archive/reproductions/autoload-c863c55/`
+  without conflating it with the 2026-09-05 source snapshot.
+- [x] Write the manifest with revisions, commands, artifact sizes/hashes, and
+  verification limits; compare both exported source trees to Git, verify the
+  generated artifacts, record ccache results, and remove temporary worktrees.
+
+## Parallel pre-PR #40 codegen comparison (2026-10-09)
+
+- [x] Build pre-PR-40 `llc` at `1991786426b42cb678bcd2c38daf10bd853d0f25`
+  in an isolated worktree/build. The historical `clang` target was not built:
+  1454 Ninja edges remained and only about 5 GB was free.
+- [x] Rebuild/verify the current compiler and compare the feature-neutral
+  current-source IR through both backends; record PROM, raw `.text`, and ZX0
+  sizes. The pre-PR-40 backend produced a 2461 B PROM vs 2190 B current-neutral.
+- [x] Record revisions, backend flags, roundtrip results, cumulative ccache
+  status, and the limits/caveat of this backend-only comparison in
+  `rc700-gensmedet/autoload-in-c/tasks/codegen-regression-vs-c863c55.md`.
+
 ## Symbol encoding PR isolation and review updates (2026-10-08)
 
 - [x] Extracted "Brik 1" symbol mangling from large PR into clean upstream PR #84.

@@ -71,12 +71,34 @@ bytes between function labels, compared with current ELF symbol sizes.
 | +16 B | `_verify_seek_result` | 44 B | 60 B |
 
 `_main_relocated` shrinks from 486 B to 194 B, while the current listing
-emits separate helper symbols also represented in the old function body,
-including `_boot_from_floppy_or_jump_prom` (143 B),
+emits separate helper symbols also represented in the old function body:
 `_display_banner_and_start_crt` (61 B), `_draw_qr` (43 B),
-`_display_sw1_status` (37 B), and `_load_chargen_font` (34 B). Compare
-instructions and call sites, rather than treating those extracted symbols
-as new source functionality.
+`_display_sw1_status` (37 B), and `_load_chargen_font` (34 B). The separate
+`_boot_from_floppy_or_jump_prom1` is 143 B; the historical listing has no
+symbol with that name. Compare instructions and call sites rather than
+treating extracted code as new source functionality.
+
+The complete symbol-boundary budget reconciles the raw `.text` growth:
+
+| Region / group | Historical | Current | Delta |
+|---|---:|---:|---:|
+| From `__code_start` to `_eot_gap3_table` | 1658 B | 1910 B | +252 B |
+| Remaining `.text` after `_eot_gap3_table` | 1735 B | 1775 B | +40 B |
+| Total raw `.text` | 3393 B | 3685 B | +292 B |
+
+Within the first region, `_main_relocated` plus its four display helpers
+changes by −117 B (486 B to 194 B + 175 B). The boot path changes by +155 B:
+the new 143 B `_boot_from_floppy_or_jump_prom1` plus the existing
+`_boot_floppy_or_prom` growing by 12 B (124 B to 136 B). Those two structural
+groups therefore net +38 B; the other code symbols before `_eot_gap3_table`
+net +214 B. This includes `_check_sysfile` (+60 B),
+`_fdc_read_data_from_current_location` (+33 B),
+`_fdc_select_drive_cylinder_head` and `_fdc_read_result` (+21 B each),
+`_fdc_get_result_bytes` (+17 B), and `_verify_seek_result` (+16 B);
+the smaller changes and `_OUTLINED_FUNCTION_1` are included in the net.
+These are measured symbol spans, not causal explanations for the code
+decisions. The +40 B after the table is a region total, not a claim that all
+of it is data.
 
 Two visible examples:
 
@@ -258,7 +280,7 @@ The disabled hashes are
 The builds are preserved under `current-d6658ad-asio/outliner-enabled/` and
 `current-d6658ad-asio/outliner-disabled/`.
 
-## Forced-inline attribute probe
+## Forced-inline diagnostic
 
 I marked `load_chargen_font`, `display_banner_and_start_crt`,
 `display_sw1_status`, and `draw_qr` as `always_inline` in a diagnostic source
@@ -266,12 +288,53 @@ copy. The emitted listing still has all four helper symbols and their calls;
 the raw `.text`, ZX0 payload, and ROM are byte-identical to the outliner-
 enabled baseline (3685 B, 2095 B, and 2214 B). Applying LLVM's
 `always-inline` pass directly to the emitted IR also left the calls intact.
+The inliner remarks identify the reason as conflicting target features. In
+this fork, `Z80TTIImpl::areInlineCompatible` rejects a callee unless it has
+`InlineHint` or at most 10 IR instructions
+(`llvm-z80/llvm/lib/Target/Z80/Z80TargetTransformInfo.h`); the inliner
+checks target compatibility before honoring `alwaysinline`
+(`llvm-z80/llvm/lib/Analysis/InlineCost.cpp`). Therefore this
+source-attribute probe did not test actual inlining.
 
-This probe did not actually inline those bodies, so it gives no measurement
-of how much the historical inline structure contributes to image size. The
-reason the marked functions remained separate is not established here. The
-source copy, listing, and build outputs are preserved in
-`current-d6658ad-asio/always-inline-probe/`.
+A second, matched IR-to-image diagnostic added `inlinehint` to those four
+functions in a diagnostic IR copy, then ran LLVM's `always-inline` pass. Its
+remarks confirm that all four bodies were inlined into `_main_relocated`.
+Both variants use the same IR-to-object/link/compress pipeline and both ZX0
+round-trips match the extracted ELF `.text` exactly:
+
+| Variant | `_main_relocated` | Helper bodies | Raw `.text` | ZX0 payload | ROM image |
+|---|---:|---:|---:|---:|---:|
+| No-inline control | 194 B | 175 B | 3666 B | 2086 B | 2205 B |
+| Forced-inline diagnostic | 353 B | 0 B | 3650 B | 2074 B | 2193 B |
+| Forced-inline minus control | +159 B | −175 B | **−16 B** | **−12 B** | **−12 B** |
+
+SHA-256 hashes for the matched diagnostic outputs:
+
+| Artifact | No-inline control | Forced-inline diagnostic |
+|---|---|---|
+| `text_raw.bin` | `3522767010685f244162275178eaef42734113650c06084ea73bcf7c7408dd56` | `ae76bea9d3e87b33d19dde580c59e59d7ffd9b2088a5cbbb6e0b2924bfc2cfe8` |
+| `text_compressed.zx0` | `a6d91f09ab7845325a5078614a5a8e438dfeb85e9742dd5c5c5cf261b428370f` | `e9c67d843b62ee34898a82bd49b8c3cbbbf20bdf3e238512ffa5e4518c422550` |
+| `prom.bin` | `eca6247600149f2d0fd5ec1da70e253aa1817e3719043550ff2379d9b8f4d50c` | `a19ac7ff24adfee990a324eaafbd56c870a703d7c4514dbd290729e5bfbfbb0c` |
+
+The no-inline IR-to-image control is already 19 B raw and 9 B compressed
+smaller than the direct-C current baseline above. Thus the valid result is
+only the matched −16 B raw / −12 B compressed / −12 B ROM delta; comparing
+either absolute diagnostic image to the historical image would mix pipeline
+differences into the result. This counterfactual shows that inlining these
+bodies can save 12 B in this matched pipeline, but does not establish why the
+historical compiler emitted them inline or explain the full image delta.
+Artifacts, including both IR files, pass remarks, ELFs, listings, raw and
+compressed payloads, and ROMs, are preserved under
+`current-d6658ad-asio/always-inline-probe/inline-diagnostics/`.
+
+The structural budget above accounts for where all +292 raw `.text` bytes
+appear in the listings; it does not provide a per-function decomposition of
+the +180 B ZX0 payload. ZX0 compresses one continuous image, so its byte count
+is not the sum of independently attributable function sizes. The measured
+whole-image counterfactuals remain limited to −6 B compressed for the
+`check_sysfile` static-frame probe, −3 B for disabling machine outlining, and
+−12 B for this matched forced-inline probe. The +174 B remaining after the
+`check_sysfile` probe is not causally assigned to individual functions here.
 
 ## Artifacts
 
@@ -287,8 +350,9 @@ source copy, listing, and build outputs are preserved in
   Its binary SHA-256 is `24372f9e016df6ac33782063a459b83d3084189b8547dd0a8f501152d7dc99c0`;
   raw payload SHA-256 is `85dc812ae5ff0e4bac631f7423345dbd905553765911387dde6cf65bceb89a80`;
   compressed payload SHA-256 is `d394d06bb25b973a9716ffc89d092d33d762fe598a8f5a8189a2ddf4f9c71e8d`.
-- `current-d6658ad-asio/always-inline-probe/` — attribute counterfactual
-  source, listing, and image artifacts; all output bytes match the baseline.
+- `current-d6658ad-asio/always-inline-probe/` — source-attribute counterfactual
+  and `inline-diagnostics/` matched IR-to-image artifacts with exact ZX0
+  round-trips.
 - `current-d6658ad-asio/current-backend-port-io.patch` — temporary backend
   patch used only in the isolated worktree.
 - `../../build-logs/current-asio-ninja-clang-llc.log` and

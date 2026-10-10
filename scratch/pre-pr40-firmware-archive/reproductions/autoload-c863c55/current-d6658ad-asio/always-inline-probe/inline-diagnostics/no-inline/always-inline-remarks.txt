@@ -1,0 +1,4 @@
+remark: scratch/pre-pr40-firmware-archive/reproductions/autoload-c863c55/current-d6658ad-asio/always-inline-probe/rom.c:1001:5: 'load_chargen_font, is not inlined intomain_relocated': conflicting target features
+remark: scratch/pre-pr40-firmware-archive/reproductions/autoload-c863c55/current-d6658ad-asio/always-inline-probe/rom.c:1004:5: 'display_banner_and_start_crt, is not inlined intomain_relocated': conflicting target features
+remark: scratch/pre-pr40-firmware-archive/reproductions/autoload-c863c55/current-d6658ad-asio/always-inline-probe/rom.c:307:5: 'display_sw1_status, is not inlined intodisplay_banner_and_start_crt': conflicting target features
+remark: scratch/pre-pr40-firmware-archive/reproductions/autoload-c863c55/current-d6658ad-asio/always-inline-probe/rom.c:308:5: 'draw_qr, is not inlined intodisplay_banner_and_start_crt': conflicting target features

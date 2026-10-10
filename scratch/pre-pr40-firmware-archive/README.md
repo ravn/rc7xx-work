@@ -36,8 +36,10 @@ commit. `source-snapshot/` contains those source trees, `cpnos-shared/`,
 - `reproductions/autoload-c863c55/current-d6658ad-asio/` — current compiler
   listing, ELF, inspection-only over-cap image, and raw/compressed payloads.
 - `reproductions/autoload-c863c55/current-d6658ad-asio/always-inline-probe/`
-  — source copy and outputs for the `always_inline` attribute counterfactual;
-  helper symbols remained separate and the image matched baseline.
+  — source-attribute counterfactual plus matched IR-to-image no-inline and
+  forced-inline diagnostics. The matched pair saves 16 B raw and 12 B in the
+  ZX0 payload when the four extracted helpers are inlined; both round-trips
+  were verified against the linked `.text`.
 - `build-logs/` — toolchain configuration/build logs and per-component build
   logs, plus ccache statistics.
 - `generated/` — rebuilt component intermediates, listings, and final binaries.
