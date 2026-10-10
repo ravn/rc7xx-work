@@ -1,0 +1,27 @@
+# FILEX.PRN reference — generated 2026-03-13
+# Source: CP/M ASM.COM run in MAME on C BIOS
+# Assembly: 009H USE FACTOR
+# STAT:   266    34k    3 R/W A:FILEX.PRN
+#
+# Addresses from TYPE output (last page of PRN listing):
+ 0894           sfcb:   ds      36              ;
+ 08B4 =         sfcbcr  equ     sfcb+32         ;
+ 08B8 01        conspil:db      1               ;
+ 08B9 50        consmax:db      80              ;
+ 08BA 00        conslen:db      0               ;
+ 08BB           cons:   ds      80              ;
+ 090B 00        itemlen:db      0               ;
+ 090C           item:   ds      20              ;
+ 0920 00        remote: db      false           ;
+ 0921 00        unitnr: db      0               ;
+ 0922           name:   ds      8               ;
+ 092A           name2:  ds      3               ;
+ 092D 00000000  blanks: db      0,0,0,0         ;
+ 0931 00                db      false           ;
+ 0932                   end     start           ;
+#
+# Key addresses (from FILEX.ASM source):
+# BOOT    = 0000  (EQU)
+# BDOS    = 0005  (EQU)
+# START   = 0100  (ORG)
+# END     = 0932  (next free address)

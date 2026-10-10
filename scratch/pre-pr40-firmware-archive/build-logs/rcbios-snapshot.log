@@ -1,0 +1,18 @@
+make -B -C /Users/ravn/z80/rc700-gensmedet-pre-pr40/rcbios-in-c bios COMPILER=clang LLVM_Z80=/Users/ravn/z80/llvm-z80-pre-pr40
+/Library/Developer/CommandLineTools/usr/bin/make -C clang bios.clang.cim MSIZE=56 KBLANG=DANISH KBDPORT=A SW1_CONSOLE_BIT=0x01
+/Library/Developer/CommandLineTools/usr/bin/make -C .. builddate.h
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -Oz -g -nostdlib -ffreestanding -std=c23 -flto -ffunction-sections -fdata-sections -DSW1_CONSOLE_BIT=0x01 -Xclang -target-feature -Xclang +static-stack -Iclang -I. -Wno-gcc-compat -Wno-return-type -Wimplicit-int-conversion -DMSIZE=56   -c boot_block.c -o clang/boot_block.o
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -Oz -g -nostdlib -ffreestanding -std=c23 -flto -ffunction-sections -fdata-sections -DSW1_CONSOLE_BIT=0x01 -Xclang -target-feature -Xclang +static-stack -Iclang -I. -Wno-gcc-compat -Wno-return-type -Wimplicit-int-conversion -DMSIZE=56    -c boot_confi.c -o clang/boot_confi.o
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -Oz -g -nostdlib -ffreestanding -std=c23 -flto -ffunction-sections -fdata-sections -DSW1_CONSOLE_BIT=0x01 -Xclang -target-feature -Xclang +static-stack -Iclang -I. -Wno-gcc-compat -Wno-return-type -Wimplicit-int-conversion -DMSIZE=56   -c boot_entry.c -o clang/boot_entry.o
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -Oz -g -nostdlib -ffreestanding -std=c23 -flto -ffunction-sections -fdata-sections -DSW1_CONSOLE_BIT=0x01 -Xclang -target-feature -Xclang +static-stack -Iclang -I. -Wno-gcc-compat -Wno-return-type -Wimplicit-int-conversion -DMSIZE=56   -c bios_hw_init.c -o clang/bios_hw_init.o
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -Oz -g -nostdlib -ffreestanding -std=c23 -flto -ffunction-sections -fdata-sections -DSW1_CONSOLE_BIT=0x01 -Xclang -target-feature -Xclang +static-stack -Iclang -I. -Wno-gcc-compat -Wno-return-type -Wimplicit-int-conversion -DMSIZE=56   -c clang/bios_jump_vector_table.c -o clang/bios_jump_vector_table.o
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -Oz -g -nostdlib -ffreestanding -std=c23 -flto -ffunction-sections -fdata-sections -DSW1_CONSOLE_BIT=0x01 -Xclang -target-feature -Xclang +static-stack -Iclang -I. -Wno-gcc-compat -Wno-return-type -Wimplicit-int-conversion -DMSIZE=56   -c bios.c -o clang/bios.o
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -c clang/bios_shims.s -o clang/bios_shims.o
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -c clang/runtime.s -o clang/runtime.o
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/ld.lld --gc-sections --defsym BIOSAD=0xDA00 \
+		-T clang/rc700_bios.ld clang/boot_block.o clang/boot_confi.o clang/boot_entry.o clang/bios_hw_init.o clang/bios_jump_vector_table.o clang/bios.o clang/bios_shims.o clang/runtime.o /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/../lib/z80/z80_rt.a -o clang/bios.clang.elf
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/llvm-objcopy -O binary clang/bios.clang.elf clang/bios.clang.cim
+# Source-annotated listing (committed to git for historical diffs).
+# Note: add -l for file:line references (clickable in terminal, not in editor)
+cd .. && /Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/llvm-objdump -d -S --triple=z80 clang/bios.clang.elf > clang/bios.clang.lis
+clang BIOS: 5918 bytes

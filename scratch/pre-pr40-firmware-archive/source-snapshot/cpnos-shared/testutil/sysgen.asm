@@ -1,0 +1,694 @@
+	TITLE	'SYSGEN - SYSTEM GENERATION PROGRAM 8/79'
+;	SYSTEM GENERATION PROGRAM, REVERSE ENGINEERED VERSION FOR REGNECENTRALEN RC702
+VERS	EQU	20	;X.X
+;
+;	COPYRIGHT (C) DIGITAL RESEARCH
+;	         1976, 1977, 1978, 1979
+;
+;NSECTS	EQU	26	;NO. OF SECTORS PER TRACK (original DIGITAL RESEARCH value)
+NSECTS	EQU	16	;NO. OF SECTORS PER TRACK (RC702 system layout)
+NTRKS	EQU	2	;NO. OF OPERATING SYSTEM TRACKS
+;NDISKS	EQU	4	;NUMBER OF DISK DRIVES (original DIGITAL RESEARCH value)
+NDISKS	EQU	2	;NUMBER OF DISK DRIVES (RC702 has two drives)
+SECSIZ	EQU	128	;SIZE OF EACH SECTOR
+LOG2SEC	EQU	7	;LOG 2 SECSIZ
+;SKEW	EQU	1	;SECTOR SKEW FACTOR (original DIGITAL RESEARCH value)
+SKEW	EQU	2	;SECTOR SKEW FACTOR (RC702 controller)
+;
+FCB	EQU	005CH	;DEFAULT FCB LOCATION
+FCBCR	EQU	FCB+32	;CURRENT RECORD LOCATION
+TPA	EQU	0100H	;TRANSIENT PROGRAM AREA
+LOADP	EQU	900H	;LOAD POINT FOR SYSTEM DURING LOAD/STORE
+BDOS	EQU	5H	;DOS ENTRY POINT
+BOOT	EQU	0	;JMP TO 'BOOT' TO REBOOT SYSTEM
+CONI	EQU	1	;CONSOLE INPUT FUNCTION
+CONO	EQU	2	;CONSOLE OUTPUT FUNCTION
+SELF	EQU	14	;SELECT DISK
+OPENF	EQU	15	;DISK OPEN FUNCTION
+DREADF	EQU	20	;DISK READ FUNCTION
+;
+MAXTRY	EQU	10	;MAXIMUM NUMBER OF RETRIES ON EACH READ/WRITE
+CR	EQU	0DH	;CARRIAGE RETURN
+LF	EQU	0AH	;LINE FEED
+STACKSIZE	EQU	16	;SIZE OF LOCAL STACK
+;
+WBOOT	EQU	1	;ADDRESS OF WARM BOOT (OTHER PATCH ENTRY
+;			POINTS ARE COMPUTED RELATIVE TO WBOOT)
+SELDSK	EQU	24	;WBOOT+24 FOR DISK SELECT
+SETTRK	EQU	27	;WBOOT+27 FOR SET TRACK FUNCTION
+SETSEC	EQU	30	;WBOOT+30 FOR SET SECTOR FUNCTION
+SETDMA	EQU	33	;WBOOT+33 FOR SET DMA ADDRESS
+READF	EQU	36	;WBOOT+36 FOR READ FUNCTION
+WRITF	EQU	39	;WBOOT+39 FOR WRITE FUNCTION
+;
+	ORG	TPA	;TRANSIENT PROGRAM AREA
+	JMP	START
+	DB	' '
+	DB	'COPYRIGHT (C) 1978, DIGITAL RESEARCH '
+	DB 	'                       '
+	DB 	'COPYRIGHT (C) 1982, A/S REGNECENTRALEN AF 1979 '
+
+;	TRANSLATE TABLE - SECTOR NUMBERS ARE TRANSLATED
+;	HERE TO DECREASE THE SYSGEN TIME FOR MISSED SECTORS
+;	WHEN SLOW CONTROLLERS ARE INVOLVED.  TRANSLATION TAKES
+;	PLACE ACCORDING TO THE "SKEW" FACTOR SET ABOVE.
+;
+OST:	DB	NTRKS	;OPERATING SYSTEM TRACKS
+;SPT:	DB	NSECTS	;SECTORS PER TRACK (CAN BE PATCHED)
+SPT:	DB	0	;SECTORS PER TRACK (CAN BE PATCHED)
+
+; RC DATA START
+;
+; The RC mapping from logical to physical sectors is different than expected
+; by SYSGEN and we therefore need to do a bit more housekeeping.   These values are for
+; maxi floppy systems.   Mini floppy systems are detected at runtime and these values
+; overwritten accordingly.
+;
+; From CPMBOOT.MAC:
+;FD0:	DB	255		;    MAXI                MINI 96 tpi
+;FD1:	DB	255		; 0: SS,128 B/S,25 S/T      not used
+;FD2:	DB	255		; 8: DD,512 B/S,30 S/T  *DD,512 B/S,20 S/T
+;FD3:	DB	255		;16:*SS,128 B/S,26 S/T   DD,512 B/S,20 S/T
+;FD4:	DB	255		;24:*DD,256 B/S,26 S/T XXDD,512 B/S,30 S/T
+
+
+rccpmfmt:	db 08h	; diskette format for normal CP/M usage, restored at exit.
+					
+rctrk1fmt1:	db 10h	; diskette format for track 1 for sectors LESS than rcmaxsect1s
+rctrk1fmt2:	db 18h	; diskette format for track 1 for sectors MORE than rcmaxsect1s
+rcspt1:		db 68h	; 
+rcspt2:		db 78h	; 
+rcmaxsect1:	db 19h	; largest sector that can fit in part _one_ of track 1.
+rcmaxsect2:	db 34h	; largest sector that can fit in part _two_ of track 1.
+rcoffset2:	db 1Ah	; offset for sectors in part _two_ of track 1.
+
+minitrans:
+
+TRAN:			;BASE OF TRANSLATE TABLE
+;TRELT	SET	1	;FIRST/NEXT TRAN ELEMENT
+TRELT	SET	0	;FIRST/NEXT TRAN ELEMENT
+;TRBASE	SET	1	;BASE FOR WRAPAROUND
+TRBASE	SET	0	;BASE FOR WRAPAROUND
+	REPT	NSECTS	;ONCE FOR EACH SECTOR ON A TRACK
+	DB	TRELT	;GENERATE FIRST/NEXT SECTOR
+TRELT	SET	TRELT+SKEW
+;	IF	TRELT GT NSECTS
+	IF	TRELT GE NSECTS
+TRBASE	SET	TRBASE+1
+TRELT	SET	TRBASE
+	ENDIF
+	ENDM
+;
+;	NOW LEAVE SPACE FOR EXTENSIONS TO TRANSLATE TABLE
+;	IF	NSECTS LT 64
+;	REPT	64-NSECTS
+	IF	NSECTS LT 32
+	REPT	32-NSECTS
+	DB	0
+	ENDM
+	endif
+
+; The following is most likely caused by a DS statement not zeroed out by the linker.
+		db ' !',22h,'#$%&', 27h,'()*+,-./0123456789:;<=>?'
+
+maxitrans:	db    0	; This could be calculated by the macro too.
+		db    4	;
+		db    8	;
+		db 0Ch
+		db  10h	;
+		db  14h	;
+		db  18h	;
+		db    1	;
+		db    5	;
+		db    9	;
+		db  0Dh	;
+		db  11h	;
+		db  15h	;
+		db  19h	;
+		db    2	;
+		db    6	;
+		db  0Ah	;
+		db  0Eh	;
+		db  12h	;
+		db  16h	;
+		db    3	;
+		db    7	;
+		db  0Bh	;
+		db  0Fh	;
+		db  13h	;
+		db  17h	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db    0	;
+		db 	'456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefg'
+; RC DATA END
+
+;
+;
+;
+;
+;	UTILITY SUBROUTINES
+MULTSEC:
+	;MULTIPLY THE SECTOR NUMBER IN A BY THE SECTOR SIZE
+	MOV L,A! MVI H,0 ;SECTOR NUMBER IN HL
+	REPT LOG2SEC	;LOG 2 OF SECTOR SIZE
+	DAD	H
+	ENDM
+	RET ;WITH HL = SECTOR * SECTOR SIZE
+;
+GETCHAR:
+;	READ CONSOLE CHARACTER TO REGISTER A
+	MVI C,CONI! CALL BDOS!
+;	CONVERT TO UPPER CASE BEFORE RETURN
+	CPI 'A' OR 20H ! RC	;RETURN IF BELOW LOWER CASE A
+	CPI ('Z' OR 20H) + 1
+	RNC	;RETURN IF ABOVE LOWER CASE Z
+	ANI 5FH! RET
+;
+PUTCHAR:
+;	WRITE CHARACTER FROM A TO CONSOLE
+	MOV E,A! MVI C,CONO! CALL BDOS! RET
+;
+CRLF:	;SEND CARRIAGE RETURN, LINE FEED
+	MVI	A,CR
+	CALL	PUTCHAR
+	MVI	A,LF
+	CALL	PUTCHAR
+	RET
+;
+CRMSG:	;PRINT MESSAGE ADDRESSED BY H,L TIL ZERO
+	;WITH LEADING CRLF
+	PUSH H! CALL CRLF! POP H ;DROP THRU TO OUTMSG0
+OUTMSG:
+	MOV A,M! ORA A! RZ
+;	MESSAGE NOT YET COMPLETED
+	PUSH H! CALL PUTCHAR! POP H! INX H
+	JMP	OUTMSG
+;
+SEL:
+;	SELECT DISK GIVEN BY REGISTER A
+	sta	sdisk		; RC: remember selected disk for rcsetfmt
+	MOV C,A! LHLD WBOOT! LXI D,SELDSK! DAD D! PCHL
+;
+TRK:	;SET UP TRACK
+	LHLD	WBOOT	;ADDRESS OF BOOT ENTRY
+	LXI	D,SETTRK	;OFFSET FOR SETTRK ENTRY
+	DAD	D
+	PCHL		;GONE TO SETTRK
+;
+SEC:	;SET UP SECTOR NUMBER
+	LHLD	WBOOT
+	LXI	D,SETSEC
+	DAD	D
+	PCHL
+;
+DMA:	;SET DMA ADDRESS TO VALUE OF B,C
+	LHLD	WBOOT
+	LXI	D,SETDMA
+	DAD	D
+	PCHL
+;
+READ:	;PERFORM READ OPERATION
+	LHLD	WBOOT
+	LXI	D,READF
+	DAD	D
+	PCHL
+;
+WRITE:	;PERFORM WRITE OPERATON
+	LHLD	WBOOT
+	LXI	D,WRITF
+	DAD	D
+; RC BEGIN
+	mvi	c,2
+; RC END
+	PCHL
+;
+DREAD:	;DISK READ FUNCTION
+	MVI	C,DREADF
+	JMP	BDOS
+;
+OPEN:	;FILE OPEN FUNCTION
+	MVI C,OPENF ! JMP BDOS
+;
+; RC BEGIN
+; Ensure before writing each sector that the format is set correctly.
+; Anything but track 1 is set to normal format, and track 1 is split in two
+; to be backwards compatible.
+rcsetfmt:				
+		lda	track
+		cpi	1
+		jnz	nottrack1
+		lda	sector
+		inr	a
+		mov	b, a
+		lda	rcmaxsect1
+		cmp	b		; first or second part of track 1?
+		lda	rctrk1fmt1
+		jnc	rcsel
+		lda	rctrk1fmt2
+		jmp	rcsel
+
+; -
+
+nottrack1:				; CODE XREF: rc_track1+5j
+		lda	rccpmfmt
+
+rcsel:				; CODE XREF: rc_track1+14j
+		; HL = ^bios[34h] - base of disk format bytes	
+		lhld	1
+		lxi	d, 34h
+		dad	d
+		push	psw		; save wanted disk format
+		lda	sdisk
+		mov	b, a		; b = current disk
+		add	l		; hl = hl + current disk
+		mov	l, a
+		jnc	rcsel2
+		inr	h
+
+rcsel2:
+		pop	psw		; a = wanted disk format
+		mov	c, m		; c = current disk format
+		cmp	c
+		rz			; return if the same
+		mov	m, a		; otherwise set new disk format in bios
+		mov	a, b		; and select the disk
+		call	sel
+		ret	
+; RC END
+
+
+GETPUT:
+;	GET OR PUT CP/M (RW=0 FOR READ, 1 FOR WRITE)
+;	DISK IS ALREADY SELECTED
+;
+	LXI	H,LOADP	;LOAD POINT IN RAM FOR CP/M DURING SYSGEN
+	SHLD	DMADDR
+;
+;;	CLEAR TRACK TO 00
+;	MVI	A,-1	;START WITH TRACK EQUAL -1
+;	STA	TRACK
+
+; RC: RC702 system layout uses tracks 1–2 for directory/CP/M
+; RC: (UNSURE) and OS image on track 3 with different SPT; initialize accordingly.
+	mvi	a, 3		; RC: start from track 3 instead of -1
+	sta	track
+	lda	rcspt2		; RC: sectors per track for upper OS area
+	sta	spt
+
+RWTRK:	;READ OR WRITE NEXT TRACK
+	LXI	H,TRACK
+;	INR	M	;TRACK = TRACK + 1
+;	LDA	OST	;NUMBER OF OPERATING SYSTEM TRACKS
+;	CMP	M	;= TRACK NUMBER ?
+
+	dcr	m
+	JZ	ENDRW	;END OF READ OR WRITE
+;
+;	OTHERWISE NOTDONE, GO TO NEXT TRACK
+	MOV	C,M	;TRACK NUMBER
+	dcr	c
+	mvi	b, 0
+	CALL	TRK	;TO SET TRACK
+	MVI	A,-1	;COUNTS 0, 1, 2, . . . 25
+	STA	SECTOR	;SECTOR INCREMENTED BEFORE READ OR WRITE
+;
+RWSEC:	;READ OR WRITE SECTOR
+	call	rcsetfmt
+	lda	track
+	cpi	1
+	jnz	rwsec2		; if sector goes on another track than 1, write it
+	lda	sector
+	inr	a
+	mov	b, a
+	lda	rcmaxsect1
+	cmp	b
+	jnc	rwsec2		; if sector is within first part of track 1, write it
+	lda	rcmaxsect2
+	cmp	b
+	jc	rwsec2		; if sector is within second part of track 1, 
+	lda	rcoffset2	; add offset to compensate for the different number of
+	add	b		; sectors per track.
+	dcr	a
+	sta	sector
+
+rwsec2:
+
+	LDA	SPT	;SECTORS PER TRACK
+	LXI	H,SECTOR
+	INR	M	;TO NEXT SECTOR
+	CMP	M	;A=26 AND M=0 1 2...25 (USUALLY)
+	JZ	ENDTRK	;
+;
+;	READ OR WRITE SECTOR TO OR FROM CURRENT DMA ADDR
+	LXI	H,SECTOR
+
+rc1:
+	mov	c, m
+	mvi	b, 0
+	lda	track	; for tracks different than 1, do not translate sector
+	cpi	1
+	jnz	rwsec1
+
+
+	MOV	E,M	;SECTOR NUMBER
+	MVI	D,0	;TO DE
+;	LXI	H,TRAN
+
+	in	14h
+	ani	80h		; maxi=0; mini=1?
+	lxi	h, minitrans
+	jnz	rc2
+	lxi	h, maxitrans
+
+rc2:					; CODE XREF: getput+6Dj
+
+
+
+	MOV	B,M	;TRAN(0) IN B
+	DAD	D	;SECTOR TRANSLATED
+	MOV	C,M	;VALUE TO C READY FOR SELECT
+rwsec1:					; CODE XREF: getput+60j
+	PUSH	B	;SAVE TRAN(0),TRAN(SECTOR)
+	CALL	SEC	;SET UP SECTOR NUMBER
+	POP	B	;RECALL TRAN(0),TRAN(SECTOR)
+	MOV	A,C	;TRAN(SECTOR)
+	SUB	B	;-TRAN(0)
+	CALL	MULTSEC	;*SECTOR SIZE
+	XCHG		;TO DE
+	LHLD	DMADDR	;BASE DMA ADDRESS FOR THIS TRACK
+	DAD	D	;+(TRAN(SECTOR)-TRAN(0))*SECSIZ
+	MOV	B,H
+	MOV	C,L	;TO BC FOR SEC CALL
+	CALL	DMA	;DMA ADDRESS SET FROM B,C
+;	DMA ADDRESS SET, CLEAR RETRY COUNT
+	XRA	A
+	STA	RETRY	;SET TO ZERO RETRIES
+;
+TRYSEC:	;TRY TO READ OR WRITE CURRENT SECTOR
+	LDA	RETRY
+	CPI	MAXTRY	;TOO MANY RETRIES?
+	JC	TRYOK
+;
+;	PAST MAXTRIES, MESSAGE AND IGNORE
+	LXI	H,ERRMSG
+	CALL	OUTMSG
+	CALL	GETCHAR
+	CPI	CR
+	JNZ	REBOOT
+;
+;	TYPED A CR, OK TO IGNORE
+	CALL	CRLF
+	JMP	RWSEC
+;
+TRYOK:
+;	OK TO TRY READ OR WRITE
+	INR	A
+	STA	RETRY	;RETRY=RETRY+1
+	LDA	RW	;READ OR WRITE?
+	ORA	A
+	JZ	TRYREAD
+;
+;	MUST BE WRITE
+	CALL	WRITE
+	JMP	CHKRW	;CHECK FOR ERROR RETURNS
+TRYREAD:
+	CALL	READ
+CHKRW:
+	ORA	A
+	JZ	RWSEC	;ZERO FLAG IF R/W OK
+;
+;	ERROR, RETRY OPERATION
+	JMP	TRYSEC
+;
+;	END OF TRACK
+ENDTRK:
+	LDA	SPT	;SECTORS PER TRACK
+	CALL	MULTSEC	;*SECSIZ
+	XCHG		;TO DE
+	LHLD	DMADDR	;BASE DMA FOR THIS TRACK
+	DAD	D	;+SPT*SECSIZ
+	SHLD	DMADDR	;READY FOR NEXT TRACK
+	
+	lda	rcspt1		; RC: restore SPT for lower OS area / track 1
+	sta	spt
+	
+	JMP	RWTRK	;FOR ANOTHER TRACK
+;
+ENDRW:	;END OF READ OR WRITE, RETURN TO CALLER
+	RET
+;
+;
+START:
+;
+	LXI	SP,STACK	;SET LOCAL STACK POINTER
+;
+; RC BEGIN
+; Detect RC702 mini vs. maxi system and override default RC data accordingly.
+	in	14h
+	ani	80h
+	jz	start2
+	; This is a mini system.  Overwrite maxi values with mini values.
+	mvi	a, 10h
+	sta	rccpmfmt
+	mvi	a, 0
+	sta	rctrk1fmt1
+	mvi	a, 8
+	sta	rctrk1fmt2
+	mvi	a, 40h
+	sta	rcspt1
+	mvi	a, 48h
+	sta	rcspt2
+	mvi	a, 0Fh
+	sta	rcmaxsect1
+	mvi	a, 20h
+	sta	rcmaxsect2
+	mvi	a, 10h
+	sta	rcoffset2
+; RC END
+
+start2:				; CODE XREF: getput+E4j
+
+
+	LXI	H,SIGNON
+	CALL	OUTMSG
+;
+;	CHECK FOR DEFAULT FILE LOAD INSTEAD OF GET
+;
+	LDA	FCB+1	;BLANK IF NO FILE
+	CPI	' '
+	JZ	GETSYS	;SKIP TO GET SYSTEM MESSAGE IF BLANK
+	LXI	D,FCB	;TRY TO OPEN IT
+	CALL	OPEN	;
+	INR	A	;255 BECOMES 00
+	JNZ	RDOK	;OK TO READ IF NOT 255
+;
+;	FILE NOT PRESENT, ERROR AND REBOOT
+;
+	LXI	H,NOFILE
+	CALL	CRMSG
+	JMP	REBOOT
+;
+;	FILE PRESENT
+;	  READ TO LOAD POINT
+;
+RDOK:
+	XRA	A
+	STA	FCBCR	;CURRENT RECORD = 0
+;
+;	PRE-READ AREA FROM TPA TO LOADP
+;
+	MVI	C,(LOADP-TPA)/SECSIZ
+;	PRE-READ FILE
+PRERD:
+	PUSH	B	;SAVE COUNT
+	LXI	D,FCB	;INPUT FILE CONTROL COUNT
+	CALL	DREAD	;ASSUME SET TO DEFAULT BUFFER
+	POP	B	;RESTORE COUNT
+	ORA	A
+	JNZ	BADRD	;CANNOT ENCOUNTER END-OF FILE
+	DCR	C	;COUNT DOWN
+	JNZ	PRERD	;FOR ANOTHER SECTOR
+;
+;	SECTORS SKIPPED AT BEGINNING OF FILE
+;
+	LXI	H,LOADP
+RDINP:
+	PUSH	H
+	MOV	B,H
+	MOV	C,L	;READY FOR DMA
+	CALL	DMA	;DMA ADDRESS SET
+	LXI	D,FCB	;READY FOR READ
+	CALL	DREAD	;
+	POP	H	;RECALL DMA ADDRESS
+	ORA	A	;00 IF READ OK
+	JNZ	PUTSYS	;ASSUME EOF IF NOT.
+;	MORE TO READ, CONTINUE
+	LXI	D,SECSIZ
+	DAD	D	;HL IS NEW LOAD ADDRESS
+	JMP	RDINP
+;
+BADRD:	;EOF ENCOUNTERED IN INPUT FILE
+
+	LXI	H,BADFILE
+	CALL	CRMSG
+	JMP	REBOOT
+;
+;
+GETSYS:
+	LXI	H,ASKGET	;GET SYSTEM?
+	CALL	CRMSG
+	CALL	GETCHAR
+	CPI	CR
+	JZ	PUTSYS	;SKIP IF CR ONLY
+;
+	SUI	'A'		;NORMALIZE DRIVE NUMBER
+	CPI	NDISKS		;VALID DRIVE?
+	JC	GETC		;SKIP TO GETC IF SO
+;
+;	INVALID DRIVE NUMBER
+	CALL	BADDISK
+	JMP	GETSYS		;TO TRY AGAIN
+;
+GETC:
+;	SELECT DISK GIVEN BY REGISTER A
+	ADI	'A'
+	STA	GDISK		;TO SET MESSAGE
+	SUI	'A'
+	CALL	SEL		;TO SELECT THE DRIVE
+;	GETSYS, SET RW TO READ AND GET THE SYSTEM
+	CALL	CRLF
+	LXI	H,GETMSG
+	CALL	OUTMSG
+	CALL	GETCHAR
+	CPI	CR
+	JNZ	REBOOT
+	CALL	CRLF
+;
+	XRA	A
+	STA	RW
+	CALL	GETPUT
+	LXI	H,DONE
+	CALL	OUTMSG
+;
+;	PUT SYSTEM
+PUTSYS:
+	LXI	H,ASKPUT
+	CALL	CRMSG
+	CALL	GETCHAR
+	CPI	CR
+	JZ	REBOOT
+	SUI	'A'
+	CPI	NDISKS
+	JC	PUTC
+;
+;	INVALID DRIVE NAME
+	CALL	BADDISK
+	JMP	PUTSYS	;TO TRY AGAIN
+;
+PUTC:
+;	SET DISK FROM REGISTER C
+	ADI	'A'
+	STA	PDISK	;MESSAGE SET
+	SUI	'A'
+	CALL	SEL	;SELECT DEST DRIVE
+;	PUT SYSTEM, SET RW TO WRITE
+	LXI	H,PUTMSG
+	CALL	CRMSG
+	CALL	GETCHAR
+	CPI	CR
+	JNZ	REBOOT
+	CALL	CRLF
+;
+	LXI	H,RW
+	MVI	M,1
+	CALL	GETPUT	;TO PUT SYSTEM BACK ON DISKETTE
+	LXI	H,DONE
+	CALL	OUTMSG
+	JMP	PUTSYS	;FOR ANOTHER PUT OPERATION
+;
+REBOOT:	
+; RC BEGIN
+	; set the diskette format for A and B in bios to rccpmfmt before exiting
+	lda	rccpmfmt
+	lhld	1
+	lxi	d, 34h
+	dad	d
+	mov	m, a
+	inx	h
+	mov	m, a
+	
+	MVI	A,0
+	CALL	SEL		; select disk 0 to activate format
+	CALL	CRLF
+	JMP	BOOT$
+; RC END
+BADDISK:
+	;BAD DISK NAME
+	LXI	H,QDISK
+	CALL	CRMSG
+	RET
+;
+;
+;
+;	DATA AREAS
+;	MESSAGES
+SIGNON:	DB	'SYSGEN VER '
+	DB	VERS/10+'0','.',VERS MOD 10+'0'
+	DB	0
+ASKGET:	DB	'SOURCE DRIVE NAME (OR RETURN TO SKIP)',0
+GETMSG:	DB	'SOURCE ON '
+GDISK:	DB	0e1h	;FILLED IN AT GET FUNCTION
+	DB	', THEN TYPE RETURN',0
+ASKPUT:	DB	'DESTINATION DRIVE NAME (OR RETURN TO REBOOT)',0
+PUTMSG:	DB	'DESTINATION ON '
+PDISK:	DB	01ch	;FILLED IN AT PUT FUNCTION
+	DB	', THEN TYPE RETURN',0
+ERRMSG:	DB	'PERMANENT ERROR, TYPE RETURN TO IGNORE',0
+DONE:	DB	'FUNCTION COMPLETE',0
+QDISK:	DB	'INVALID DRIVE NAME (USE A OR B)',0
+NOFILE:	DB	'NO SOURCE FILE ON DISK',0
+BADFILE:
+	DB	'SOURCE FILE INCOMPLETE',0
+;
+;	VARIABLES
+SDISK:	DS	1	;SELECTED DISK FOR CURRENT OPERATION
+TRACK:	DS	1	;CURRENT TRACK
+SECTOR:	DS	1	;CURRENT SECTOR
+RW:	DS	1	;READ IF 0, WRITE IF 1
+DMADDR:	DS	2	;CURRENT DMA ADDRESS
+RETRY:	DS	1	;NUMBER OF TRIES ON THIS SECTOR
+;	DS	STACKSIZE*2
+	REPT	STACKSIZE
+	DW	0
+	ENDM
+STACK:
+; PAD TO 128 BYTE SECTOR SIZE FOR NON-CP/M ASSEMBLER.
+	if	($ MOD 128) GT 0	
+	rept 	128 - ($ MOD 128) 
+	db	0
+	endm
+	endif

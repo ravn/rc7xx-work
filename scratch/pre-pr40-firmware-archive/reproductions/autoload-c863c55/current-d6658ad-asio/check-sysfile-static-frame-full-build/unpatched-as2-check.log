@@ -1,0 +1,45 @@
+fatal error: error in backend: unable to legalize instruction: G_STORE %0:_(s8), %1:_(p2) :: (volatile store (s8) into `ptr addrspace(2) inttoptr (i16 5 to ptr addrspace(2))`, addrspace 2) (in function: write_port)
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and dumped files.
+Stack dump:
+0.	Program arguments: /Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang --target=z80 -c /Users/ravn/z80/scratch/pre-pr40-firmware-archive/reproductions/autoload-c863c55/current-d6658ad-asio/minimal-as2-store.c -o /dev/null
+1.	<eof> parser at end of file
+2.	Code generation
+3.	Running pass 'Function Pass Manager' on module '/Users/ravn/z80/scratch/pre-pr40-firmware-archive/reproductions/autoload-c863c55/current-d6658ad-asio/minimal-as2-store.c'.
+4.	Running pass 'Legalizer' on function '@write_port'
+ #0 0x00000001018c59f8 llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1011d99f8)
+ #1 0x00000001018c3718 llvm::sys::RunSignalHandlers() (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1011d7718)
+ #2 0x00000001018c4fd0 llvm::sys::CleanupOnSignal(unsigned long) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1011d8fd0)
+ #3 0x000000010181128c (anonymous namespace)::CrashRecoveryContextImpl::HandleCrash(int, unsigned long) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x10112528c)
+ #4 0x00000001018111fc llvm::CrashRecoveryContext::HandleExit(int) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1011251fc)
+ #5 0x00000001018c0bc4 llvm::sys::Process::Exit(int, bool) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1011d4bc4)
+ #6 0x00000001006f20d0 llvm::DenseMap<llvm::AssertingVH<llvm::Value const>, llvm::AliasSet*, llvm::DenseMapInfo<llvm::AssertingVH<llvm::Value const>, void>, llvm::detail::DenseMapPair<llvm::AssertingVH<llvm::Value const>, llvm::AliasSet*>>::~DenseMap() (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1000060d0)
+ #7 0x000000010181ac1c llvm::report_fatal_error(llvm::Twine const&, bool) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x10112ec1c)
+ #8 0x000000010181ae18 llvm::install_bad_alloc_error_handler(void (*)(void*, char const*, bool), void*) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x10112ee18)
+ #9 0x00000001027eb340 llvm::reportGISelFailure(llvm::MachineFunction&, llvm::MachineOptimizationRemarkEmitter&, llvm::MachineOptimizationRemarkMissed&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1020ff340)
+#10 0x00000001027eb588 llvm::reportGISelFailure(llvm::MachineFunction&, llvm::MachineOptimizationRemarkEmitter&, char const*, llvm::StringRef, llvm::MachineInstr const&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1020ff588)
+#11 0x000000010278b064 runLegalizerOnMachineFunction(llvm::MachineFunction&, llvm::function_ref<llvm::GISelCSEInfo* ()>, llvm::function_ref<llvm::GISelValueTracking* ()>, llvm::LibcallLoweringInfo const*) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x10209f064)
+#12 0x000000010278acc0 llvm::LegalizerLegacy::runOnMachineFunction(llvm::MachineFunction&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x10209ecc0)
+#13 0x0000000100c2a110 llvm::MachineFunctionPass::runOnFunction(llvm::Function&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x10053e110)
+#14 0x000000010102057c llvm::FPPassManager::runOnFunction(llvm::Function&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x10093457c)
+#15 0x0000000101025e84 llvm::FPPassManager::runOnModule(llvm::Module&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x100939e84)
+#16 0x0000000101020d74 llvm::legacy::PassManagerImpl::run(llvm::Module&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x100934d74)
+#17 0x0000000101db700c (anonymous namespace)::EmitAssemblyHelper::TimeCodegenPasses(llvm::function_ref<void ()>) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1016cb00c)
+#18 0x0000000101da9c14 (anonymous namespace)::EmitAssemblyHelper::emitAssembly(clang::BackendAction, std::__1::unique_ptr<llvm::raw_pwrite_stream, std::__1::default_delete<llvm::raw_pwrite_stream>>, clang::BackendConsumer*) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1016bdc14)
+#19 0x0000000101da853c clang::emitBackendOutput(clang::CompilerInstance&, clang::CodeGenOptions&, llvm::StringRef, llvm::Module*, clang::BackendAction, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>, std::__1::unique_ptr<llvm::raw_pwrite_stream, std::__1::default_delete<llvm::raw_pwrite_stream>>, clang::BackendConsumer*) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1016bc53c)
+#20 0x000000010203e350 clang::BackendConsumer::HandleTranslationUnit(clang::ASTContext&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x101952350)
+#21 0x0000000102f109f0 clang::ParseAST(clang::Sema&, bool, bool) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1028249f0)
+#22 0x00000001023ebefc clang::FrontendAction::Execute() (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x101cffefc)
+#23 0x000000010238b310 clang::CompilerInstance::ExecuteAction(clang::FrontendAction&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x101c9f310)
+#24 0x000000010246050c clang::ExecuteCompilerInvocation(clang::CompilerInstance*) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x101d7450c)
+#25 0x00000001006f1064 cc1_main(llvm::ArrayRef<char const*>, char const*, void*) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x100005064)
+#26 0x00000001006ef200 ExecuteCC1Tool(llvm::SmallVectorImpl<char const*>&, llvm::ToolContext const&, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x100003200)
+#27 0x00000001006f0918 int llvm::function_ref<int (llvm::SmallVectorImpl<char const*>&)>::callback_fn<clang_main(int, char**, llvm::ToolContext const&)::$_0>(long, llvm::SmallVectorImpl<char const*>&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x100004918)
+#28 0x00000001022091bc void llvm::function_ref<void ()>::callback_fn<clang::driver::CC1Command::Execute(llvm::ArrayRef<std::__1::optional<llvm::StringRef>>, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>*, bool*) const::$_0>(long) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x101b1d1bc)
+#29 0x00000001018111cc llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x1011251cc)
+#30 0x0000000102208c44 clang::driver::CC1Command::Execute(llvm::ArrayRef<std::__1::optional<llvm::StringRef>>, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>*, bool*) const (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x101b1cc44)
+#31 0x00000001021d5210 clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&, bool) const (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x101ae9210)
+#32 0x00000001021d57c0 clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::__1::pair<int, clang::driver::Command const*>>&, bool) const (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x101ae97c0)
+#33 0x00000001021efd64 clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::__1::pair<int, clang::driver::Command const*>>&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x101b03d64)
+#34 0x00000001006ee57c clang_main(int, char**, llvm::ToolContext const&) (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x10000257c)
+#35 0x00000001006fa79c main (/Users/ravn/z80/llvm-z80/build-macos-asserts/bin/clang-24+0x10000e79c)
+#36 0x00000001840a84e4

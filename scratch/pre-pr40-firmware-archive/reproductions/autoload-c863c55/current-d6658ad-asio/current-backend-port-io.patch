@@ -1,0 +1,278 @@
+diff --git a/llvm/lib/Target/Z80/Z80InstrInfo.h b/llvm/lib/Target/Z80/Z80InstrInfo.h
+index 231d53f23298..2fd5e0296db7 100644
+--- a/llvm/lib/Target/Z80/Z80InstrInfo.h
++++ b/llvm/lib/Target/Z80/Z80InstrInfo.h
+@@ -689,7 +689,7 @@ private:
+ 
+ namespace Z80 {
+ 
+-enum AddressSpace : unsigned { AS_Memory = 0, NumAddrSpaces };
++enum AddressSpace : unsigned { AS_Memory = 0, AS_IO = 2, NumAddrSpaces };
+ 
+ /// Target-specific flags on symbol machine operands. They select which part
+ /// of the symbol's link-time address an 8-bit immediate slot receives; the
+diff --git a/llvm/lib/Target/Z80/Z80InstrInfo.td b/llvm/lib/Target/Z80/Z80InstrInfo.td
+index 1d01d6bfcb9f..861a1b1aeaed 100644
+--- a/llvm/lib/Target/Z80/Z80InstrInfo.td
++++ b/llvm/lib/Target/Z80/Z80InstrInfo.td
+@@ -201,11 +201,13 @@ def RETN : InstED8<"retn", 0x45>, InstReturn;
+ // IN A,(n)
+ def IN_A_n : Inst16<"in a,", 0xDB, PortMode> {
+   let AsmString = "in a, ( $imm )";
++  let Defs = [A];
+ }
+ 
+ // OUT (n),A
+ def OUT_n_A : Inst16<"out", 0xD3, PortMode> {
+   let AsmString = "out ( $imm ), a";
++  let Uses = [A];
+ }
+ 
+ // IN r,(C) - ED prefixed (sets flags)
+diff --git a/llvm/lib/Target/Z80/Z80InstructionSelector.cpp b/llvm/lib/Target/Z80/Z80InstructionSelector.cpp
+index 46dba22c58f9..d0266f73d705 100644
+--- a/llvm/lib/Target/Z80/Z80InstructionSelector.cpp
++++ b/llvm/lib/Target/Z80/Z80InstructionSelector.cpp
+@@ -14,6 +14,7 @@
+ 
+ #include "MCTargetDesc/Z80MCTargetDesc.h"
+ #include "Z80.h"
++#include "Z80InstrInfo.h"
+ #include "Z80RegisterInfo.h"
+ #include "Z80Subtarget.h"
+ 
+@@ -1788,6 +1789,39 @@ bool Z80InstructionSelector::select(MachineInstr &MI) {
+     const LLT DstTy = MRI.getType(DstReg);
+     const DebugLoc &DL = MI.getDebugLoc();
+ 
++    // Port I/O: address_space(2) → IN A,(n) or IN A,(C)
++    if (MI.hasOneMemOperand() &&
++        (*MI.memoperands_begin())->getAddrSpace() == Z80::AS_IO) {
++      if (DstTy.getSizeInBits() > 8)
++        return false; // Only 8-bit port reads supported
++      // Extract constant port address from G_INTTOPTR(G_CONSTANT n)
++      MachineInstr *AddrDef = MRI.getVRegDef(AddrReg);
++      int64_t PortAddr = -1;
++      if (AddrDef && AddrDef->getOpcode() == TargetOpcode::G_INTTOPTR) {
++        Register SrcReg = AddrDef->getOperand(1).getReg();
++        MachineInstr *SrcDef = MRI.getVRegDef(SrcReg);
++        if (SrcDef && SrcDef->getOpcode() == TargetOpcode::G_CONSTANT)
++          PortAddr = SrcDef->getOperand(1).getCImm()->getZExtValue() & 0xFF;
++      } else if (AddrDef && AddrDef->getOpcode() == TargetOpcode::G_CONSTANT) {
++        // The combiner folded G_INTTOPTR(G_CONSTANT n) into a pointer-typed
++        // constant (e.g. port 0 shows up as `ptr addrspace(2) null`).
++        PortAddr = AddrDef->getOperand(1).getCImm()->getZExtValue() & 0xFF;
++      }
++      // Only a compile-time-constant port is supported (selects IN A,(n)).
++      // A runtime/PHI'd port is intentionally rejected rather than silently
++      // emitting IN A,(C): that form puts B on the high address bits, which is
++      // only *coincidentally* harmless on RC700 (low-8-bit port decode). Fail
++      // loudly instead of baking that hardware assumption into codegen (#44).
++      if (PortAddr < 0)
++        return false;
++      if (!RBI.constrainGenericRegister(DstReg, Z80::GR8RegClass, MRI))
++        return false;
++      BuildMI(MBB, MI, DL, TII.get(Z80::IN_A_n)).addImm(PortAddr);
++      BuildMI(MBB, MI, DL, TII.get(TargetOpcode::COPY), DstReg).addReg(Z80::A);
++      MI.eraseFromParent();
++      return true;
++    }
++
+     // A compile-time address needs no pointer in a register: SM83 reaches the
+     // high page 0xFF00-0xFFFF in two bytes and anywhere else in three, against
+     // four for loading a pair and going indirect.
+@@ -2018,6 +2052,38 @@ bool Z80InstructionSelector::select(MachineInstr &MI) {
+     const LLT SrcTy = MRI.getType(SrcReg);
+     const DebugLoc &DL = MI.getDebugLoc();
+ 
++    // Port I/O: address_space(2) → OUT (n),A or OUT (C),A
++    if (MI.hasOneMemOperand() &&
++        (*MI.memoperands_begin())->getAddrSpace() == Z80::AS_IO) {
++      if (SrcTy.getSizeInBits() > 8)
++        return false; // Only 8-bit port writes supported
++      MachineInstr *AddrDef = MRI.getVRegDef(AddrReg);
++      int64_t PortAddr = -1;
++      if (AddrDef && AddrDef->getOpcode() == TargetOpcode::G_INTTOPTR) {
++        Register IntReg = AddrDef->getOperand(1).getReg();
++        MachineInstr *IntDef = MRI.getVRegDef(IntReg);
++        if (IntDef && IntDef->getOpcode() == TargetOpcode::G_CONSTANT)
++          PortAddr = IntDef->getOperand(1).getCImm()->getZExtValue() & 0xFF;
++      } else if (AddrDef && AddrDef->getOpcode() == TargetOpcode::G_CONSTANT) {
++        // The combiner folded G_INTTOPTR(G_CONSTANT n) into a pointer-typed
++        // constant (e.g. port 0 shows up as `ptr addrspace(2) null`).
++        PortAddr = AddrDef->getOperand(1).getCImm()->getZExtValue() & 0xFF;
++      }
++      // Only a compile-time-constant port is supported (selects OUT (n),A).
++      // A runtime/PHI'd port is intentionally rejected rather than silently
++      // emitting OUT (C),A: that form puts B on the high address bits, which is
++      // only *coincidentally* harmless on RC700 (low-8-bit port decode). Fail
++      // loudly instead of baking that hardware assumption into codegen (#44).
++      if (PortAddr < 0)
++        return false;
++      if (!RBI.constrainGenericRegister(SrcReg, Z80::GR8RegClass, MRI))
++        return false;
++      BuildMI(MBB, MI, DL, TII.get(TargetOpcode::COPY), Z80::A).addReg(SrcReg);
++      BuildMI(MBB, MI, DL, TII.get(Z80::OUT_n_A)).addImm(PortAddr);
++      MI.eraseFromParent();
++      return true;
++    }
++
+     // See the matching fold in G_LOAD.
+     if (SrcTy.getSizeInBits() == 8 && MI.hasOneMemOperand() &&
+         MBB.getParent()->getSubtarget<Z80Subtarget>().hasSM83()) {
+diff --git a/llvm/lib/Target/Z80/Z80LegalizerInfo.cpp b/llvm/lib/Target/Z80/Z80LegalizerInfo.cpp
+index 8088b4ac560e..69f22114d2f7 100644
+--- a/llvm/lib/Target/Z80/Z80LegalizerInfo.cpp
++++ b/llvm/lib/Target/Z80/Z80LegalizerInfo.cpp
+@@ -184,14 +184,18 @@ Z80LegalizerInfo::Z80LegalizerInfo(const Z80Subtarget &STI) {
+   const LLT S64 = LLT::scalar(64);
+   const LLT S128 = LLT::scalar(128);
+   const LLT P0 = LLT::pointer(0, 16); // Default address space, 16-bit pointers
++  const LLT P2 = LLT::pointer(2, 16); // I/O address space for port operations
+ 
+   // Basic type legalization for Z80
+   // Most operations need to be broken down to 8-bit or 16-bit
+   // 32-bit operations are narrowed to pairs of 16-bit operations
+ 
+   // Constants - clamp to legal sizes, narrow larger
++  // P2 (port I/O) pointer constants arise when the combiner folds
++  // G_INTTOPTR(G_CONSTANT n) for a constant port into a pointer-typed constant;
++  // like P0 it is a 16-bit pointer, so it is legal here.
+   getActionDefinitionsBuilder(G_CONSTANT)
+-      .legalFor({S8, S16, P0})
++      .legalFor({S8, S16, P0, P2})
+       .widenScalarToNextPow2(0, 8)
+       .clampScalar(0, S8, S16);
+ 
+@@ -386,7 +390,8 @@ Z80LegalizerInfo::Z80LegalizerInfo(const Z80Subtarget &STI) {
+   // count, volatile included); scalar narrowing then handles wide elements.
+   getActionDefinitionsBuilder(G_LOAD)
+       .legalForTypesWithMemDesc(
+-          {{S8, P0, S8, 1}, {S16, P0, S16, 1}, {P0, P0, S16, 1}})
++          {{S8, P0, S8, 1}, {S16, P0, S16, 1}, {P0, P0, S16, 1},
++           {S8, P2, S8, 1}}) // Port I/O: IN A,(n)
+       .scalarize(0)
+       .lowerIfMemSizeNotByteSizePow2()
+       .customIf([](const LegalityQuery &Q) {
+@@ -397,7 +402,8 @@ Z80LegalizerInfo::Z80LegalizerInfo(const Z80Subtarget &STI) {
+ 
+   getActionDefinitionsBuilder(G_STORE)
+       .legalForTypesWithMemDesc(
+-          {{S8, P0, S8, 1}, {S16, P0, S16, 1}, {P0, P0, S16, 1}})
++          {{S8, P0, S8, 1}, {S16, P0, S16, 1}, {P0, P0, S16, 1},
++           {S8, P2, S8, 1}}) // Port I/O: OUT (n),A
+       .scalarize(0)
+       .lowerIfMemSizeNotByteSizePow2()
+       // Truncating stores (value wider than memory, e.g. the tail byte of
+@@ -417,10 +423,10 @@ Z80LegalizerInfo::Z80LegalizerInfo(const Z80Subtarget &STI) {
+   // Pointer/integer conversions - no-op on Z80 (both are 16-bit)
+   // Wider integers (e.g. s32 from GEP with i32 index) are narrowed to s16.
+   getActionDefinitionsBuilder(G_INTTOPTR)
+-      .legalFor({{P0, S16}})
++      .legalFor({{P0, S16}, {P2, S16}})
+       .clampScalar(1, S16, S16);
+   getActionDefinitionsBuilder(G_PTRTOINT)
+-      .legalFor({{S16, P0}})
++      .legalFor({{S16, P0}, {S16, P2}})
+       .clampScalar(0, S16, S16);
+ 
+   // Bitcast - no-op reinterpretation between same-size types.
+@@ -446,15 +452,18 @@ Z80LegalizerInfo::Z80LegalizerInfo(const Z80Subtarget &STI) {
+       [](const LegalityQuery &) { return true; });
+ 
+   // PHI nodes
++  // P2 (port I/O address space) is 16-bit like P0 -- both are legal for PHI.
++  // Without P2 here, conditional port_out (e.g. SIO channel A vs B) crashes the
++  // Legalizer when the optimizer merges the port pointers into a PHI (#44).
+   getActionDefinitionsBuilder(G_PHI)
+-      .legalFor({S8, S16, P0})
++      .legalFor({S8, S16, P0, P2})
+       .scalarize(0)
+       .widenScalarToNextPow2(0)
+       .clampScalar(0, S8, S16);
+ 
+   // Freeze - converts undef to a deterministic value. No-op at codegen level.
+   getActionDefinitionsBuilder(G_FREEZE)
+-      .legalFor({S8, S16, P0})
++      .legalFor({S8, S16, P0, P2})
+       .scalarize(0)
+       .widenScalarToNextPow2(0)
+       .clampScalar(0, S8, S16);
+diff --git a/llvm/test/CodeGen/Z80/port-io-runtime-reject.ll b/llvm/test/CodeGen/Z80/port-io-runtime-reject.ll
+new file mode 100644
+index 000000000000..5d361634a74f
+--- /dev/null
++++ b/llvm/test/CodeGen/Z80/port-io-runtime-reject.ll
+@@ -0,0 +1,25 @@
++; RUN: not llc -mtriple=z80 -O2 %s -o /dev/null 2>&1 | FileCheck %s
++
++; A runtime-selected (PHI'd / select'd) address_space(2) port is intentionally
++; NOT supported.  It must FAIL TO SELECT rather than silently emit OUT (C),A,
++; whose "B on the high address bits" behaviour is only coincidentally harmless
++; on RC700 (which decodes just the low 8 port bits).  Baking that hardware
++; assumption into codegen would be a silent-miscompile trap, so we reject it.
++;
++; The Legalizer must still ACCEPT the p2 PHI/select (P2 is legal for G_PHI /
++; G_FREEZE) -- i.e. it must not crash; the diagnostic is a clean "cannot select"
++; at instruction selection.  (ravn/llvm-z80 #44.)
++
++; CHECK: cannot select: {{.*}}G_STORE{{.*}}p2
++
++@flag = external global i8
++
++define void @wr5_phi(i8 %val) nounwind {
++entry:
++  %f = load i8, ptr @flag
++  %cond = icmp ne i8 %f, 0
++  %port = select i1 %cond, ptr addrspace(2) inttoptr (i16 11 to ptr addrspace(2)),
++                          ptr addrspace(2) inttoptr (i16 10 to ptr addrspace(2))
++  store volatile i8 %val, ptr addrspace(2) %port
++  ret void
++}
+diff --git a/llvm/test/CodeGen/Z80/port-io.ll b/llvm/test/CodeGen/Z80/port-io.ll
+new file mode 100644
+index 000000000000..b44635d70aa2
+--- /dev/null
++++ b/llvm/test/CodeGen/Z80/port-io.ll
+@@ -0,0 +1,41 @@
++; RUN: llc -mtriple=z80 -z80-asm-format=sdasz80 -O2 < %s | FileCheck %s
++
++; address_space(2) is Z80 port I/O.  A compile-time-constant port selects the
++; short constant forms OUT (n),A / IN A,(n).  (ravn/llvm-z80 #1, #44.)
++; The runtime-port (PHI'd) case is intentionally rejected -- see
++; port-io-runtime-reject.ll.
++
++define void @out_const(i8 %v) nounwind {
++; CHECK-LABEL: _out_const:
++; CHECK: out (5),a
++  store volatile i8 %v, ptr addrspace(2) inttoptr (i16 5 to ptr addrspace(2))
++  ret void
++}
++
++define i8 @in_const() nounwind {
++; CHECK-LABEL: _in_const:
++; CHECK: in a,(5)
++  %v = load volatile i8, ptr addrspace(2) inttoptr (i16 5 to ptr addrspace(2))
++  ret i8 %v
++}
++
++; Conditional store to two *constant* ports: the optimizer inlines the constant
++; per branch, so each branch still uses OUT (n),A (no runtime port survives).
++@flag = external global i8
++define void @wr5(i8 %val) nounwind {
++; CHECK-LABEL: _wr5:
++; CHECK-DAG: out (10),a
++; CHECK-DAG: out (11),a
++entry:
++  %f = load i8, ptr @flag
++  %cond = icmp ne i8 %f, 0
++  br i1 %cond, label %ifb, label %ifa
++
++ifa:
++  store volatile i8 %val, ptr addrspace(2) inttoptr (i16 10 to ptr addrspace(2))
++  ret void
++
++ifb:
++  store volatile i8 %val, ptr addrspace(2) inttoptr (i16 11 to ptr addrspace(2))
++  ret void
++}

@@ -1,0 +1,1 @@
+--target=z80 -Oz -g -nostdlib -ffreestanding -std=c23 -flto -ffunction-sections -fdata-sections -DSW1_CONSOLE_BIT=0x01 -Xclang -target-feature -Xclang +static-stack -Iclang -I. -Wno-gcc-compat -Wno-return-type -Wimplicit-int-conversion -DMSIZE=56  

@@ -1,0 +1,100 @@
+make -B -C /Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c prom1-lineprog COMPILER=clang LLVM_Z80=/Users/ravn/z80/llvm-z80-pre-pr40 CLANG_BUILD=/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin
+transport stamp: pio-irq drv=
+toolchain stamp: f6b59d95790e7c73ac50d0a077353edc (clang)
+buildinfo: 2026-10-10 00:33 2951f96
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -c clang-prom1lineprog/bootstrap.s -o clang-prom1lineprog/bootstrap.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -c clang-prom1lineprog/dzx0_standard.s -o clang-prom1lineprog/dzx0_standard.o
+/Library/Developer/CommandLineTools/usr/bin/make -C cpnos-build all
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -std=c23 -Oz -nostdlib -g -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -mllvm -disable-lsr -DENABLE_FDC=0 -DMIRROR_SIOB=1 -DBOOT_MARK_ENABLED=0     -DRC702_SLAVEID=0x01  -DTRANSPORT_NAME='"PIO"' -Iclang -Isrc -I../cpnos-shared/include -I. -Weverything -Wno-unsafe-buffer-usage -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -Wno-pre-c23-compat -Wno-int-to-pointer-cast -Wno-cast-qual -Wno-padded -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-missing-noreturn -Wno-sign-conversion  -c src/bios_jt.c -o clang/bios_jt.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -std=c23 -Oz -nostdlib -g -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -mllvm -disable-lsr -DENABLE_FDC=0 -DMIRROR_SIOB=1 -DBOOT_MARK_ENABLED=0     -DRC702_SLAVEID=0x01  -DTRANSPORT_NAME='"PIO"' -Iclang -Isrc -I../cpnos-shared/include -I. -Weverything -Wno-unsafe-buffer-usage -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -Wno-pre-c23-compat -Wno-int-to-pointer-cast -Wno-cast-qual -Wno-padded -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-missing-noreturn -Wno-sign-conversion  -c src/transport_sio.c -o clang/transport_sio.o
+make: *** No rule to make target `cpnos-build/d/cpnos.sym', needed by `clang-prom1lineprog/payload.elf'.  Stop.
+make: *** Waiting for unfinished jobs....
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -std=c23 -Oz -nostdlib -g -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -mllvm -disable-lsr -DENABLE_FDC=0 -DMIRROR_SIOB=1 -DBOOT_MARK_ENABLED=0     -DRC702_SLAVEID=0x01  -DTRANSPORT_NAME='"PIO"' -Iclang -Isrc -I../cpnos-shared/include -I. -Weverything -Wno-unsafe-buffer-usage -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -Wno-pre-c23-compat -Wno-int-to-pointer-cast -Wno-cast-qual -Wno-padded -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-missing-noreturn -Wno-sign-conversion  -c src/transport_pio.c -o clang/transport_pio.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -std=c23 -Oz -nostdlib -g -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -mllvm -disable-lsr -DENABLE_FDC=0 -DMIRROR_SIOB=1 -DBOOT_MARK_ENABLED=0     -DRC702_SLAVEID=0x01  -DTRANSPORT_NAME='"PIO"' -Iclang -Isrc -I../cpnos-shared/include -I. -Weverything -Wno-unsafe-buffer-usage -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -Wno-pre-c23-compat -Wno-int-to-pointer-cast -Wno-cast-qual -Wno-padded -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-missing-noreturn -Wno-sign-conversion  -c src/xport_jt.c -o clang/xport_jt.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -std=c23 -Oz -nostdlib -g -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -mllvm -disable-lsr -DENABLE_FDC=0 -DMIRROR_SIOB=1 -DBOOT_MARK_ENABLED=0     -DRC702_SLAVEID=0x01  -DTRANSPORT_NAME='"PIO"' -Iclang -Isrc -I../cpnos-shared/include -I. -Weverything -Wno-unsafe-buffer-usage -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -Wno-pre-c23-compat -Wno-int-to-pointer-cast -Wno-cast-qual -Wno-padded -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-missing-noreturn -Wno-sign-conversion  -c src/snios_c.c -o clang/snios_c.o
+perl -pe 's/\r?\n/\r\n/g' /Users/ravn/z80/cpnet-z80/dist/src/cpndos.asm > d/cpndos.asm
+perl -pe 's/\r?\n/\r\n/g' src/cpnios-shim.asm > d/cpnios.asm
+perl -pe 's/\r?\n/\r\n/g' /Users/ravn/z80/cpnet-z80/dist/src/cpbdos.asm > d/cpbdos.asm
+cd /Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c/cpnos-build && java -jar /Users/ravn/z80/cpnet-z80/tools/VirtualCpm.jar rmac cpnios 2>&1 | tail -3
+cd /Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c/cpnos-build && java -jar /Users/ravn/z80/cpnet-z80/tools/VirtualCpm.jar rmac cpbdos 2>&1 | tail -3
+cd /Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c/cpnos-build && java -jar /Users/ravn/z80/cpnet-z80/tools/VirtualCpm.jar rmac cpndos 2>&1 | tail -3
+src/bios_jt.c:17:9: warning: packed attribute is unnecessary for 'JpEntry' [-Wpacked]
+   17 | typedef struct { uint8_t op; bios_fptr target; } __attribute__((packed)) JpEntry;
+      |         ^
+src/transport_sio.c:19:9: warning: macro is not used [-Wunused-macros]
+   19 | #define RESIDENT_DATA SECTION_RESIDENT_DATA
+      |         ^
+src/snios_c.c:447:9: warning: packed attribute is unnecessary for 'SniosJpEntry' [-Wpacked]
+  447 | typedef struct { uint8_t op; snios_fptr target; }
+      |         ^
+src/snios_c.c:472:23: warning: cast from 'uint8_t (*)(void)' (aka 'unsigned char (*)(void)') to 'snios_fptr' (aka 'void (*)(void)') converts to incompatible function type [-Wcast-function-type-strict]
+  472 |     .ntwkin = { 0xC3, (snios_fp1 warning generated.
+tr)snios_ntwkin_impl },
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/snios_c.c:473:23: warning: cast from 'uint8_t (*)(void)' (aka 'unsigned char (*)(void)') to 'snios_fptr' (aka 'void (*)(void)') converts to incompatible function type [-Wcast-function-type-strict]
+  473 |     .ntwkst = { 0xC3, (snios_fptr)snios_ntwkst_impl },
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/transport_pio.c:101:9: warning: macro is not used [-Wunused-macros]
+  101 | #define FNC 3
+      |         ^
+src/transport_pio.c:138:9: warning: macro is not used [-Wunused-macros]
+src/snios_c.c:478  138 | #define PIO_RX_BUF_MASK 0xFF
+      |         ^
+src/transport_pio.c:102:9: warning: macro is not used [-Wunused-macros]
+  102 | #defin:23: warning: cast from 'uint8_t (*)(void)' (aka 'unsigned char (*)(void)') to 'snios_fptr' (aka 'void (*)(void)') converts to incompatible function type [-Wcast-function-type-strict]
+e SIZ 4  478 |     .ntwkbt = { 0xC3, (snios_fptr)
+      |         ^
+src/transport_pio.c:105:9: warning: smacro is not used [-Wunused-macros]
+ni  os_ntwkbt_impl },
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+105 | #defisrc/snios_c.c:ne PING_FNC  0xC0
+      |         ^
+479:23: warning: cast from 'uint8_t (*)(void)' (aka 'unsigned char (*)(void)') to 'snios_fptr' (aka 'void (*)(void)') converts to incompatible function type [-Wcast-function-type-strict]
+src/transport_pio.c  479 |     .ntwkdn: = { 0xC3, (snios_fptr)snios_ntwkd107:9: warning: macro is not used [-Wunused-macros]
+n_impl },
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  107 | #define PONG_BYTE 'O'
+      |         ^
+src/transport_pio.c:98:9: warning: macro is not used [-Wunused-macros]
+   98 | #define FMT 0
+      |         ^
+src/transport_pio.c:99:9: warning: macro is not used [-Wunused-macros]
+   99 | #define DID 1
+      |         ^
+src/transport_pio.c:83:9: warning: macro is not used [-Wunused-macros]
+   83 | #define RESIDENT_DATA SECTION_RESIDENT_DATA
+      |         ^
+src/transport_pio.c:106:9: warning: macro is not used [-Wunused-macros]
+  106 | #define PING_BYTE 'P'
+      |         ^
+src/transport_pio.c:100:9: warning: macro is not used [-Wunused-macros]
+  100 | #define SID 2
+      |         ^
+1 warning generated.
+10 warnings generated.
+5 warnings generated.
+000H USE FACTOR
+END OF ASSEMBLY
+
+004H USE FACTOR
+END OF ASSEMBLY
+
+00CH USE FACTOR
+END OF ASSEMBLY
+
+cd /Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c/cpnos-build && java -jar /Users/ravn/z80/cpnet-z80/tools/VirtualCpm.jar link 'cpnos=cpndos,cpnios,cpbdos[LDE80,DDA80]' 2>&1 | tail -15
+Using CPU z80core.Z80
+Creating HostFileBdos 00 device with root dir /Users/ravn/HostFileBdos
+D>link cpnos=cpndos,cpnios,cpbdos[LDE80,DDA80]
+LINK 1.31
+
+NDOSRL   DA80   NDOS     DE80   BDOSDS   DC6A   NIOS     EE33   
+BDOS     E816   
+
+ABSOLUTE     0000
+CODE SIZE    0C0D (DE80-EA8C)
+DATA SIZE    0227 (DA80-DCA6)
+COMMON SIZE  0000
+USE FACTOR     20
+
+rm d/cpndos.asm d/cpbdos.asm

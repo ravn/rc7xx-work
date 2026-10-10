@@ -1,0 +1,563 @@
+/* cpnos-rom byte-level transport backend (PIO-B parallel) + IM2 ISRs.
+ *
+ * Two halves merged Phase 60 (2026-05-10) — they shared the
+ * RESIDENT_PRE_CODE SDCC codeseg and the PIO-B receive ring buffer
+ * (`pio_rx_buf` + head/tail), so co-locating them lets isr_pio_par
+ * push directly into the file-static buffer instead of crossing TUs:
+ *
+ *   1. PIO transport layer (former transport_pio.c body):
+ *      - transport_pio_send_byte / transport_pio_recv_byte
+ *      - direction-flip workaround for ravn/mame#7
+ *      - pio_rx_buf SPSC ring (256-byte page-aligned)
+ *
+ *   2. IM2 ISR layer (former isr.c body):
+ *      - isr_crt   — VRTC, frame counter, deferred 8275 cursor write
+ *      - isr_pio_kbd — PIO-A keyboard strobe -> kbd_ring
+ *      - isr_pio_par — PIO-B byte strobe -> pio_rx_buf
+ *      - isr_noop  — daisy-chain placeholder
+ *      - set_i_reg / enable_im2 / enable_interrupts / disable_interrupts
+ *
+ * Register preservation: every ISR PUSHes only the register pairs it
+ * actually clobbers, then POPs them on exit.  Crucially the ISRs do
+ * NOT touch the Z80 shadow set (BC'/DE'/HL'/AF') — userspace programs
+ * (PolyPascal-compiled binaries, BDS C, WordStar) stash persistent
+ * runtime state there and any EX AF,AF' / EXX in an ISR would silently
+ * corrupt that state on every interrupt.  None of the ISR bodies use
+ * IX/IY.
+ *
+ * Speed budget — isr_pio_par is throughput-critical:
+ *
+ *   PIO-B Mode 1 handshake holds /BRDY low until the CPU reads the
+ *   PIO data register; the master cannot strobe the next byte until
+ *   /BRDY is reasserted.  isr_pio_par's roundtrip latency is therefore
+ *   the wall on CP/NET RX byte-rate.
+ *
+ *   Current happy-path cost (Z80 @ 4 MHz):
+ *     IM2 acceptance (push PC, vector fetch):  ~19 T
+ *     ISR body (not-drop path):                 184 T
+ *     Total per byte:                          ~203 T ≈ 51 µs
+ *     Steady-state max RX rate:                ~19.6 kbyte/s
+ *
+ *   PolyPascal source load, CP/NET BDOS reads, and CCP-driven file
+ *   copies all bottleneck on this rate.  cpnos-polypascal-test
+ *   (currently ~51 s end-to-end) is approximately linear in 1 / ISR
+ *   latency.
+ *
+ *   Optimization candidates — NOT YET APPLIED (preserve discipline:
+ *   measure happy-path T-states before AND after every change, and
+ *   gate on the `.resident.isr` section size budget):
+ *
+ *     1. Stash byte in B or E instead of `push af` — saves the
+ *        `push af` / `pop af` stash pair (−21 T).
+ *
+ *     2. Combine head/tail BSS read into one 16-bit `ld hl, (head)`
+ *        (head, tail must be placed adjacent and order-pinned).
+ *        Saves the second `ld hl, _pio_rx_tail` (−10 T) plus a
+ *        compare-prep step.
+ *
+ *     3. Reorganise so old_head stays in a register through the
+ *        ring write instead of dec-A after the store — saves the
+ *        `dec a ; ld l, a` reload (~−8 T).
+ *
+ *     Estimated total achievable: ~−40 T ≈ 25 % improvement in
+ *     steady-state max RX rate.  Each saving must clear the
+ *     shadow-register-safety constraint above.
+ *
+ *   Do NOT remove the `ei` before `reti` — `reti` does NOT
+ *   re-enable interrupts on Z80, only signals the daisy chain;
+ *   without `ei` the slave goes deaf to subsequent IRQs.
+ *
+ * Cross-compiler note: inline asm uses globally-unique labels (e.g.
+ * `_isr_crt_no_dirty`) instead of GAS-style numeric local labels —
+ * z80asm rejects `1:`/`1f` syntax.  Labels start with `_` so they
+ * don't collide with C identifiers and aren't mangled differently
+ * by the two compilers.  See compiler/compat.h.
+ */
+#include <stdbool.h>
+#include <stdint.h>
+#include "hal.h"           /* FRAME_COUNTER_ADDR, port consts */
+#include "compiler/compat.h"
+#include "transport.h"
+
+#define RESIDENT      SECTION_RESIDENT
+#define RESIDENT_DATA SECTION_RESIDENT_DATA
+
+/* Z80-PIO control-word constants (Zilog datasheet table 4 + ICW form). */
+#define PIO_MODE_OUTPUT       0x0F
+#define PIO_MODE_INPUT        0x4F
+#define PIO_IE_DISABLE        0x03   /* set IE FF: bit7=0 -> IE off */
+#define PIO_IE_ENABLE         0x83   /* set IE FF: bit7=1 -> IE on  */
+#define PIO_IE_ENABLE_RESET   0x97   /* ICW: enable + mask follows */
+#define PIO_INT_MASK_NONE     0x00
+
+#define PIO_DIR_INPUT   0
+#define PIO_DIR_OUTPUT  1
+static uint8_t pio_b_dir;            /* zeroed BSS = INPUT initially */
+
+/* SCB header offsets (matches netboot_mpm.c). */
+#define FMT 0
+#define DID 1
+#define SID 2
+#define FNC 3
+#define SIZ 4
+
+/* PING/PONG SCB shape — used by pio_probe. */
+#define PING_FNC  0xC0
+#define PING_BYTE 'P'
+#define PONG_BYTE 'O'
+
+#ifndef RC702_SLAVEID
+#define RC702_SLAVEID 0x01
+#endif
+
+/* SPSC ring buffer between isr_pio_par (push) and
+ * transport_pio_recv_byte (pop).  Size 256 = one full page so
+ * uint8_t indices wrap freely (no AND-mask) and the ISR builds
+ * `&buf[head]` as `ld h, _pio_rx_buf_page ; ld l, head` with no
+ * arithmetic — both critical for the ISR T-state budget above.
+ *
+ * Empty: head == tail.  Full slots lost silently; under
+ * flow-controlled CP/NET this can't happen, so the ISR doesn't
+ * bother to detect it.  Replaces the old 0xFF=empty sentinel which
+ * conflated a real 0xFF data byte from mpm-net2 with "no byte yet"
+ * (#56).
+ *
+ * **Planned simplification (#115):** PIO-B is dedicated to CP/NET +
+ * cpnos (no other consumer of PIO-B bytes), AND CP/NET BDOS-66/67
+ * already passes the message buffer by reference — caller's MSGBUF
+ * in the TPA is the destination, so SNIOS doesn't need its own
+ * staging buffer.  Future direction is busy-poll INIR straight into
+ * the caller's buffer: one byte for SOH, INIR 7 for header+HCS
+ * (memcpy first 5 to msgbuf), one byte for STX, INIR (SIZ+1)
+ * directly to `msgbuf+5`, then 3 bytes for ETX/CKS/EOT.  Zero
+ * intermediate buffering; this ring + the isr_pio_par ISR body
+ * both go away.  Throughput: ~10x on the worst-case round-trip
+ * (~17 ms ring-path -> ~2 ms INIR for a max-size BDOS response).
+ * Today's two-paths setup remains until that refactor lands. */
+#define PIO_RX_BUF_SIZE 256
+#define PIO_RX_BUF_MASK 0xFF
+/* IRQ ring buffer for byte-level PIO transport. */
+volatile uint8_t pio_rx_head;   /* ISR writes only */
+volatile uint8_t pio_rx_tail;   /* mainline writes only */
+/* Page-aligned 256-byte ring.  ISR builds `&buf[head]` as `ld h,
+ * _pio_rx_buf_page; ld l, head` — only correct if the buffer is
+ * page-aligned (low byte 0).  Both compilers derive _pio_rx_buf_page
+ * from HIGH(_pio_rx_buf) so the constant cannot drift from the
+ * placement: clang via payload.ld (.pio_rx_bss NOLOAD region at 0xF700);
+ * SDCC via sections.asm (bss_pio_rx section, align 256, defs 256).
+ * The SDCC build defines the symbol in sections.asm, so transport_pio.c
+ * just declares it extern.  Clang allocates here through the section
+ * attribute. */
+#if defined(__clang__) && defined(__z80__)
+SECTION_PIO_RX_BSS volatile uint8_t pio_rx_buf[PIO_RX_BUF_SIZE];
+#else
+extern volatile uint8_t pio_rx_buf[PIO_RX_BUF_SIZE];
+#endif
+
+RESIDENT
+static void pio_b_set_output(void) {
+    if (pio_b_dir == PIO_DIR_OUTPUT) return;
+    IO_WRITE(PIO_B_CTRL, PIO_IE_DISABLE);
+    IO_WRITE(PIO_B_CTRL, PIO_MODE_OUTPUT);
+    pio_b_dir = PIO_DIR_OUTPUT;
+}
+
+/* ravn/llvm-z80#131/#133: this function only writes A — every other
+ * register is preserved.  Declaring the broad set lets the lone
+ * caller (transport_pio_recv_byte) keep its timeout_ticks (initially
+ * in HL) alive across the call without spilling.  Body cost is zero
+ * because PEI's isPhysRegModified returns false for the declared
+ * regs (none of them is defined by the body). */
+RESIDENT
+PRESERVES_REGS_CLANG("b", "c", "d", "e", "h", "l")
+static void pio_b_set_input(void) {
+    if (pio_b_dir == PIO_DIR_INPUT) return;
+    /* Mode 1 select latches direction; ICW 0x97 + mask 0x00
+     * atomically clears m_ip (Mode 0 strobes will have set it).
+     * Final 0x83 re-asserts IE on, so isr_pio_par fires once per
+     * real chip strobe and pushes the latched byte into pio_rx_buf
+     * for snios's transport_pio_recv_byte to pop. */
+    IO_WRITE(PIO_B_CTRL, PIO_MODE_INPUT);
+    IO_WRITE(PIO_B_CTRL, PIO_IE_ENABLE_RESET);
+    IO_WRITE(PIO_B_CTRL, PIO_INT_MASK_NONE);
+    IO_WRITE(PIO_B_CTRL, PIO_IE_ENABLE);
+    pio_b_dir = PIO_DIR_INPUT;
+}
+
+
+/* ---- Byte-level PIO transport ---------------------------------
+ * snios.s (PIO-only experiment) calls these for every envelope byte.
+ *
+ * Stale-prefix mitigation on Mode 1->Mode 0 transitions: MAME's
+ * z80pio.cpp::set_mode(MODE_OUTPUT) immediately fires
+ * out_pb_callback with the chip's current m_output latch.  After a
+ * direction flip there's a stale value from the previous send sitting
+ * in m_output; if we just `_port_out(CTRL, MODE_OUTPUT)` and then
+ * `_port_out(DATA, c)`, the peer sees stale_byte + c.  When the peer
+ * is mpm-net2's SERVER.RSP, that stale byte breaks the protocol
+ * (received between ACK and SOH, mpm-net2 doesn't tolerate it).
+ * Workaround: write the data byte to the data port BEFORE the mode
+ * switch.  That updates m_output while still in input mode (the
+ * chip latches it without emitting), then the mode switch fires the
+ * callback with the byte we actually want to send.  No stale prefix.
+ * (See ravn/mame#7 for the underlying chip-emulation behaviour.) */
+/* ravn/llvm-z80#131/#133: the function preserves D, E, H, L, B, C
+ * from its callers' perspective.  The clang attribute on the *definition*
+ * makes Z80FrameLowering emit prologue push / epilogue pop for any of
+ * these registers the body actually modifies (clang chose D as scratch
+ * to stash the incoming `c` argument, so D in particular needs the
+ * save).  Together with the matching declaration in snios_c.c (read by
+ * Z80CallLowering for caller-side RegMask narrowing), this lets SNIOS
+ * state-machine callers keep values alive in those registers across
+ * the call. */
+RESIDENT
+PRESERVES_REGS_CLANG("d", "e", "h", "l", "b", "c")
+void transport_pio_send_byte(uint8_t c) {
+    if (pio_b_dir == PIO_DIR_OUTPUT) {
+        IO_WRITE(PIO_B_DATA, c);
+        return;
+    }
+    IO_WRITE(PIO_B_CTRL, PIO_IE_DISABLE);
+    IO_WRITE(PIO_B_DATA, c);              /* preload m_output */
+    IO_WRITE(PIO_B_CTRL, PIO_MODE_OUTPUT); /* fires callback with c */
+    pio_b_dir = PIO_DIR_OUTPUT;
+}
+
+RESIDENT
+uint16_t transport_pio_recv_byte(uint16_t timeout_ticks) {
+    pio_b_set_input();
+    while (timeout_ticks--) {
+        uint8_t t = pio_rx_tail;
+        if (pio_rx_head != t) {
+            uint8_t b = pio_rx_buf[t];
+            pio_rx_tail = (uint8_t)(t + 1);   /* wraps at 256 */
+            return b;
+        }
+    }
+    return TRANSPORT_TIMEOUT;
+}
+
+/* Speed-test BSS variables (legacy harness).  Kept allocated for the
+ * speed-test build only — no current callers in the merged TU. */
+uint16_t pio_rx_count;
+uint8_t  pio_test_done;
+
+/* ---- #115 Step 1 — INIR block-recv scaffold (no call site yet) ------
+ *
+ * Reads pio_block_count bytes from PIO_B_DATA into the buffer at
+ * pio_block_dst via a single Z80 INIR.  Calling convention via BSS
+ * globals (avoids sdcccall(1) / clang-sdcccall drift between the two
+ * compilers; clang's __naked + arg-in-DE handling is fragile).
+ *
+ * INIR semantics: each iter `IN (HL),(C); INC HL; DEC B; JR NZ`.  PIO
+ * Mode 1's /BRDY handshake serialises iters: chip drops /BRDY low on
+ * each IN A,(C), peer can't strobe the next byte until /BRDY rises
+ * again on the next iter's IN, so iter N sees the freshly-latched byte
+ * N (not the stale one from iter N-1).  21 T-states / iter @ 4 MHz =
+ * ~5 us/byte = ~190 kB/s ceiling (vs ~50 us/byte / ~20 kB/s for the
+ * current isr_pio_par + ring path).  See
+ * tasks/pio-input-busy-wait-and-inir-2026-06-12.md and
+ * tasks/session-2026-06-14-windowed-trace-analysis.md.
+ *
+ * Caller MUST bracket with DI/EI so isr_pio_par doesn't fire mid-INIR
+ * and race m_input via the ring buffer.  isr_crt is autoinit-DMA (see
+ * comment at isr_crt) so display stays clean during the ~1.5 ms DI
+ * window; PIO-A keyboard input pauses for the duration.
+ *
+ * Caller MUST prime the chain: a strobe must be pending (chip IP set,
+ * /BRDY low) when INIR starts, else iter 1 reads stale m_input.  In
+ * CP/NET RX the priming byte is STX -- after recv'ing STX via the
+ * ring path, the next byte is already in flight from the bridge.
+ *
+ * Step 1 is additive: no current call sites.  Linker --gc-sections
+ * will drop this; size delta = 0 B until Step 2 wires the call. */
+uint8_t *pio_block_dst;
+uint8_t  pio_block_count;
+
+RESIDENT
+void pio_b_recv_block_body(void) __naked {
+    ASM_VOLATILE(
+        "ld   hl, (_pio_block_dst)\n\t"
+        "ld   a, (_pio_block_count)\n\t"
+        "ld   b, a\n\t"
+        "ld   c, 0x11\n\t"          /* PORT_PIO_B_DATA */
+        "inir\n\t"
+        "ret\n\t"
+    );
+}
+
+
+/* =============================================================
+ *  IM2 ISR layer  (formerly isr.c, merged Phase 60)
+ *
+ *  IVT lives at 0xEA00 (set up by init.c).  Each entry is a 16-bit
+ *  pointer to one of the ISR symbols below.  All ISRs live in
+ *  `.resident.isr` so they survive the OUT (0x18) PROM disable.
+ *
+ *  Phase 3 step 2 (2026-04-26): replaced isr.s.  Co-location with
+ *  transport_pio.c's pio_rx_buf and resident.c's BSS (kbd_ring,
+ *  curx/cury, cur_dirty) is the win — the ISRs and the BSS they
+ *  touch live in the same compilation-unit family.
+ *
+ *  2026-04-29: switched from EX AF,AF' + EXX bracket to explicit
+ *  PUSH/POP per ISR.  EXX swaps the shadow bank into main; userspace
+ *  code that holds live state in the shadow bank (every PolyPascal
+ *  v3 compiled binary — 216 EXX + 208 EX AF,AF' instructions in
+ *  PPAS.COM itself) loses that state on every VRTC IRQ.  The new
+ *  sequence is +6 bytes overall but keeps the shadow regs free for
+ *  userspace.
+ * ============================================================= */
+
+/* BSS symbols referenced by inline asm but defined in resident.c.
+ * SDCC's asm emitter only generates EXTERN directives for C-level
+ * extern declarations — references in inline-asm strings are
+ * invisible to it.  Declare them here at file scope so SDCC emits
+ * the right EXTERNs.  pio_rx_head / pio_rx_tail are file-locals
+ * defined above (transport_pio_send_byte's ring), so no extern. */
+#define KBD_RING_SIZE 16
+extern uint8_t kbd_ring[KBD_RING_SIZE];
+extern volatile uint8_t kbd_head;
+extern volatile uint8_t kbd_tail;
+extern volatile uint8_t cur_dirty;   /* defined in resident.c */
+extern uint8_t curx;
+extern uint8_t cury;
+/* Linker-defined constant — value is the high byte of pio_rx_buf
+ * address, used in inline asm via `ld h, _pio_rx_buf_page`.  Declared
+ * here so SDCC emits an asm-level EXTERN directive; the value comes
+ * from sdcc/sections.asm (defc) at link time. */
+extern uint8_t pio_rx_buf_page;
+
+/* Init-time helpers — one-instruction wrappers around the Z80
+ * intrinsics.  Plain C — both compilers reduce these to `LD I, A; RET`
+ * / `IM 2; RET` / `EI; RET` / `DI; RET` after inlining the
+ * static-inline intrinsic.  No naked needed because the
+ * compiler-generated prologue/epilogue is already just RET; saving
+ * registers across a one-instruction body is fine. */
+
+SECTION_RESIDENT_ISR
+void set_i_reg(uint8_t page) { intrinsic_ld_i_a(page); }
+
+SECTION_RESIDENT_ISR
+void enable_im2(void)        { intrinsic_im_2(); }
+
+SECTION_RESIDENT_ISR
+void enable_interrupts(void) { intrinsic_ei(); }
+
+SECTION_RESIDENT_ISR
+static void disable_interrupts(void) { intrinsic_di(); }
+
+/* No-op ISR for unused IM2 slots.  Must use RETI so the daisy-chained
+ * interrupt-priority hardware (CTC, PIO) can advance past this device. */
+SECTION_RESIDENT_ISR
+void isr_noop(void) __naked {
+    ASM_VOLATILE(
+        "ei\n\t"
+        "reti\n\t"
+    );
+}
+
+/* CRT refresh ISR.  On each VRTC interrupt:
+ *   - ack CRT status read
+ *   - re-arm CTC ch2 for next frame
+ *   - bump 32-bit frame counter at 0xFFFC..0xFFFF (MAME probes read
+ *     the low byte to verify the ISR fired; mainline code reads all 4
+ *     bytes for a 50 Hz wall-clock-immune timestamp)
+ *   - if cur_dirty: push 8275 cursor regs, clear flag (defers per-char
+ *     8275 writes from impl_conout to once-per-frame here, eliminating
+ *     visible flicker on netboot banner / CCP DIR / etc.)
+ *
+ * DMA refresh is NOT re-programmed here.  init.c programs ch2 in
+ * autoinit mode (0x5A — bit 4 set), so the 8237 reloads its base
+ * source address (0xF800) and word count (0x07CF) on terminal count
+ * automatically at the end of each frame.  Stripping the per-VRTC
+ * mask + reload + unmask shrinks the ISR body from ~180 T to ~30 T
+ * (~46 us -> ~8 us @ 4 MHz) and -- more importantly -- lets a `DI`
+ * bracket around the planned INIR block-RX (~1.5 ms) survive without
+ * display garble: the autoinit-driven refresh keeps running while
+ * VRTC IRQs queue.  Pending IRQs fire at EI, no ticks lost.
+ *
+ * Registers used: A, F, HL.  Save set: AF + HL (4 bytes of PUSH/POP).
+ *
+ * Mainline writes cur_dirty *after* curx/cury, so reading them here
+ * races benignly: we may see a slightly-stale position one frame later,
+ * but never a torn pair (single-byte stores are atomic on Z80). */
+SECTION_RESIDENT_ISR
+void isr_crt(void) __naked {
+    ASM_VOLATILE(
+        "push af\n\t"
+        "push hl\n\t"
+
+        /* 32-bit frame counter at 0xFFFC..0xFFFF — mirrors rcbios's
+         * RTC location (RC702_BIOS_SPECIFICATION.md §3.4).  50 Hz ticks
+         * (CRT VRTC).  Wraps at ~993 days.  Used by the file-I/O bench
+         * to record frames-to-completion (immune to MAME wall-clock
+         * variation), and by the MAME taps as the "did the CRT ISR
+         * fire" probe (reading the low byte at 0xFFFC suffices — it
+         * passes through 0 once every 5.12 s but the test logs the
+         * value alongside other counters so a transient zero is
+         * unambiguous).  ~13 bytes; INC (HL) sets Z on zero, so
+         * propagate carry by jr nz from each byte. */
+        "ld   hl, " CPNOS_STR(FRAME_COUNTER_ADDR) "\n\t"
+        "inc  (hl)\n\t"
+        "jr   nz, _isr_crt_count_done\n\t"
+        "inc  hl\n\t"
+        "inc  (hl)\n\t"
+        "jr   nz, _isr_crt_count_done\n\t"
+        "inc  hl\n\t"
+        "inc  (hl)\n\t"
+        "jr   nz, _isr_crt_count_done\n\t"
+        "inc  hl\n\t"
+        "inc  (hl)\n\t"
+    "_isr_crt_count_done:\n\t"
+
+        /* Ack CRT status register. */
+        "in   a, (0x01)\n\t"        /* PORT_CRT_CMD */
+
+        /* DMA ch2 + ch3 reload removed: init.c programs ch2 in
+         * autoinit mode (0x5A), so the 8237 reloads source addr
+         * 0xF800 and word count 0x07CF automatically on terminal
+         * count.  ch3 attribute count stays at 0 from init time
+         * (autoinit reloads it too).  Saves ~150 T-states per VRTC
+         * and lets a DI bracket around INIR block-RX survive
+         * without display garble. */
+
+        /* Re-arm CTC ch2 for the next VRTC. */
+        "ld   a, 0xD7\n\t"
+        "out  (0x0E), a\n\t"
+        "ld   a, 0x01\n\t"
+        "out  (0x0E), a\n\t"
+
+        /* Deferred 8275 cursor update. */
+        "ld   a, (_cur_dirty)\n\t"
+        "or   a\n\t"
+        "jr   z, _isr_crt_no_dirty\n\t"
+        "xor  a\n\t"
+        "ld   (_cur_dirty), a\n\t"
+        "ld   a, 0x80\n\t"          /* 8275 "load cursor position" */
+        "out  (0x01), a\n\t"
+        "ld   a, (_curx)\n\t"
+        "out  (0x00), a\n\t"
+        "ld   a, (_cury)\n\t"
+        "out  (0x00), a\n\t"
+    "_isr_crt_no_dirty:\n\t"
+
+        "pop  hl\n\t"
+        "pop  af\n\t"
+        "ei\n\t"
+        "reti\n\t"
+    );
+}
+
+/* PIO-A keyboard ISR.  Fires on each PIO-A interrupt (one per keystroke
+ * with PIO-A in input mode + IRQ enabled).  Reads the byte and enqueues
+ * to kbd_ring; drops on full ring.  Ring buffer symbols (kbd_ring /
+ * kbd_head / kbd_tail) live in resident.c.
+ *
+ * Registers used: A, F, BC, HL.  Save set: AF + BC + HL (6 bytes of
+ * PUSH/POP). */
+SECTION_RESIDENT_ISR
+void isr_pio_kbd(void) __naked {
+    ASM_VOLATILE(
+        "push af\n\t"
+        "push bc\n\t"
+        "push hl\n\t"
+
+        "in   a, (0x10)\n\t"        /* PORT_PIO_A_DATA -> A = key */
+        "push af\n\t"               /* stash key on stack (A goes high byte) */
+
+        /* new_head = (head + 1) & 0x0F, in A */
+        "ld   hl, _kbd_head\n\t"
+        "ld   a, (hl)\n\t"
+        "inc  a\n\t"
+        "and  0x0F\n\t"
+
+        /* if (new_head == tail) drop */
+        "ld   hl, _kbd_tail\n\t"
+        "cp   (hl)\n\t"
+        "jr   z, _isr_pio_kbd_drop\n\t"
+
+        /* head = new_head (A still holds new_head) */
+        "ld   (_kbd_head), a\n\t"
+
+        /* HL = &ring[old_head] = ring + ((new_head - 1) & 0x0F) */
+        "dec  a\n\t"
+        "and  0x0F\n\t"
+        "ld   l, a\n\t"
+        "ld   h, 0\n\t"
+        "ld   bc, _kbd_ring\n\t"
+        "add  hl, bc\n\t"
+
+        /* Pop key from stack into A (clobbers F — we no longer need it). */
+        "pop  af\n\t"
+        "ld   (hl), a\n\t"          /* ring[old_head] = key */
+        "jr   _isr_pio_kbd_done\n\t"
+
+    "_isr_pio_kbd_drop:\n\t"
+        "pop  af\n\t"               /* drop path: discard the stashed key */
+    "_isr_pio_kbd_done:\n\t"
+
+        "pop  hl\n\t"
+        "pop  bc\n\t"
+        "pop  af\n\t"
+        "ei\n\t"
+        "reti\n\t"
+    );
+}
+
+/* PIO-B parallel ISR.  Fires once per chip strobe (= once per byte
+ * delivered by the bridge) when chip IE is on.  Reads the latched
+ * byte from PORT_PIO_B_DATA (the IN itself clears chip IP), pushes
+ * into the snios receive ring (pio_rx_buf, head/tail above).
+ *
+ * Registers used: A, F, HL.  Save set: AF + HL (4 bytes of PUSH/POP).
+ * The byte is stashed on the stack between the head/tail check and the
+ * ring write; new_head is carried in A; pio_rx_buf is page-aligned so
+ * `ld h, _pio_rx_buf_page; ld l, head` builds &ring[head] without BC.
+ * Userspace BC/DE/shadow registers all stay intact across the IRQ. */
+SECTION_RESIDENT_ISR
+/* THROUGHPUT-CRITICAL — see "Speed budget" in the file header.
+ * Happy-path body currently 184 T-states / ~46 µs @ 4 MHz; bounds CP/NET
+ * RX byte-rate at ~19.6 kbyte/s.  Optimization candidates documented at
+ * the file header — measure before/after every change. */
+void isr_pio_par(void) __naked {
+    ASM_VOLATILE(
+        "push af\n\t"
+        "push hl\n\t"
+
+        "in   a, (0x11)\n\t"        /* PORT_PIO_B_DATA -> A; clears chip IP */
+        "push af\n\t"               /* stash the byte on the stack */
+
+        /* SPSC ring push for snios.  256-byte buffer at page-aligned
+         * address (0xF700 per payload.ld), so HL = page<<8 | head is
+         * a single 16-bit address.  uint8_t wrap is free — no mask.
+         * new_head = (uint8_t)(head + 1), in A. */
+        "ld   hl, _pio_rx_head\n\t"
+        "ld   a, (hl)\n\t"
+        "inc  a\n\t"
+
+        /* if (new_head == tail) drop — ring full, byte lost. */
+        "ld   hl, _pio_rx_tail\n\t"
+        "cp   (hl)\n\t"
+        "jr   z, _isr_pio_par_drop\n\t"
+
+        /* head = new_head; ring[old_head] = byte.  Page-aligned 256-byte
+         * buf — H = buf>>8 (0xf7) is a constant; L = old_head. */
+        "ld   (_pio_rx_head), a\n\t"
+        "dec  a\n\t"                 /* A = old_head (uint8 wrap) */
+        "ld   l, a\n\t"
+        "ld   h, _pio_rx_buf_page\n\t"
+
+        "pop  af\n\t"                /* recover stashed byte into A */
+        "ld   (hl), a\n\t"           /* ring[old_head] = byte */
+        "jr   _isr_pio_par_done\n\t"
+
+    "_isr_pio_par_drop:\n\t"
+        "pop  af\n\t"                /* drop path: discard the stashed byte */
+    "_isr_pio_par_done:\n\t"
+
+        "pop  hl\n\t"
+        "pop  af\n\t"
+        "ei\n\t"
+        "reti\n\t"
+    );
+}

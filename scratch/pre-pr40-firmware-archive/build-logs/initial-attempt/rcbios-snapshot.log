@@ -1,0 +1,5 @@
+make -B -C /Users/ravn/z80/rc700-gensmedet-pre-pr40/rcbios-in-c bios COMPILER=clang LLVM_Z80=/Users/ravn/z80/llvm-z80-pre-pr40
+/Library/Developer/CommandLineTools/usr/bin/make -C clang bios.clang.cim MSIZE=56 KBLANG=DANISH KBDPORT=A SW1_CONSOLE_BIT=0x01
+/Library/Developer/CommandLineTools/usr/bin/make -C .. builddate.h
+make[1]: *** No rule to make target `/Users/ravn/z80/llvm-z80-pre-pr40/build/bin/clang', needed by `boot_block.o'.  Stop.
+make: *** [bios] Error 2

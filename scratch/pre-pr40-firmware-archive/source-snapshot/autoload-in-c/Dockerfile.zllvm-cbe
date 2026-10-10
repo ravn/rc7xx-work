@@ -1,0 +1,17 @@
+FROM ubuntu:24.04
+
+# Minimal image: just zllvm-cbe (LLVM C Backend for z88dk Clang pipeline)
+# Usage: docker run --rm -v "$PWD:/work" z88dk-llvm-cbe zllvm-cbe [args...]
+
+RUN apt-get update && apt-get install -y \
+    cmake ninja-build git g++ \
+    llvm-20-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 https://github.com/JuliaHubOSS/llvm-cbe.git /llvm-cbe
+WORKDIR /llvm-cbe/build
+RUN cmake .. -G Ninja -DLLVM_DIR=/usr/lib/llvm-20/cmake && ninja llvm-cbe
+RUN cp /llvm-cbe/build/tools/llvm-cbe/llvm-cbe /usr/local/bin/zllvm-cbe
+
+WORKDIR /work
+ENTRYPOINT ["zllvm-cbe"]

@@ -1,0 +1,66 @@
+
+/Users/ravn/z80/scratch/tmp/c863c55-static-frame-ab/check.nostatic.o:	file format elf32-unknown
+
+Disassembly of section .text:
+
+00000000 <_check_sysfile>:
+       0: dd e5        	push	ix
+       2: dd 21 00 00  	ld	ix,$0
+       6: dd 39        	add	ix,sp
+       8: f5           	push	af
+       9: f5           	push	af
+       a: f5           	push	af
+       b: dd 73 fe     	ld	(ix+-$2),e
+       e: dd 72 ff     	ld	(ix+-$1),d
+      11: 0e fc        	ld	c,$fc
+      13: dd 75 fa     	ld	(ix+-$6),l
+      16: dd 74 fb     	ld	(ix+-$5),h
+      19: 23           	inc	hl
+      1a: dd 75 fc     	ld	(ix+-$4),l
+      1d: dd 74 fd     	ld	(ix+-$3),h
+      20: 7e           	ld	a,(hl)
+      21: 6f           	ld	l,a
+      22: 26 00        	ld	h,$0
+      24: dd 5e fe     	ld	e,(ix+-$2)
+      27: dd 56 ff     	ld	d,(ix+-$1)
+      2a: 1a           	ld	a,(de)
+      2b: 5f           	ld	e,a
+      2c: 07           	rlca
+      2d: 9f           	sbc	a,a
+      2e: 47           	ld	b,a
+      2f: 7d           	ld	a,l
+      30: ab           	xor	e
+      31: b0           	or	b
+      32: 20 38        	jr	nz,$6c
+      34: dd 5e fe     	ld	e,(ix+-$2)
+      37: dd 56 ff     	ld	d,(ix+-$1)
+      3a: 13           	inc	de
+      3b: dd 73 fe     	ld	(ix+-$2),e
+      3e: dd 72 ff     	ld	(ix+-$1),d
+      41: 06 00        	ld	b,$0
+      43: 03           	inc	bc
+      44: 79           	ld	a,c
+      45: a9           	xor	c
+      46: b0           	or	b
+      47: c6 ff        	add	a,$ff
+      49: 9f           	sbc	a,a
+      4a: e6 01        	and	$1
+      4c: ee 01        	xor	$1
+      4e: dd 6e fc     	ld	l,(ix+-$4)
+      51: dd 66 fd     	ld	h,(ix+-$3)
+      54: 20 c3        	jr	nz,$19
+      56: 01 08 00     	ld	bc,$8
+      59: dd 6e fa     	ld	l,(ix+-$6)
+      5c: dd 66 fb     	ld	h,(ix+-$5)
+      5f: 09           	add	hl,bc
+      60: 7e           	ld	a,(hl)
+      61: e6 3f        	and	$3f
+      63: d6 13        	sub	$13
+      65: c6 ff        	add	a,$ff
+      67: 9f           	sbc	a,a
+      68: e6 01        	and	$1
+      6a: 18 02        	jr	$6e
+      6c: 3e 01        	ld	a,$1
+      6e: dd f9        	ld	sp,ix
+      70: dd e1        	pop	ix
+      72: c9           	ret

@@ -1,0 +1,3 @@
+vcpm_root_dir = /Users/ravn/z80/rc700-gensmedet/cpnos-rom/cpnos-build
+vcpm_dso = def,a:,d:
+silent

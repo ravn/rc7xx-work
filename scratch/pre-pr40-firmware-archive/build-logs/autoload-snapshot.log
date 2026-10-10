@@ -1,0 +1,48 @@
+make -B -C /Users/ravn/z80/rc700-gensmedet-pre-pr40/autoload-in-c prom COMPILER=clang LLVM_Z80=/Users/ravn/z80/llvm-z80-pre-pr40 MAME=/Users/ravn/z80/scratch/pre-pr40-firmware-archive/generated/mame
+/Library/Developer/CommandLineTools/usr/bin/make clang/prom.clang.bin
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -Oz -g -nostdlib -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -Xclang -target-feature -Xclang +shadow-regs -mllvm -disable-lsr -Iclang -I. -Weverything -Wno-unsafe-buffer-usage -Wno-c23-extensions -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat  -DSW1_CONSOLE_BIT=0x01 -DINIT_SEM702=1 -c boot_rom.c -o clang/boot.o
+boot_rom.c:61:9: warning: macro is not used [-Wunused-macros]
+   61 | #define RELOC_SIZE  ((unsigned)_code_size)
+      |         ^
+boot_rom.c:59:9: warning: macro is not used [-Wunused-macros]
+   59 | #define RELOC_DST   (_code_start)
+      |         ^
+boot_rom.c:60:9: warning: macro is not used [-Wunused-macros]
+   60 | #define RELOC_SRC   ((const void *)_code_load)
+      |         ^
+3 warnings generated.
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -Oz -g -nostdlib -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -Xclang -target-feature -Xclang +shadow-regs -mllvm -disable-lsr -Iclang -I. -Weverything -Wno-unsafe-buffer-usage -Wno-c23-extensions -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat  -DSW1_CONSOLE_BIT=0x01 -DINIT_SEM702=1 -c intvec.c -o clang/intvec.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -Oz -g -nostdlib -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -Xclang -target-feature -Xclang +shadow-regs -mllvm -disable-lsr -Iclang -I. -Weverything -Wno-unsafe-buffer-usage -Wno-c23-extensions -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat  -DSW1_CONSOLE_BIT=0x01 -DINIT_SEM702=1 -c rom.c -o clang/rom.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -c clang/runtime.s -o clang/runtime.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -c clang/dzx0_standard.s -o clang/dzx0_standard.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -c clang/text_compressed.s -o clang/text_compressed.o
+=== pass 1: link to extract raw .text bytes ===
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/ld.lld --gc-sections -T clang/rc700_prom.ld clang/boot.o clang/intvec.o clang/rom.o clang/runtime.o clang/dzx0_standard.o clang/text_compressed.o -o clang/prom.pass1.elf
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/llvm-objcopy -O binary --only-section=.text clang/prom.pass1.elf clang/text_raw.bin
+    .text raw = 3393 bytes
+=== ZX0 compress ===
+/Users/ravn/z80/rc700-gensmedet-pre-pr40/autoload-in-c/../../z88dk/src/zx0/z88dk-zx0 -f clang/text_raw.bin clang/text_compressed.zx0
+ZX0 v1.5: Optimal data compressor by Einar Saukas
+[...............................................]
+File compressed from 3393 to 1915 bytes! (delta 3)
+=== roundtrip verify: z88dk-dzx0 must reproduce pass-1 .text exactly ===
+/Users/ravn/z80/rc700-gensmedet-pre-pr40/autoload-in-c/../../z88dk/src/zx0/z88dk-dzx0 clang/text_compressed.zx0 clang/text_roundtrip.bin
+DZX0 v1.5: Data decompressor by Einar Saukas
+File decompressed from 1915 to 3393 bytes!
+cmp clang/text_raw.bin clang/text_roundtrip.bin \
+	    || { echo "FAIL: ZX0 roundtrip mismatch -- compressed blob would not unpack correctly at boot"; exit 1; }
+    OK: 3393 bytes raw -> 1915 bytes compressed; roundtrip exact
+=== pass 2: re-assemble text_compressed.o + link ===
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/clang --target=z80 -c clang/text_compressed.s -o clang/text_compressed.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/ld.lld --gc-sections --defsym FINAL_LINK=1 -T clang/rc700_prom.ld clang/boot.o clang/intvec.o clang/rom.o clang/runtime.o clang/dzx0_standard.o clang/text_compressed.o -o clang/prom.clang.elf
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/llvm-objcopy -O binary \
+	    --only-section=.boot --only-section=.nmi \
+	    --only-section=.zx0_decoder --only-section=.zx0_decoder_hi \
+	    --only-section=.text_compressed \
+	    clang/prom.clang.elf clang/prom.clang.bin
+# Source-annotated listing (committed to git for historical diffs
+# without needing to rebuild clang).
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos/bin/llvm-objdump -d -S --triple=z80 clang/prom.clang.elf > clang/prom.clang.lis
+clang PROM: 2034 / 2048 bytes (PROM0 2 KB hard)
+OK: 14 bytes free in PROM0 2 KB hard
+cp clang/prom0.ic66 /Users/ravn/z80/scratch/pre-pr40-firmware-archive/generated/mame/roms/rc702/roa375.ic66

@@ -1,0 +1,55 @@
+# z88dk / clang build artifacts.
+#
+# Note: clang/bios.clang.lis is intentionally NOT ignored — it is the
+# source-annotated disassembly of the clang BIOS build, committed to git
+# so historical comparison works without rebuilding clang.  See
+# clang/Makefile.
+bios
+bios.rom
+bios.cim
+clang/bios.clang.cim
+clang/bios.clang.elf
+clang/*.o
+clang/.cflags
+sdcc/bios.cim
+sdcc/bios.elf
+bios.map
+bios.lis
+sdcc/bios.lis
+bios_BIOS.bin
+bios_BOOT.bin
+*.o
+*.sym
+bios.def
+*.c.lis
+zcc_opt.def
+builddate.h
+builddate.inc
+siob_bios_addrs.inc
+
+# MAME auto-generated config (stale ioport overrides cause bugs)
+cfg/
+
+# MAME socket error artifacts (created when bitb sockets unavailable after hard_reset)
+socket.localhost:*
+
+# Build artifacts
+*.elf
+*.tmp
+cpm56.com
+cpm56.hex
+cpm56_cr.hex
+memmove_test
+memmove_test_CODE.bin
+conotest
+conotest.com
+CONOTEST.COM
+conotest_CODE.bin
+
+# Test disk images
+/tmp/
+
+# SDLC experiment — compiled C capture helper + python bytecode
+sdlc_capture
+__pycache__/
+*.pyc

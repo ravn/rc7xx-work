@@ -1,0 +1,66 @@
+DZX0 v1.5: Data decompressor by Einar Saukas
+File decompressed from 1915 to 3393 bytes!
+autoload raw .text tracked vs rebuilt: differs; first byte offsets (cmp -l):
+  3369  60  61
+  3370  67  60
+  3373  62  60
+  3375  61  60
+  3376  62  60
+  3378  64  63
+  3379  63  64
+  3381  70  62
+  3382  60  71
+  3383  60  65
+  3384  62  61
+  3385 142 146
+autoload ZX0 tracked vs rebuilt: differs; first byte offsets (cmp -l):
+  1874 224 200
+  1876 355  77
+  1891 201  61
+  1892  55  60
+  1893  35 373
+  1894 117 327
+  1895  32 264
+  1896 110 321
+  1897 240  56
+  1898  56 171
+  1899 356 107
+  1900  63 337
+autoload listing tracked vs rebuilt: differs; first byte offsets (cmp -l):
+ 59967  60  61
+ 59970  67  60
+ 59986  60  61
+ 59987  67  60
+ 60006  62  60
+ 60012  61  60
+ 60015  62  60
+ 60021  64  63
+ 60033  62  60
+ 60035  61  60
+ 60036  62  60
+ 60038  64  63
+CP/NOS raw payload tracked vs rebuilt: differs; first byte offsets (cmp -l):
+  1252   4   0
+  1986 140 144
+CP/NOS PROM1 tracked vs rebuilt: differs; first byte offsets (cmp -l):
+    14 164 162
+   286 125 124
+   574   0  24
+   575 343 376
+   592 317  60
+   593  66  62
+   594  55  66
+   595 147  55
+   596 121  61
+   597  55  60
+   598  62 373
+   599  67 253
+
+Measured diff summary (1-based byte offsets):
+- Autoload raw .text: 14 differing bytes, offsets 3369-3387. The listing
+  diff places them all in the build banner (2026-07-12/8002b31 vs
+  2026-10-10/2951f96).
+- CP/NOS raw payload: 2 differing bytes, offsets 1252 and 1986. Cause not
+  established.
+- Padded CP/NOS PROM1: 1417 differing bytes, offsets 14-2012. Compression
+  and payload differences mean byte identity is not established.

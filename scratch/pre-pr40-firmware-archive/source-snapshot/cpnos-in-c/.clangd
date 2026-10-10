@@ -1,0 +1,35 @@
+CompileFlags:
+  # Include paths come from the CMake compile database (CMakeLists.txt
+  # target_include_directories, absolute via ${CMAKE_CURRENT_SOURCE_DIR}) --
+  # do NOT add relative -I here: clangd resolves them from the source dir, not
+  # this file's dir, so "compiler/compat.h" would not resolve.  Verified via
+  # compile_commands.json (feedback_verify_cmake_fixes).
+  Add:
+    - -xc
+    - -std=c23
+    - -DENABLE_FDC=0
+    - -DMIRROR_SIOB=0
+    - -DBOOT_MARK_ENABLED=1
+    - -DRC702_SLAVEID=0x01
+    - -DPIO_SPEED_TEST=0
+    - -DPIO_LOOPBACK_TEST
+    - -DTRANSPORT_NAME="pio"
+    - -Wno-unknown-attributes
+    - -Wno-gcc-compat
+    - -Wno-unused-value
+    - -Wno-unused-function
+    - -Wno-int-to-pointer-cast
+    - -Wno-pointer-to-int-cast
+    - -Wno-shift-count-overflow
+Diagnostics:
+  ClangTidy:
+    Remove:
+      - bugprone-infinite-loop
+      - bugprone-too-small-loop-variable
+      - bugprone-narrowing-conversions
+      - bugprone-reserved-identifier
+      - cert-dcl37-c
+      - misc-use-internal-linkage
+  Suppress:
+    - asm_invalid_input_constraint
+    - asm_invalid_output_constraint

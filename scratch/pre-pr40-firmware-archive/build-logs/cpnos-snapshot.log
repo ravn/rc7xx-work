@@ -1,0 +1,53 @@
+make -C /Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c prom1-lineprog COMPILER=clang LLVM_Z80=/Users/ravn/z80/llvm-z80-pre-pr40 CLANG_BUILD=/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin (cpnos.sym prebuilt)
+buildinfo: 2026-10-10 00:34 2951f96
+cpnos.sys fits below IVT (0xEB00):     3200 B at 0xDE80 (tail 0xEAFF, 0 B clearance)
+init region (max 0xC280) clear of cpnos.sys NDOSRL (0xDA80): 6144 B gap
+cpnos_addrs.h: #define CPNOS_BDOS_ADDR 0xE816 #define CPNOS_NDOS_ADDR 0xDE80 #define CPNOS_NDOSE_ADDR 0xDE83   /* NDOS + 3, the BDOS dispatch entry */ #define CPNOS_TPA_KB 55 
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -std=c23 -Oz -nostdlib -g -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -mllvm -disable-lsr -DENABLE_FDC=0 -DMIRROR_SIOB=1 -DBOOT_MARK_ENABLED=0     -DRC702_SLAVEID=0x01  -DTRANSPORT_NAME='"PIO"' -Iclang -Isrc -I../cpnos-shared/include -I. -Weverything -Wno-unsafe-buffer-usage -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -Wno-pre-c23-compat -Wno-int-to-pointer-cast -Wno-cast-qual -Wno-padded -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-missing-noreturn -Wno-sign-conversion  -c src/cpnos_main.c -o clang/cpnos_main.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -std=c23 -Oz -nostdlib -g -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -mllvm -disable-lsr -DENABLE_FDC=0 -DMIRROR_SIOB=1 -DBOOT_MARK_ENABLED=0     -DRC702_SLAVEID=0x01  -DTRANSPORT_NAME='"PIO"' -Iclang -Isrc -I../cpnos-shared/include -I. -Weverything -Wno-unsafe-buffer-usage -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -Wno-pre-c23-compat -Wno-int-to-pointer-cast -Wno-cast-qual -Wno-padded -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-missing-noreturn -Wno-sign-conversion  -c src/init.c -o clang/init.o
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -std=c23 -Oz -nostdlib -g -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-stack -mllvm -disable-lsr -DENABLE_FDC=0 -DMIRROR_SIOB=1 -DBOOT_MARK_ENABLED=0     -DRC702_SLAVEID=0x01  -DTRANSPORT_NAME='"PIO"' -Iclang -Isrc -I../cpnos-shared/include -I. -Weverything -Wno-unsafe-buffer-usage -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -Wno-pre-c23-compat -Wno-int-to-pointer-cast -Wno-cast-qual -Wno-padded -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-missing-noreturn -Wno-sign-conversion  -c src/resident.c -o clang/resident.o
+src/init.c:374:37: warning: initializer-string for character array is too long, array size is 8 but initializer has size 9 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+  374 | static const uint8_t login_pwd[8] = RC702_LOGIN_PWD;
+      |                                     ^~~~~~~~~~~~~~~
+src/init.c:371:25: note: expanded from macro 'RC702_LOGIN_PWD'
+  371 | #define RC702_LOGIN_PWD "PASSWORD"
+      |                         ^~~~~~~~~~
+src/init.c:374:37: warning: initializer-string for character array is too long for C++, array size is 8 but initializer has size 9 (including the null terminating character) [-Wc++-unterminated-string-initialization]
+  374 | static const uint8_t login_pwd[8] = RC702_LOGIN_PWD;
+      |                                     ^~~~~~~~~~~~~~~
+src/init.c:371:25: note: expanded from macro 'RC702_LOGIN_PWD'
+  371 | #define RC702_LOGIN_PWD "PASSWORD"
+      |                         ^~~~~~~~~~
+src/init.c:362:9: warning: macro is not used [-Wunused-macros]
+  362 | #define LOCALE_PREFIX_SIZE 384
+      |         ^
+3 warnings generated.
+prom1-lineprog payload.elf: __cpnos_load_end = 0xEB00
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/llvm-objcopy -O binary --only-section=.init clang-prom1lineprog/payload.elf clang-prom1lineprog/init.bin
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/llvm-objcopy -O binary --only-section=.payload clang-prom1lineprog/payload.elf clang-prom1lineprog/payload.bin
+python3 cpnos-build/patch_payload_checksum.py clang-prom1lineprog/payload.bin
+/Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c/../../z88dk/src/zx0/z88dk-zx0 -f clang-prom1lineprog/init.bin clang-prom1lineprog/init.zx0
+ZX0 v1.5: Optimal data compressor by Einar Saukas
+[...............................................]
+File compressed from 604 to 524 bytes! (delta 4)
+/Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c/../../z88dk/src/zx0/z88dk-dzx0 clang-prom1lineprog/init.zx0 /tmp/cpnos_prom1_init_rt.bin
+DZX0 v1.5: Data decompressor by Einar Saukas
+File decompressed from 524 to 604 bytes!
+cmp clang-prom1lineprog/init.bin /tmp/cpnos_prom1_init_rt.bin || { echo "FAIL: init ZX0 roundtrip"; exit 1; }
+  init:      604 ->      524 B, roundtrip OK
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -c clang-prom1lineprog/init_zx0.s -o clang-prom1lineprog/init_zx0.o
+patched clang-prom1lineprog/payload.bin: body word-sum = 0x6682, correction = 0x647C, total = 0xCAFE
+/Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c/../../z88dk/src/zx0/z88dk-zx0 -f clang-prom1lineprog/payload.bin clang-prom1lineprog/payload.zx0
+ZX0 v1.5: Optimal data compressor by Einar Saukas
+[...............................................]
+File compressed from 1986 to 1384 bytes! (delta 3)
+/Users/ravn/z80/rc700-gensmedet-pre-pr40/cpnos-in-c/../../z88dk/src/zx0/z88dk-dzx0 clang-prom1lineprog/payload.zx0 /tmp/cpnos_prom1_payload_rt.bin
+DZX0 v1.5: Data decompressor by Einar Saukas
+File decompressed from 1384 to 1986 bytes!
+cmp clang-prom1lineprog/payload.bin /tmp/cpnos_prom1_payload_rt.bin || { echo "FAIL: payload ZX0 roundtrip"; exit 1; }
+  payload:     1986 ->     1384 B, roundtrip OK
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/clang --target=z80 -c clang-prom1lineprog/payload_zx0.s -o clang-prom1lineprog/payload_zx0.o
+PROM1-only link: _prom1_only_sentinel = 0x0000ec02
+/Users/ravn/z80/llvm-z80-pre-pr40/build-macos-asserts/bin/llvm-objcopy -O binary clang-prom1lineprog/prom1-lineprog.elf clang-prom1lineprog/prom1-lineprog.bin
+PROM1 line program: 2010 / 2048 B (38 B free; hard cap 2048 B)
+wrote clang-prom1lineprog/prom1-lineprog.bin (    2048 B padded)

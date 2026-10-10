@@ -1,0 +1,38 @@
+# Known SDCC IX+/IY+ frame-pointer violators -- baseline for the
+# check_no_frame_ptr.py audit gate.
+#
+# Each line: <file>.s:<function>:<count>
+#
+# These are accepted as technical debt because eliminating them
+# requires either splitting the function into smaller pieces or
+# rewriting hot paths in inline asm.  Both options carry their own
+# risk.  Track via a task; do not silently grow this list.
+#
+# When a function on this list is refactored to fit in registers,
+# remove or update its line.  The gate will WARN if the actual
+# count is below the baseline (so a successful fix is visible).
+
+# relocator.c::relocate -- header magic check + BSS-pair iteration
+# + word-additive checksum loop + dual-header memcmp, all with
+# simultaneously-live locals SDCC spills to IX-relative stack.
+# Rewriting in inline asm defeats the point of a shared C source.
+# See plan #19 + dual-header-plan-2026-05-08.md.  Tracked as task #27.
+relocator.s:relocate:10
+
+# resident.c::scroll_lines -- unified delete_line/insert_line body
+# with `up` direction flag (Phase 66 refactor).  Saves ~25 B clang
+# vs the prior two separate functions; SDCC's iCode allocator can't
+# keep the count + row + up across the memcpy/memmove/memset calls
+# (4-5 simultaneously-live locals), spilling 7 to the IX frame.
+# Net SDCC: TBD vs baseline (depends on whether the IX-frame cost
+# outweighs the eliminated second-function ABI overhead).
+resident.s:scroll_lines:7
+
+# snios_c.c::try_send_frame, try_recv_frame -- CP/NET 1.2 wire-protocol
+# state machines in plain C (#75 Phases 5+6).  Phase 64's inline-asm
+# rewrite was REVERTED in Phase 68 per user preference for the C
+# version's maintainability.  SDCC spills 2 + 10 to IX-frame for the
+# same reasons as before Phase 64 -- the Phase 65 cross-class peephole
+# is clang-only and doesn't affect SDCC's iCode allocator.
+snios_c.s:try_send_frame:2
+snios_c.s:try_recv_frame:10

@@ -56,5 +56,6 @@ scratch/rc759-cmd-toolchain/drc86111/*.tok
 scratch/*.log
 /dhry.err
 /whet.err
-/scratch/
+/scratch/*
+!/scratch/pre-pr40-firmware-archive/
 llvm-z80-worktrees/

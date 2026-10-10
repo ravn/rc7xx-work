@@ -1,0 +1,50 @@
+
+/Users/ravn/z80/scratch/tmp/c863c55-static-frame-ab/check.norecurse.o:	file format elf32-unknown
+
+Disassembly of section .text:
+
+00000000 <_check_sysfile>:
+       0: ed 53 00 00  	ld	($0),de                 ; 0x0 <_check_sysfile>
+       4: 0e fc        	ld	c,$fc
+       6: 22 00 00     	ld	($0),hl                 ; 0x0 <_check_sysfile>
+       9: 23           	inc	hl
+       a: 22 00 00     	ld	($0),hl                 ; 0x0 <_check_sysfile>
+       d: 7e           	ld	a,(hl)
+       e: 6f           	ld	l,a
+       f: 26 00        	ld	h,$0
+      11: ed 5b 00 00  	ld	de,($0)                 ; 0x0 <_check_sysfile>
+      15: 1a           	ld	a,(de)
+      16: 5f           	ld	e,a
+      17: 07           	rlca
+      18: 9f           	sbc	a,a
+      19: 47           	ld	b,a
+      1a: 7d           	ld	a,l
+      1b: ab           	xor	e
+      1c: b0           	or	b
+      1d: 20 2d        	jr	nz,$4c
+      1f: ed 5b 00 00  	ld	de,($0)                 ; 0x0 <_check_sysfile>
+      23: 13           	inc	de
+      24: ed 53 00 00  	ld	($0),de                 ; 0x0 <_check_sysfile>
+      28: 06 00        	ld	b,$0
+      2a: 03           	inc	bc
+      2b: 79           	ld	a,c
+      2c: a9           	xor	c
+      2d: b0           	or	b
+      2e: c6 ff        	add	a,$ff
+      30: 9f           	sbc	a,a
+      31: e6 01        	and	$1
+      33: ee 01        	xor	$1
+      35: 2a 00 00     	ld	hl,($0)                 ; 0x0 <_check_sysfile>
+      38: 20 cf        	jr	nz,$9
+      3a: 01 08 00     	ld	bc,$8
+      3d: 2a 00 00     	ld	hl,($0)                 ; 0x0 <_check_sysfile>
+      40: 09           	add	hl,bc
+      41: 7e           	ld	a,(hl)
+      42: e6 3f        	and	$3f
+      44: d6 13        	sub	$13
+      46: c6 ff        	add	a,$ff
+      48: 9f           	sbc	a,a
+      49: e6 01        	and	$1
+      4b: c9           	ret
+      4c: 3e 01        	ld	a,$1
+      4e: c9           	ret

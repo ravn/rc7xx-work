@@ -1,0 +1,10 @@
+d/*.asm
+d/*.rel
+d/*.prn
+d/*.sym
+d/*.com
+d/*.z80
+d/test*
+d/tiny*
+s/*.s
+s/*.o

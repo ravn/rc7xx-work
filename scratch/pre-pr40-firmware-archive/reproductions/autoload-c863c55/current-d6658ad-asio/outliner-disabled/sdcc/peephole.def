@@ -1,0 +1,170 @@
+	ld	a,0x00
+=
+	xor	a, a
+
+	ld	a,%1
+	out	(%2), a
+	ld	a,%1
+=
+	ld	a,%1
+	out	(%2), a
+
+	xor	a, a
+	out	(%1), a
+	xor	a, a
+=
+	xor	a, a
+	out	(%1), a
+
+	xor	a,a
+	ld	(%1),a
+	xor	a,a
+=
+	xor	a,a
+	ld	(%1),a
+
+	xor	a, a
+	ld	(%1),a
+	xor	a, a
+=
+	xor	a, a
+	ld	(%1),a
+
+	xor	a,a
+	ld	(%1),a
+	ld	(%2),a
+	xor	a,a
+=
+	xor	a,a
+	ld	(%1),a
+	ld	(%2),a
+
+	xor	a, a
+	ld	(%1),a
+	ld	(%2),a
+	xor	a, a
+=
+	xor	a, a
+	ld	(%1),a
+	ld	(%2),a
+
+	jp	_%1
+	jp	_%2
+=
+	jp	_%1
+
+	jp	_%1
+	jp	l_%2
+=
+	jp	_%1
+
+	jp	l_%1
+	jp	_%2
+=
+	jp	l_%1
+
+	jp	l_%1
+	jp	l_%2
+=
+	jp	l_%1
+
+	jp	_%1
+	jr	l_%2
+=
+	jp	_%1
+
+	jp	l_%1
+	jr	l_%2
+=
+	jp	l_%1
+
+	jr	l_%1
+	jp	_%2
+=
+	jr	l_%1
+
+	jr	l_%1
+	jp	l_%2
+=
+	jr	l_%1
+
+	jr	l_%1
+	jr	l_%2
+=
+	jr	l_%1
+
+	ret
+	jp	_%1
+=
+	ret
+
+	ret
+	jp	l_%1
+=
+	ret
+
+	ret
+	jr	l_%1
+=
+	ret
+
+s	jp	%1
+%1:
+=
+%1:
+
+	jp	%1
+;%2
+%1:
+=
+;%2
+%1:
+
+	jp	%1
+;%2
+;%3
+%1:
+=
+;%2
+;%3
+%1:
+
+	jp	%1
+;%2
+;%3
+;%4
+%1:
+=
+;%2
+;%3
+;%4
+%1:
+
+	jr	NZ,l_%1
+	jp	_%2
+l_%1:
+=
+	jp	Z,_%2
+l_%1:
+
+	jr	NZ,l_%1
+	jp	l_%2
+l_%1:
+=
+	jp	Z,l_%2
+l_%1:
+
+	jr	Z,l_%1
+	jp	_%2
+l_%1:
+=
+	jp	NZ,_%2
+l_%1:
+
+	jr	Z,l_%1
+	jp	l_%2
+l_%1:
+=
+	jp	NZ,l_%2
+l_%1:
+

@@ -1,0 +1,27 @@
+test_boot
+test_fdc
+roa375
+roa375_*.bin
+*.o
+*.bin
+*.map
+*.sym
+*.lis
+*.def
+*.rom
+*.ic66
+zcc_opt.def
+code.asm
+code.c.asm
+roa375_sccz80
+roa375_debug.cmd
+clang/prom0_debug.cmd
+build_stamp.h
+boot_entry.c.i
+rom.c.i
+clang/*.elf
+clang/banner.h
+
+# Source-annotated clang PROM listing — committed to git so historical
+# diffs work without rebuilding clang.  Negate the "*.lis" rule above.
+!clang/prom.clang.lis

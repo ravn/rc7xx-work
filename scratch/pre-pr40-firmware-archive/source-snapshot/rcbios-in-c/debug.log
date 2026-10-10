@@ -1,0 +1,20 @@
+MAME debugger version 0.286 (mame0286-77-g30cd8e23738-dirty)
+Currently targeting rc702 (RC702 Piccolo (8"))
+>bp da8f,1,{printf "BOOT_C: HL=%04X",hl; g}
+Breakpoint 1 set
+>bp dac9,1,{printf "PUTS_P: HL=%04X A=%02X",hl,a; g}
+Breakpoint 2 set
+>bp daca,1,{printf "PUTS_P_LOAD: A=%02X HL=%04X",a,hl; g}
+Breakpoint 3 set
+>bp dacc,1,{printf "PUTS_P_RET_CHECK: A=%02X Z=%d",a,((f&0x40)>>6); g}
+Breakpoint 4 set
+>bp dad0,1,{printf "PUTS_P_CALL: A=%02X",a; g}
+Breakpoint 5 set
+>bp dad6,1,{printf "WBOOT_C"; g}
+Breakpoint 6 set
+>g
+BOOT_C: HL=ECC6
+PUTS_P: HL=EB32 A=FF
+PUTS_P_LOAD: A=00 HL=EB32
+PUTS_P_RET_CHECK: A=00 Z=1
+WBOOT_C

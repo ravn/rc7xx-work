@@ -1,0 +1,39 @@
+/Library/Developer/CommandLineTools/usr/bin/make clang/prom.clang.bin
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/clang --target=z80 -Oz -g -nostdlib -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-frame -Xclang -target-feature -Xclang +shadow-isr -mllvm -disable-lsr -Iclang -I. -Weverything -Wno-unsafe-buffer-usage -Wno-c23-extensions -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -DSW1_CONSOLE_BIT=0x01 -c boot_rom.c -o clang/boot.o
+boot_rom.c:61:9: warning: macro is not used [-Wunused-macros]
+   61 | #define RELOC_SIZE  ((unsigned)_code_size)
+      |         ^
+boot_rom.c:59:9: warning: macro is not used [-Wunused-macros]
+   59 | #define RELOC_DST   (_code_start)
+      |         ^
+boot_rom.c:60:9: warning: macro is not used [-Wunused-macros]
+   60 | #define RELOC_SRC   ((const void *)_code_load)
+      |         ^
+3 warnings generated.
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/clang --target=z80 -Oz -g -nostdlib -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-frame -Xclang -target-feature -Xclang +shadow-isr -mllvm -disable-lsr -Iclang -I. -Weverything -Wno-unsafe-buffer-usage -Wno-c23-extensions -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -DSW1_CONSOLE_BIT=0x01 -c intvec.c -o clang/intvec.o
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/clang --target=z80 -Oz -g -nostdlib -ffunction-sections -fdata-sections -Xclang -target-feature -Xclang +static-frame -Xclang -target-feature -Xclang +shadow-isr -mllvm -disable-lsr -Iclang -I. -Weverything -Wno-unsafe-buffer-usage -Wno-c23-extensions -Wno-reserved-macro-identifier -Wno-reserved-identifier -Wno-gcc-compat -Wno-declaration-after-statement -Wno-pre-c11-compat -DSW1_CONSOLE_BIT=0x01 -c rom.c -o clang/rom.o
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/clang --target=z80 -c clang/runtime.s -o clang/runtime.o
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/clang --target=z80 -c clang/dzx0_standard.s -o clang/dzx0_standard.o
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/clang --target=z80 -c clang/text_compressed.s -o clang/text_compressed.o
+=== pass 1: link to extract raw .text bytes ===
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/ld.lld --gc-sections -T clang/rc700_prom.ld clang/boot.o clang/intvec.o clang/rom.o clang/runtime.o /Users/ravn/z80/scratch/c863c55-current-compiler/memset-builtin.o clang/dzx0_standard.o clang/text_compressed.o -o clang/prom.pass1.elf
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/llvm-objcopy -O binary --only-section=.text clang/prom.pass1.elf clang/text_raw.bin
+    .text raw = 3685 bytes
+=== ZX0 compress ===
+/Users/ravn/z80/z88dk/src/zx0/z88dk-zx0 -f clang/text_raw.bin clang/text_compressed.zx0
+ZX0 v1.5: Optimal data compressor by Einar Saukas
+[...............................................]
+File compressed from 3685 to 2095 bytes! (delta 3)
+=== roundtrip verify: z88dk-dzx0 must reproduce pass-1 .text exactly ===
+/Users/ravn/z80/z88dk/src/zx0/z88dk-dzx0 clang/text_compressed.zx0 clang/text_roundtrip.bin
+DZX0 v1.5: Data decompressor by Einar Saukas
+File decompressed from 2095 to 3685 bytes!
+cmp clang/text_raw.bin clang/text_roundtrip.bin \
+	    || { echo "FAIL: ZX0 roundtrip mismatch -- compressed blob would not unpack correctly at boot"; exit 1; }
+    OK: 3685 bytes raw -> 2095 bytes compressed; roundtrip exact
+=== pass 2: re-assemble text_compressed.o + link ===
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/clang --target=z80 -c clang/text_compressed.s -o clang/text_compressed.o
+/Users/ravn/z80/llvm-z80/build-c863c55-current-asio/bin/ld.lld --gc-sections --defsym FINAL_LINK=1 -T clang/rc700_prom.ld clang/boot.o clang/intvec.o clang/rom.o clang/runtime.o /Users/ravn/z80/scratch/c863c55-current-compiler/memset-builtin.o clang/dzx0_standard.o clang/text_compressed.o -o clang/prom.clang.elf
+ld.lld: error: PROM0 socket exceeds 2048 bytes after ZX0!
+make[1]: *** [clang/prom.clang.bin] Error 1
+make: *** [prom] Error 2

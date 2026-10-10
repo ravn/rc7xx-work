@@ -1,0 +1,4 @@
+make -B -C /Users/ravn/z80/rc700-gensmedet-pre-pr40/autoload-in-c prom COMPILER=clang LLVM_Z80=/Users/ravn/z80/llvm-z80-pre-pr40 MAME=/Users/ravn/z80/scratch/pre-pr40-firmware-archive/generated/mame
+/Library/Developer/CommandLineTools/usr/bin/make clang/prom.clang.bin
+make[1]: *** No rule to make target `/clang', needed by `clang/boot.o'.  Stop.
+make: *** [prom] Error 2

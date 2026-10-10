@@ -1,0 +1,1401 @@
+                ; NDOS for CP/NOS, may be ROM-able
+                
+                	extrn	bdosds,nios
+                	public	ndosrl,ndos
+                
+ 0000 =         reboot	equ	0000h
+ 0004 =         cdisk	equ	0004h
+ 0005 =         bdosa	equ	0005h
+ 0080 =         defdma	equ	0080h
+                
+ 000D =         cr	equ	13
+ 000A =         lf	equ	10
+                
+ 0009 =         printf	equ	9
+ 000C =         versnf	equ	12
+ 000F =         openf	equ	15
+ 0010 =         closef	equ	16
+ 0014 =         readf	equ	20
+ 001A =         setdmaf	equ	26
+ 0020 =         userf	equ	32
+ 0027 =         freedrf	equ	39
+                
+                	cseg
+                
+                	dseg
+ 0000 0000000000ndosrl:	db	0,0,0,0,0,0	; serial number
+ 0006           ndosa:	ds	3
+ 0009           	ds	3
+                
+                	cseg
+ 0000 C32201    ndos:	jmp	ndose
+ 0003 C37F00    	jmp	coldst
+                
+                	dseg
+ 000C           lstdrt:	ds	1
+ 000D           ctlpf:	ds	1
+ 000E           rdcbff:	ds	1
+                
+                	cseg
+ 0006 434F50522E	db	'COPR. ''80-''82 DRI'
+ 0017 0000000000sernum:	db	0,0,0,0,0,0
+                
+ 001D 0D0A4E444Fnderrm:	db	cr,lf,'NDOS Err $'
+ 0029 2C2046756Enderr2:	db	', Func $'
+                
+                	dseg
+ 000F 0000      contad:	dw	0
+ 0011 0000      bdose:	dw	0
+ 0013 0000      version: dw	0
+ 0015 00        cursid:	db	0
+ 0016 0000      	dw	0
+                
+                ; CP/NET message buffer
+ 0018           msgtop:	ds	1
+ 0019           msgid:	ds	1
+ 001A           	ds	1
+ 001B           msgfun:	ds	1
+ 001C           msgsiz:	ds	1
+ 001D           msgdat:	ds	256
+                
+ 011D C7C7C7C7C7	dw	0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h
+ 012D C7C7C7C7C7	dw	0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h
+ 013D C7C7C7C7C7	dw	0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h
+ 014D C7C7C7C7C7	dw	0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h,0c7c7h
+                stack:
+                
+ 0159 0000      ustack:	dw	0
+ 015B 00        funcod:	db	0
+ 015C 0000      paramt:	dw	0
+ 015E 00        retcod:	db	0
+ 015F 0000      mcrpnt:	dw	0
+ 0161 00        lstunt:	db	0
+ 0162           opnunl:	ds	1
+ 0163           fntmpf:	ds	1
+ 0164           orgbio:	ds	2
+                ; data to be initialized
+                ; all these values are overwritten on coldstart
+                idata1:
+ 0166 01        curdsk:	db	01h
+ 0167 8000      dmaadd:	dw	defdma
+ 0169 00        curusr:	db	0
+                
+ 016A 0000      tlbios:	dw	0
+ 016C 0303      	dw	nwboot
+ 016E 7B07      	dw	nconst
+ 0170 8407      	dw	nconin
+ 0172 F607      	dw	nconot
+ 0174 3608      	dw	nlist
+ 0176 0000000000	dw	0,0,0,0,0,0,0,0,0
+ 0188 9408      	dw	nlstst
+ 018A 0000      	dw	0
+                
+ 018C 0143435020ccpfcb:	db	1,'CCP  ',' '+80h,'  SPR',0
+ 0199           	ds	23
+                
+ 01B0           hexmsg:	ds	2
+ 01B2 24        	db	'$'
+ 01B3 00        bdermd:	db	0
+                
+                	cseg
+                ; initialization template for data
+                tdata1:
+ 0031 01        	db	01h
+ 0032 8000      	dw	defdma
+ 0034 000000    	db	0,0,0
+ 0037 0303      	dw	nwboot
+ 0039 7B07      	dw	nconst
+ 003B 8407      	dw	nconin
+ 003D F607      	dw	nconot
+ 003F 3608      	dw	nlist
+ 0041 0000000000	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+ 0053 9408      	dw	nlstst
+ 0055 0000      	dw	0
+ 0057 0143435020	db	1,'CCP  ',' '+80h,'  SPR',0
+ 0064           	ds	23
+ 007B 00002400  	db	0,0,'$',0
+ 004E =         d1len	equ	$-tdata1
+                
+ 007F 210000    coldst:	lxi	h,bdosds
+ 0082 0E3D      	mvi	c,61
+ 0084 3600      colds4:	mvi	m,0
+ 0086 23        	inx	h
+ 0087 0D        	dcr	c
+ 0088 C28400    	jnz	colds4
+ 008B 213100    	lxi	h,tdata1
+ 008E 116601    	lxi	d,idata1
+ 0091 0E4E      	mvi	c,d1len
+ 0093 7E        colds5:	mov	a,m
+ 0094 12        	stax	d
+ 0095 23        	inx	h
+ 0096 13        	inx	d
+ 0097 0D        	dcr	c
+ 0098 C29300    	jnz	colds5
+ 009B CD0000    	call	nios+0	; NTWKIN
+ 009E B7        	ora	a
+ 009F C20E01    	jnz	coldse
+ 00A2 0E11      	mvi	c,17
+ 00A4 2A0100    	lhld	reboot+1
+ 00A7 226401    	shld	orgbio
+ 00AA 2B        	dcx	h
+ 00AB 116A01    	lxi	d,tlbios
+ 00AE C5        colds1:	push	b
+ 00AF 1A        	ldax	d
+ 00B0 4F        	mov	c,a
+ 00B1 13        	inx	d
+ 00B2 1A        	ldax	d
+ 00B3 47        	mov	b,a
+ 00B4 13        	inx	d
+ 00B5 B1        	ora	c
+ 00B6 CAC500    	jz	colds2
+ 00B9 7E        	mov	a,m
+ 00BA 1B        	dcx	d
+ 00BB 12        	stax	d
+ 00BC 2B        	dcx	h
+ 00BD 7E        	mov	a,m
+ 00BE 1B        	dcx	d
+ 00BF 12        	stax	d
+ 00C0 13        	inx	d
+ 00C1 13        	inx	d
+ 00C2 71        	mov	m,c
+ 00C3 23        	inx	h
+ 00C4 70        	mov	m,b
+ 00C5 23        colds2:	inx	h
+ 00C6 23        	inx	h
+ 00C7 23        	inx	h
+ 00C8 C1        	pop	b
+ 00C9 0D        	dcr	c
+ 00CA C2AE00    	jnz	colds1
+ 00CD CD0600    	call	nios+6	; CNFTBL
+ 00D0 23        	inx	h
+ 00D1 220F00    	shld	contad
+ 00D4 2A0600    	lhld	bdosa+1
+ 00D7 221100    	shld	bdose
+ 00DA 211D00    	lxi	h,msgdat
+ 00DD 225F01    	shld	mcrpnt
+ 00E0 AF        	xra	a
+ 00E1 320C00    	sta	lstdrt
+ 00E4 320D00    	sta	ctlpf
+ 00E7 320E00    	sta	rdcbff
+ 00EA 210000    	lxi	h,ndosrl
+ 00ED 111700    	lxi	d,sernum
+ 00F0 0606      	mvi	b,6
+ 00F2 1A        colds3:	ldax	d
+ 00F3 77        	mov	m,a
+ 00F4 23        	inx	h
+ 00F5 13        	inx	d
+ 00F6 05        	dcr	b
+ 00F7 C2F200    	jnz	colds3
+ 00FA 36C3      	mvi	m,0c3h
+ 00FC 110000    	lxi	d,ndos
+ 00FF 23        	inx	h
+ 0100 73        	mov	m,e
+ 0101 23        	inx	h
+ 0102 72        	mov	m,d
+ 0103 0E0C      	mvi	c,versnf
+ 0105 CD0500    	call	bdosa
+ 0108 221300    	shld	version
+ 010B C30303    	jmp	nwboot
+                
+ 010E 0E09      coldse:	mvi	c,printf
+ 0110 111901    	lxi	d,inerms
+ 0113 CD0500    	call	bdosa
+ 0116 C30000    	jmp	reboot
+                
+ 0119 496E697420inerms:	db	'Init Err$'
+                
+ 0122 210000    ndose:	lxi	h,0
+ 0125 79        	mov	a,c
+ 0126 FE64      	cpi	100
+ 0128 DA2D01    	jc	ndose1
+ 012B D632      	sui	50
+ 012D FE48      ndose1:	cpi	72
+ 012F DA3501    	jc	ndose7
+ 0132 2B        	dcx	h
+ 0133 7C        	mov	a,h
+ 0134 C9        	ret
+ 0135 39        ndose7:	dad	sp
+ 0136 225901    	shld	ustack
+ 0139 315901    	lxi	sp,stack
+ 013C 21AE02    	lxi	h,nerror
+ 013F E5        	push	h
+ 0140 4F        	mov	c,a
+ 0141 FE0A      	cpi	10
+ 0143 3E00      	mvi	a,0
+ 0145 C24901    	jnz	ndose2
+ 0148 3C        	inr	a
+ 0149 320E00    ndose2:	sta	rdcbff
+ 014C EB        	xchg
+ 014D 225C01    	shld	paramt
+ 0150 79        	mov	a,c
+ 0151 325B01    	sta	funcod
+ 0154 321B00    	sta	msgfun
+ 0157 211C00    	lxi	h,msgsiz
+ 015A 3600      	mvi	m,0
+ 015C 23        	inx	h
+ 015D 225F01    	shld	mcrpnt
+ 0160 AF        	xra	a
+ 0161 47        	mov	b,a
+ 0162 57        	mov	d,a
+ 0163 212702    	lxi	h,funtb1
+ 0166 09        	dad	b
+ 0167 5E        	mov	e,m
+ 0168 93        	sub	e
+ 0169 CAC402    	jz	tbdosp
+ 016C 3D        	dcr	a
+ 016D C27401    	jnz	ndose4
+ 0170 3D        	dcr	a
+ 0171 67        	mov	h,a
+ 0172 6F        	mov	l,a
+ 0173 C9        	ret
+ 0174 21AB02    ndose4:	lxi	h,ndendr
+ 0177 E3        	xthl
+ 0178 21DF01    	lxi	h,funtb2
+ 017B 19        	dad	d
+ 017C E5        	push	h
+ 017D C1        ndose5:	pop	b
+ 017E 0A        	ldax	b
+ 017F 57        	mov	d,a
+ 0180 E67F      	ani	7fh
+ 0182 5F        	mov	e,a
+ 0183 7A        	mov	a,d
+ 0184 1600      	mvi	d,0
+ 0186 219901    	lxi	h,funtb3
+ 0189 19        	dad	d
+ 018A 5E        	mov	e,m
+ 018B 23        	inx	h
+ 018C 56        	mov	d,m
+ 018D 03        	inx	b
+ 018E 17        	ral
+ 018F DA9701    	jc	ndose6
+ 0192 C5        	push	b
+ 0193 217D01    	lxi	h,ndose5
+ 0196 E5        	push	h
+ 0197 EB        ndose6:	xchg
+ 0198 E9        	pchl
+                
+                funtb3:
+ 0199 0303      	dw	nwboot	; 00h
+ 019B 6F02      	dw	sndhdr	; 02h
+ 019D B702      	dw	rcvpar	; 04h
+ 019F 6803      	dw	sndfcb	; 06h
+ 01A1 6E03      	dw	cksfcb	; 08h
+ 01A3 EB03      	dw	rentmp	; 0ah
+ 01A5 0104      	dw	stfid	; 0ch
+ 01A7 0604      	dw	wtdtc8	; 0eh
+ 01A9 0B04      	dw	wtdtcp	; 10h
+ 01AB 1A04      	dw	ckstdk	; 12h
+ 01AD 3B04      	dw	bcstfn	; 14h
+ 01AF 6A04      	dw	bcstvc	; 16h
+ 01B1 7505      	dw	rcvec	; 18h
+ 01B3 CC05      	dw	gtfcb	; 1ah
+ 01B5 D805      	dw	gtfccr	; 1ch
+ 01B7 D305      	dw	ctfcrr	; 1eh
+ 01B9 1406      	dw	gtdire	; 20h
+ 01BB 3006      	dw	gtosct	; 22h
+ 01BD 4106      	dw	gtmisc	; 24h
+ 01BF 6B06      	dw	gtlogv	; 26h
+ 01C1 D106      	dw	setdma	; 28h
+ 01C3 DA06      	dw	seldsk	; 2ah
+ 01C5 1507      	dw	sguser	; 2ch
+ 01C7 2507      	dw	getver	; 2eh
+ 01C9 3107      	dw	getdsk	; 30h
+ 01CB FA06      	dw	reset	; 32h
+ 01CD 3807      	dw	nwstat	; 34h
+ 01CF 3F07      	dw	nwcftb	; 36h
+ 01D1 6407      	dw	sdmsgu	; 38h
+ 01D3 6C07      	dw	rvmsgu	; 3ah
+ 01D5 4707      	dw	login	; 3ch
+ 01D7 5B07      	dw	logoff	; 3eh
+ 01D9 2905      	dw	stsf	; 40h
+ 01DB 5505      	dw	stsn	; 42h
+ 01DD 7407      	dw	stbder	; 44h
+                
+                funtb2:	; opcodes for funtb3, 80h+ terminates
+ 01DF 80        	db	80h+0			; 00h
+ 01E0 AE        	db	80h+2eh			; 01h
+ 01E1 B2        	db	80h+32h			; 02h
+ 01E2 96        	db	80h+16h			; 03h
+ 01E3 AA        	db	80h+2ah			; 04h
+ 01E4 080E189A  	db	8,14,18h,80h+1ah	; 05h
+ 01E8 0698      	db	6,80h+18h		; 09h
+ 01EA 4018A0    	db	40h,18h,80h+20h		; 0bh
+ 01ED 4218A0    	db	42h,18h,80h+20h		; 0eh
+ 01F0 06181CA2  	db	6,18h,1ch,80h+22h	; 11h
+ 01F4 0810189C  	db	8,10h,18h,80h+1ch	; 15h
+ 01F8 080A0298  	db	8,10,2,80h+18h		; 19h
+ 01FC A6        	db	80h+26h			; 1dh
+ 01FD B0        	db	80h+30h			; 1eh
+ 01FE A8        	db	80h+28h			; 1fh
+ 01FF 120218A4  	db	12h,2,18h,80h+24h	; 20h
+ 0203 120298    	db	12h,2,80h+18h		; 24h
+ 0206 06189C    	db	6,18h,80h+1ch		; 27h
+ 0209 AC        	db	80h+2ch			; 2ah
+ 020A 06181EA2  	db	6,18h,1eh,80h+22h	; 2bh
+ 020E 0810189E  	db	8,10h,18h,80h+1eh	; 2fh
+ 0212 06189E    	db	6,18h,80h+1eh		; 33h
+ 0215 080C189E  	db	8,12,18h,80h+1eh	; 36h
+ 0219 C4        	db	80h+44h			; 3ah
+ 021A 94        	db	80h+14h			; 3bh
+ 021B 3C98      	db	3ch,80h+18h		; 3ch
+ 021D 3E98      	db	3eh,80h+18h		; 3eh
+ 021F B8        	db	80h+38h			; 40h
+ 0220 BA        	db	80h+3ah			; 41h
+ 0221 B4        	db	80h+34h			; 42h
+ 0222 B6        	db	80h+36h			; 43h
+ 0223 94        	db	80h+14h			; 44h
+ 0224 3E18A4    	db	3eh,18h,80h+24h		; 45h
+                
+                
+                ; first level table, function to opcode-string map
+ 0227 0000000000funtb1:	db	0,0,0,0,0,0
+ 022D 0000000000	db	0,0,0,0,0,0
+ 0233 0102040505	db	1,2,4,5,5,11,14,9,11h,15h,5,19h,1dh,1eh,1fh,20h,24h,1dh,27h,20h
+ 0247 2A2B2F3333	db	2ah,2bh,2fh,33h,33h,3,3,3,2fh,0ffh,36h,36h,0ffh,3ah
+ 0255 FFFFFFFFFF	db	0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh
+ 025F 3BFFFFFFFF	db	3bh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,3ch,3eh,40h,41h,42h,43h,44h,45h
+                
+ 026F 2A0F00    sndhdr:	lhld	contad
+ 0272 EB        	xchg
+ 0273 211800    	lxi	h,msgtop
+ 0276 3600      	mvi	m,0
+ 0278 1A        	ldax	d
+ 0279 23        	inx	h
+ 027A 23        	inx	h
+ 027B 77        	mov	m,a
+ 027C 23        	inx	h
+ 027D 23        	inx	h
+ 027E 23        	inx	h
+ 027F EB        	xchg
+ 0280 2A5F01    	lhld	mcrpnt
+ 0283 AF        	xra	a
+ 0284 93        	sub	e
+ 0285 4F        	mov	c,a
+ 0286 3E00      	mvi	a,0
+ 0288 9A        	sbb	d
+ 0289 47        	mov	b,a
+ 028A 09        	dad	b
+ 028B 7D        	mov	a,l
+ 028C B4        	ora	h
+ 028D CA9402    	jz	sndhd1
+ 0290 2B        	dcx	h
+ 0291 EB        	xchg
+ 0292 2B        	dcx	h
+ 0293 73        	mov	m,e
+ 0294 011800    sndhd1:	lxi	b,msgtop
+ 0297 CD0900    sdmsge:	call	nios+9	; SNDMSG
+ 029A 3C        	inr	a
+ 029B C0        	rnz
+ 029C C3A402    	jmp	ndend
+                
+                rvmsge:
+ 029F CD0C00    	call	nios+12	; RCVMSG
+ 02A2 3C        	inr	a
+ 02A3 C0        	rnz
+ 02A4 21FFFF    ndend:	lxi	h,-1
+ 02A7 7C        	mov	a,h
+ 02A8 C3AE02    	jmp	nerror
+                
+ 02AB 3A5E01    ndendr:	lda	retcod
+                nerror:
+ 02AE EB        	xchg
+ 02AF 2A5901    	lhld	ustack
+ 02B2 F9        	sphl
+ 02B3 EB        	xchg
+ 02B4 6F        	mov	l,a
+ 02B5 44        	mov	b,h
+ 02B6 C9        	ret
+                
+ 02B7 011800    rcvpar:	lxi	b,msgtop
+ 02BA CD9F02    	call	rvmsge
+ 02BD 211D00    	lxi	h,msgdat
+ 02C0 225F01    	shld	mcrpnt
+ 02C3 C9        	ret
+                
+ 02C4 2A5C01    tbdosp:	lhld	paramt
+ 02C7 EB        	xchg
+ 02C8 3A5B01    	lda	funcod
+ 02CB 4F        	mov	c,a
+ 02CC 2A1100    tobdos:	lhld	bdose
+ 02CF E9        	pchl
+                
+ 02D0 2A5C01    ckfcbd:	lhld	paramt
+ 02D3 7E        	mov	a,m
+ 02D4 3D        	dcr	a
+ 02D5 F2DB02    	jp	ckfcb1
+ 02D8 3A6601    	lda	curdsk
+ 02DB 5F        ckfcb1:	mov	e,a
+ 02DC 1600      	mvi	d,0
+ 02DE CDEA02    	call	chkdsk
+ 02E1 FEFF      	cpi	0ffh
+ 02E3 C0        	rnz
+ 02E4 CDC402    	call	tbdosp
+ 02E7 C3AE02    	jmp	nerror
+                
+ 02EA 2A0F00    chkdsk:	lhld	contad
+ 02ED 19        	dad	d
+ 02EE 19        	dad	d
+ 02EF 23        	inx	h
+ 02F0 7E        	mov	a,m
+ 02F1 17        	ral
+ 02F2 DAF802    	jc	chkds1
+ 02F5 3EFF      	mvi	a,0ffh
+ 02F7 C9        	ret
+ 02F8 1F        chkds1:	rar
+ 02F9 E60F      	ani	0fh
+ 02FB 3C        	inr	a
+ 02FC 4F        	mov	c,a
+ 02FD 23        	inx	h
+ 02FE 7E        	mov	a,m
+ 02FF 321900    	sta	msgid
+ 0302 C9        	ret
+                
+ 0303 310001    nwboot:	lxi	sp,0100h
+ 0306 210600    	lxi	h,ndosa
+ 0309 220600    	shld	bdosa+1
+ 030C 2A6401    	lhld	orgbio
+ 030F 220100    	shld	reboot+1
+ 0312 AF        	xra	a
+ 0313 325C01    	sta	paramt
+ 0316 CD1507    	call	sguser
+ 0319 CDFA06    	call	reset
+ 031C 3E27      	mvi	a,freedrf
+ 031E 325B01    	sta	funcod
+ 0321 321B00    	sta	msgfun
+ 0324 21FFFF    	lxi	h,-1
+ 0327 225C01    	shld	paramt
+ 032A CD6A04    	call	bcstvc
+ 032D AF        	xra	a
+ 032E 32AC01    	sta	ccpfcb+32
+ 0331 118C01    	lxi	d,ccpfcb
+ 0334 210000    	lxi	h,ndosrl
+ 0337 CDA508    	call	load
+ 033A B7        	ora	a
+ 033B CA5303    	jz	goccp
+ 033E 0E09      	mvi	c,printf
+ 0340 114903    	lxi	d,clderr
+ 0343 CDCC02    	call	tobdos
+ 0346 C34603    	jmp	$
+                
+ 0349 4343502E53clderr:	db	'CCP.SPR ?$'
+                
+ 0353 3A0400    goccp:	lda	cdisk
+ 0356 4F        	mov	c,a
+ 0357 F9        	sphl
+ 0358 E5        	push	h
+ 0359 C5        	push	b
+ 035A 3A6901    	lda	curusr
+ 035D 5F        	mov	e,a
+ 035E 0E20      	mvi	c,userf
+ 0360 CDCC02    	call	tobdos
+ 0363 CD1200    	call	nios+18	; NTWKBT
+ 0366 C1        	pop	b
+ 0367 C9        	ret
+                
+ 0368 CD6E03    sndfcb:	call	cksfcb
+ 036B C36F02    	jmp	sndhdr
+                
+ 036E CDD002    cksfcb:	call	ckfcbd
+ 0371 2A5F01    stfcb:	lhld	mcrpnt
+ 0374 3A6901    	lda	curusr
+ 0377 77        	mov	m,a
+ 0378 23        	inx	h
+ 0379 71        	mov	m,c
+ 037A 23        	inx	h
+ 037B EB        	xchg
+ 037C 2A5C01    	lhld	paramt
+ 037F 23        	inx	h
+ 0380 EB        	xchg
+ 0381 0623      	mvi	b,35
+ 0383 CDF503    	call	mcpyts
+ 0386 AF        	xra	a
+ 0387 326301    	sta	fntmpf
+ 038A 326201    	sta	opnunl
+ 038D 2A5F01    	lhld	mcrpnt
+ 0390 11DDFF    	lxi	d,-35
+ 0393 19        	dad	d
+ 0394 CDB603    subtmp:	call	ckdol
+ 0397 0600      	mvi	b,0
+ 0399 09        	dad	b
+ 039A 23        	inx	h
+ 039B 7E        	mov	a,m
+ 039C E680      	ani	80h
+ 039E 23        	inx	h
+ 039F CAAC03    	jz	subtm1
+ 03A2 7E        	mov	a,m
+ 03A3 E680      	ani	80h
+ 03A5 C2AC03    	jnz	subtm1
+ 03A8 3D        	dcr	a
+ 03A9 326201    	sta	opnunl
+ 03AC 3A6301    subtm1:	lda	fntmpf
+ 03AF 87        	add	a
+ 03B0 326301    	sta	fntmpf
+ 03B3 23        	inx	h
+ 03B4 23        	inx	h
+ 03B5 23        	inx	h
+ 03B6 0E03      ckdol:	mvi	c,3
+ 03B8 3E24      	mvi	a,36
+ 03BA BE        ckdol1:	cmp	m
+ 03BB C0        	rnz
+ 03BC 23        	inx	h
+ 03BD 0D        	dcr	c
+ 03BE C2BA03    	jnz	ckdol1
+ 03C1 EB        	xchg
+ 03C2 216301    	lxi	h,fntmpf
+ 03C5 34        	inr	m
+ 03C6 1B        	dcx	d
+ 03C7 2A0F00    	lhld	contad
+ 03CA 7E        	mov	a,m
+ 03CB 47        	mov	b,a
+ 03CC CDDC03    	call	hexdig
+ 03CF 1B        	dcx	d
+ 03D0 78        	mov	a,b
+ 03D1 1F        	rar
+ 03D2 1F        	rar
+ 03D3 1F        	rar
+ 03D4 1F        	rar
+ 03D5 CDDC03    	call	hexdig
+ 03D8 13        	inx	d
+ 03D9 13        	inx	d
+ 03DA EB        	xchg
+ 03DB C9        	ret
+                
+ 03DC E60F      hexdig:	ani	0fh
+ 03DE FE0A      	cpi	10
+ 03E0 D2E703    	jnc	hexdg1
+ 03E3 C630      	adi	'0'
+ 03E5 12        	stax	d
+ 03E6 C9        	ret
+                
+ 03E7 C637      hexdg1:	adi	'A'-10
+ 03E9 12        	stax	d
+ 03EA C9        	ret
+                
+ 03EB 2A5F01    rentmp:	lhld	mcrpnt
+ 03EE 11EDFF    	lxi	d,-19
+ 03F1 19        	dad	d
+ 03F2 C39403    	jmp	subtmp
+                
+ 03F5 1A        mcpyts:	ldax	d
+ 03F6 77        	mov	m,a
+ 03F7 23        	inx	h
+ 03F8 13        	inx	d
+ 03F9 05        	dcr	b
+ 03FA C2F503    	jnz	mcpyts
+ 03FD 225F01    	shld	mcrpnt
+ 0400 C9        	ret
+                
+ 0401 0602      stfid:	mvi	b,2
+ 0403 C30D04    	jmp	wtdtcs
+                
+ 0406 0608      wtdtc8:	mvi	b,8
+ 0408 C30D04    	jmp	wtdtcs
+                
+ 040B 0680      wtdtcp:	mvi	b,defdma
+ 040D 2A6701    wtdtcs:	lhld	dmaadd
+ 0410 EB        	xchg
+ 0411 2A5F01    	lhld	mcrpnt
+ 0414 CDF503    	call	mcpyts
+ 0417 C36F02    	jmp	sndhdr
+                
+ 041A 3A6601    ckstdk:	lda	curdsk
+ 041D 5F        	mov	e,a
+ 041E 1600      	mvi	d,0
+ 0420 CDEA02    	call	chkdsk
+ 0423 FEFF      	cpi	0ffh
+ 0425 C22E04    	jnz	stdsk1
+ 0428 CDC402    	call	tbdosp
+ 042B C3AE02    	jmp	nerror
+                
+ 042E 321900    stdsk1:	sta	msgid
+ 0431 2A5F01    	lhld	mcrpnt
+ 0434 0D        	dcr	c
+ 0435 71        	mov	m,c
+ 0436 23        	inx	h
+ 0437 225F01    	shld	mcrpnt
+ 043A C9        	ret
+                
+ 043B 110000    bcstfn:	lxi	d,0
+ 043E CDB104    	call	forall
+ 0441 79        	mov	a,c
+ 0442 0C        	inr	c
+ 0443 CA1805    	jz	rstall
+ 0446 321900    	sta	msgid
+ 0449 2A5C01    	lhld	paramt
+ 044C EB        	xchg
+ 044D 2A5F01    	lhld	mcrpnt
+ 0450 3A5B01    	lda	funcod
+ 0453 FE38      	cpi	56
+ 0455 CA5C04    	jz	bcst1
+ 0458 73        	mov	m,e
+ 0459 C36104    	jmp	bcst2
+                
+ 045C 0608      bcst1:	mvi	b,8
+ 045E CDF503    	call	mcpyts
+ 0461 CD6F02    bcst2:	call	sndhdr
+ 0464 CDB702    	call	rcvpar
+ 0467 C33B04    	jmp	bcstfn
+                
+ 046A 2A5C01    bcstvc:	lhld	paramt
+ 046D EB        	xchg
+ 046E CDB104    bcstv1:	call	forall
+ 0471 E5        	push	h
+ 0472 79        	mov	a,c
+ 0473 0C        	inr	c
+ 0474 C27B04    	jnz	bcstv2
+ 0477 D1        	pop	d
+ 0478 C31805    	jmp	rstall
+ 047B 321900    bcstv2:	sta	msgid
+ 047E 211D00    	lxi	h,msgdat
+ 0481 73        	mov	m,e
+ 0482 23        	inx	h
+ 0483 72        	mov	m,d
+ 0484 23        	inx	h
+ 0485 225F01    	shld	mcrpnt
+ 0488 CD6F02    	call	sndhdr
+ 048B 3A5B01    	lda	funcod
+ 048E D626      	sui	38
+ 0490 CAAA04    	jz	bcstv3
+ 0493 F5        	push	psw
+ 0494 CDB702    	call	rcvpar
+ 0497 F1        	pop	psw
+ 0498 D1        	pop	d
+ 0499 3D        	dcr	a
+ 049A CA6E04    	jz	bcstv1
+ 049D 3A1D00    	lda	msgdat
+ 04A0 325E01    	sta	retcod
+ 04A3 3C        	inr	a
+ 04A4 CA1805    	jz	rstall
+ 04A7 C36E04    	jmp	bcstv1
+                
+ 04AA CD7505    bcstv3:	call	rcvec
+ 04AD D1        	pop	d
+ 04AE C36E04    	jmp	bcstv1
+                
+ 04B1 2A0F00    forall:	lhld	contad
+ 04B4 23        	inx	h
+ 04B5 D5        	push	d
+ 04B6 110000    	lxi	d,0
+ 04B9 01FF16    	lxi	b,16ffh
+ 04BC 7E        foral1:	mov	a,m
+ 04BD 17        	ral
+ 04BE D2FC04    	jnc	foral6
+ 04C1 17        	ral
+ 04C2 DAFC04    	jc	foral6
+ 04C5 23        	inx	h
+ 04C6 79        	mov	a,c
+ 04C7 FEFF      	cpi	0ffh
+ 04C9 CAD404    	jz	foral2
+ 04CC BE        	cmp	m
+ 04CD CAD504    	jz	foral3
+ 04D0 2B        	dcx	h
+ 04D1 C3FC04    	jmp	foral6
+ 04D4 4E        foral2:	mov	c,m
+ 04D5 2B        foral3:	dcx	h
+ 04D6 7E        	mov	a,m
+ 04D7 F640      	ori	40h
+ 04D9 77        	mov	m,a
+ 04DA E3        	xthl
+ 04DB CD1005    	call	rhlr0
+ 04DE D20705    	jnc	foral7
+ 04E1 E3        	xthl
+ 04E2 7E        	mov	a,m
+ 04E3 E60F      	ani	0fh
+ 04E5 3C        	inr	a
+ 04E6 E5        	push	h
+ 04E7 210100    	lxi	h,1
+ 04EA 3D        foral4:	dcr	a
+ 04EB CAF204    	jz	foral5
+ 04EE 29        	dad	h
+ 04EF C3EA04    	jmp	foral4
+ 04F2 7B        foral5:	mov	a,e
+ 04F3 B5        	ora	l
+ 04F4 5F        	mov	e,a
+ 04F5 7A        	mov	a,d
+ 04F6 B4        	ora	h
+ 04F7 57        	mov	d,a
+ 04F8 E1        	pop	h
+ 04F9 C30805    	jmp	foral8
+ 04FC E3        foral6:	xthl
+ 04FD CD1005    	call	rhlr0
+ 0500 D20705    	jnc	foral7
+ 0503 7C        	mov	a,h
+ 0504 F680      	ori	80h
+ 0506 67        	mov	h,a
+ 0507 E3        foral7:	xthl
+ 0508 23        foral8:	inx	h
+ 0509 23        	inx	h
+ 050A 05        	dcr	b
+ 050B C2BC04    	jnz	foral1
+ 050E E1        	pop	h
+ 050F C9        	ret
+                
+ 0510 B7        rhlr0:	ora	a
+ 0511 7C        	mov	a,h
+ 0512 1F        	rar
+ 0513 67        	mov	h,a
+ 0514 7D        	mov	a,l
+ 0515 1F        	rar
+ 0516 6F        	mov	l,a
+ 0517 C9        	ret
+                
+ 0518 2A0F00    rstall:	lhld	contad
+ 051B 23        	inx	h
+ 051C 0610      	mvi	b,16
+ 051E 7E        rstal1:	mov	a,m
+ 051F E68F      	ani	8fh
+ 0521 77        	mov	m,a
+ 0522 23        	inx	h
+ 0523 23        	inx	h
+ 0524 05        	dcr	b
+ 0525 C21E05    	jnz	rstal1
+ 0528 C9        	ret
+                
+ 0529 3EFF      stsf:	mvi	a,0ffh
+ 052B 321500    	sta	cursid
+ 052E 2A5C01    	lhld	paramt
+ 0531 7E        	mov	a,m
+ 0532 FE3F      	cpi	'?'
+ 0534 C24205    	jnz	stsf1
+ 0537 CD1A04    	call	ckstdk
+ 053A 0E3F      	mvi	c,'?'
+ 053C CD7103    	call	stfcb
+ 053F C34C05    	jmp	stsf2
+                
+ 0542 2A5F01    stsf1:	lhld	mcrpnt
+ 0545 23        	inx	h
+ 0546 225F01    	shld	mcrpnt
+ 0549 CD6E03    	call	cksfcb
+ 054C 3A1900    stsf2:	lda	msgid
+ 054F 321500    	sta	cursid
+ 0552 C36F02    	jmp	sndhdr
+                
+ 0555 3A1500    stsn:	lda	cursid
+ 0558 FEFF      	cpi	0ffh
+ 055A C26305    	jnz	stsn1
+ 055D CDC402    	call	tbdosp
+ 0560 C3AE02    	jmp	nerror
+                
+ 0563 321900    stsn1:	sta	msgid
+ 0566 3A6901    	lda	curusr
+ 0569 2A5F01    	lhld	mcrpnt
+ 056C 23        	inx	h
+ 056D 77        	mov	m,a
+ 056E 23        	inx	h
+ 056F 225F01    	shld	mcrpnt
+ 0572 C36F02    	jmp	sndhdr
+                
+ 0575 CDB702    rcvec:	call	rcvpar
+ 0578 211E00    	lxi	h,msgdat+1
+ 057B 225F01    	shld	mcrpnt
+ 057E 56        	mov	d,m
+ 057F 2B        	dcx	h
+ 0580 7E        	mov	a,m
+ 0581 325E01    	sta	retcod
+ 0584 2B        	dcx	h
+ 0585 7E        	mov	a,m
+ 0586 3D        	dcr	a
+ 0587 C0        	rnz
+ 0588 3AB301    	lda	bdermd
+ 058B 3C        	inr	a
+ 058C C29305    	jnz	nderr
+ 058F EB        	xchg
+ 0590 C3AB02    	jmp	ndendr
+                
+ 0593 D5        nderr:	push	d
+ 0594 111D00    	lxi	d,nderrm
+ 0597 CDC705    	call	prmsg
+ 059A F1        	pop	psw
+ 059B CDB705    	call	hexout
+ 059E 112900    	lxi	d,nderr2
+ 05A1 CDC705    	call	prmsg
+ 05A4 3A5B01    	lda	funcod
+ 05A7 CDB705    	call	hexout
+ 05AA F1        	pop	psw
+ 05AB 67        	mov	h,a
+ 05AC 3AB301    	lda	bdermd
+ 05AF FEFE      	cpi	0feh
+ 05B1 CAAB02    	jz	ndendr
+ 05B4 C30303    	jmp	nwboot
+                
+ 05B7 11B101    hexout:	lxi	d,hexmsg+1
+ 05BA F5        	push	psw
+ 05BB CDDC03    	call	hexdig
+ 05BE F1        	pop	psw
+ 05BF 1F        	rar
+ 05C0 1F        	rar
+ 05C1 1F        	rar
+ 05C2 1F        	rar
+ 05C3 1B        	dcx	d
+ 05C4 CDDC03    	call	hexdig
+ 05C7 0E09      prmsg:	mvi	c,printf
+ 05C9 C3CC02    	jmp	tobdos
+                
+ 05CC 3A6201    gtfcb:	lda	opnunl
+ 05CF 3C        	inr	a
+ 05D0 C2D805    	jnz	gtfccr
+ 05D3 0623      ctfcrr:	mvi	b,35
+ 05D5 C3DA05    	jmp	gtfc1
+ 05D8 0620      gtfccr:	mvi	b,32
+ 05DA CDF305    gtfc1:	call	rstmp
+ 05DD 2A5F01    	lhld	mcrpnt
+ 05E0 23        	inx	h
+ 05E1 EB        	xchg
+ 05E2 2A5C01    	lhld	paramt
+ 05E5 23        	inx	h
+                	;jmp	mcpyfs
+                
+ 05E6 1A        mcpyfs:	ldax	d
+ 05E7 77        	mov	m,a
+ 05E8 13        	inx	d
+ 05E9 23        	inx	h
+ 05EA 05        	dcr	b
+ 05EB C2E605    	jnz	mcpyfs
+ 05EE EB        	xchg
+ 05EF 225F01    	shld	mcrpnt
+ 05F2 C9        	ret
+                
+ 05F3 3A6301    rstmp:	lda	fntmpf
+ 05F6 1F        	rar
+ 05F7 1F        	rar
+ 05F8 D20506    	jnc	rstmp1
+ 05FB 2A5F01    	lhld	mcrpnt
+ 05FE 23        	inx	h
+ 05FF 23        	inx	h
+ 0600 3624      	mvi	m,'$'
+ 0602 23        	inx	h
+ 0603 3624      	mvi	m,'$'
+ 0605 17        rstmp1:	ral
+ 0606 D0        	rnc
+ 0607 2A5F01    	lhld	mcrpnt
+ 060A 110A00    	lxi	d,10
+ 060D 19        	dad	d
+ 060E 3624      	mvi	m,'$'
+ 0610 23        	inx	h
+ 0611 3624      	mvi	m,'$'
+ 0613 C9        	ret
+                
+ 0614 3A5E01    gtdire:	lda	retcod
+ 0617 3C        	inr	a
+ 0618 C8        	rz
+ 0619 2A5F01    	lhld	mcrpnt
+ 061C EB        	xchg
+ 061D 2A6701    	lhld	dmaadd
+ 0620 012000    	lxi	b,32
+ 0623 3D        gtdir1:	dcr	a
+ 0624 CA2B06    	jz	gtdir2
+ 0627 09        	dad	b
+ 0628 C32306    	jmp	gtdir1
+ 062B 41        gtdir2:	mov	b,c
+ 062C CDE605    	call	mcpyfs
+ 062F C9        	ret
+                
+ 0630 3A5E01    gtosct:	lda	retcod
+ 0633 B7        	ora	a
+ 0634 C0        	rnz
+ 0635 214200    	lxi	h,msgdat+37
+ 0638 EB        	xchg
+ 0639 2A6701    	lhld	dmaadd
+ 063C 0680      	mvi	b,128
+ 063E C3E605    	jmp	mcpyfs
+                
+ 0641 2A5F01    gtmisc:	lhld	mcrpnt
+ 0644 2B        	dcx	h
+ 0645 3A5B01    	lda	funcod
+ 0648 FE1B      	cpi	27
+ 064A CA6606    	jz	gtmsc3
+ 064D EB        	xchg
+ 064E FE1F      	cpi	31
+ 0650 C25C06    	jnz	gtmsc1
+ 0653 21C401    	lxi	h,curdpb
+ 0656 E5        	push	h
+ 0657 0610      	mvi	b,16
+ 0659 C36206    	jmp	gtmsc2
+ 065C 21D301    gtmsc1:	lxi	h,curscf
+ 065F E5        	push	h
+ 0660 0617      	mvi	b,23
+ 0662 CDE605    gtmsc2:	call	mcpyfs
+ 0665 E1        	pop	h
+ 0666 7D        gtmsc3:	mov	a,l
+ 0667 325E01    	sta	retcod
+ 066A C9        	ret
+                
+ 066B 2A0F00    gtlogv:	lhld	contad
+ 066E 112000    	lxi	d,32
+ 0671 19        	dad	d
+ 0672 EB        	xchg
+ 0673 210000    	lxi	h,0
+ 0676 0610      	mvi	b,16
+ 0678 1A        gtlgv1:	ldax	d
+ 0679 1B        	dcx	d
+ 067A 4F        	mov	c,a
+ 067B 1A        	ldax	d
+ 067C 1B        	dcx	d
+ 067D 29        	dad	h
+ 067E CD8A06    	call	drvsts
+ 0681 05        	dcr	b
+ 0682 C27806    	jnz	gtlgv1
+ 0685 7D        	mov	a,l
+ 0686 325E01    	sta	retcod
+ 0689 C9        	ret
+                
+ 068A D5        drvsts:	push	d
+ 068B C5        	push	b
+ 068C E5        	push	h
+ 068D 17        	ral
+ 068E DA9B06    	jc	drvst1
+ 0691 C5        	push	b
+ 0692 CDC402    	call	tbdosp
+ 0695 C1        	pop	b
+ 0696 05        	dcr	b
+ 0697 EB        	xchg
+ 0698 C3B706    	jmp	drvst2
+                
+ 069B 1F        drvst1:	rar
+ 069C E60F      	ani	0fh
+ 069E 47        	mov	b,a
+ 069F 79        	mov	a,c
+ 06A0 321900    	sta	msgid
+ 06A3 211D00    	lxi	h,msgdat
+ 06A6 225F01    	shld	mcrpnt
+ 06A9 C5        	push	b
+ 06AA CD6F02    	call	sndhdr
+ 06AD CDB702    	call	rcvpar
+ 06B0 C1        	pop	b
+ 06B1 2A5F01    	lhld	mcrpnt
+ 06B4 5E        	mov	e,m
+ 06B5 23        	inx	h
+ 06B6 56        	mov	d,m
+ 06B7 78        drvst2:	mov	a,b
+ 06B8 B7        	ora	a
+ 06B9 CAC606    	jz	drvst4
+ 06BC 7A        drvst3:	mov	a,d
+ 06BD 1F        	rar
+ 06BE 57        	mov	d,a
+ 06BF 7B        	mov	a,e
+ 06C0 1F        	rar
+ 06C1 5F        	mov	e,a
+ 06C2 05        	dcr	b
+ 06C3 C2BC06    	jnz	drvst3
+ 06C6 1600      drvst4:	mvi	d,0
+ 06C8 7B        	mov	a,e
+ 06C9 E601      	ani	1
+ 06CB 5F        	mov	e,a
+ 06CC E1        	pop	h
+ 06CD 19        	dad	d
+ 06CE C1        	pop	b
+ 06CF D1        	pop	d
+ 06D0 C9        	ret
+                
+ 06D1 2A5C01    setdma:	lhld	paramt
+ 06D4 226701    	shld	dmaadd
+ 06D7 C3C402    	jmp	tbdosp
+                
+ 06DA 3A5C01    seldsk:	lda	paramt
+ 06DD 326601    	sta	curdsk
+ 06E0 1600      	mvi	d,0
+ 06E2 5F        	mov	e,a
+ 06E3 CDEA02    	call	chkdsk
+ 06E6 FEFF      	cpi	0ffh
+ 06E8 CAC402    	jz	tbdosp
+ 06EB 2A5F01    	lhld	mcrpnt
+ 06EE 0D        	dcr	c
+ 06EF 71        	mov	m,c
+ 06F0 23        	inx	h
+ 06F1 225F01    	shld	mcrpnt
+ 06F4 CD6F02    	call	sndhdr
+ 06F7 C37505    	jmp	rcvec
+                
+ 06FA 218000    reset:	lxi	h,defdma
+ 06FD 226701    	shld	dmaadd
+ 0700 AF        	xra	a
+ 0701 325C01    	sta	paramt
+ 0704 3E0E      	mvi	a,14
+ 0706 325B01    	sta	funcod
+ 0709 321B00    	sta	msgfun
+ 070C 211D00    	lxi	h,msgdat
+ 070F 225F01    	shld	mcrpnt
+ 0712 C3DA06    	jmp	seldsk
+                
+ 0715 3A5C01    sguser:	lda	paramt
+ 0718 FEFF      	cpi	0ffh
+ 071A 216901    	lxi	h,curusr
+ 071D 5F        	mov	e,a
+ 071E 7E        	mov	a,m
+ 071F 325E01    	sta	retcod
+ 0722 C8        	rz
+ 0723 73        	mov	m,e
+ 0724 C9        	ret
+                
+ 0725 2A1300    getver:	lhld	version
+ 0728 3E02      	mvi	a,2
+ 072A B4        	ora	h
+ 072B 67        	mov	h,a
+ 072C 7D        	mov	a,l
+ 072D 325E01    	sta	retcod
+ 0730 C9        	ret
+                
+ 0731 3A6601    getdsk:	lda	curdsk
+ 0734 325E01    	sta	retcod
+ 0737 C9        	ret
+                
+ 0738 CD0300    nwstat:	call	nios+3	; NTWKST
+ 073B 325E01    	sta	retcod
+ 073E C9        	ret
+                
+ 073F CD0600    nwcftb:	call	nios+6	; CNFTBL
+ 0742 7D        	mov	a,l
+ 0743 325E01    	sta	retcod
+ 0746 C9        	ret
+                
+ 0747 2A5C01    login:	lhld	paramt
+ 074A 7E        	mov	a,m
+ 074B 321900    	sta	msgid
+ 074E 23        	inx	h
+ 074F EB        	xchg
+ 0750 2A5F01    	lhld	mcrpnt
+ 0753 0608      	mvi	b,8
+ 0755 CDF503    	call	mcpyts
+ 0758 C36F02    	jmp	sndhdr
+                
+ 075B 3A5C01    logoff:	lda	paramt
+ 075E 321900    	sta	msgid
+ 0761 C36F02    	jmp	sndhdr
+                
+ 0764 2A5C01    sdmsgu:	lhld	paramt
+ 0767 44        	mov	b,h
+ 0768 4D        	mov	c,l
+ 0769 C39702    	jmp	sdmsge
+                
+ 076C 2A5C01    rvmsgu:	lhld	paramt
+ 076F 44        	mov	b,h
+ 0770 4D        	mov	c,l
+ 0771 C39F02    	jmp	rvmsge
+                
+ 0774 3A5C01    stbder:	lda	paramt
+ 0777 32B301    	sta	bdermd
+ 077A C9        	ret
+                
+ 077B 2A6E01    nconst:	lhld	tlbios+4
+ 077E 110B00    	lxi	d,11
+ 0781 C3FC07    	jmp	nconcm
+                
+ 0784 219107    nconin:	lxi	h,cpchk
+ 0787 E5        	push	h
+ 0788 2A7001    	lhld	tlbios+6
+ 078B 110300    	lxi	d,3
+ 078E C3FC07    	jmp	nconcm
+                
+ 0791 F5        cpchk:	push	psw
+ 0792 FE10      	cpi	10h	; Ctrl-P
+ 0794 C2F407    	jnz	cpchk5
+ 0797 3A0E00    	lda	rdcbff
+ 079A B7        	ora	a
+ 079B CAF407    	jz	cpchk5
+ 079E 2A0F00    	lhld	contad
+ 07A1 2B        	dcx	h
+ 07A2 3A0D00    	lda	ctlpf
+ 07A5 B7        	ora	a
+ 07A6 CAD307    	jz	cpchk2
+ 07A9 AF        	xra	a
+ 07AA 320D00    	sta	ctlpf
+ 07AD 7E        	mov	a,m
+ 07AE E6FB      	ani	0fbh
+ 07B0 77        	mov	m,a
+ 07B1 112400    	lxi	d,36
+ 07B4 19        	dad	d
+ 07B5 7E        	mov	a,m
+ 07B6 17        	ral
+ 07B7 0EFF      	mvi	c,0ffh
+ 07B9 DC3608    	cc	nlist
+ 07BC AF        	xra	a
+ 07BD 320C00    	sta	lstdrt
+ 07C0 214646    	lxi	h,'FF'
+ 07C3 22D007    	shld	ctpmsg+7
+ 07C6 C3E207    	jmp	cpchk3
+                
+ 07C9 43746C2D50ctpmsg:	db	'Ctl-P OFF',0
+                
+ 07D3 3EFF      cpchk2:	mvi	a,0ffh
+ 07D5 320D00    	sta	ctlpf
+ 07D8 7E        	mov	a,m
+ 07D9 F604      	ori	04h
+ 07DB 77        	mov	m,a
+ 07DC 214E00    	lxi	h,'N'
+ 07DF 22D007    	shld	ctpmsg+7
+ 07E2 21C907    cpchk3:	lxi	h,ctpmsg
+ 07E5 7E        cpchk4:	mov	a,m
+ 07E6 B7        	ora	a
+ 07E7 CAF407    	jz	cpchk5
+ 07EA 4F        	mov	c,a
+ 07EB 23        	inx	h
+ 07EC E5        	push	h
+ 07ED CDF607    	call	nconot
+ 07F0 E1        	pop	h
+ 07F1 C3E507    	jmp	cpchk4
+ 07F4 F1        cpchk5:	pop	psw
+ 07F5 C9        	ret
+                
+ 07F6 2A7201    nconot:	lhld	tlbios+8
+ 07F9 110401    	lxi	d,260	; count + func offset
+ 07FC E5        nconcm:	push	h
+ 07FD C5        	push	b
+ 07FE 2A0F00    	lhld	contad
+ 0801 012100    	lxi	b,33
+ 0804 09        	dad	b
+ 0805 C1        	pop	b
+ 0806 7E        	mov	a,m
+ 0807 17        	ral
+ 0808 D0        	rnc
+ 0809 7E        	mov	a,m
+ 080A E60F      	ani	0fh
+ 080C 47        	mov	b,a
+ 080D 23        	inx	h
+ 080E 7E        	mov	a,m
+ 080F 211800    	lxi	h,msgtop
+ 0812 3600      	mvi	m,0
+ 0814 23        	inx	h
+ 0815 77        	mov	m,a	
+ 0816 E3        	xthl
+ 0817 2A0F00    	lhld	contad
+ 081A 7E        	mov	a,m
+ 081B E1        	pop	h
+ 081C 23        	inx	h
+ 081D 77        	mov	m,a
+ 081E 23        	inx	h
+ 081F 73        	mov	m,e
+ 0820 23        	inx	h
+ 0821 72        	mov	m,d
+ 0822 23        	inx	h
+ 0823 70        	mov	m,b
+ 0824 23        	inx	h
+ 0825 71        	mov	m,c
+ 0826 011800    	lxi	b,msgtop
+ 0829 CD9702    	call	sdmsge
+ 082C 011800    	lxi	b,msgtop
+ 082F CD9F02    	call	rvmsge
+ 0832 3A1D00    	lda	msgdat
+ 0835 C9        	ret
+                
+ 0836 3EFF      nlist:	mvi	a,0ffh
+ 0838 320C00    	sta	lstdrt
+ 083B 2A0F00    	lhld	contad
+ 083E 112300    	lxi	d,35
+ 0841 19        	dad	d
+ 0842 7E        	mov	a,m
+ 0843 17        	ral
+ 0844 DA4B08    	jc	nlist1
+ 0847 2A7401    	lhld	tlbios+10
+ 084A E9        	pchl
+ 084B 7E        nlist1:	mov	a,m
+ 084C E60F      	ani	0fh
+ 084E 326101    	sta	lstunt
+ 0851 C5        	push	b
+ 0852 41        	mov	b,c
+ 0853 23        	inx	h
+ 0854 23        	inx	h
+ 0855 4E        	mov	c,m
+ 0856 34        	inr	m
+ 0857 3E80      	mvi	a,80h
+ 0859 BE        	cmp	m
+ 085A CA6308    	jz	nlist2
+ 085D 78        	mov	a,b
+ 085E FEFF      	cpi	0ffh
+ 0860 C26808    	jnz	nlist3
+ 0863 AF        nlist2:	xra	a
+ 0864 77        	mov	m,a
+ 0865 320C00    	sta	lstdrt
+ 0868 110700    nlist3:	lxi	d,7
+ 086B 19        	dad	d
+ 086C 0600      	mvi	b,0
+ 086E 09        	dad	b
+ 086F D1        	pop	d
+ 0870 73        	mov	m,e
+ 0871 C0        	rnz
+ 0872 2A0F00    	lhld	contad
+ 0875 112400    	lxi	d,36
+ 0878 19        	dad	d
+ 0879 7E        	mov	a,m
+ 087A 23        	inx	h
+ 087B 23        	inx	h
+ 087C 59        	mov	e,c
+ 087D 44        	mov	b,h
+ 087E 4D        	mov	c,l
+ 087F 23        	inx	h
+ 0880 77        	mov	m,a
+ 0881 23        	inx	h
+ 0882 23        	inx	h
+ 0883 23        	inx	h
+ 0884 1C        	inr	e
+ 0885 73        	mov	m,e
+ 0886 23        	inx	h
+ 0887 3A6101    	lda	lstunt
+ 088A 77        	mov	m,a
+ 088B CD9702    	call	sdmsge
+ 088E 011800    	lxi	b,msgtop
+ 0891 C39F02    	jmp	rvmsge
+                
+ 0894 2A0F00    nlstst:	lhld	contad
+ 0897 112300    	lxi	d,35
+ 089A 19        	dad	d
+ 089B 7E        	mov	a,m
+ 089C 17        	ral
+ 089D DAA408    	jc	nlsts1
+ 08A0 2A8801    	lhld	tlbios+30
+ 08A3 E9        	pchl
+                
+ 08A4 C9        nlsts1:	ret
+                
+ 08A5 22BD01    load:	shld	ldbotm
+ 08A8 EB        	xchg
+ 08A9 22BB01    	shld	ldfcb
+ 08AC 0E1A      	mvi	c,setdmaf
+ 08AE 2180FF    	lxi	h,-128
+ 08B1 19        	dad	d
+ 08B2 22B701    	shld	lddma
+ 08B5 EB        	xchg
+ 08B6 CD0500    	call	bdosa
+ 08B9 2ABB01    	lhld	ldfcb
+ 08BC EB        	xchg
+ 08BD 0E0F      	mvi	c,openf
+ 08BF CD0500    	call	bdosa
+ 08C2 FEFF      	cpi	0ffh
+ 08C4 C8        	rz
+ 08C5 CD8109    	call	osread
+ 08C8 2AB701    	lhld	lddma
+ 08CB 23        	inx	h
+ 08CC 5E        	mov	e,m
+ 08CD 23        	inx	h
+ 08CE 56        	mov	d,m
+ 08CF 23        	inx	h
+ 08D0 23        	inx	h
+ 08D1 4E        	mov	c,m
+ 08D2 23        	inx	h
+ 08D3 46        	mov	b,m
+ 08D4 EB        	xchg
+ 08D5 22B901    	shld	ldlngt
+ 08D8 09        	dad	b
+ 08D9 EB        	xchg
+ 08DA 2ABD01    	lhld	ldbotm
+ 08DD EB        	xchg
+ 08DE AF        	xra	a
+ 08DF 95        	sub	l
+ 08E0 6F        	mov	l,a
+ 08E1 3E00      	mvi	a,0
+ 08E3 9C        	sbb	h
+ 08E4 67        	mov	h,a
+ 08E5 19        	dad	d
+ 08E6 2E00      	mvi	l,0
+ 08E8 22BF01    	shld	ldtop
+ 08EB EB        	xchg
+ 08EC 2180FF    	lxi	h,-128
+ 08EF 19        	dad	d
+ 08F0 22B701    	shld	lddma
+ 08F3 CD8109    	call	osread
+ 08F6 2AB901    	lhld	ldlngt
+ 08F9 117F00    	lxi	d,127
+ 08FC 19        	dad	d
+ 08FD 7D        	mov	a,l
+ 08FE 17        	ral
+ 08FF 7C        	mov	a,h
+ 0900 17        	ral
+ 0901 2ABF01    	lhld	ldtop
+ 0904 32C101    load1:	sta	ldcnt
+ 0907 22C201    	shld	ldpnt
+ 090A EB        	xchg
+ 090B 0E1A      	mvi	c,setdmaf
+ 090D CD0500    	call	bdosa
+ 0910 CD8109    	call	osread
+ 0913 2AC201    	lhld	ldpnt
+ 0916 118000    	lxi	d,128
+ 0919 19        	dad	d
+ 091A 3AC101    	lda	ldcnt
+ 091D 3D        	dcr	a
+ 091E C20409    	jnz	load1
+ 0921 2AB701    	lhld	lddma
+ 0924 EB        	xchg
+ 0925 0E1A      	mvi	c,setdmaf
+ 0927 CD0500    	call	bdosa
+ 092A 2AB901    	lhld	ldlngt
+ 092D 44        	mov	b,h
+ 092E 4D        	mov	c,l
+ 092F EB        	xchg
+ 0930 2ABF01    	lhld	ldtop
+ 0933 EB        	xchg
+ 0934 19        	dad	d
+ 0935 E5        	push	h
+ 0936 62        	mov	h,d
+ 0937 78        load2:	mov	a,b
+ 0938 B1        	ora	c
+ 0939 C24C09    	jnz	load3
+ 093C E1        	pop	h
+ 093D F5        	push	psw
+ 093E 2ABB01    	lhld	ldfcb
+ 0941 EB        	xchg
+ 0942 0E10      	mvi	c,closef
+ 0944 CD0500    	call	bdosa
+ 0947 F1        	pop	psw
+ 0948 2ABF01    	lhld	ldtop
+ 094B C9        	ret
+                
+ 094C 0B        load3:	dcx	b
+ 094D 7B        	mov	a,e
+ 094E E607      	ani	07h
+ 0950 C27409    	jnz	load5
+ 0953 E3        	xthl
+ 0954 7D        	mov	a,l
+ 0955 E67F      	ani	7fh
+ 0957 C27009    	jnz	load4
+ 095A C5        	push	b
+ 095B D5        	push	d
+ 095C E5        	push	h
+ 095D 2ABB01    	lhld	ldfcb
+ 0960 EB        	xchg
+ 0961 0E14      	mvi	c,readf
+ 0963 CD0500    	call	bdosa
+ 0966 E1        	pop	h
+ 0967 D1        	pop	d
+ 0968 C1        	pop	b
+ 0969 2AB701    	lhld	lddma
+ 096C B7        	ora	a
+ 096D C28C09    	jnz	lderr
+ 0970 7E        load4:	mov	a,m
+ 0971 23        	inx	h
+ 0972 E3        	xthl
+ 0973 6F        	mov	l,a
+ 0974 7D        load5:	mov	a,l
+ 0975 17        	ral
+ 0976 6F        	mov	l,a
+ 0977 D27D09    	jnc	load6
+ 097A 1A        	ldax	d
+ 097B 84        	add	h
+ 097C 12        	stax	d
+ 097D 13        load6:	inx	d
+ 097E C33709    	jmp	load2
+                
+ 0981 2ABB01    osread:	lhld	ldfcb
+ 0984 EB        	xchg
+ 0985 0E14      	mvi	c,readf
+ 0987 CD0500    	call	bdosa
+ 098A B7        	ora	a
+ 098B C8        	rz
+ 098C 3EFF      lderr:	mvi	a,0ffh
+ 098E E1        	pop	h
+ 098F C9        	ret
+                
+                	dseg
+ 01B4           	ds	2	; unused?
+ 01B6           	ds	1	; unused?
+ 01B7           lddma:	ds	2
+ 01B9           ldlngt:	ds	2
+ 01BB           ldfcb:	ds	2
+ 01BD           ldbotm:	ds	2
+ 01BF           ldtop:	ds	2
+ 01C1           ldcnt:	ds	1
+ 01C2           ldpnt:	ds	2
+ 01C4           curdpb:	ds	15
+ 01D3           curscf:	ds	23
+                
+                	cseg
+ 0990           	end
+
