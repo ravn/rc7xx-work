@@ -12,6 +12,9 @@ backend plus a temporary restoration of address-space-2 port I/O.
 | Current backend | `d6658ad` plus temporary port-I/O patch | 3685 B | 2095 B | 2214 B* |
 | Difference |  | +292 B | +180 B | +180 B |
 
+The whole-image ZX0 delta is context only; the primary analysis below is
+routine-by-routine generated code size and instruction structure.
+
 `*` The 2214 B image is for inspection only. The production linker script
 rejects it for exceeding the physical 2048 B PROM limit by 166 B. A copy of
 the linker script with only that assertion raised to 4096 B was used to
@@ -56,12 +59,15 @@ also differ. It therefore shows the emitted-code delta, not a backend-only
 causal attribution. The assembly below documents observed differences; it
 does not prove why each compiler made its decisions.
 
-## Largest matched function changes
+## Per-routine code growth
 
-Function byte counts are from the disassemblies: historical instruction
-bytes between function labels, compared with current ELF symbol sizes.
+The main question is how much code each routine now needs. For the historical
+image, each routine's byte span runs from its label to the next routine label;
+for the current image, sizes come from ELF symbols. The matched list below
+excludes `_main_relocated`, whose old inline bodies are accounted for
+separately as extracted helpers.
 
-| Delta | Function | Historical | Current |
+| Delta | Routine | Historical | Current |
 |---:|---|---:|---:|
 | +60 B | `_check_sysfile` | 40 B | 100 B |
 | +33 B | `_fdc_read_data_from_current_location` | 132 B | 165 B |
@@ -69,6 +75,31 @@ bytes between function labels, compared with current ELF symbol sizes.
 | +21 B | `_fdc_read_result` | 39 B | 60 B |
 | +17 B | `_fdc_get_result_bytes` | 92 B | 109 B |
 | +16 B | `_verify_seek_result` | 44 B | 60 B |
+| +12 B | `_boot_floppy_or_prom` | 124 B | 136 B |
+| +11 B | `_fdc_write_full_cmd` | 81 B | 92 B |
+| +9 B | `_lookup_sectors_and_gap3_for_current_track` | 49 B | 58 B |
+| +7 B | `_floppy_legacy_boot` | 41 B | 48 B |
+| +5 B | `_wait_fdc_ready` | 44 B | 49 B |
+| +5 B | `_calc_size_of_current_track` | 43 B | 48 B |
+| +4 B | `_prom1_if_present` | 41 B | 45 B |
+| +3 B | `_delay` | 14 B | 17 B |
+| +3 B | `_check_fdc_result` | 38 B | 41 B |
+| +1 B | `_halt_forever` | 11 B | 12 B |
+| +1 B | `_fdc_sense_interrupt` | 23 B | 24 B |
+| +1 B | `_error_display_halt` | 28 B | 29 B |
+| 0 B | `_compare_6bytes` | 20 B | 20 B |
+| −1 B | `_refresh_crt_dma_50hz_interrupt` | 44 B | 43 B |
+| −1 B | `_nothing_int` | 3 B | 2 B |
+| −1 B | `_floppy_completed_operation_interrupt` | 30 B | 29 B |
+| −1 B | `_fdc_read_when_ready` | 29 B | 28 B |
+| −2 B | `_fdc_write_when_ready` | 31 B | 29 B |
+| −5 B | `_fdc_detect_sector_size_and_density` | 60 B | 55 B |
+
+Across these 25 shared routines, the measured spans total **+219 B net**.
+Most routines are larger, while six shrink by 1-5 B and one is unchanged.
+This is the clearest routine-level evidence that the current output spends
+more bytes in several existing bodies; it is not a claim that every routine
+regressed.
 
 `_main_relocated` shrinks from 486 B to 194 B, while the current listing
 emits separate helper symbols also represented in the old function body:
@@ -78,7 +109,8 @@ emits separate helper symbols also represented in the old function body:
 symbol with that name. Compare instructions and call sites rather than
 treating extracted code as new source functionality.
 
-The complete symbol-boundary budget reconciles the raw `.text` growth:
+For completeness, the full symbol-region budget reconciles the raw `.text`
+growth:
 
 | Region / group | Historical | Current | Delta |
 |---|---:|---:|---:|
@@ -100,15 +132,29 @@ These are measured symbol spans, not causal explanations for the code
 decisions. The +40 B after the table is a region total, not a claim that all
 of it is data.
 
-Two visible examples:
+Three instruction-level comparisons show where some of the extra bytes go:
 
-- `_fdc_select_drive_cylinder_head`: historical code uses `OR (HL)` and
-  `PUSH AF`; current code loads the drive byte into `C`, uses `OR C`, and
-  stores values in IX-relative frame slots. Its measured body grows by 21 B.
-- `_fdc_read_result`: historical code saves the loop counter with `PUSH DE`
-  across a call and indexes via `ADD HL,DE`. Current code spills the counter
-  through an IX-relative slot and zero-extends it into BC before `ADD HL,BC`.
-  Its measured body also grows by 21 B.
+| Routine | Observed current-vs-historical code shape |
+|---|---|
+| `_fdc_read_result` (+21 B) | Historical code keeps the loop index in `DE`, saves it with `PUSH DE` across the call, then indexes with `ADD HL,DE`. Current code adds an IX frame, spills/reloads the index through `(IX-1)`, zero-extends it into `BC`, and uses `ADD HL,BC`. The current prologue/epilogue alone costs 14 B. |
+| `_fdc_select_drive_cylinder_head` (+21 B) | Historical code combines the head and drive with `OR (HL)`, preserves the argument with `PUSH AF`, and tail-jumps to `verify_seek_result`. Current code adds an IX frame, materializes the values in IX-relative slots, and calls the verifier before restoring the frame and returning. |
+| `_fdc_read_data_from_current_location` (+33 B) | The historical body has no IX frame and keeps the remaining-byte arithmetic in registers using `EX DE,HL`. The current body has IX setup/teardown and stores/reloads values through IX-relative slots around the same transfer loop. |
+
+These are directly visible code-shape differences consistent with extra
+register pressure/spilling and frame-management overhead in the current
+output. They are evidence of less compact generated code in these routines,
+but not yet proof that a single backend decision caused each change: the
+historical and current Clang frontends differ, and the frame-eligibility
+policies are not equivalent.
+
+`_check_sysfile` is the largest apparent growth (+60 B), but it should not be
+treated as a straightforward missed optimization. The source compares an
+unsigned `byte` with a plain `char`; the current code sign-extends the pattern
+character and compares promoted values, while the historical code compares
+only the low bytes. The real callers pass ASCII `"SYSM"`/`"SYSC"`, but the
+historical sequence can differ for high-bit pattern characters. Some of this
+routine's extra size is therefore consistent with preserving C promotion
+semantics, not simply inferior instruction selection.
 
 ## Inlining versus separate helper bodies
 

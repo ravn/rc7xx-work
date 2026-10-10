@@ -46,6 +46,8 @@
 - [x] Reconcile the complete +292 B raw `.text` growth by symbol/region:
   helper extraction nets −117 B, the boot-path changes +155 B, and remaining
   pre-table symbols +214 B; record the separate +40 B post-table region.
+- [x] Make matched-routine code size and generated instruction structure the
+  primary comparison; retain ZX0 as a secondary whole-image metric.
 - [x] Bound the remaining +174 B compressed gap after the `check_sysfile`
   counterfactual. ZX0 encodes one continuous payload, so this structural
   comparison does not claim a unique per-function or causal attribution.
