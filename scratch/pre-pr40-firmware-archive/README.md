@@ -2,7 +2,8 @@
 
 This archive keeps the September 5, 2026 firmware snapshot and its committed
 artifacts separate from the earlier `c863c55` autoload comparison. It is a
-workspace-local archive under `scratch/`; it is not committed or pushed.
+workspace-local archive under `scratch/`, version-controlled on branch
+`archive/pre-pr40-firmware`; it has not been pushed.
 
 ## Revision anchors
 
@@ -34,6 +35,9 @@ commit. `source-snapshot/` contains those source trees, `cpnos-shared/`,
   versus current-backend disassembly comparison, including method and limits.
 - `reproductions/autoload-c863c55/current-d6658ad-asio/` — current compiler
   listing, ELF, inspection-only over-cap image, and raw/compressed payloads.
+- `reproductions/autoload-c863c55/current-d6658ad-asio/always-inline-probe/`
+  — source copy and outputs for the `always_inline` attribute counterfactual;
+  helper symbols remained separate and the image matched baseline.
 - `build-logs/` — toolchain configuration/build logs and per-component build
   logs, plus ccache statistics.
 - `generated/` — rebuilt component intermediates, listings, and final binaries.
@@ -102,8 +106,8 @@ comparison details are in `build-logs/artifact-comparisons.log`. The earlier
 `reproductions/autoload-c863c55/`.
 
 No MAME boot or firmware runtime test was run for these archived builds. This
-archive is local to the workspace and is not committed or pushed. The CP/NOS
-build used sibling `cpnet-z80` revision
+archive is local to the workspace, committed on `archive/pre-pr40-firmware`,
+and not pushed. The CP/NOS build used sibling `cpnet-z80` revision
 `d577cb2ffa187e9c5882a1cce8b27ef45d49e09c`; the autoload compressor/decompressor
 came from `z88dk` revision `bad0ed8fa9b1916fa8a4566f25f11951a7f9e7fd`. Those
 external dependency trees are not duplicated here because all resulting build

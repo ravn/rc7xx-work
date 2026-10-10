@@ -258,6 +258,21 @@ The disabled hashes are
 The builds are preserved under `current-d6658ad-asio/outliner-enabled/` and
 `current-d6658ad-asio/outliner-disabled/`.
 
+## Forced-inline attribute probe
+
+I marked `load_chargen_font`, `display_banner_and_start_crt`,
+`display_sw1_status`, and `draw_qr` as `always_inline` in a diagnostic source
+copy. The emitted listing still has all four helper symbols and their calls;
+the raw `.text`, ZX0 payload, and ROM are byte-identical to the outliner-
+enabled baseline (3685 B, 2095 B, and 2214 B). Applying LLVM's
+`always-inline` pass directly to the emitted IR also left the calls intact.
+
+This probe did not actually inline those bodies, so it gives no measurement
+of how much the historical inline structure contributes to image size. The
+reason the marked functions remained separate is not established here. The
+source copy, listing, and build outputs are preserved in
+`current-d6658ad-asio/always-inline-probe/`.
+
 ## Artifacts
 
 - `evidence/prom.clang.lis` — historical annotated disassembly.
@@ -272,6 +287,8 @@ The builds are preserved under `current-d6658ad-asio/outliner-enabled/` and
   Its binary SHA-256 is `24372f9e016df6ac33782063a459b83d3084189b8547dd0a8f501152d7dc99c0`;
   raw payload SHA-256 is `85dc812ae5ff0e4bac631f7423345dbd905553765911387dde6cf65bceb89a80`;
   compressed payload SHA-256 is `d394d06bb25b973a9716ffc89d092d33d762fe598a8f5a8189a2ddf4f9c71e8d`.
+- `current-d6658ad-asio/always-inline-probe/` — attribute counterfactual
+  source, listing, and image artifacts; all output bytes match the baseline.
 - `current-d6658ad-asio/current-backend-port-io.patch` — temporary backend
   patch used only in the isolated worktree.
 - `../../build-logs/current-asio-ninja-clang-llc.log` and

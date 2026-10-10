@@ -1,0 +1,453 @@
+# Makefile for RC702 autoload PROM rewrite
+#
+# Usage:
+#   make prom                    Build + install PROM (default: clang)
+#   make prom COMPILER=sdcc      Build + install PROM with SDCC
+#   make mame                   Build + boot in MAME
+#   make clean                  Clean both compiler outputs
+
+# ================================================================
+# Compiler selection
+# ================================================================
+#
+# Each compiler produces its own distinguishable PROM artifact from the
+# shared sources:
+#   clang -> clang/prom.clang.bin  (annotated listing: clang/prom.clang.lis,
+#                                    tracked in git so historical diffs work
+#                                    without rebuilding clang)
+#   sdcc  -> sdcc/prom.bin
+# Distinct filenames let both compilers build in parallel without colliding.
+
+COMPILER ?= clang
+
+# SW1 console / SIO-B-debug switch bit -- default here, authoritatively
+# overridden by the shared top-level config (see ../sw1_config.mk and
+# docs/SW1_BIT_MAP.md).  Passed to the C build as -DSW1_CONSOLE_BIT so the
+# autoload SIO-B debug gate and the rcbios console gate use one constant.
+SW1_CONSOLE_BIT ?= 0x01
+-include $(CURDIR)/../sw1_config.mk
+
+# Compiler-distinct artifact names.
+ifeq ($(COMPILER),clang)
+  PROM_BIN     = clang/prom.clang.bin
+  PROM_ELF     = clang/prom.clang.elf
+  PROM_LIS     = clang/prom.clang.lis
+  PROM_TARGET  = clang/prom.clang.bin
+else
+  PROM_BIN     = sdcc/prom.bin
+  PROM_ELF     = sdcc/prom.elf
+  PROM_LIS     = sdcc/prom.lis
+  PROM_TARGET  = sdcc/prom.bin
+endif
+
+# ================================================================
+# Shared configuration
+# ================================================================
+
+MAME ?= $(CURDIR)/../../mame
+MAME_ROM = $(MAME)/roms/rc702/roa375.ic66
+MAME_RUN = $(MAME)/regnecentralend rc702 -rompath $(MAME)/roms \
+	-nothrottle -window -skip_gameinfo \
+	-seconds_to_run 60 \
+	-autoboot_script mame_boot_test.lua \
+	-flop1 "$(FLOPPY)"
+RC700 = ../../rc700
+FLOPPY = $(HOME)/Downloads/SW1711-I8.imd
+
+.PHONY: all prom mame floppy-boot-test mamesym rc700 clean fdc-log \
+        clang_asm clang_disasm clang_src_lis clang_symbols clang_mamesym
+
+all: prom
+
+# ================================================================
+# PROM dispatch: make prom → build + pad + install
+# ================================================================
+
+prom:
+	$(MAKE) $(PROM_TARGET)
+	@# Per-compiler size policy:
+	@#   clang: 2 KB hard cap (production binary -- user's physical
+	@#          RC702 has 2716 sockets, no A11 bridge for 2732).
+	@#   sdcc:  4 KB hard cap (MAME-only parity testing; MAME's
+	@#          roa375.ic66 slot is a 4 KB file format).
+	@PROM=$$(wc -c < $(PROM_BIN) | tr -d ' '); \
+	 if [ "$(COMPILER)" = "sdcc" ]; then CEIL=4096; CLABEL="MAME 4 KB"; \
+	 else CEIL=2048; CLABEL="PROM0 2 KB hard"; fi; \
+	 echo "$(COMPILER) PROM: $$PROM / $$CEIL bytes ($$CLABEL)"; \
+	 if [ $$PROM -gt 4096 ]; then \
+	   echo "ERROR: exceeds 4096-byte file-format limit by $$((PROM - 4096)) bytes"; \
+	   exit 1; \
+	 elif [ $$PROM -gt $$CEIL ]; then \
+	   echo "ERROR: $(COMPILER) build exceeds $$CEIL-byte ceiling by $$((PROM - CEIL)) bytes"; \
+	   exit 1; \
+	 else \
+	   echo "OK: $$((CEIL - PROM)) bytes free in $$CLABEL"; \
+	 fi
+	@# Pad to 4096 for MAME's roa375.ic66 slot (the file format is
+	@# 4 KB; high 2 KB is unused / 0xFF in autoload mode, holds the
+	@# cpnos-in-asm slave when that's installed).  Hard-limit failure
+	@# above stops anything exceeding the actual PROM0 EPROM size.
+	@{ cat $(PROM_BIN); \
+	   perl -e "print \"\\xff\" x (4096 - $$(wc -c < $(PROM_BIN) | tr -d ' '))"; \
+	 } > $(COMPILER)/prom0.ic66
+	cp $(COMPILER)/prom0.ic66 $(MAME_ROM)
+
+# ================================================================
+# MAME targets
+# ================================================================
+
+# SW1 status display test.  Boots autoload with a stock 0xFF PROM1
+# (no signature -> autoload reaches its NO-LINEPROG halt, leaving the
+# banner + SW1 line on display); dumps display rows 0..2 from RAM at
+# 0x7A00 and greps for "SW1: " on row 1.  Use to verify the
+# display_sw1_status() output after editing the formatting.
+SW1_DUMP    = /tmp/autoload_sw1_dump.txt
+QR_DUMP     = /tmp/autoload_qr_dump.txt
+SW1_PROM1   = $(MAME)/roms/rc702/prom1.ic65
+SW1_PROM1_BACKUP = /tmp/autoload_prom1_backup.bin
+
+.PHONY: sw1-test
+sw1-test: prom
+	@echo "=== preparing empty PROM1 (no signature) ==="
+	@if [ -f "$(SW1_PROM1)" ]; then cp "$(SW1_PROM1)" "$(SW1_PROM1_BACKUP)"; fi
+	@perl -e 'print "\xFF" x 2048' > "$(SW1_PROM1)"
+	@rm -f $(SW1_DUMP)
+	@echo "=== launching MAME for SW1 status check (~4 s) ==="
+	-$(MAME)/regnecentralend rc702 -rompath $(MAME)/roms \
+	    -nothrottle -window -skip_gameinfo \
+	    -seconds_to_run 6 \
+	    -autoboot_script mame_sw1_test.lua \
+	    -snapname autoload_sw1 \
+	    >/tmp/autoload_sw1_mame.log 2>&1
+	@echo "=== restoring PROM1 ==="
+	@if [ -f "$(SW1_PROM1_BACKUP)" ]; then cp "$(SW1_PROM1_BACKUP)" "$(SW1_PROM1)"; rm -f "$(SW1_PROM1_BACKUP)"; fi
+	@echo "--- display rows 0..3 (base taken from DMA ch2, see dump header) ---"
+	@cat $(SW1_DUMP) 2>/dev/null || { echo "no dump produced"; exit 1; }
+	@grep -qE "^row00: .*SW1 12345678: [01]{8}" $(SW1_DUMP) \
+	    && echo "PASS: SW1 status present on row 0 (right side)" \
+	    || { echo "FAIL: SW1 status not found on row 0"; exit 1; }
+
+# QR-at-boot oracle: boot with NO diskette + NO PROM1 signature (the
+# "**NO DISKETTE NOR LINEPROG**" halt) and assert the QR code is on the
+# CRT next to the error message.  Verifies THREE things:
+#   1. the 8275 field attribute 0x84 (GPA0=1) precedes the block,
+#   2. the 13x9 sextant region byte-matches clang/qr_data.h, and
+#   3. the no-diskette error message is on screen.
+.PHONY: qr-test
+qr-test: prom
+	@echo "=== preparing empty PROM1 (no signature) ==="
+	@if [ -f "$(SW1_PROM1)" ]; then cp "$(SW1_PROM1)" "$(SW1_PROM1_BACKUP)"; fi
+	@perl -e 'print "\xFF" x 2048' > "$(SW1_PROM1)"
+	@rm -f $(QR_DUMP)
+	@echo "=== launching MAME for QR check (~4 s) ==="
+	-$(MAME)/regnecentralend rc702 -rompath $(MAME)/roms \
+	    -nothrottle -window -skip_gameinfo \
+	    -seconds_to_run 6 \
+	    -autoboot_script mame_qr_test.lua \
+	    -snapname autoload_qr \
+	    >/tmp/autoload_qr_mame.log 2>&1
+	@echo "=== restoring PROM1 ==="
+	@if [ -f "$(SW1_PROM1_BACKUP)" ]; then cp "$(SW1_PROM1_BACKUP)" "$(SW1_PROM1)"; rm -f "$(SW1_PROM1_BACKUP)"; fi
+	@cat $(QR_DUMP) 2>/dev/null || { echo "FAIL: no dump produced"; exit 1; }
+	@grep -q "^attr: 84" $(QR_DUMP) \
+	    || { echo "FAIL: field attribute 0x84 (GPA0=1) not present before QR"; exit 1; }
+	@grep -q "NO DISKETTE NOR LINEPROG" $(QR_DUMP) \
+	    || { echo "FAIL: no-diskette error message not on screen"; exit 1; }
+	@python3 -c 'import re,sys; \
+h=open("clang/qr_data.h").read(); \
+exp=[int(x,16) for x in re.findall(r"0x([0-9a-fA-F]{2})", h.split("qr_screen",1)[1])]; \
+d=open("$(QR_DUMP)").read().splitlines(); \
+got=[int(b,16) for l in d if l.startswith("qr") and l[2:4].isdigit() for b in l.split(":",1)[1].split()]; \
+sys.exit(0 if got==exp and len(exp)==117 else (print("FAIL: QR region mismatch (got %d bytes, expected %d)"%(len(got),len(exp))) or 1))' \
+	    && echo "PASS: QR rendered correctly (attr 0x84 + 117 sextant cells match qr_data.h + error message present)" \
+	    || { echo "FAIL: QR region does not match qr_data.h"; exit 1; }
+
+mame: prom mamesym
+	@awk '{printf "comadd %s,%s\n", $$1, $$2}' $(COMPILER)/prom0_mame.sym > $(COMPILER)/prom0_debug.cmd
+	@# clang banner is "RC700 ROA375 CL <date> <hash>/<user>"; SDCC banner is
+	@# "RC700 ROA375 <date>..." (no CL tag).  Match the full distinguishing
+	@# prefix per compiler -- the old clang EXPECT "RC700 CL" was never a
+	@# substring of the real banner (ROA375 sits between), so it always FAILed
+	@# even on a correct boot (ravn/rc700-gensmedet#100).
+	$(eval EXPECT := $(if $(filter sdcc,$(COMPILER)),RC700 ROA375,RC700 ROA375 CL))
+	EXPECT_BANNER="$(EXPECT)" $(MAME_RUN)
+	@cat /tmp/boot_test_result.txt
+	@grep -q '^PASS' /tmp/boot_test_result.txt
+
+# End-to-end production-path oracle: autoload boots the unpatched
+# `test-disks/SW1711-I8.imd` (in-tree, committed) through the DRI
+# rel.2.3 BIOS to the CP/M `A>` prompt.  Mirrors `mame` but uses the
+# in-tree disk + drops the autoload-banner check -- the assertion
+# here is "the floppy boot path reaches A>", not "the autoload
+# banner identifies".  Verified by screenshot 2026-06-03; this target
+# turns that into a repeatable / CI-hookable check.
+.PHONY: floppy-boot-test
+floppy-boot-test: prom mamesym
+	@awk '{printf "comadd %s,%s\n", $$1, $$2}' $(COMPILER)/prom0_mame.sym > $(COMPILER)/prom0_debug.cmd
+	FLOPPY=$(CURDIR)/test-disks/SW1711-I8.imd $(MAME_RUN)
+	@cat /tmp/boot_test_result.txt
+	@grep -q '^PASS' /tmp/boot_test_result.txt
+
+# ================================================================
+# FDC (µPD765) transaction logger — upstream bug evidence capture
+# ================================================================
+# Boots autoload-in-c with a floppy present so the boot PROM runs its disk
+# auto-detect (recalibrate / seek to head 1 / read track) and logs every
+# upd765a command + result byte via passive I/O taps (mame_fdc_log.lua).
+# Flags the Read-Track ST1-ND (bug A) and Sense-Int ST0-HD (bug B) signatures.
+# Override FDC_FLOPPY to point at a bootable CP/M image for a fuller trace.
+FDC_FLOPPY      ?= $(CURDIR)/test-disks/SW1711-I8.imd
+FDC_RAW_LOG     ?= /tmp/autoload_fdc_raw.txt
+FDC_DECODED_LOG ?= /tmp/autoload_fdc_decoded.txt
+FDC_LOG_SECONDS ?= 20
+
+fdc-log: prom
+	@rm -f $(FDC_RAW_LOG) $(FDC_DECODED_LOG)
+	@echo "=== MAME FDC logger: $(COMPILER) PROM, $(FDC_LOG_SECONDS)s, floppy=$(notdir $(FDC_FLOPPY)) ==="
+	-FDC_RAW_LOG="$(FDC_RAW_LOG)" FDC_DECODED_LOG="$(FDC_DECODED_LOG)" \
+	 FDC_LOG_SECONDS="$(FDC_LOG_SECONDS)" \
+	 FDC_LOG_LABEL="$(COMPILER) autoload-in-c | MAME $(notdir $(MAME)) | $(notdir $(FDC_FLOPPY))" \
+	 $(MAME)/regnecentralend rc702 -rompath $(MAME)/roms \
+	    -nothrottle -window -skip_gameinfo \
+	    -seconds_to_run $$(($(FDC_LOG_SECONDS) + 8)) \
+	    -autoboot_script mame_fdc_log.lua \
+	    -snapname autoload_fdc \
+	    -flop1 "$(FDC_FLOPPY)" \
+	    >/tmp/autoload_fdc_mame.log 2>&1
+	@echo "--- decoded FDC transactions ($(FDC_DECODED_LOG)) ---"
+	@cat $(FDC_DECODED_LOG) 2>/dev/null || { echo "no decoded log (see /tmp/autoload_fdc_mame.log)"; exit 1; }
+
+mamesym:
+ifeq ($(COMPILER),clang)
+	@$(RUN) $(CLANG_NM) --numeric-sort clang/prom.clang.elf | \
+		awk '/ [TtBbDd] / { sub(/^_/, "", $$3); printf "%s %s\n", $$1, $$3 }' \
+		> clang/prom0_mame.sym
+else
+	@awk '/= \$$[0-9A-Fa-f]+ ; addr,/ { \
+		name = $$1; addr = $$3; \
+		if (name ~ /^l_/) next; \
+		sub(/^\$$/, "0x", addr); \
+		sub(/^_/, "", name); \
+		printf "%s %s\n", addr, name; \
+	}' sdcc/prom0.map | sort > sdcc/prom0_mame.sym
+endif
+	@echo "wrote $(COMPILER)/prom0_mame.sym ($$(wc -l < $(COMPILER)/prom0_mame.sym) symbols)"
+
+# ================================================================
+# LLVM-Z80 clang build
+# ================================================================
+
+LLVM_Z80 = $(CURDIR)/../../llvm-z80
+NATIVE ?= 1
+
+ifneq ($(NATIVE),0)
+  # Native build — run tools directly (probe Linux first, then macOS, then plain build/)
+  CLANG_BUILD = $(firstword $(wildcard $(LLVM_Z80)/build-linux/bin $(LLVM_Z80)/build-macos/bin $(LLVM_Z80)/build/bin))
+  RUN =
+  CLANG_COMPILER = $(CLANG_BUILD)/clang
+else
+  # Docker build
+  CLANG_BUILD = /src/build/bin
+  RUN = docker run --rm -m 8g \
+	-v $(LLVM_Z80):/src \
+	-v $(CURDIR):/rom \
+	-w /rom \
+	ubuntu:24.04
+  CLANG_COMPILER = $(LLVM_Z80)/build/bin/clang
+endif
+
+CLANG_CC      = $(CLANG_BUILD)/clang
+CLANG_LD      = $(CLANG_BUILD)/ld.lld
+CLANG_OBJCOPY = $(CLANG_BUILD)/llvm-objcopy
+CLANG_OBJDUMP = $(CLANG_BUILD)/llvm-objdump
+CLANG_NM      = $(CLANG_BUILD)/llvm-nm
+
+CLANG_CFLAGS = --target=z80 -Oz -g -nostdlib \
+	       -ffunction-sections -fdata-sections \
+	       -Xclang -target-feature -Xclang +static-stack \
+	       -Xclang -target-feature -Xclang +shadow-regs \
+	       -mllvm -disable-lsr \
+	       -Iclang -I. \
+	       -Weverything \
+	       -Wno-unsafe-buffer-usage \
+	       -Wno-c23-extensions \
+	       -Wno-reserved-macro-identifier \
+	       -Wno-reserved-identifier \
+	       -Wno-gcc-compat \
+	       -Wno-declaration-after-statement \
+	       -Wno-pre-c11-compat
+# Investigation hook (ravn/llvm-z80#23): inject extra clang flags via
+# `make CLANG_EXTRA="-mllvm -z80-enable-licm -mllvm -z80-enable-cse"`.
+CLANG_CFLAGS += $(CLANG_EXTRA)
+CLANG_CFLAGS += -DSW1_CONSOLE_BIT=$(SW1_CONSOLE_BIT)
+# -g enables DWARF debug info; binary unchanged because objcopy -O binary
+# only emits ALLOC sections and .debug_* are non-ALLOC.  The DWARF info
+# is what makes the source-annotated listing (clang/prom.clang.lis)
+# possible.
+
+CLANG_OBJS = clang/boot.o clang/intvec.o clang/rom.o clang/runtime.o
+CLANG_ZX0_OBJS = clang/dzx0_standard.o clang/text_compressed.o
+
+# Host-side ZX0 compressor + verifier from z88dk source tree.
+Z88DK_ZX0  = $(CURDIR)/../../z88dk/src/zx0/z88dk-zx0
+Z88DK_DZX0 = $(CURDIR)/../../z88dk/src/zx0/z88dk-dzx0
+
+# Two-pass build:
+#   Pass 1 link with whatever clang/text_compressed.zx0 currently holds
+#   (empty placeholder on first build).  Extract raw .text bytes.
+#   Compress with z88dk-zx0; verify by host-side z88dk-dzx0 roundtrip
+#   that the decompressed bytes match the pass-1 .text exactly.
+#   Pass 2 re-link with the new compressed blob, then strip VMA-only
+#   .text from the binary so only the four ROM-resident sections land
+#   in the .bin.
+clang/prom.clang.bin: $(CLANG_OBJS) $(CLANG_ZX0_OBJS) clang/rc700_prom.ld
+	@echo "=== pass 1: link to extract raw .text bytes ==="
+	$(RUN) $(CLANG_LD) --gc-sections -T clang/rc700_prom.ld $(CLANG_OBJS) $(CLANG_ZX0_OBJS) -o clang/prom.pass1.elf
+	$(RUN) $(CLANG_OBJCOPY) -O binary --only-section=.text clang/prom.pass1.elf clang/text_raw.bin
+	@RAW=$$(wc -c < clang/text_raw.bin | tr -d ' '); \
+	 echo "    .text raw = $$RAW bytes"
+	@echo "=== ZX0 compress ==="
+	$(Z88DK_ZX0) -f clang/text_raw.bin clang/text_compressed.zx0
+	@echo "=== roundtrip verify: z88dk-dzx0 must reproduce pass-1 .text exactly ==="
+	@rm -f clang/text_roundtrip.bin
+	$(Z88DK_DZX0) clang/text_compressed.zx0 clang/text_roundtrip.bin
+	cmp clang/text_raw.bin clang/text_roundtrip.bin \
+	    || { echo "FAIL: ZX0 roundtrip mismatch -- compressed blob would not unpack correctly at boot"; exit 1; }
+	@echo "    OK: $$(wc -c < clang/text_raw.bin | tr -d ' ') bytes raw -> $$(wc -c < clang/text_compressed.zx0 | tr -d ' ') bytes compressed; roundtrip exact"
+	@echo "=== pass 2: re-assemble text_compressed.o + link ==="
+	$(RUN) $(CLANG_CC) --target=z80 -c clang/text_compressed.s -o clang/text_compressed.o
+	$(RUN) $(CLANG_LD) --gc-sections --defsym FINAL_LINK=1 -T clang/rc700_prom.ld $(CLANG_OBJS) $(CLANG_ZX0_OBJS) -o clang/prom.clang.elf
+	$(RUN) $(CLANG_OBJCOPY) -O binary \
+	    --only-section=.boot --only-section=.nmi \
+	    --only-section=.zx0_decoder --only-section=.zx0_decoder_hi \
+	    --only-section=.text_compressed \
+	    clang/prom.clang.elf clang/prom.clang.bin
+	# Source-annotated listing (committed to git for historical diffs
+	# without needing to rebuild clang).
+	$(RUN) $(CLANG_OBJDUMP) -d -S --triple=z80 clang/prom.clang.elf > clang/prom.clang.lis
+
+# Force-regen on every build so the banner reflects the moment this
+# PROM was burnt (matches rcbios-in-c/builddate.h pattern).  The cmp
+# dance avoids retouching the file (and rebuilding clang/boot.o) when
+# neither the date nor the git hash changed since last build.
+clang/banner.h: FORCE
+	@HASH=$$(git rev-parse --short HEAD 2>/dev/null || echo "????"); \
+	 BANNER=" RC700 ROA375 CL $$(date '+%Y-%m-%d %H.%M') $$HASH/$$(whoami)"; \
+	 { echo "#define BUILD_BANNER \"$$BANNER\""; \
+	   echo "#define BUILD_BANNER_LENGTH $${#BANNER}"; } > $@.$$$$; \
+	 cmp -s $@.$$$$ $@ 2>/dev/null && rm -f $@.$$$$ || mv $@.$$$$ $@
+
+FORCE:
+
+clang/boot.o: boot_rom.c rom.h clang/banner.h $(CLANG_COMPILER)
+	$(RUN) $(CLANG_CC) $(CLANG_CFLAGS) -c $< -o $@
+
+clang/runtime.o: clang/runtime.s $(CLANG_COMPILER)
+	$(RUN) $(CLANG_CC) --target=z80 -c $< -o $@
+
+clang/dzx0_standard.o: clang/dzx0_standard.s $(CLANG_COMPILER)
+	$(RUN) $(CLANG_CC) --target=z80 -c $< -o $@
+
+# text_compressed.o incbins clang/text_compressed.zx0.  On a fresh
+# tree the zx0 file may not exist yet; create an empty placeholder so
+# pass 1 can link (pass 1's bytes are discarded; pass 2 rebuilds this
+# object against the real compressed blob).
+clang/text_compressed.zx0:
+	@touch $@
+
+clang/text_compressed.o: clang/text_compressed.s clang/text_compressed.zx0 $(CLANG_COMPILER)
+	$(RUN) $(CLANG_CC) --target=z80 -c $< -o $@
+
+clang/intvec.o: intvec.c rom.h $(CLANG_COMPILER)
+	$(RUN) $(CLANG_CC) $(CLANG_CFLAGS) -c intvec.c -o $@
+
+clang/rom.o: rom.c rom.h $(CLANG_COMPILER)
+	$(RUN) $(CLANG_CC) $(CLANG_CFLAGS) -c rom.c -o $@
+
+clang_asm: rom.c rom.h
+	$(RUN) $(CLANG_CC) $(CLANG_CFLAGS) -S rom.c -o /dev/stdout
+
+clang_disasm: clang/prom.clang.bin
+	$(RUN) $(CLANG_OBJDUMP) -d --triple=z80 clang/prom.clang.elf
+
+# Source-annotated listing is now produced by the default build at
+# clang/prom.clang.lis (since CLANG_CFLAGS already includes -g).  This
+# alias rebuilds it explicitly for convenience.
+clang_src_lis: clang/prom.clang.bin
+	@echo "wrote clang/prom.clang.lis (built by default rule)"
+
+clang_symbols: clang/prom.clang.bin
+	$(RUN) $(CLANG_NM) --numeric-sort clang/prom.clang.elf
+
+clang_mamesym: clang/prom.clang.bin
+	@$(RUN) $(CLANG_NM) --numeric-sort clang/prom.clang.elf | \
+		awk '/ [TtBbDd] / { sub(/^_/, "", $$3); printf "%s %s\n", $$1, $$3 }' \
+		> clang/prom0_mame.sym
+	@echo "wrote clang/prom0_mame.sym ($$(wc -l < clang/prom0_mame.sym) symbols)"
+
+# ================================================================
+# SDCC build (via z88dk Docker)
+# ================================================================
+
+Z88DK_DOCKER = docker run --rm \
+	-v $(CURDIR):/src \
+	-w /src \
+	z88dk:2.4
+
+ZFLAGS = +z80 -clib=sdcc_iy --no-crt --opt-code-size -SO3 \
+         -Cs"--max-allocs-per-node 1000000" \
+         -Cs"--fomit-frame-pointer" \
+         -Cs"--allow-unsafe-read" \
+         -Cs"--sdcccall 1" -Cs"--disable-warning 296" \
+         -custom-copt-rules=/src/sdcc/peephole.def \
+         -pragma-define:CRT_ORG_CODE=0x0000 \
+         -pragma-define:CRT_ORG_BSS=0x8200 \
+         -pragma-define:CRT_CPU_CLOCK_HZ=4000000 \
+         -DSW1_CONSOLE_BIT=$(SW1_CONSOLE_BIT)
+# /src is the Docker mount point for $(CURDIR) -- absolute container
+# path so the copt-rules lookup works in all three zcc invocations
+# below (the third one runs from /src/sdcc after `cd sdcc`, where the
+# previous relative path `sdcc/peephole.def` resolved to a non-existent
+# /src/sdcc/sdcc/peephole.def).
+
+ZLIB = -lz80
+ZLFLAGS = -m --list -create-app -Cz"--org 0" $(ZLIB)
+
+sdcc/prom.bin: sdcc/sections.asm rom.c rom.h boot_rom.c intvec.c sdcc/peephole.def
+	@mkdir -p sdcc
+	$(Z88DK_DOCKER) sh -c '\
+	BANNER=" RC700 ROA375 $$(date "+%Y-%m-%d %H.%M")/$$(whoami)" && \
+	printf '"'"'#define BUILD_BANNER "%s"\n#define BUILD_BANNER_LENGTH %d\n'"'"' "$$BANNER" $${#BANNER} > sdcc/build_stamp.h && \
+	zcc $(ZFLAGS) -Cs"--codeseg BOOT" -c boot_rom.c -o sdcc/boot_rom.o && \
+	zcc $(ZFLAGS) -c intvec.c -o sdcc/intvec.o && \
+	cd sdcc && zcc $(ZFLAGS) $(ZLFLAGS) -o prom0 sections.asm intvec.o ../rom.c boot_rom.o'
+	@cd sdcc && cat prom0_BOOT.bin prom0_CODE.bin > prom.bin
+	@PROM=$$(wc -c < sdcc/prom.bin | tr -d ' '); \
+	 echo "sdcc PROM: $$PROM bytes"
+
+# ================================================================
+# RC700 emulator
+# ================================================================
+
+CC = cc
+RC700_SRC = cpu0.c cpu1.c cpu2.c cpu3.c cpu4.c cpu5.c cpu6.c cpu7.c \
+            rom.c charrom.c charram.c pio.c sio.c ctc.c dma.c crt.c \
+            fdc.c wdc.c ftp.c disk.c fifo.c monitor.c disasm.c
+
+rc700: prom
+	cd $(RC700) && ./rom2struct roa375.rom roa375 > roa375.c && \
+	$(CC) -DSDL_main=main -DSDL_MAIN_HANDLED -DPROM0=roa375 \
+		-o rc700-sdl2 -O3 -Wno-unused-result \
+		$(RC700_SRC) roa375.c rc700.c rcterm-sdl2.c screen.c \
+		-F/Library/Frameworks -framework SDL2 \
+		-Wl,-rpath,/Library/Frameworks
+	$(RC700)/rc700-sdl2 "$(FLOPPY)"
+
+# ================================================================
+# Clean
+# ================================================================
+
+clean:
+	$(MAKE) -C clang clean
+	$(MAKE) -C sdcc clean
+	rm -f build_stamp.h prom0.ic66 prom0_mame.sym prom0_debug.cmd
