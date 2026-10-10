@@ -1,5 +1,25 @@
 # Prompts
 
+## 2026-10-10 (start memory-operand modeling work)
+
+> start
+
+> husk at arbejde i en ny branch
+
+> fortsæt
+
+> du må gerne skrive kode
+
+> godt! commit og push
+
+## 2026-10-10 (plan for korrekt modellering af Z80-minneoperander)
+
+> lav en plan
+
+## 2026-10-10 (proper modeling for Z80 memory-operand ALU instructions)
+
+> jeg vil gerne have en grrundig analyse af hvordan vi kan få clang til at kunne understøtte fx OR (HL) eller tilsvarende.   jeg er interessreet i korrekt modellering, ikke kodehotfixes
+
 ## 2026-10-10 (same-source autoload codegen comparison)
 
 > what next? Keep working autonomously until the task is truly complete.

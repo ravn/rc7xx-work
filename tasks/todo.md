@@ -1,5 +1,65 @@
 # Z80 Code Density Optimization Todo
 
+## Plan: korrekt modellering af Z80-minneoperander (2026-10-10)
+
+- [ ] Afgræns den første leverance: almindelige Z80 ALU-indlæsninger fra
+  generelle pointere og linkeropklarede globale adresser; hold frame-index/
+  IX-foldning adskilt, da den allerede har sin egen pseudo og udvidelse.
+  - [x] OR-folden bruger adresseværdien som GR16_HL-input; en linkeropklaret
+    global går derfor gennem samme model som en pointer, mens frame-index-loads
+    fortsat overlades til ALU_Ac_FI.
+- [ ] Fastlæg semantiske forudsætninger for hver operation: operandorden,
+  accumulator, flags/carry, single-use og om indlæsning og forbruger kan
+  forbindes uden at flytte hukommelsesadgangen.
+  - [x] OR-folden commutter de to operandpositioner, kræver single-use,
+    bevarer volatile MMO og afviser memory-/side-effect-barrierer imellem.
+- [ ] Udform den target-specifikke MachineInstr-repræsentation, så adresse,
+  registerklasse (HL), mayLoad og MachineMemOperand følger operationen fra
+  GlobalISel gennem registerallokering til den endelige opcode.
+  - [x] `OR8_IND` fastholder GR16_HL, accumulator/flags, mayLoad og MMO helt
+    frem til post-RA-ekspansion til `OR_HLind`.
+- [ ] Afklar lovlighed og fallback for Z80-varianter, SM83 og address space 2;
+  bevar eksisterende generelle BC/DE/HL-indirekte load-valg, hvor folden ikke
+  er gyldig eller ikke kan vælges.
+  - [x] Z80 og SM83 er testet; address space 2 afvises eksplicit af folden.
+    AS2's øvrige lowering blev ikke valideret her.
+- [ ] Før implementering: lav failing lit/MIR-tests for OR (HL), pointer og
+  globaladresse, operandrækkefølge, flags, registerpres, flere brugere,
+  volatile/aliaserende adgang og ikke-understøttede targets/address spaces.
+  - [x] Baseline for et enkeltbrugt pointer-load direkte ind i OR: den
+    urørte compiler udsender `LD A,(HL)` efterfulgt af `OR B`; `OR (HL)` mangler.
+  - [x] Lit dækker pointer, global, operandbytte, volatile MMO, SM83, multi-use
+    og aliasserende store. Runtime-fixture dækker faktiske OR-værdier.
+- [x] Implementér og verificér første OR (HL)-sti: `OR8_IND`, HL-registerkrav,
+  selection, memory-reference-propagation og post-RA-ekspansion.
+- [x] Kør målrettet lit, hele Z80-lit-suiten og runtime-fixture på Z80 og SM83
+  ved O0/O1/O2/O3/Os/Oz med machine-verifier og uafhængig host-oracle.
+- [ ] Implementér én sammenhængende sti for instruction selection,
+  registerklassebegrænsning, pseudoekspansion og memory-reference-propagation;
+  udvid derefter til andre ALU-instruktioner kun hvor semantikken er dækket.
+  - [ ] OR-stien er implementeret; andre ALU-operationer, eksplicit
+    registerpresmatrix og AS2-test er fortsat åbne.
+- [ ] Kør de målrettede lit-tests med `-verify-machineinstrs`, Z80-lit-suiten
+  og relevante runtime-/firmwarekontroller; mål kode- og spillændringer mod
+  en ufoldet baseline uden at bruge størrelsesgevinst som korrekthedsbevis.
+  - [x] Lit 154/154 PASS; runtime-fixture 6/6 PASS for hver af Z80 og SM83,
+    alle opt-niveauer, `-verify`, `-diff-opt` og `-native-oracle`.
+  - [x] Sammenlign samme autoload-build uden/med fold: PROM 2141 -> 2135 B
+    (-6 B komprimeret); begge builds rundrejste gennem ZX0-komprimering.
+- [ ] Opdatér ravn/llvm-z80#402 med den verificerede afgrænsning og evidens,
+  når analysen/tests er klar; offentliggør intet uden særskilt godkendelse.
+
+## Modeling Z80 ALU memory operands correctly (2026-10-10)
+
+- [x] Trace current GlobalISel selection, register-class constraints,
+  TableGen instruction descriptions, and post-RA pseudo expansion for
+  `OR (HL)` and related memory operands.
+- [x] Separate the existing frame-index/IX-indexed support from the missing
+  generic pointer/global-load fold; identify aliasing, ordering, and
+  register-pressure constraints a correct model must preserve.
+- [x] Report the proper target-specific modeling layers and validation
+  surfaces; no backend changes or public issues created.
+
 ## Same-source c863c55 autoload codegen comparison (2026-10-10)
 
 - [x] Rebuild the exact archived `c863c55` autoload source with current
