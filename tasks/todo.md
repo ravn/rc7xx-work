@@ -48,9 +48,15 @@
   pre-table symbols +214 B; record the separate +40 B post-table region.
 - [x] Make matched-routine code size and generated instruction structure the
   primary comparison; retain ZX0 as a secondary whole-image metric.
+- [x] Synthesize the repeated patterns across routine listings and separate
+  observed instruction costs from unproven backend attribution.
 - [x] Bound the remaining +174 B compressed gap after the `check_sysfile`
   counterfactual. ZX0 encodes one continuous payload, so this structural
   comparison does not claim a unique per-function or causal attribution.
+- [ ] Isolate backend attribution by feeding identical optimized LLVM IR for
+  the largest-growth routines to both backend revisions, then compare
+  post-legalization and post-register-allocation MIR. The report's observed
+  code-shape differences are not yet proof of a backend regression.
 
 ## Full pre-PR-40 compiler on c863c55 autoload source (2026-10-09)
 

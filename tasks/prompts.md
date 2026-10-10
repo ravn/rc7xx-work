@@ -1,5 +1,55 @@
 # Prompts
 
+## 2026-10-10 (same-source autoload codegen comparison)
+
+> what next? Keep working autonomously until the task is truly complete.
+
+> har vi det der skal til for at kunne sammenligne disassemblly for at forstå forskellene i kodegenereringerne?
+
+> har du hvad du skal bruge nu for at kunne undersøge regressionen mht størrelse?
+
+> static frames blev lavet helt om
+
+> hvad er problemet?
+
+> du kan tilføje patchen der giver mapning til port i/o midlertidigt igen
+
+> fortsæt
+
+> det kan vlre der var rutiner der blev inlinet før
+> det vigtige her er som sådan ikke den komprimerede del men snarere hvordan de enkelte rutiner fylder mere nu, fordi compileren ikke kan lave helt så god kode mere
+> hvilke mønstre ser du?
+> lav en rapport over de mønstre du ser
+> jeg skal til at gå, opsummer, analyser, opret issues i mine repos efter behov, commit og push. Især det materiale du har lavet nu er vigtigt at gemme
+
+## 2026-10-09 (full historical compiler and firmware build)
+
+> du skal bygge hele compileren, og så køre den mod autoload-in-c som den så ud dengagn
+
+> hvordan går det
+
+> hvordan går et?
+
+> address-space-2 blev mappet til INP/OUTP instruktioner Hvis compileren ikke kan det, er den ikke helt gammel nok endnu
+
+> sæt et tag som fx compiler-pre-pr40
+
+> hvor langt er du nået?
+
+> hvad er effektiviteten med ccache?
+
+> så cachen er varm selv om tællerne er nulstillet?
+
+> hvor langt er du nået?
+
+> jeg vil gerne have at du samler en kopi af pre-pr#40 autoload-in-c, rcbios, og cpnos kildetekster, mellemfiler og færdige binære artifakter i en passende folder, så du til enhver tid kan kigge på dem direkte uden at behøve bygge igen.
+
+> de er nok ikke byteidentiske fordi der er et tidsstempel i
+
+## 2026-10-09 (pre-PR #40 autoload codegen comparison)
+
+> godt, så vil jeg foreslå du laver et parallelt byg af llvm-z80 som den så ud inden PR#40 og så sammenligner. Husk cclang for at spare tid
+
 ## 2026-10-04 (toolchain refresh and session closure)
 
 > sikr z88dm og llvm-z80 er opdateret og genbygget
@@ -1415,4 +1465,3 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 26. er der sket en fejl med origin/native-runtime-summary-20261003=
 27. ok, så hvis det kun er på rod z80, er det fint at merge -no-ff
 28. ja
-

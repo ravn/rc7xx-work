@@ -32,8 +32,8 @@ commit. `source-snapshot/` contains those source trees, `cpnos-shared/`,
 - `reproductions/autoload-c863c55/evidence/` — PROM, listing, raw/compressed
   payloads, and logs from the earlier pre-PR-40 `c863c55` build.
 - `reproductions/autoload-c863c55/COMPARISON.md` — same-source historical
-  versus current-backend disassembly comparison, with a per-routine size
-  table and instruction-level comparisons of the largest increases.
+  versus current-backend disassembly comparison, with per-routine sizes,
+  concrete recurring code-generation patterns, and attribution limits.
 - `reproductions/autoload-c863c55/current-d6658ad-asio/` — current compiler
   listing, ELF, inspection-only over-cap image, and raw/compressed payloads.
 - `reproductions/autoload-c863c55/current-d6658ad-asio/always-inline-probe/`

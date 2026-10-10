@@ -136,7 +136,7 @@ Three instruction-level comparisons show where some of the extra bytes go:
 
 | Routine | Observed current-vs-historical code shape |
 |---|---|
-| `_fdc_read_result` (+21 B) | Historical code keeps the loop index in `DE`, saves it with `PUSH DE` across the call, then indexes with `ADD HL,DE`. Current code adds an IX frame, spills/reloads the index through `(IX-1)`, zero-extends it into `BC`, and uses `ADD HL,BC`. The IX prologue/epilogue alone costs 13 B. |
+| `_fdc_read_result` (+21 B) | Historical code keeps the loop index in `DE`, saves it with `PUSH DE` across the call, then indexes with `ADD HL,DE`. Current code adds an IX frame, spills/reloads the index through `(IX-1)`, zero-extends it into `BC`, and uses `ADD HL,BC`. The IX prologue/epilogue alone costs 14 B. |
 | `_fdc_select_drive_cylinder_head` (+21 B) | Historical code combines the head and drive with `OR (HL)`, preserves the argument with `PUSH AF`, and tail-jumps to `verify_seek_result`. Current code adds an IX frame, materializes the values in IX-relative slots, and calls the verifier before restoring the frame and returning. |
 | `_fdc_read_data_from_current_location` (+33 B) | The historical body has no IX frame and keeps the remaining-byte arithmetic in registers using `EX DE,HL`. The current body has IX setup/teardown and stores/reloads values through IX-relative slots around the same transfer loop. |
 
@@ -155,6 +155,42 @@ only the low bytes. The real callers pass ASCII `"SYSM"`/`"SYSC"`, but the
 historical sequence can differ for high-bit pattern characters. Some of this
 routine's extra size is therefore consistent with preserving C promotion
 semantics, not simply inferior instruction selection.
+
+## Synthesis: recurring code-generation patterns
+
+The routine table is not one uniform regression. It shows a repeated cost
+shape in several routines: the current output often spends extra bytes
+setting up a stack frame, preserving values across calls, and reconstructing
+16-bit addresses or comparisons. These observations support the conclusion
+that several current routine bodies are less compact, while the exact cause
+can differ by routine.
+
+| Pattern | Concrete evidence | What the added code does |
+|---|---|---|
+| IX frame setup and teardown around small routines | `_fdc_read_result` (+21 B), `_fdc_select_drive_cylinder_head` (+21 B), `_verify_seek_result` (+16 B), `_fdc_get_result_bytes` (+17 B), `_fdc_write_full_cmd` (+11 B) | A routine with one or two live bytes pays for `PUSH IX; LD IX,0; ADD IX,SP`, local-slot allocation, then `LD SP,IX; POP IX; RET`. In `_fdc_read_result`, setup/teardown costs 14 B before counting local spills or changed indexing. |
+| Register-pair values spilled across a call | `_fdc_read_result` | Historical code holds the index in `DE`, uses `PUSH DE`/`POP DE` around the call, then addresses with `ADD HL,DE`. Current code writes and reloads the index through `(IX-1)`, then copies it into `C`, clears `B`, and uses `ADD HL,BC`. These are extra memory traffic and register-conversion instructions on a short loop. |
+| Direct memory operation replaced by staging through a register | `_fdc_select_drive_cylinder_head` | Historical code forms the head bits and combines the drive value with `OR (HL)`. Current code loads the drive into `C`, saves the head bits in `B`, restores them to `A`, then uses `OR C`; this materializes operands that the older instruction sequence could combine directly. |
+| Tail transfer becomes call plus return sequence | `_fdc_select_drive_cylinder_head` | Historical code ends by jumping directly to `verify_seek_result`. Current code calls it, restores the IX frame, and returns. That adds a post-call return path and is consistent with the current routine needing to dismantle its frame; whether the backend could have emitted a safe tail transfer is not established. |
+| Narrow values expanded into wider arithmetic | `_fdc_read_result`, `_verify_seek_result`, `_check_sysfile` | The current listing includes explicit zero/sign extension and 16-bit compares/arithmetic where the old listing uses byte or existing-pair operations. In `_fdc_read_result` the index widening is visible; in `_check_sysfile`, at least part of the widening is required to honor signed `char` promotions and is not safely classed as lost optimization. |
+| Extra frame/live-value traffic in a larger loop | `_fdc_read_data_from_current_location` (+33 B) | The old routine carries the subtraction and loop state in register pairs (`EX DE,HL`, `SBC HL,BC`) without an IX frame. Current code creates a frame and uses IX-relative values as well as additional pair moves around the track-transfer logic. This is a code-shape observation; no single spill has been isolated as the cause of all 33 B. |
+
+**Overall pattern:** 18 of the 25 matched routines are larger, six are
+smaller by 1-5 B, and one is unchanged; their measured net increase is
+219 B. The strongest repeated clue is not simply “more instructions,” but
+that values which the historical code kept in register pairs or passed
+through the stack are more often spilled to IX-relative slots or widened
+before use. The observed sequences are consistent with higher frame and
+register-preservation costs in the current output.
+
+**Attribution limit:** this is evidence about emitted code, not proof that
+one backend regression caused the pattern. The compiler frontends differ,
+and historical `+static-stack` and current `+static-frame` do not share the
+same eligibility rules. To isolate backend responsibility, the decisive
+next comparison would feed identical optimized LLVM IR to both backend
+revisions for the routines above, then inspect post-legalization and
+post-register-allocation MIR. Until that controlled comparison exists, frame
+spills and pair selection are observed differences with a plausible
+backend/regalloc connection, not a confirmed root cause.
 
 ## Inlining versus separate helper bodies
 
