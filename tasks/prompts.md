@@ -12,6 +12,8 @@
 
 > godt! commit og push
 
+> jeg skal skifte til claude, gem den nødvendige viden i projeltet
+
 ## 2026-10-10 (plan for korrekt modellering af Z80-minneoperander)
 
 > lav en plan
