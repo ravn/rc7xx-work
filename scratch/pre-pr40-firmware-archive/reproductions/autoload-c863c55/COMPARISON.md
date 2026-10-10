@@ -136,7 +136,7 @@ Three instruction-level comparisons show where some of the extra bytes go:
 
 | Routine | Observed current-vs-historical code shape |
 |---|---|
-| `_fdc_read_result` (+21 B) | Historical code keeps the loop index in `DE`, saves it with `PUSH DE` across the call, then indexes with `ADD HL,DE`. Current code adds an IX frame, spills/reloads the index through `(IX-1)`, zero-extends it into `BC`, and uses `ADD HL,BC`. The current prologue/epilogue alone costs 14 B. |
+| `_fdc_read_result` (+21 B) | Historical code keeps the loop index in `DE`, saves it with `PUSH DE` across the call, then indexes with `ADD HL,DE`. Current code adds an IX frame, spills/reloads the index through `(IX-1)`, zero-extends it into `BC`, and uses `ADD HL,BC`. The IX prologue/epilogue alone costs 13 B. |
 | `_fdc_select_drive_cylinder_head` (+21 B) | Historical code combines the head and drive with `OR (HL)`, preserves the argument with `PUSH AF`, and tail-jumps to `verify_seek_result`. Current code adds an IX frame, materializes the values in IX-relative slots, and calls the verifier before restoring the frame and returning. |
 | `_fdc_read_data_from_current_location` (+33 B) | The historical body has no IX frame and keeps the remaining-byte arithmetic in registers using `EX DE,HL`. The current body has IX setup/teardown and stores/reloads values through IX-relative slots around the same transfer loop. |
 
