@@ -10,6 +10,7 @@
 - **[NEVER POST ANYTHING EXTERNALLY WITHOUT EXPLICIT "JA POST DET"](feedback_no_pull_requests.md) — SESSION-ENDING ×2: `gh api .../comments POST`, `gh pr create`, push til upstream = FORBIDDEN indtil brugeren i DENNE tur skriver ordene. "Naturlig næste skridt", "åbenlyst svar", "tak for review" er IKKE tilladelse. Draft i chat → vent → ALDRIG post selv.**
 - **[ALL PRs ALWAYS draft](feedback_upstream_prs_always_draft.md) — ABSOLUTE: `gh pr create` SKAL have `--draft`. ALTID. Ingen undtagelser. Ingen repo-undtagelser. Aldrig non-draft.**
 - **[ravn/\* open, upstream NEVER](feedback_ravn_open_upstream_never.md) — HARD (user 2026-10-11): act directly in ravn/\* (push, comment, close, draft PR); upstream (llvm, z88dk, mamedev, …) requires explicit "ja post" this turn.**
+- **[Ravn's patches rebase onto zlfn's decisions](feedback_ravn_patches_rebase_onto_zlfn.md) — HARD (user 2026-10-11): ravn/llvm-z80 is downstream of zlfn; conflict resolution always keeps zlfn's version, cherry-pick ravn-unique bits on top. Never parallel-implement; wait for zlfn's design.**
 - [Reviewer feedback: show before push (non-ravn/\*)](feedback_upstream_review_local_first.md) — on external PRs: show diff/results in chat, wait for OK, then push.
 - **AGENTS.md + lignende meta-filer må ALDRIG inkluderes i upstream PRs** — de er lokale arbejdsaftaler, ikke kodeændringer.
 
