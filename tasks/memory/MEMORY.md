@@ -48,6 +48,7 @@
 - **[No upstream sdcccall discrepancies](feedback_no_upstream_sdcccall_discrepancies.md) — HARD: ABI mismatches are known build-config issues, NOT upstream-fileable**
 - **[Never mention zlfn anywhere](feedback_never_mention_zlfn.md) — HARD: never write "zlfn"/@zlfn in repos OR chat; always "the fork owner"**
 - [Attribution line on filed issues](feedback_issue_attribution_line.md) — append `--- / _Filed by GitHub Copilot on behalf of @ravn._`
+- **[Resolved issues get a comment](feedback_resolved_issue_gets_comment.md) — HARD: when a commit resolves an open issue, draft a comment with commit SHA + evidence; ask for per-issue go-ahead; close only on explicit OK**
 
 ## 3. Memory layout / linker / address changes
 
