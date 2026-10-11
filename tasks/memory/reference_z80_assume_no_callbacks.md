@@ -1,48 +1,34 @@
 ---
 name: reference-z80-assume-no-callbacks
-description: -z80-assume-no-callbacks flag enables static frames for externally-linked entry points (main) without -ffreestanding; implemented 2026-10-01 in Z80TargetMachine.
+description: Historical experiment: -z80-assume-no-callbacks is absent from compiler d6658ad and is not a current invocation option
 metadata:
   type: reference
 ---
 
-## Flag
+## Status: historical, removed from current compiler
 
-`-mllvm -z80-assume-no-callbacks` (passed via zcc as `-Cg-mllvm -Cg-z80-assume-no-callbacks`)
+The `-z80-assume-no-callbacks` switch described below was used in an
+intermediate static-frame experiment. It is not implemented in the inspected
+compiler `d6658ad` (no option or implementation is present in the current
+Z80 target sources). Do not use the old command as a current build recipe.
 
-## What it does
+The old experiment treated indirect calls as unable to re-enter the module,
+so externally linked entry points could be promoted without changing
+`__STDC_HOSTED__`. That whole-module assumption is not present in the current
+analysis. The current per-function `target("no-recurse")` feature is a
+different, explicit assertion: it is valid only for functions that cannot
+have overlapping activations.
 
-Tells Z80NonReentrant that no external code will call back into this module
-via function pointers. Switches `CallsExternalNode` from open-world
-(`→ ExternalCallingNode → all externally-callable functions`) to closed-world
-(only address-taken functions), identical to `-ffreestanding`'s effect on
-Z80NonReentrant — but WITHOUT changing language semantics or suppressing
-hosted-C builtins.
+The historical benchmark and invocation are retained below for provenance;
+their results apply only to the revision that contained the switch.
 
-**Why this matters:** Without the flag, `main` is in a multi-node SCC with
-`ExternalCallingNode` (via `main → external call → CallsExternalNode →
-ExternalCallingNode → main`). That cycle prevents `doesNotRecurse` and thus
-`nonreentrant`, so `main` keeps its IX-based stack frame even with
-`+static-frame`.
+### Historical behavior
 
-## vs -ffreestanding
+The switch caused `Z80NonReentrant` to treat indirect calls as reaching only
+locally address-taken functions, rather than every externally callable
+function. It did not alter hosted-C language semantics.
 
-Both produce identical Z80NonReentrant behaviour. Difference:
-- `-ffreestanding`: module-wide language mode change; suppresses libc builtins,
-  changes `__STDC_HOSTED__`. Correct for firmware.
-- `-z80-assume-no-callbacks`: codegen-only; hosted stdlib still works. Correct
-  for standalone CP/M programs.
-
-## Implementation
-
-`Z80TargetMachine.cpp`: `cl::opt<bool> AssumeNoCallbacksOpt("z80-assume-no-callbacks")`
-+ `bool Z80TargetMachine::assumeNoCallbacks()`.
-
-`Z80NonReentrant.cpp` line ~220: condition extended to
-`isFreestandingModule(M) || hasEntryPointAnnotations(M) || TM.assumeNoCallbacks()`.
-
-Lit test: `llvm/test/CodeGen/Z80/nonreentrant-assume-no-callbacks.ll`
-
-## Usage with zcc
+Historical zcc invocation:
 
 ```bash
 zcc +cpm -compiler=llvmz80 -O2 \
@@ -51,11 +37,5 @@ zcc +cpm -compiler=llvmz80 -O2 \
   -o prog prog.c
 ```
 
-## Related
-
-[[reference_z80_ffreestanding_closed_world]] — same pass effect, different
-language-mode implications.
-
-`z80-entry-point` fn attribute (in Z80NonReentrant.cpp) — per-function
-alternative; marks individual functions as context roots with no external
-re-entry. Upstream issue: ravn/llvm-z80#394.
+See [[reference_z80_ffreestanding_closed_world]] for the related historical
+closed-world design and its current status.

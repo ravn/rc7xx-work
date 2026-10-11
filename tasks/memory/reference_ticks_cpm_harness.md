@@ -40,8 +40,10 @@ stops ticks there. Cycle count = complete program run including CRT0.
 
 ## Mandelbrot benchmark result (2026-10-01)
 
-24×64 integer mandelbrot, MAXIT=16, `+static-frame -z80-assume-no-callbacks`
-vs plain stack frame:
+24×64 integer mandelbrot, MAXIT=16, historical
+`+static-frame -z80-assume-no-callbacks` build vs plain stack frame. The
+switch is absent from compiler `d6658ad`; treat these numbers as historical,
+not as a current invocation recipe:
 
 | Variant | Cycles |
 |---|---|

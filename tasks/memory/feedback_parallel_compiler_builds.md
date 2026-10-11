@@ -44,3 +44,5 @@ ninja -C /Users/ravn/z80/llvm-z80/build-<name> clang llc
 - Ryd op bagefter: `git worktree remove ../llvm-z80-<name>` + `rm -rf build-<name>`
 - Genbrug normalt `build-macos-asserts` efter branchskift. Separate builds
   navngives `build-<prname>` eller `build-<feature>` og kræver aktiv ccache.
+- Isolated firmware builds must also override `MAME` to a private output path:
+  `make prom` copies its ROM into `$(MAME)/roms/rc702/roa375.ic66`.
