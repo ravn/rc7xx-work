@@ -91,6 +91,7 @@
 - [Memory-fold pseudo template](reference_memory_fold_pseudo_template.md) — four-file recipe for CP(HL)/LOAD8_ABS-style folds (td class + pseudo + AccPseudos entry + selector fold)
 - **[Fixed-stack FI is NEGATIVE](reference_fixed_stack_fi_is_negative.md) — `FI >= 0` filters miss incoming stack args (fi#-1); check G_FRAME_INDEX def, not FI sign**
 - **[Combiner: x−1 → G_ADD(x, 0xFF)](reference_combiner_canonicalizes_sub1_to_add_ff.md) — near-identity-arith folds must key off 8-bit constant VALUE, not G_ADD/G_SUB opcode**
+- **[LSR filter prefers wide stride-match](reference_lsr_filter_prefers_wide_stride_match.md) — LSR widens i8 counter to i16 to stride-match pointer IVs; no TTI hook disables; `-disable-lsr` is correct until upstream patch**
 
 ## 6. Before any MAME / boot / test run
 
