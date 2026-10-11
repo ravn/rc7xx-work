@@ -57,9 +57,9 @@
 
 - **[+shadow-isr: EXX/EX AF,AF' ISR context save](reference_shadow_isr_feature.md) — autoload only; rcbios/cpnos unsafe (EXX in division legalizer)**
 - **[ZX0 PROMs: optimize compressed, not raw](feedback_zx0_optimize_compressed_not_raw.md) — HARD: autoload metric is compressed B; raw codegen wins can grow the PROM (add a,a chains are ZX0-free)**
-- **[+static-stack only for non-recursive code](feedback_static_stack_nonrecursive_only.md) — HARD: non-reentrant, SILENTLY miscompiles recursion**
-- **[-ffreestanding unlocks Z80 static-frame promotion](reference_z80_ffreestanding_closed_world.md) — HARD: standard C flag; sets "Freestanding" module flag Z80NonReentrant reads; +~35% speed on div-heavy code**
-- **[-z80-assume-no-callbacks: static frames for hosted CP/M main](reference_z80_assume_no_callbacks.md) — codegen-only; no language-mode change; +5.8% speed on mandelbrot; use with +static-frame**
+- **[Historical +static-stack recursion hazard](feedback_static_stack_nonrecursive_only.md) — old mechanism silently miscompiled recursion; absent from d6658ad, whose +static-frame gate is different**
+- **[Historical -ffreestanding closed-world static-frame path](reference_z80_ffreestanding_closed_world.md) — superseded; current d6658ad does not use the Freestanding module flag**
+- **[Historical -z80-assume-no-callbacks experiment](reference_z80_assume_no_callbacks.md) — switch absent from current d6658ad; old benchmark is revision-specific**
 - **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — prefer build-side (whole-program LTO+internalize) or upstream fix; NOT reinstating old AutoStaticFrame**
 - **[Short and concise](feedback_short_and_concise.md) — HARD: brief responses/write-ups/filings; deep detail goes in project docs, not the reply**
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
@@ -87,6 +87,8 @@
 - **[Z80 interrupt attr = bare RETI by design](reference_z80_interrupt_attr_bare_reti.md) — programmer controls EI via `__builtin_z80_ei()`; do NOT file "no EI" as compiler bug (see #317 closed 2026-09-17)**
 - **[Fix as close to the source as possible](reference_quad_init_backend_split.md) — HARD: fix in earliest/owning layer; never downstream band-aid**
 - [Memory-fold pseudo template](reference_memory_fold_pseudo_template.md) — four-file recipe for CP(HL)/LOAD8_ABS-style folds (td class + pseudo + AccPseudos entry + selector fold)
+- **[Fixed-stack FI is NEGATIVE](reference_fixed_stack_fi_is_negative.md) — `FI >= 0` filters miss incoming stack args (fi#-1); check G_FRAME_INDEX def, not FI sign**
+- **[Combiner: x−1 → G_ADD(x, 0xFF)](reference_combiner_canonicalizes_sub1_to_add_ff.md) — near-identity-arith folds must key off 8-bit constant VALUE, not G_ADD/G_SUB opcode**
 
 ## 6. Before any MAME / boot / test run
 
@@ -167,6 +169,7 @@
 - [C_LINE debug + z88dk-dis -c](reference_z80asm_c_line_debug.md) — z80asm source maps; z88dk-dis -c shows source in disassembly
 - **[Canonical test aggregator](reference_run_all_tests.md) — tasks/tools/run-all-tests.sh; fast=A+C+D; run at merge/checkpoint**
 - **[llvmz80 + z88dk test scripts](reference_llvmz80_test_scripts.md) — `./run-llvmz80-tests.sh test` (816/841); `full` adds torture+utils; rel2elf must be built**
+- **[z80-utils lives in llvm-z80](reference_z80_utils_lives_in_llvm_z80.md) — test-runner path is llvm-z80/z80-utils/, NOT workspace-root z80-utils/ (silently misses new fixtures)**
 - **[sdcc _memcpy stub fix](feedback_sdcc_memcpy_stub_fix.md) — z88dk z0.lib conflicts w/ z80_rt.lib; fixed via ___z80_memcpy_builtin + ___memcpy stubs**
 - **[sdldz80 ar archives](feedback_sdldz80_ar_archives.md) — sdldz80 -k/-l CANNOT resolve ar archives; pass z80_rt.a as direct file arg (fixes #359)**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — tasks/z88dk-llvmz80-evaluation-2026-07-21.md; update after bridge/benchmark/float change**
