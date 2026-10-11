@@ -1,6 +1,6 @@
 ---
 name: reference-lsr-filter-prefers-wide-stride-match
-description: LSR's formel-filter foretrækker IV'er der stride-matcher pointer-IV'er, ikke smaller IV'er — ikke konfigurerbar via TTI
+description: LSR foretrækker wide stride-matched IVs over narrow nedtællere på Z80 — løst med tre TTI hooks (Z80TargetTransformInfo.h)
 metadata:
   type: reference
 ---
@@ -18,32 +18,45 @@ Filtering out formula reg({6,+,-1}<nsw>)
 
 Begrundelsen i `LSRUse::DeleteFormula` er at `{-6,+,1}` deler stride
 (`+1`) med loopens pointer-IV'er, hvilket LSR betragter som
-"regster-besparende". På Z80 er dette den omvendte sandhed: `dec r`
+"register-besparende". På Z80 er dette den omvendte sandhed: `dec r`
 på et 8-bit halv-register er 1 byte, mens `inc rr` på en 16-bit tæller
 koster byte + registertryk + sign-extend-shuffling omkring brug.
 
-**Hvilke TTI-hooks dækker IKKE dette:**
+**Løsning (ravn/llvm-z80@8d909ab, 2026-10-11): tre TTI-hooks i
+`Z80TargetTransformInfo.h` opnår samme effekt uden upstream-ændringer.**
 
-- `isLSRCostLess` — rangerer færdige løsninger (post-filter)
-- `getNumberOfRegisters` — ingen effekt, testet med 3 på Z80TTI
-- `isTruncateFree` / `isZExtFree` — allerede korrekte i Z80ISelLowering
-- `isLegalAddImmediate` / `isLegalICmpImmediate` — lovlighed, ikke præference
-- `getRegisterBitWidth` — kun vektor-pathways
+1. **`isHardwareLoopProfitable()`** — returnerer true for sløjfer med
+   i8 symbolic max trip count. LSR::RateRegister nulstiller
+   `AddRecCost` for `countsDownToZero`-formler, så LSR foretrækker den
+   smalle `{C,+,-1}` IV over den stride-matched wide `{−C,+,1}`.
+   Hook'en registrerer **ikke** HardwareLoops IR-passet; udnytter kun
+   den eksisterende cost-signal. DJNZ-mønsteret.
+2. **`getNumberOfRegisters(ClassID)` → 3** — Z80 har BC/DE/HL som GP
+   pairs. `Cost::RateFormula` adderer `(NumRegs - TTIRegNum)` til
+   `C.Insns` når en formel kræver flere IVs end tilgængelige registre.
+   Default er 8; 3 presser LSR til at vælge færre IVs for sløjfer der
+   ellers ville overrunne register-filen.
+3. **`shouldDropLSRSolutionIfLessProfitable()` → true** — LSR
+   detekterer selv "Baseline is more profitable than chosen solution"
+   men handler kun på det hvis denne hook er sat. Load-bearing for
+   nested-loop-mønstre som `draw_qr` i autoload-in-c.
 
-Filter-logikken ligger i core-LSR og eksponerer ingen target-krog til
-at udtrykke "smal IV er billigere end stride-matched bred IV".
+**Resultat:** autoload-in-c PROM gik fra 2134 B (`-disable-lsr`) til
+2131 B (hooks, ingen flag). `-mllvm -disable-lsr` fjernet fra
+`autoload-in-c/Makefile` i commit rc700-gensmedet@d4efa1b. MAME-boot
+PASS frame 175.
 
-**Konsekvens for Z80:**
+**Hvorfor min oprindelige analyse var forkert:** jeg testede kun
+`getNumberOfRegisters=3` isoleret på `cmp6`-sagen, hvor den ikke
+flyttede noget — fordi cmp6 vindes af `countsDownToZero`-pathen
+(hook 1), ikke af NumRegs-pathen. `draw_qr`-sagen var det omvendte.
+Først med alle tre hooks aktive virkede baseline-check'et i hook 3
+som sikkerhedsnet mod LSR's regressioner.
 
-- `-disable-lsr` i produktion (autoload-in-c Makefile) er ikke blot
-  pragmatisk, men arkitektonisk korrekt indtil nogen tilføjer en
-  TTI-hook upstream (fx `preferNarrowerIV()` eller en bredde-cost-hook).
-- Et Z80-specifikt post-LSR unwidening-pass kunne være en mellemløsning
-  hvis vi finder flere ofre end `cmp6`-mønsteret.
+**Scope:** Vej A (TTI-hooks) virker fuldt ud for autoload. Lever
+B (upstream `preferNarrowerIV` TTI-hook) eller et Z80-specifikt
+post-LSR unwidening-pass er ikke længere nødvendigt.
 
-**Scope:** Dette er en upstream LLVM-core observation; ravn/llvm-z80
-kan ikke løse det alene via TTI. Enhver fiks er enten en
-Z80-specifik pass eller en upstream patch til `llvm/llvm-project`.
-
-Relateret: [[reference_lsr_sledgehammer_disable]], issue #401
-(oprindelig CP (HL) codegen problem der afslørede dette).
+Relateret: [[reference_lsr_sledgehammer_disable]] (nu dateret),
+issue ravn/llvm-z80#401 (CP (HL) codegen der afslørede problemet),
+issue ravn/llvm-z80#408 (push/pop spill — orthogonal next-step).

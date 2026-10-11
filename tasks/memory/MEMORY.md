@@ -91,7 +91,9 @@
 - [Memory-fold pseudo template](reference_memory_fold_pseudo_template.md) — four-file recipe for CP(HL)/LOAD8_ABS-style folds (td class + pseudo + AccPseudos entry + selector fold)
 - **[Fixed-stack FI is NEGATIVE](reference_fixed_stack_fi_is_negative.md) — `FI >= 0` filters miss incoming stack args (fi#-1); check G_FRAME_INDEX def, not FI sign**
 - **[Combiner: x−1 → G_ADD(x, 0xFF)](reference_combiner_canonicalizes_sub1_to_add_ff.md) — near-identity-arith folds must key off 8-bit constant VALUE, not G_ADD/G_SUB opcode**
-- **[LSR filter prefers wide stride-match](reference_lsr_filter_prefers_wide_stride_match.md) — LSR widens i8 counter to i16 to stride-match pointer IVs; no TTI hook disables; `-disable-lsr` is correct until upstream patch**
+- **[LSR filter prefers wide stride-match → 3 TTI hooks](reference_lsr_filter_prefers_wide_stride_match.md) — fixed 2026-10-11 (llvm-z80@8d909ab): isHardwareLoopProfitable + getNumberOfRegisters=3 + shouldDropLSRSolutionIfLessProfitable; `-disable-lsr` removed from autoload Makefile**
+- **[Z88DK triple trade-offs](reference_z88dk_triple_tradeoffs.md) — triple-shift ændrer float-bredde, 32-bit math-ABI, memset lowering, DWARF-emission; autoload +77 B regression, IKKE netto-win**
+- **[emitRawText guard with hasRawTextSupport()](reference_emitrawtext_streamer_guard.md) — HARD: every AsmPrinter emitRawText-site must guard; object streamer (-c path) crashes without it (issue #410 fix d081b0d)**
 
 ## 6. Before any MAME / boot / test run
 
