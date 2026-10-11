@@ -29,7 +29,6 @@
 
 ## 2. Before any commit / PR / issue
 
-- **[Never create UNSOLICITED PRs](feedback_no_pull_requests.md) — HARD: no gh pr create unless asked this turn**
 - **[Explain before filing](feedback_explain_before_filing.md) — HARD: root cause in chat + explicit per-filing go-ahead; check for duplicates first**
 - **[Self-caused bug? reflect](feedback_self_caused_bug_reflect_on_instructions.md) — HARD: if Co-Authored-By: anybody, identify which rule would have prevented it**
 - **[File bugs, not fixes](feedback_file_bugs_not_fixes.md) — HARD: upstream filings are BUG REPORTS only; maintainer decides how to fix**
@@ -43,8 +42,7 @@
 - **[Consult rules before acting](feedback_consult_rules_before_acting.md) — HARD: search MEMORY.md before any fix; commit message includes Rules-checked:**
 - **[Grep repo docs before deriving](feedback_grep_repo_docs_before_deriving.md) — HARD: grep for *_REFERENCE.md before re-deriving encodings**
 - **[Replicate user's PR text verbatim](feedback_replicate_user_pr_text_verbatim.md) — HARD: copy revised body 1:1 when opening upstream twin**
-- **[No external issues ever](feedback_no_external_issues.md) — HARD: external repos require explicit per-issue go-ahead**
-- **[Issues on own repo first](feedback_issues_own_repo_first.md) — HARD: "lav et issue" → ravn/* fork, ALDRIG direkte upstream uden eksplicit go-ahead**
+- **[Issues: own repo first, external never without go-ahead](feedback_issues_own_repo_first.md) — HARD: "lav et issue" → ravn/* fork; external repos (incl. llvm/llvm-project, z88dk/z88dk, mamedev) require explicit per-issue go-ahead. See also [[feedback_no_external_issues]]**
 - **[Upstream routing](feedback_upstream_routing_two_targets.md) — HARD: generic-LLVM bugs -> llvm/llvm-project; Z80-specific -> llvm-z80/llvm-z80 only**
 - **[MAME upstream routing](feedback_mame_upstream_routing.md) — HARD: never file in MAME without explicit per-issue permission**
 - **[No upstream sdcccall discrepancies](feedback_no_upstream_sdcccall_discrepancies.md) — HARD: ABI mismatches are known build-config issues, NOT upstream-fileable**
@@ -60,10 +58,8 @@
 
 - **[+shadow-isr: EXX/EX AF,AF' ISR context save](reference_shadow_isr_feature.md) — autoload only; rcbios/cpnos unsafe (EXX in division legalizer)**
 - **[ZX0 PROMs: optimize compressed, not raw](feedback_zx0_optimize_compressed_not_raw.md) — HARD: autoload metric is compressed B; raw codegen wins can grow the PROM (add a,a chains are ZX0-free)**
-- **[Historical +static-stack recursion hazard](feedback_static_stack_nonrecursive_only.md) — old mechanism silently miscompiled recursion; absent from d6658ad, whose +static-frame gate is different**
-- **[Historical -ffreestanding closed-world static-frame path](reference_z80_ffreestanding_closed_world.md) — superseded; current d6658ad does not use the Freestanding module flag**
-- **[Historical -z80-assume-no-callbacks experiment](reference_z80_assume_no_callbacks.md) — switch absent from current d6658ad; old benchmark is revision-specific**
-- **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — prefer build-side (whole-program LTO+internalize) or upstream fix; NOT reinstating old AutoStaticFrame**
+- **[Historical static-frame / closed-world / no-callbacks](feedback_static_stack_nonrecursive_only.md) — three historical mechanisms superseded by d6658ad; benchmarks are revision-specific. See linked files + [[reference_z80_ffreestanding_closed_world]] + [[reference_z80_assume_no_callbacks]]**
+- **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — prefer build-side (LTO+internalize) or upstream fix; NOT reinstating old AutoStaticFrame**
 - **[Short and concise](feedback_short_and_concise.md) — HARD: brief responses/write-ups/filings; deep detail goes in project docs, not the reply**
 - **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
 - **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel ifeq COMPILER recipes must emit the SAME artifact set**
@@ -164,12 +160,10 @@
 - **[rcbios jump table is ABI](feedback_rcbios_jump_table_is_abi.md) — HARD: BIOS jump table at 0xDA00 is frozen ABI; new paths ADDITIVE only**
 - **[rcbios -flto: section-attrs required](feedback_rcbios_no_lto_boot_placement.md) — RE-ENABLED 2026-07-03 on main; STILL BROKEN on test/all-prs (LTO + P2 legalizer, root cause unknown)**
 
-## 11b. z88dk llvmz80 bridge-eliminering
-
-- **[EXX-protokol: kerne-ABI + legalizer](reference_exx_protocol_z88dk_32bit.md) — addSym; EXX uses/defs; gem IX ved dynamic frames**
-- [llvmz80 native runtime](project_llvmz80_bridge_elimination.md) — RTLIB + sdcccall(0); ingen nye broer; strict NaN-tests PASS
-
 ## 12. Reference / standing reminders
+
+- **[EXX-protokol: z88dk 32-bit kerne-ABI + legalizer](reference_exx_protocol_z88dk_32bit.md) — addSym; EXX uses/defs; gem IX ved dynamic frames**
+- [llvmz80 native runtime (bridge-eliminering)](project_llvmz80_bridge_elimination.md) — RTLIB + sdcccall(0); strict NaN-tests PASS
 
 - [cmake after Xcode removal](reference_cmake_after_xcode_removal.md) — `-DCMAKE_LIBTOOL` + `-DLLVM_ENABLE_LIBEDIT=OFF` + `DEVELOPER_DIR=CommandLineTools` required
 - [C_LINE debug + z88dk-dis -c](reference_z80asm_c_line_debug.md) — z80asm source maps; z88dk-dis -c shows source in disassembly
