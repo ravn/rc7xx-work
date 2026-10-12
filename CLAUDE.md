@@ -10,7 +10,7 @@ This includes "parallel just in case" broad searches — they walk iCloud-synced
 
 ## Memory — read at session start
 
-**Durable rules, preferences, and lessons live in `tasks/memory/` (index: `tasks/memory/MEMORY.md`). Read `MEMORY.md` at the start of every session** (migrated out of `~/.claude/` 2026-05-28, so it is no longer auto-injected). To record a durable note: add a file under `tasks/memory/` + a one-line index entry in `MEMORY.md`. **Never write to `~/.claude/`** — that harness default is OVERRIDDEN.
+**Durable rules, preferences, and lessons live in `tasks/memory/` (index: `tasks/memory/MEMORY.md`). Read `MEMORY.md` at the start of every session, including after `/compact` or any context summarization — treat resumed context as a new session.** (migrated out of `~/.claude/` 2026-05-28, so it is no longer auto-injected). To record a durable note: add a file under `tasks/memory/` + a one-line index entry in `MEMORY.md`. **Never write to `~/.claude/`** — that harness default is OVERRIDDEN.
 
 ## Project Goal
 
@@ -178,9 +178,17 @@ Recently fixed (full writeups in the cited files; kept as pointers):
 - sret copied to wrong dest from an sret-returning call (`cf6c78afd775`, ravn/llvm-z80#268 CLOSED); sret setup skipped for no-arg >4-byte returns (`74378e7a78cc`, #274 CLOSED).
 - Bare pair inline-asm constraints (`"hl"` etc.) crashed IRTranslator — `Z80TargetInfo::convertConstraint` rewrites to braced form.
 
-## Working LLVM-Z80 features (use directly)
+## Z80 port I/O
 
-- `address_space(2)` for port I/O (ravn/llvm-z80 #1/#44): `*(volatile __attribute__((address_space(2))) uint8_t *)0x10` → `IN A,(0x10)` / `OUT (0x10),A`.
+- Do not assume `address_space(2)` pointer dereferences are supported by every
+  compiler revision. Upstream merge `48c1b4b` dropped the `AS_IO` lowering:
+  its parent `d52e233` builds c863c55 and emits IN/OUT, while the later
+  `199178...` tree fails on the same volatile `G_STORE`. The local
+  `compiler-pre-pr40` tag identifies the working pre-merge revision. Current
+  autoload uses inline assembly (`rc700-gensmedet/autoload-in-c/rom.h`).
+- The separate `llvm.z80.in/out` intrinsics have codegen coverage in
+  `llvm/test/CodeGen/Z80/port-io-any-register.ll`. Verify the exact operation
+  and compiler build before reusing older address-space-2 claims.
 
 ## z88dk `+cpm -compiler=llvmz80` stdlib status (2026-07-17)
 

@@ -16,7 +16,7 @@
 
 ## 1. Always-on (every response — genuinely frequent triggers only)
 
-- **[Check memory BEFORE coding](feedback_check_memory_before_coding.md) — HARD: scan MEMORY.md, READ linked files, NAME rules in first response, THEN code**
+- **[Check memory BEFORE coding](feedback_check_memory_before_coding.md) — HARD: scan MEMORY.md, READ linked files, NAME rules in first response, THEN code. `/compact` = new session; re-read MEMORY.md.**
 - **[MEMORY.md size check](feedback_memory_size_check.md) — HARD: if read shows "Truncated … of N total" with N>210, flag to user immediately**
 - **[Revalidate historical compiler claims](feedback_revalidate_historical_compiler_claims.md) — HARD: re-run before acting on any historical size/speed/miscompile claim**
 - **[Rebuild ALL Z80 tools after backend edit](feedback_rebuild_all_z80_tools.md) — HARD: `make toolchain` or rebuild all tools (incl llvm-nm, opt, FileCheck)**
