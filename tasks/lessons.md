@@ -1,5 +1,38 @@
 # Lessons Learned
 
+## 2026-10-13: z88dk cpm_clib links SDCC variants under underscore names
+
+When the fork changed the z88dk triple's default from sdcccall(0) to __smallc,
+ravn's `getDefaultCallingConv()` override (4e84ecb0) conflicted with the design.
+The override was removed; tests were rewritten for __smallc.
+
+cpm_clib links `_qsort.asm` and `_vsnprintf.asm` (SDCC/sdcccall(0) variants)
+under the underscore-prefixed names.  To call them correctly from llvmz80
+(__smallc default): declare vsnprintf/vfprintf with `__z88dk_sdcc0`, add
+`-fno-builtin-vsnprintf/vfprintf` to zcc, and annotate comparator callbacks
+with `sdcccall(0)`.  The `__z88dk_sdcc0` macro is defined in `sys/compiler.h`.
+
+Root cause: clang generates `_qsort` (underscore) which resolves to the SDCC
+thunk variant, not the sccz80 variant.  A future z88dk library rebuild could
+expose sccz80-calling-convention variants under `_xxx` names for llvmz80.
+
+## 2026-10-10: Port-I/O restoration must legalize the pointer conversion
+
+Address-space-2 `G_LOAD`/`G_STORE` support is not sufficient for port-I/O
+codegen: GlobalISel must also legalize `G_INTTOPTR` to `P2`. When reconstructing
+a temporary backend patch, verify the exact failing MIR operation and build the
+full firmware before trusting an outliner or size measurement.
+
+## 2026-10-10: Compare static-frame mechanisms, not option names
+
+Do not infer that a new frame feature preserves the old feature's eligibility
+or safety policy from a similar name. The pre-PR-40 `+static-stack` lowering
+used frame-shape checks without the current whole-module non-reentrance gate;
+current `+static-frame` requires a `nonreentrant` proof. Trace both the
+feature definition and frame-lowering gate, and check that remembered
+`-ffreestanding`/closed-world behavior still exists in the checked-out source
+before using it to explain a code-size delta.
+
 ## 2026-10-08: Target temporary prefix ('L') suppresses MC EXTERN emission
 
 In LLVM Z80 (Mach-O mangling mode `m:o`), `PrivateGlobalPrefix` is `"L"`.
@@ -294,3 +327,14 @@ you rebuilt*.
 - **Zoom-out discipline applied:** at the 3rd instance of the same "XX pair is foreign to the 16-bit back end" class, stopped whack-a-mole (Path A) and revised the recommendation to spike Path B (split result into DX+AX real registers, reuse existing I4-assembly machinery) — recorded in the plan + issue #9.
 - **A produced object is not proof of codegen correctness.** Two of the crashes were masked by `| tail` swallowing the SIGSEGV exit code (rc=139) and by a 0-byte object that looked like a clean compile. Always check the RAW exit code and object size, and gate real correctness with a runtime value oracle (product with non-zero high 16 bits under emu2).
 - **Repo commit-hook keyword trap:** the "repo settings" preToolUse hook errors on the substring l-o-c-a-t-e in any tool command / commit message. Cost ~10 probes to bisect. See tasks/memory/reference_repo_pretooluse_hook_keyword.md.
+
+## 2026-10-09 — validate historical Z80 port-I/O claims by exact compiler
+
+The first full build used `199178...`, the parent of PR #40, but that tree was
+already after upstream merge `48c1b4b` removed the local `AS_IO` mapping. Its
+`G_STORE ... addrspace 2` failure did not test the compiler that implemented
+the port mapping. Use the first parent of `48c1b4b` (`d52e233...`) for the
+pre-merge control, and inspect the exact revision for `AS_IO`, legalizer rules,
+and selector lowering before building. When a historical build fails, first
+verify that the selected tree actually contains the feature the experiment is
+meant to test; a label such as “pre-PR-40” is not sufficient.
