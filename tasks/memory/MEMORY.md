@@ -70,6 +70,7 @@
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
 - **[Compiler builds](feedback_parallel_compiler_builds.md) — genbrug builddir + ccache efter branchskift; separat kun til samtidige versioner**
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
+- **[pgrep BEFORE every new build](feedback_check_pgrep_before_ninja.md) — HARD: `pgrep -f ninja` first; empty task-output ≠ not started; if PID exists → wait, never start another**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
 - **[ld.lld LTO bypasses addIRPasses](reference_lld_lto_bypasses_addIRPasses.md) — HARD: `-flto` under ld.lld does NOT run custom Z80PassConfig passes (incl. NonReentrant) → silent static-frame regression**
 - **[Machine outliner breaks timing asm](feedback_machine_outliner_breaks_timing_asm.md) — HARD: cycle-counted C delays MUST live in `.s`; LTO outlines inner loops with __asm__ volatile("") and corrupts timing**

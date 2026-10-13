@@ -1,5 +1,23 @@
 # Prompts
 
+## 2026-10-13 (zcc+llvmz80 __smallc adaptation + upstream sync)
+
+> vi skal gentage arbejdet med at få zcc til at virke korrekt med llvmz80. zlfn har besluttet at opføre sig som en eksisterende compiler som bruger __smallc
+
+> vi går ud fra at zlfns løsning er bedre end ravns.
+
+> målet lige nu er at få zcc til at virke igen med llvmz80.
+
+> zlfn har lavet llvmz80 om så det opfører sig mere som en af syandard compilerne i z88dk i stedet for at ligne ez80clang eksperimentet
+
+> hent de nye commits
+
+> vi skal kun have main med fra upstream / med de rettelser du har lavet
+
+> passerer alle tests?
+
+> analyser, opsummer, opret issies hvis nødvendigt, commit push
+
 ## 2026-10-10 (start memory-operand modeling work)
 
 > start
