@@ -1,5 +1,27 @@
 # Lessons Learned
 
+## 2026-10-13: zcc+llvmz80 sdcc triple — sdasz80 path blocked on CRT format
+
+`clang --target=z80-unknown-none-sdcc` produces SDCC-format assembly (.area/.globl/#).
+z88dk-z80asm cannot parse this. Routing through sdasz80/sdldz80 works for user code
+but fails on z88dk's CRT files (cpm_crt0.asm) which are in z88dk-z80asm syntax.
+
+**Key zcc.c lesson:** `configure_assembler()` is called BEFORE `configure_compiler()`
+sets `compiler_type`. Assembler overrides for CC_LLVMZ80 must go inside
+`configure_compiler()` after `compiler_type = CC_LLVMZ80` (line 3736).
+
+**Resolution path:** wait for fork owner's elf2rel + runtime-2-libsdcc branches.
+See `tasks/memory/project_zcc_llvmz80_sdcc_triple_blocker.md`.
+
+## 2026-10-13: upstream/main sync — llvm-z80 two-line split resolved
+
+The fork's two development lines (z88dk-env track vs libcall-table track) are
+now resolved: use upstream/main as the sole base. The 22 z88dk-env commits are
+archived at `archive/z88dk-env-20261013` in ravn/llvm-z80.
+
+ravn/llvm-z80 main = upstream/main + reloc-fix (7aaad37) + select-sink (#117).
+154/154 lit pass.
+
 ## 2026-10-13: z88dk cpm_clib links SDCC variants under underscore names
 
 When the fork changed the z88dk triple's default from sdcccall(0) to __smallc,

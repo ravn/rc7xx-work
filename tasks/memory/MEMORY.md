@@ -79,6 +79,8 @@
 - **[Verify CMake fixes with compile_commands](feedback_verify_cmake_fixes.md) — HARD: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON + confirm actual -I flags**
 - **[Self-compact during long builds](feedback_self_compact_during_long_builds.md) — kør /compact selv mens ninja/docker/MAME kører i baggrund**
 
+- **[zcc+llvmz80 sdcc triple BLOCKED](project_zcc_llvmz80_sdcc_triple_blocker.md) — sdasz80 path fails on CRT format; z88dk triple needs Triple::Z88DK (not in upstream/main); wait for elf2rel+runtime-libsdcc from fork owner**
+
 ## 5. llvm-z80 compiler / codegen changes
 
 **-> Read [MEMORY_CODEGEN.md](MEMORY_CODEGEN.md) before any compiler/codegen/ABI change**
