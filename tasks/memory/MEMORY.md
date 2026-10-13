@@ -90,6 +90,7 @@
 - **[Combiner: x−1 → G_ADD(x, 0xFF)](reference_combiner_canonicalizes_sub1_to_add_ff.md) — near-identity-arith folds must key off 8-bit constant VALUE, not G_ADD/G_SUB opcode**
 - **[LSR filter prefers wide stride-match → 3 TTI hooks](reference_lsr_filter_prefers_wide_stride_match.md) — fixed 2026-10-11 (llvm-z80@8d909ab): isHardwareLoopProfitable + getNumberOfRegisters=3 + shouldDropLSRSolutionIfLessProfitable; `-disable-lsr` removed from autoload Makefile**
 - **[Z88DK triple trade-offs](reference_z88dk_triple_tradeoffs.md) — triple-shift ændrer float-bredde, 32-bit math-ABI, memset lowering, DWARF-emission; autoload +77 B regression, IKKE netto-win**
+- **[zsdcc 4.5 BSS duplication](reference_zsdcc_bss_duplication.md) — .h i ucpp cwd / explicit = 0 / pragma constseg trigger data_compiler duplikering; byg fra /tmp med headers i inc/ subdir (ravn/z88dk#88)**
 - **[emitRawText guard with hasRawTextSupport()](reference_emitrawtext_streamer_guard.md) — HARD: every AsmPrinter emitRawText-site must guard; object streamer (-c path) crashes without it (issue #410 fix d081b0d)**
 
 ## 6. Before any MAME / boot / test run
