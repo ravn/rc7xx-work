@@ -1,5 +1,34 @@
 # Lessons Learned
 
+## 2026-10-14: zsdcc autoload — five SDCC 4.6 boot fixes, ISR mystery remains
+
+Native z88dk (SDCC 4.6) `make zsdcc-prom` now builds correctly (3861 B).
+Five root-cause fixes required to get here:
+
+1. `__INTVEC_ONLY` guards `static set_i_reg()` in rom.h so SDCC doesn't
+   emit it in intvec.c (where it would land at 0x7200 and misalign IVT).
+2. `SECTION _BOOT` + `SECTION _code_sentinel`: SDCC 4.6 prefixes
+   `--codeseg NAME` with underscore (SDCC 4.1 did not).
+3. `_code_end` runtime address: use `#pragma constseg _code_sentinel`
+   (section name matches SDCC 4.6 convention).
+4. `boot_reloc()` LDIR in _BOOT: library memcpy is in CODE section
+   (runtime 0x8014) and not in RAM yet when start() runs from ROM.
+   sdcccall(1) passes 3rd arg (len) on stack — pop via SP+4.
+5. RELOC_SIZE = `0x1000u - _boot_tail_ptr` = 0x0F98: covers full PROM
+   slot including z88dk library (asm_memcpy etc. sit above user code).
+
+Also: linker-level IVT alignment check in Makefile (`_intvec % 256 == 0`
+from map file) — guarantees build fails if IVT drifts off page boundary.
+`zsdcc/prom0.map` is now always saved for post-build diagnostics.
+
+**Boot still broken**: display stuck at 0x39, DMA ch2 never programmed.
+All byte-level setup verified correct. DIAG_EARLY_EI compile flag
+confirmed EI timing is not the cause. Paused — see
+`tasks/memory/project_zsdcc_autoload_boot_investigation.md`.
+
+Code size 3861 B vs clang 2363 B (+63%) — SDCC 4.6 codegen regression
+to investigate after boot works.
+
 ## 2026-10-13: zcc+llvmz80 sdcc triple — sdasz80 path blocked on CRT format
 
 `clang --target=z80-unknown-none-sdcc` produces SDCC-format assembly (.area/.globl/#).
@@ -9,6 +38,10 @@ but fails on z88dk's CRT files (cpm_crt0.asm) which are in z88dk-z80asm syntax.
 **Key zcc.c lesson:** `configure_assembler()` is called BEFORE `configure_compiler()`
 sets `compiler_type`. Assembler overrides for CC_LLVMZ80 must go inside
 `configure_compiler()` after `compiler_type = CC_LLVMZ80` (line 3736).
+
+**Real blocker:** object format mismatch at link time. z88dk-z80asm linker uses `.obj`;
+sdasz80 produces `.rel`. No single linker handles both. CRT format is a red herring —
+the CRT can always stay in z88dk-z80asm; it's the USER code object that's incompatible.
 
 **Resolution path:** wait for fork owner's elf2rel + runtime-2-libsdcc branches.
 See `tasks/memory/project_zcc_llvmz80_sdcc_triple_blocker.md`.

@@ -15,8 +15,10 @@ zcc+llvmz80 integration is **blocked** until the fork owner merges the elf2rel a
 
 **Why sdcc triple + sdasz80 doesn't work:**
 - clang with sdcc triple outputs SDCC-format assembly (`.area`, `.globl`, `#` immediates)
-- z88dk's CRT files (`cpm_crt0.asm` etc.) are in z88dk-z80asm syntax → cannot be assembled by sdasz80
-- sdldz80 expects SDCC `.rel` objects and `.lib` libraries → incompatible with z88dk's library format
+- z88dk-z80asm cannot parse SDCC-format assembly (user code fails)
+- sdasz80 produces `.rel` objects; z88dk-z80asm as linker only understands its own `.obj` format
+- sdldz80 can link `.rel` but cannot link z88dk's CRT/library `.obj` format
+- **Root blocker: object format mismatch at link time** — no single linker handles both formats
 
 **WIP commit**: `ravn/z88dk` `0633c22cb5` — routes CC_LLVMZ80 through sdasz80/sdldz80 in configure_compiler(), skips MODULE/LINE and BuildAsmLine flags. Assembly of user code works; CRT assembly fails.
 

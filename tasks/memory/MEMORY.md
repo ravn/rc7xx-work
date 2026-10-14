@@ -80,6 +80,7 @@
 - **[Self-compact during long builds](feedback_self_compact_during_long_builds.md) — kør /compact selv mens ninja/docker/MAME kører i baggrund**
 
 - **[zcc+llvmz80 sdcc triple BLOCKED](project_zcc_llvmz80_sdcc_triple_blocker.md) — sdasz80 path fails on CRT format; z88dk triple needs Triple::Z88DK (not in upstream/main); wait for elf2rel+runtime-libsdcc from fork owner**
+- **[zsdcc autoload paused](project_zsdcc_autoload_boot_investigation.md) — builds (3861 B) but CTC CH2 ISR never fires in MAME; byte-level setup verified correct; next step needs MAME-debugger breakpoint on 0x78AD. Branch: work/zsdcc-sccz80-builds-20261012.**
 
 ## 5. llvm-z80 compiler / codegen changes
 
