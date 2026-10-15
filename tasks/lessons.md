@@ -430,3 +430,25 @@ for 32 KB RAM), but `0x7A00` in SDCC (where code relocates to 0x7200). Hardcodin
 (0x30), wrapping the banner and shifting line numbers. Always match low/high bytes
 to `(DSPSTR_ADDR & 0xFF)` / `(DSPSTR_ADDR >> 8)` for each compiler target.
 
+## 2026-10-15 — Inline `memcpy` and `memset` under `-ffreestanding` in Clang Z80
+
+Under `-ffreestanding`, Clang ceases recognizing standard C library identifiers (`memcpy`, `memset`), emitting external library calls (`call _memcpy`, `call _memset`). In LLVM Z80:
+1. `G_MEMCPY` lowers to inline `LDIR` when constant-sized (or `LDIR_GUARDED` if variable). Using `__builtin_memcpy` forces Clang to emit `@llvm.memcpy` regardless of `-ffreestanding`, producing inline `ldir` with no library stubs.
+2. `G_MEMSET` in `llvm/lib/Target/Z80/Z80LegalizerInfo.cpp:1801` does NOT lower to inline code — it always falls back to `Helper.createMemLibcall()` calling `___z80_memset_builtin` in `compiler-rt`.
+3. To generate 100% inline `LDIR` for `memset` without library dependencies:
+   `*_dst = c; if (n > 1) __builtin_memcpy(_dst + 1, _dst, n - 1);`
+   The classic Z80 self-overlapping copy trick turns `memset` into an inline 1-byte store followed by `ldir` (`ld bc, n-1; ldir`), completely eliminating `compiler-rt` runtime stubs (`rt_memcpy.o`, `rt_memset.o`) from the build.
+
+## 2026-10-15 — Z80 static frame lacks size cost model (unlike SM83), inflating call spills
+
+In `Z80FrameLowering.cpp:148`, commit `b28c4ab0518a` added `KeepWideOnStack` with a cost model for SM83 (leaving wide slots on stack if extra access bytes exceed the 4 B prologue savings), but hardcoded `KeepWideOnStack = false` for Z80 under the assumption that Z80 has 16-bit direct absolute addressing (`ld bc, (nn)` / `ld (nn), bc`).
+However, `ld bc, (nn)` is 4 bytes. For register spills across function calls:
+- Stack: `push bc; call foo; pop bc` costs 2 bytes overhead.
+- Static frame: `ld (frame), bc; call foo; ld bc, (frame)` costs 8 bytes (4× code size) plus permanent BSS memory.
+For non-A 8-bit registers (`D`), static frame spill/reload takes 8 bytes vs 2 bytes for `push de; pop de`.
+In loops with calls (e.g. `_fdc_read_result`), this inflates code by 14 B per iteration.
+Tracked in ravn/llvm-z80#415.
+
+
+
+
