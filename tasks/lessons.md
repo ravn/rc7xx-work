@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## 2026-10-15: Signed vs unsigned 16-bit comparisons & GlobalISel operand swapping
+
+1. **Signed vs unsigned 16-bit comparisons on Z80:**
+   `int16_t remaining = a - b; if (remaining > 0)` emits 14 bytes on Z80
+   (`sub`/`sbc`, `xor $80`, `sub $1`, `sbc a, $80`, plus static frame spills).
+   Changing to unsigned `if (a > b) a -= b;` emits clean 5-6 bytes with no
+   sign-bit manipulation or frame spills, saving 17 B in `fdc_read_data`.
+
+2. **GlobalISel bottom-up selection & commutative operand swapping:**
+   In `Z80InstructionSelector`, commutative 16-bit `G_PTR_ADD` and `G_ADD` can
+   swap operands so that accumulator `HL` holds the intermediate computed
+   value, allowing `add hl, bc` / `add hl, de` directly. Because selection runs
+   bottom-up, the operand producers have not been selected yet; checking
+   generic opcodes (`G_SHL`, `G_ADD`, `G_PTR_ADD`) identifies values that will
+   end up in `HL`, saving 10 B of register moves per multi-dimensional GEP.
+
 ## 2026-10-14: zsdcc autoload — five SDCC 4.6 boot fixes, ISR mystery remains
 
 Native z88dk (SDCC 4.6) `make zsdcc-prom` now builds correctly (3861 B).
