@@ -393,3 +393,40 @@ pre-merge control, and inspect the exact revision for `AS_IO`, legalizer rules,
 and selector lowering before building. When a historical build fails, first
 verify that the selected tree actually contains the feature the experiment is
 meant to test; a label such as “pre-PR-40” is not sufficient.
+
+## 2026-10-15 — LLVM-Z80 `areInlineCompatible` blocks `always_inline` (> 10 instructions)
+
+Upstream LLVM commit `7bdca287` (July 6, 2026) moved `TTI.areInlineCompatible()`
+checks ahead of `always_inline` handling in `InlineCost.cpp` to prevent unsound
+cross-target-feature inlining. In `llvm/lib/Target/Z80/Z80TargetTransformInfo.h`,
+`areInlineCompatible()` was implemented as a cost-heuristic check returning true
+only if `hasFnAttribute(Attribute::InlineHint)` or `getInstructionCount() <= 10`.
+It omitted `hasFnAttribute(Attribute::AlwaysInline)`.
+Because Clang sets `AlwaysInline` (not `InlineHint`) when compiling
+`__attribute__((always_inline))`, every non-trivial always_inline function (>10 IR insns)
+was silently rejected with the misleading message:
+`conflicting target features [-Rpass-missed=inline]`.
+Lesson: when overriding generic compiler hooks like `areInlineCompatible()`, verify
+whether the hook is meant for architectural capability or optimization policy, and ensure
+mandated compiler attributes (`always_inline`) are explicitly preserved. In C source,
+macro blocks (`#define f() do { ... } while(0)`) bypass the inliner completely.
+Tracked in ravn/llvm-z80#414.
+
+## 2026-10-15 — Am9517A DMA byte-pointer flip-flop is shared across all 4 channels (port 0xFC)
+
+The Am9517A / 8237A DMA controller has a single internal byte-pointer (BP) flip-flop
+shared by all four channels. Writing 16-bit address or word-count registers requires
+clearing this flip-flop (`out (0xFC), a`) before the low byte write. Writing to port
+0xF8 instead of 0xFC fails to clear the BP flip-flop, inverting high/low byte order.
+When channel 2 (CRT) or channel 1 (Floppy) address is loaded while the BP flip-flop is
+misaligned, subsequent floppy DMA transfers write to wrong memory addresses, producing
+silent RAM corruption and `**DISKETTE ERROR**` in MAME.
+
+## 2026-10-15 — CRT DMA base address differences across compilers (0x7830 vs 0x7A00)
+
+`DSPSTR_ADDR` is `0x7830` in clang / llvmz80 (fitting 2000 B framebuffer below 0x8000
+for 32 KB RAM), but `0x7A00` in SDCC (where code relocates to 0x7200). Hardcoding
+`0x00` / `0x78` (`0x7800`) in assembly ISRs shifts the display output by 48 bytes
+(0x30), wrapping the banner and shifting line numbers. Always match low/high bytes
+to `(DSPSTR_ADDR & 0xFF)` / `(DSPSTR_ADDR >> 8)` for each compiler target.
+
