@@ -447,7 +447,12 @@ However, `ld bc, (nn)` is 4 bytes. For register spills across function calls:
 - Static frame: `ld (frame), bc; call foo; ld bc, (frame)` costs 8 bytes (4× code size) plus permanent BSS memory.
 For non-A 8-bit registers (`D`), static frame spill/reload takes 8 bytes vs 2 bytes for `push de; pop de`.
 In loops with calls (e.g. `_fdc_read_result`), this inflates code by 14 B per iteration.
-Tracked in ravn/llvm-z80#415.
+## 2026-10-15 — GlobalISel bottom-up selection and commutative 16-bit operand ordering
+
+1. In GlobalISel's `InstructionSelect`, selector passes run bottom-up (reverse basic-block order). When a consumer instruction like `G_PTR_ADD` is selected, definitions of its operands earlier in the basic block have NOT yet been selected and remain generic opcodes (`G_SHL`, `G_GLOBAL_VALUE`, `G_ADD`, etc.).
+2. Therefore, testing only for post-selection forms (like `COPY from HL`) fails to match instructions that will produce their values in HL (such as 16-bit `G_SHL` with 1..7 shifts, which always select to `ADD_HL_HL`).
+3. For commutative 16-bit operations (`G_PTR_ADD`, `G_ADD`), Z80 requires one operand in accumulator `HL` and the other in `BC`/`DE`. Unconditionally forcing the base into `HL` and offset into `BC`/`DE` evicts offsets that were just shifted into `HL` via `ADD_HL_HL`, causing redundant `ld c, l; ld b, h` chains and adding ~5-10 bytes overhead per multi-dimensional array lookup.
+4. Detecting both generic and selected producers (`G_SHL`, `G_PTR_ADD`, `G_ADD`, `G_SUB`, `COPY from HL`) and swapping operands so the value produced in `HL` remains in `HL` allows the base to be loaded or added directly via `add hl, bc` / `add hl, de`.
 
 
 
