@@ -8,6 +8,14 @@ Guidance for Claude Code when working in this repository.
 
 This includes "parallel just in case" broad searches — they walk iCloud-synced dirs and force-download every offloaded file, costing real bandwidth/disk regardless of whether anyone reads the result. Four documented incidents (2026-04-21/05-09/06-10/06-14) — see `tasks/memory/feedback_no_home_search.md`. Further violations are a session-ending failure of trust. If a workspace-internal lookup returns nothing, **ask the user where the file lives** — never "search wider."
 
+## ⛔ TOP-PRIORITY HARD RULE — never invoke MAME binaries directly
+
+**Never invoke `mame`, `rc702test`, `regnecentralen`, or `regnecentralend` directly from the shell — no exceptions, not even for quick checks, `--help`, or inline Lua scripts.** All MAME interaction MUST go through:
+1. Makefile targets (`make mame`, `make cpnos-polypascal-test`, `make mame-test`), or
+2. The project launcher script `rc700-gensmedet/scripts/mame_capture.sh` (or a dedicated wrapper script) that enforces `-window`, `-seconds_to_run N`, `-skip_gameinfo`, and `-sound none`.
+
+Calling MAME binaries raw defaults to fullscreen exclusive mode with SDL input-grab on macOS, capturing mouse and keyboard and halting indefinitely on modal ROM warnings, which completely locks the user's desktop and forces a hard reboot (freeze incident 2026-10-19).
+
 ## Memory — read at session start
 
 **Durable rules, preferences, and lessons live in `tasks/memory/` (index: `tasks/memory/MEMORY.md`). Read `MEMORY.md` at the start of every session, including after `/compact` or any context summarization — treat resumed context as a new session.** (migrated out of `~/.claude/` 2026-05-28, so it is no longer auto-injected). To record a durable note: add a file under `tasks/memory/` + a one-line index entry in `MEMORY.md`. **Never write to `~/.claude/`** — that harness default is OVERRIDDEN.

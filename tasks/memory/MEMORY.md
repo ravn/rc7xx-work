@@ -11,6 +11,7 @@
 - **[ALL PRs ALWAYS draft](feedback_upstream_prs_always_draft.md) — ABSOLUTE: `gh pr create` SKAL have `--draft`. ALTID. Ingen undtagelser. Ingen repo-undtagelser. Aldrig non-draft.**
 - **[ravn/\* open, upstream NEVER](feedback_ravn_open_upstream_never.md) — HARD (user 2026-10-11): act directly in ravn/\* (push, comment, close, draft PR); upstream (llvm, z88dk, mamedev, …) requires explicit "ja post" this turn.**
 - **[Ravn's patches rebase onto zlfn's decisions](feedback_ravn_patches_rebase_onto_zlfn.md) — HARD (user 2026-10-11): ravn/llvm-z80 is downstream of zlfn; conflict resolution always keeps zlfn's version, cherry-pick ravn-unique bits on top. Never parallel-implement; wait for zlfn's design.**
+- **[NEVER run raw MAME](feedback_mame_always_window_timeout.md) — ABSOLUTE: no raw mame/rc702test; use Makefiles or scripts with -window + timeout.**
 - [Reviewer feedback: show before push (non-ravn/\*)](feedback_upstream_review_local_first.md) — on external PRs: show diff/results in chat, wait for OK, then push.
 - **AGENTS.md + lignende meta-filer må ALDRIG inkluderes i upstream PRs** — de er lokale arbejdsaftaler, ikke kodeændringer.
 
@@ -107,7 +108,7 @@
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: capture MAME screenshot; PASS lines alone are NOT enough**
 - **[Visual capture for display path changes](feedback_visual_capture_for_display.md) — HARD: CRT/DMA/8275/display BSS changes need multi-frame video verification**
 - **[Black screen is fatal](feedback_black_screen_fatal.md) — HARD: halts all other investigation**
-- **[MAME always windowed + timeout](feedback_mame_always_window_timeout.md) — HARD: every launch needs -window AND finite -seconds_to_run N**
+- **[MAME always windowed + timeout](feedback_mame_always_window_timeout.md) — see §0; ABSOLUTE: never raw; always -window + finite timeout**
 - **[Never concurrent builds, never kill a build](feedback_never_concurrent_or_kill_builds.md) — HARD: one ninja/make at a time; never pkill a build**
 - **[Disable MAME audio in ALL tests](feedback_disable_audio_in_tests.md) — HARD: -sound none; CoreAudio causes SIGPIPE under background load**
 - **[Headless host = no MAME window](feedback_host_no_graphics.md) — HARD: on sonnyboy use SDL_VIDEODRIVER=dummy**
