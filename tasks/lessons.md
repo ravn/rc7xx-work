@@ -470,6 +470,18 @@ In loops with calls (e.g. `_fdc_read_result`), this inflates code by 14 B per it
 3. For commutative 16-bit operations (`G_PTR_ADD`, `G_ADD`), Z80 requires one operand in accumulator `HL` and the other in `BC`/`DE`. Unconditionally forcing the base into `HL` and offset into `BC`/`DE` evicts offsets that were just shifted into `HL` via `ADD_HL_HL`, causing redundant `ld c, l; ld b, h` chains and adding ~5-10 bytes overhead per multi-dimensional array lookup.
 4. Detecting both generic and selected producers (`G_SHL`, `G_PTR_ADD`, `G_ADD`, `G_SUB`, `COPY from HL`) and swapping operands so the value produced in `HL` remains in `HL` allows the base to be loaded or added directly via `add hl, bc` / `add hl, de`.
 
+## 2026-10-20 — Never tag third parties in issues, PRs, or commits
+
+Never `@`-mention / tag any external individual (such as upstream authors or third parties) in issue bodies, pull request descriptions, or commit messages in `ravn/*` repositories without explicit instruction from @ravn. Refer to external developers by plain text name (e.g., "Dirk Best" or "upstream author"), never by their GitHub `@handle`. Tagging sends unsolicited GitHub notifications.
+
+## 2026-10-20 — MAME Lua DIP switches: set `field.user_value`, never `field:set_value()`
+
+1. In MAME's Lua interface, `field:set_value(val)` binds to `ioport_field::set_value()`, which sets `m_digital_value` (momentary digital keypress impulse).
+2. For toggle controls (which DIP switches are: `m_flags |= FIELD_FLAG_TOGGLE`), `ioport_field::frame_update()` interprets a digital press transition as a toggle switch event and invokes `select_next_setting()`.
+3. Consequently, calling `f:set_value(want)` on each run toggles the switch back and forth on alternate runs. When MAME persists modified input settings on exit into `cfg/<driver>.cfg`, the toggled value creates a deterministic mod-2 bistable multivibrator across consecutive runs.
+4. Correct practice: assign the persistent user setting directly via `f.user_value = want` (which maps to `ioport_field::set_user_settings`) and clear any programmatic digital override with `f:clear_value()`.
+
+
 
 
 

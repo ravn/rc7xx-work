@@ -36,6 +36,11 @@ the whole brief.
 - **Simplicity and root causes.** Make each change as small as it can be. Find the
   real cause; no temporary band-aids. If a fix feels hacky, stop and do the clean
   version. Don't over-engineer simple changes.
+- **Never tag third parties.** NEVER tag or `@`-mention anyone other than @ravn
+  in issues, PRs, comments, or commit messages across any repository without
+  explicit instruction from @ravn. Refer to external contributors or upstream
+  authors strictly by plain text name (e.g. "Dirk Best" or "upstream author"),
+  never with a GitHub `@handle`. Tagging triggers unsolicited GitHub notifications.
 - **Use subagents** for research, exploration, and parallel analysis to keep the main
   context window focused — one task per subagent.
 
@@ -115,6 +120,9 @@ the whole brief.
   block. Put my words under a `**From @ravn (human):**` header and yours under
   `**From Copilot (AI):**`, separated by a `---` rule. The reader must always be
   able to tell which sentences are mine and which are the agent's.
+- **Never tag or @-mention third parties.** (Reiterated from *How to operate*):
+  never use `@handle` for anyone other than `@ravn`. Write plain text names
+  so GitHub does not send unwanted notifications to third parties.
 
 ## Verification & commit discipline
 

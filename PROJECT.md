@@ -28,6 +28,10 @@ CP/M BIOS, CP/NOS) booted in MAME.
   in that config, not just the default.
 - **Issues go in `ravn/*` forks only** (llvm-z80, mame, z88dk, …), never upstream
   LLVM. Every compiler bug found gets an XFAIL lit test.
+- **NEVER tag third parties:** Issues, PRs, comments, and commits must NEVER
+  `@`-mention or tag anyone other than @ravn. Always use plain text names
+  (e.g. "Dirk Best" or "upstream author"), never GitHub `@handles`. Tagging sends
+  unsolicited notifications to external people.
 - **Dual-compiler parity:** rcbios/shared C changes must build with **both** z88dk
   (zsdcc) and clang before commit. Source uses a **C23 subset** that works in both
   (true/false/nullptr/typeof/0b/designated-init; *not* constexpr/`[[attr]]`/digit

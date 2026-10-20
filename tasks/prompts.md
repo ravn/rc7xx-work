@@ -1505,3 +1505,28 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 26. er der sket en fejl med origin/native-runtime-summary-20261003=
 27. ok, så hvis det kun er på rod z80, er det fint at merge -no-ff
 28. ja
+
+## 2026-10-20 (SW1 bit names, FDC timeout, screen startup, no Homebrew)
+
+1. jeg vil gerne have alle bitværdierne i sw1 har et navn
+2. hvorforgemmes sw1 variabel? hvad fylder is_mini = (read_sw1() >> 7) & 1;?
+3. jeg er meget tilfreds med dit arbejde med at krympe maskinkoden
+4. rul ud.
+5. virker cpnet ?
+6. hvordan går det
+7. hvorfor er der ikke timeout på? du skal lægge tmp filer i workspacet, sort skærm er skidt
+8. jatak
+9. /tmp/autoload_fdc_mame.log ligger ikke i workspace, FDC-timeout logikken - du kan evt kigge på autoload-in-asm hvordan det var oprindeligt
+10. analyser, opsummer, opret issues efter behov, commit
+11. jeg har  ikke homebrew
+12. hvorfor må du ikke køre gh?
+13. egen fork tak
+14. behold
+15. hvad mangler?
+16. undersøg f p
+17. hvad er du nået frm til?
+18. fakta: DU må _IKKE_ tagge andre end mig i issues og commits i mine egne repos. Dirk blev tagget i det issue du lige har lavet uden jeg havde bedt om det
+19. det skal løftes så højt op så at det ikke kan overses af nogen AI's
+20. jatak
+21. lav analyse igen
+22. analyser og opsummer og opet issues efter behov, commit push
