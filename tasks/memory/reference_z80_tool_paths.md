@@ -21,6 +21,11 @@ metadata:
 | zcc (z88dk C compiler driver) | `/Users/ravn/z80/z88dk/bin/zcc` |
 | **ntvcm** (CP/M emulator for FILE* / stdio runtime tests, arm64 native) | `/Users/ravn/z80/ntvcm/ntvcm` |
 | zmac (Z80 assembler) | `/Users/ravn/z80/rc700-gensmedet/zmac/bin/zmac` |
+| ez80-clang (CEdev install, symlinked from z88dk/bin) | `/Users/ravn/z80/cedev-eval/CEdev/bin/ez80-clang` (symlink: `/Users/ravn/z80/z88dk/bin/ez80-clang`) |
+
+### Rebuilding z88dk tools — use `make bin/<tool>` at workspace root
+
+`make -C src/<tool>` builds in-place at `src/<tool>/<tool>` but does NOT install to `bin/`; the result is a stale `bin/<tool>` that silently reproduces the pre-edit behavior. Correct recipe: `make bin/zcc` (or `bin/z88dk-ticks`, etc.) from `/Users/ravn/z80/z88dk/`. Verify with `./bin/zcc 2>&1 | head -1` → shows `v<count>-<git-sha>-<date>`; the SHA should match your working branch head, not the base. Caveat: `src/config.h` (which embeds the SHA) is NOT auto-regenerated when git state changes — `rm src/config.h && make src/config.h` to refresh. See [[feedback_validate_full_feedback_loop]] for the general rule.
 
 ### Running CP/M runtime fixtures (`z88dk/test/clang/runtime_fileio_*.sh`)
 

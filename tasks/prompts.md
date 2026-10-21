@@ -1531,3 +1531,34 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 21. lav analyse igen
 22. analyser og opsummer og opet issues efter behov, commit push
 23. jeg er tilfreds, den var ikke nem at regne ud!
+
+## 2026-10-21 (PR #90 close-out: zcc.c ixiy probe, header_abi expansion, pragma cleanup)
+
+1. [antigravity hand-off: fix PR #90 — zcc.c conditional ixiy, header_abi tests for strcpy/qsort/..., verify ez80-clang, run z88dk tests]
+2. for nu rul det ufærdige tilbage og lav en plan
+3. 1 a,2 lokalt (og lav notits om det i pr), 3 forklar
+4. ja
+5. hvorfor tilføjede du `strstr(config_filename, "cpm")`?
+6. bekræft at ez80-clang stadig virker
+7. jeg mener der er en ez80-clang binær i projektet
+8. har du kørt alle z88dk's tests mod llvmz80
+9. ca
+10. clib bør vel være ixiy?
+11. pr'et er ikke fokuseret på cpm integration så +test skal også virke
+12. vi skal i øjeblikket kun understøtte Z80 processoren i llvmz80. zlfn vil gerne også SM83 men ikke nu.
+13. hvorfor er der ikke et testixiy_clib build?
+14. er der et test-byg allerede vi KAN bruge?
+15. c, hold det simpelt
+16. forklar hvordan pr#90 ser ud nu
+17. åben pr#90 i en browser
+18. hvorfor skulle vi tvinges til ixiy?
+19. med den accepterede rettelse i printf parsningen burde "#pragma printf = \"%d\"" ikke være nødvendig
+20. hvorfor tester header_abi ikke længere qsort?
+21. opsummer hvad du nåede frem til
+22. der burde være en makeregel for at flytte til bin, er der ikke det (så du bare kalder forkert?)
+23. hvorfor gjorde du det?
+24. hvorfor hoppede du til udførslen? Hvilken regel burde styrkes?
+25. jatak
+26. understøtter zcc et versionstag der kan hjælpe dig med at sikre at det er den rigtige binære der testes
+27. var der andet jeg skulle forholde mig til?
+28. 1 commit, 2 mål hurtigt eksperimentielt i en branch, 3 lav et issue der samler disse, 4 slet dem vi er færdige med, 5 jatak, 6. jatak
