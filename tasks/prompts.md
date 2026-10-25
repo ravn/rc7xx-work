@@ -1505,6 +1505,7 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 26. er der sket en fejl med origin/native-runtime-summary-20261003=
 27. ok, så hvis det kun er på rod z80, er det fint at merge -no-ff
 28. ja
+29. z88dk bør pege på minimal-llvmz80-20261004
 
 ## 2026-10-20 (SW1 bit names, FDC timeout, screen startup, no Homebrew)
 
