@@ -68,6 +68,7 @@
 - **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32; triple-native calls to existing math32 entries; 2.4 facts are not 2.5**
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations; native llc/clang in llvm-z80/build-macos/bin
 - [ccache + cmake rekonfiguration](feedback_ccache_llvm_build.md) — Z80.cmake har ccache-støtte; brug altid `cmake -C Z80.cmake` ved rekonfiguration
+- **[Read Z80.cmake header before improvising cmake call](feedback_read_cmake_cache_header.md) — HARD: flagene -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON står i Z80.cmake linje 4-5, læs før ad-hoc configure**
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
 - **[Compiler builds](feedback_parallel_compiler_builds.md) — genbrug builddir + ccache efter branchskift; separat kun til samtidige versioner**
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**

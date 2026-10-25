@@ -59,6 +59,32 @@ LLVM auto-prefixes C symbols with `_`, so without intervention `qsort(...)` in C
 - If a classic-library call misbehaves, check if the ZPROTO `*_callee` is actually linked (via map file). The `.lib` lookup for callee variants is in `sdcc_ix/` and `sccz80/` subdirs of libsrc.
 - `qsort` comparator receives `a` = left (deeper, IX+6), `b` = right (top, IX+4) under llvmz80. `return va - vb` for ascending sort.
 
+## Sharpened mechanism map (2026-10-26)
+
+The llvmz80↔classic-lib compat has **three independent problem layers**; mentally confusing them wastes time. Each has its own fix:
+
+| Layer | Problem | Fix |
+|---|---|---|
+| 1. Push order | Clang default R-to-L, classic lib expects L-to-R | **Zlfn's smallc-default** on `z80-unknown-none-z88dk` triple — every C func auto-gets `__smallc`, no attribute needed. |
+| 2. Cleanup side | `__smallc` = caller cleanup; `_callee` variants = callee cleanup (RET N, smaller code) | **ZPROTO bridges** (headers): `#define memcpy(a,b,c) memcpy_callee(a,b,c)` + `extern memcpy_callee(...) __smallc __z88dk_callee`. Activated by NOT setting `__STDC_ABI_ONLY` under `__LLVMZ80`. |
+| 3. Backend-synthesized memops | Backend emits `__z80_memset_builtin`/`__z80_memcpy_builtin` from struct copies / aggregate inits — bypasses headers entirely | **`-clib=ixiy`** (symbols only live in cpmixiy_clib + z80iy_crt0), OR `upstream-z88dk-native-runtime` branch that emits `asm_memset`/`asm_memmove` instead (available in both crt0 variants). |
+
+### ZPROTO internals — three macro expansions in `include/sys/proto.h`
+```
+__SCCZ80 branch:  extern r __LIB__ p n(t1,t2,t3) __smallc;
+__SDCC branch:    extern r p n(t1,t2,t3) __smallc;
+else (generic):   extern r p __n(t3,t2,t1);                          /* params REVERSED */
+                  static inline r p n(t1,t2,t3) { return __n(t3,t2,t1); }
+```
+The generic branch tries to simulate smallc under a R-to-L clang by reversing the declared param order AND the call-site args — stack bytes end up identical to L-to-R push. **Dead code for us**: no `__memcpy` symbol exists in classic lib; the `#define memcpy memcpy_callee` directly below overrides the inline wrapper anyway.
+
+### `__STDC_ABI_ONLY` — role shift after zlfn's smallc-default
+- **Before smallc-default**: setting it was a **correctness switch** (R-to-L push vs L-to-R lib → miscompile).
+- **After smallc-default**: setting it is a **performance switch** — plain `memcpy(a,b,c)` still link-compatible via the smallc-default base symbol, you just lose the `_callee` cleanup optimization and any lib func that *only* exists in `_callee` form.
+
+### Watch for
+- A new backend-synthesized memop pattern that doesn't resolve to `__z80_*_builtin` or `asm_*` → will fail link under either workaround. Covered by `test/llvmz80/memops_emission.c` + `check_memops_emission.sh` on `ravn/z88dk:llvmz80-runtime-testsuite` (not yet in PR #90).
+
 ## Related memory
 
 See [[reference_z88dk_evaluation_doc]] for broader llvmz80+z88dk compatibility status.
