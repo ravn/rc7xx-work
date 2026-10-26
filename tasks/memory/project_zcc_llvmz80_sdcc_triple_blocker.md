@@ -93,6 +93,39 @@ Underscore-prefix mechanics (verified via asm emission + nm):
 - sccz80 library asm defines **both** `strcpy_callee` and `_strcpy_callee` as aliases → resolves either way.
 - `qsort`/`bsearch` have NO `_callee` form, so the underscore selects the sdcc-R-to-L entry → fix: `__asm__("qsort")` symbol override in `stdlib.h` under `__LLVMZ80`.
 
+## Minimum change set to eliminate -clib=ixiy (2026-10-26)
+
+Why `-clib=ixiy` is needed TODAY: on 2026-09-29, commit `776e8ee9ae` deleted `libsrc/l/llvmz80/__memset_builtin.asm` + `__memmove_rt.asm` with message "backend now calls asm_memmove and asm_memset directly" — but the matching llvm-z80 change lives on branch `upstream-z88dk-native-runtime`, UNMERGED. So the plain `z80_crt0.lib` lost those symbols (rebuilt after deletion), while `z80iy_crt0.lib` + several others still carry them as stale .o files from before the deletion. `-clib=ixiy` works purely by selecting the archive that happens to still contain the symbols.
+
+### Verified ABI compatibility (git show 776e8ee9ae^:libsrc/l/llvmz80/*)
+
+- `__z80_memset_builtin`: original source was literally `jp asm_memset`. Backend emits HL=dst, E=val, BC=n; `asm_memset` expects identical layout. **A `defc` linker alias suffices** — no instruction, no bytes.
+- `__memmove_rt` / `__z80_memmove_builtin`: backend emits HL=dst, DE=src, BC=n; `asm_memmove` expects HL=src, DE=dst, BC=n (swapped). Needs a 4-byte thunk `ex de,hl ; jp asm_memmove` — a `defc` alias would miscompile.
+
+### Minimum fix (~10 asm lines)
+```asm
+PUBLIC ___z80_memset_builtin
+defc   ___z80_memset_builtin = asm_memset       ; alias, 0 bytes
+
+PUBLIC ___memmove_rt
+PUBLIC ___z80_memmove_builtin
+___memmove_rt:
+___z80_memmove_builtin:
+    ex de,hl
+    jp asm_memmove                               ; 4-byte thunk
+EXTERN asm_memset
+EXTERN asm_memmove
+```
+Place in `libsrc/l/llvmz80/` and register in a `.lst` that is included in **every** crt0 variant (not just ixiy). Rebuild crt0 libraries; `-clib=ixiy` default in zcc.c becomes removable for memops reasons.
+
+### Strategic alternative
+Merge llvm-z80 branch `upstream-z88dk-native-runtime` into main: backend emits `asm_memset`/`asm_memmove` directly under the z88dk triple, no bridge needed. ~110 lines already written in `Z80LegalizerInfo.cpp`. This is the correct long-term retirement path for the whole bridge layer.
+
+### Both analyses agreed (opus independent review 2026-10-26)
+- Taktical fix: ~10-line defc+thunk alias (better than restoring the full 60-line original bridges — opus caught this; my first draft had restored them verbatim).
+- Strategic fix: merge native-runtime branch into llvm-z80 main.
+- Dropped: backend inline-everything (code bloat), zcc auto-link stub lib (unnecessary indirection), rename emitted symbol (ABI drift risk).
+
 ## Related memory
 
 See [[reference_z88dk_evaluation_doc]] for broader llvmz80+z88dk compatibility status.
