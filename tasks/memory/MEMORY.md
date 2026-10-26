@@ -170,6 +170,7 @@
 - **[sdcc _memcpy stub fix](feedback_sdcc_memcpy_stub_fix.md) — z88dk z0.lib conflicts w/ z80_rt.lib; fixed via ___z80_memcpy_builtin + ___memcpy stubs** · **[sdldz80 ar archives](feedback_sdldz80_ar_archives.md) — sdldz80 -k/-l CANNOT resolve ar archives; pass z80_rt.a as direct file arg (fixes #359)**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — tasks/z88dk-llvmz80-evaluation-2026-07-21.md; update after bridge/benchmark/float change**
 - **[Standing goal: z88dk full llvmz80 CP/M support](project_z88dk_llvmz80_full_support_goal.md) — prioritize closing evaluation-doc gaps + modern-C support**
+- **[zcc+llvmz80 z88dk integration — ACTIVE](project_zcc_llvmz80_sdcc_triple_blocker.md) — 2026-10-27: rt.lib wiring Phase 1+2 done; PR #90 rebased; zlfn PR #112 coord; umulhisi3 bug tracked; issue #127 reply pending**
 - [User Profile](user_profile.md) — experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, /home/ravn/z80, headless; upstream LLVM at ~/llvm-upstream/
 - [Memory lives in tasks/memory/](feedback_no_claude_memory.md) — canonical here; NEVER ~/.claude/; also MEMORY_LAYOUT.md + MEMORY_CODEGEN.md + MEMORY_PARKED.md

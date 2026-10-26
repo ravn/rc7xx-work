@@ -1,11 +1,13 @@
 ---
 name: project_zcc_llvmz80_sdcc_triple_blocker
-description: zcc+llvmz80 z88dk integration — RESOLVED 2026-10-14 (classic clib compat)
+description: zcc+llvmz80 z88dk integration — active 2026-10-27 (rt.lib wiring, zlfn PR #112 coord, PR #90)
 metadata:
   type: project
 ---
 
-**RESOLVED 2026-10-14** — `zcc +cpm -compiler=llvmz80` works end-to-end with z88dk's classic library on `ravn/llvm-z80 main` + `ravn/z88dk master`.
+**STATUS 2026-10-27**: Classic clib compat was functionally RESOLVED 2026-10-14 (initial `-clib=ixiy` workaround).  Current active work replaces that workaround with zlfn's `z80_z88dk_rt.lib` design (shipped by his open PR llvm-z80/llvm-z80#112).  Phase 1+2 implemented and verified empirically 2026-10-26; PR #90 (`ravn/z88dk:llvmz80-classic-clib-integration`) rebased on the new probe.  Open: issue #127 reply (gated on "ja post det"), umulhisi3 llvm-mc EXTERN-emission bug on PR #112 branch, PR #112 merge timing.
+
+**Original resolution note 2026-10-14** — `zcc +cpm -compiler=llvmz80` works end-to-end with z88dk's classic library on `ravn/llvm-z80 main` + `ravn/z88dk master`.
 
 ## Final state
 
