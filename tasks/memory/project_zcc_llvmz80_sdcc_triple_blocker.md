@@ -126,6 +126,29 @@ Merge llvm-z80 branch `upstream-z88dk-native-runtime` into main: backend emits `
 - Strategic fix: merge native-runtime branch into llvm-z80 main.
 - Dropped: backend inline-everything (code bloat), zcc auto-link stub lib (unnecessary indirection), rename emitted symbol (ABI drift risk).
 
+## Zlfn's PR #112 ships z80_z88dk_rt.lib (2026-10-26 — the real answer)
+
+Zlfn pointed out on llvm-z80/llvm-z80#127: **the supplement library is zlfn's design, not ours to invent.** llvm-z80 PR #112 (OPEN, branch `users/zlfn/runtime-4-z88dk`) ships a `compiler-rt`-built archive `z80_z88dk_rt.lib` containing z88dk-syntax versions of exactly the symbols the backend emits — including `___z80_memset_builtin`, `___z80_memcpy_builtin`, `___z80_memmove_builtin` (sources `compiler-rt/lib/builtins/z80/z80_memset_builtin.asm` etc.). Those are small `jp asm_memset`-style thunks; identical to the pre-sletning z88dk bridge files, just owned by LLVM instead of z88dk.
+
+Build gates in `llvm/lib/Target/Z80/CMakeLists.txt`:
+- `find_program(Z88DK_Z80ASM z88dk-z80asm)` must succeed at cmake config time
+- Target `Z80Runtime` builds `${LLVM_LIBRARY_OUTPUT_INTDIR}/z80/z80_z88dk_rt.lib`
+- Install destination: `lib/z80/z80_z88dk_rt.lib` (via `install(FILES ...)`)
+
+### Verified empirically 2026-10-26
+Built `z80_z88dk_rt.lib` locally (packed `z80_memset_builtin.o`, `z80_memcpy_builtin.o`, `z80_memmove_builtin.o` with `z88dk-z80asm -x=`). Patched zcc.c to skip the ixiy override, linked bigagg.c (aggregate struct copy → G_MEMCPY, aggregate init → G_MEMSET) with `-lz80_z88dk_rt -L...`. Result:
+- `___z80_memset_builtin` resolved from `/Users/ravn/z80/llvm-z80/build-macos-asserts/lib/z80/z88dk/z80_memset_builtin.asm:4` (section `code_compiler`), NOT the stale `../../l/llvmz80/__memset_builtin.asm:15` from z80iy_crt0.lib
+- Runtime output correct: aggregate copy preserves byte values, aggregate zero fills correctly
+- `-clib=ixiy` default no longer needed; standard `cpm_crt0` + `cpm_clib` suffices alongside the rt.lib
+
+### Still-missing wiring (future work, scoped)
+1. zcc driver has NO awareness of `z80_z88dk_rt.lib` — no `-l`/`-L` auto-injected under `-compiler=llvmz80`. Needs ~5 lines in `src/zcc/zcc.c` to add it to the link command.
+2. Our local llvm-z80 build currently FAILS at `umulhisi3.asm` (undefined `___umulhi3`) when running the `Z80Runtime` target — appears to be a bug on PR #112's branch or snapshot divergence. We built the three memop .o manually to proceed, but a full `Z80Runtime` build is blocked until this upstream issue clears.
+3. The old static-dangling bridge .o files in `z80iy_crt0.lib` + 6 other crt0 variants are still there (never cleaned since 776e8ee9ae on z88dk-side). Harmless but misleading in archaeology.
+
+### Preferred strategy (not an alternative to zlfn's design)
+Wire zcc to link `z80_z88dk_rt.lib` automatically under `-compiler=llvmz80`. Drop the `-clib=ixiy` override. zlfn's design wins — our mental model of "backend calls asm_memset directly" was a shortcut that bypassed his cleaner compiler-rt-shipped scheme.
+
 ## Related memory
 
 See [[reference_z88dk_evaluation_doc]] for broader llvmz80+z88dk compatibility status.
