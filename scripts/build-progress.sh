@@ -17,8 +17,10 @@ PROGRESS_INTERVAL=2
 PROGRESS_RE="${PROGRESS_RE:-.}"
 
 refuse_if_building() {
-	if pgrep -x ninja >/dev/null || pgrep -x make >/dev/null; then
-		echo "error: a ninja/make build is already running; one build at a time" >&2
+	# wmake/builder: Open Watcom's own build tools (not covered by make).
+	if pgrep -x ninja >/dev/null || pgrep -x make >/dev/null ||
+	   pgrep -x wmake >/dev/null || pgrep -x builder >/dev/null; then
+		echo "error: a ninja/make/wmake build is already running; one build at a time" >&2
 		exit 1
 	fi
 }
@@ -30,7 +32,7 @@ _progress_line() {   # done total elapsed last
 }
 
 _progress_last() {   # trimmed last log line, without the leading step marker
-	tail -n 1 "$1" | sed -E 's/^\[[0-9]+\/[0-9]+\] //; s/^(Compiling|Building) //; s/\.\.\.$//' |
+	tail -n 1 "$1" | sed -E 's/^\[[0-9]+\/[0-9]+\] //; s/^(Compiling|Building) //; s/\.\.\.$//; s/^=+ [0-9:]+ //; s/ =+$//' |
 		awk '{print substr($0, length($0) > 45 ? length($0) - 44 : 1)}'
 }
 
