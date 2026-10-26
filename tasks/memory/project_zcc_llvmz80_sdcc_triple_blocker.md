@@ -149,6 +149,28 @@ Built `z80_z88dk_rt.lib` locally (packed `z80_memset_builtin.o`, `z80_memcpy_bui
 ### Preferred strategy (not an alternative to zlfn's design)
 Wire zcc to link `z80_z88dk_rt.lib` automatically under `-compiler=llvmz80`. Drop the `-clib=ixiy` override. zlfn's design wins — our mental model of "backend calls asm_memset directly" was a shortcut that bypassed his cleaner compiler-rt-shipped scheme.
 
+## Phase 1+2 implemented 2026-10-26 (not yet pushed to ravn/*)
+
+### llvm-z80 (local `main`, commit `35d80b2f59e8`)
+`llvm/lib/Target/Z80/CMakeLists.txt`: HINTS for z88dk-z80asm + exclude 4 mul*-files blocked by llvm-mc bug on PR #112 (mulhisi3, muldi3, mulsi3, umulhisi3 all reference `___umulhi3` but z88dk-asm backend doesn't emit `EXTERN`). z80_z88dk_rt.lib now builds with 50+ compiler-rt helpers + the three memops.
+
+### z88dk (local `llvmz80-runtime-testsuite`, commit `a561d15208`)
+`src/zcc/zcc.c`: ~50 lines. Replaced ixiy force-default with probe:
+1. `$LLVMZ80_RTLIB_DIR/z80_z88dk_rt.lib` (explicit override)
+2. `$(dirname (dirname $LLVMZ80EXE))/lib/z80/z80_z88dk_rt.lib`
+3. Hard fail (exit 1 + stderr help) if neither found
+
+### Verified end-to-end
+- test/llvmz80/run_minimal.sh: 7 runtime tests × O0/O2/Os = 21 PASS
+- memops_emission: 24/24 checks PASS
+- All without `-clib=ixiy` anywhere; `___z80_memset_builtin` resolves from the fresh rt.lib
+
+### Still open
+- PR #90 branch not yet rebased on top of this (Phase 3)
+- Not pushed to ravn/* yet (user decides timing)
+- umulhisi3 llvm-mc translator bug: on zlfn's side (strongly looks like a compiler-rt→z80asm text backend missing EXTERN emission)
+- Communication with zlfn on #127 (gated on explicit "ja post det")
+
 ## Related memory
 
 See [[reference_z88dk_evaluation_doc]] for broader llvmz80+z88dk compatibility status.
