@@ -9,6 +9,7 @@
 #
 # Usage:  ./rebuild-open-watcom.sh [options] [TARGET]
 #   TARGET       builder target (default: rel; e.g. boot = bootstrap only)
+#   --clean      run Open Watcom's clean.sh first (full rebuild)
 #   --stats      show ccache statistics after the build
 #   -h|--help    this text
 #
@@ -34,9 +35,10 @@ TOTAL_FILE="$LOG_DIR/open-watcom-build.total"
 SHIM="$LOG_DIR/ccache-shim"
 PROGRESS_RE='^=+ [0-9]{2}:[0-9]{2}:[0-9]{2} /'
 
-TARGET=rel STATS=0
+TARGET=rel CLEAN=0 STATS=0
 while [[ $# -gt 0 ]]; do
 	case "$1" in
+		--clean)   CLEAN=1 ;;
 		--stats)   STATS=1 ;;
 		-h|--help) sed -n '2,/^set -e/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; exit 0 ;;
 		-*)        echo "error: unknown option: $1" >&2; exit 2 ;;
@@ -88,6 +90,12 @@ fi
 export OWROOT OWTOOLS OWDOSBOX
 export OWDOCBUILD=0      # skip the big DOS/dosbox manual set
 export OWDISTRBUILD=0    # skip distribution installers
+
+if ((CLEAN)); then
+	echo "=== clean.sh ==="
+	sh -c 'cd "$OWROOT" && . ./cmnvars.sh && sh ./clean.sh' >"$LOG_DIR/open-watcom-clean.log" 2>&1 ||
+		{ tail -n 20 "$LOG_DIR/open-watcom-clean.log" >&2; exit 1; }
+fi
 
 echo "=== open-watcom: OWTOOLS=$OWTOOLS target=$TARGET (log $LOG) ==="
 progress_run "$LOG" count "$TOTAL_FILE" -- \

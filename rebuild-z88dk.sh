@@ -6,7 +6,8 @@
 # script adds -j, logging and a progress display.)
 #
 # Usage:  ./rebuild-z88dk.sh [options] [TARGET...]
-#   --clean      `make clean` first (ccache keeps the rebuild cheap)
+#   --clean      `make clean` first, then rebuild `all` AND `libs` (clean also
+#                deletes lib/clibs/*.lib, which `all` does not rebuild)
 #   --stats      show ccache statistics after the build
 #   -j N         parallel jobs (default: nproc)
 #   -h|--help    this text
@@ -38,12 +39,20 @@ while [[ $# -gt 0 ]]; do
 	esac
 	shift
 done
-((${#TARGETS[@]})) || TARGETS=(all)
+if ((${#TARGETS[@]} == 0)); then
+	TARGETS=(all)
+	((CLEAN)) && TARGETS=(all libs)
+fi
 
 [[ -f "$Z88DK/Makefile" ]] || { echo "error: $Z88DK/Makefile missing (git submodule update --init z88dk)" >&2; exit 1; }
 command -v ccache >/dev/null || { echo "error: ccache not installed" >&2; exit 1; }
 refuse_if_building
 mkdir -p "$LOG_DIR"
+
+# Same as z88dk/set_environment.sh: the lib and testsuite builds invoke
+# z88dk-z80asm/zcc by name (a clean build failed with "z88dk-z80asm: not found").
+export PATH="$Z88DK/bin:$PATH"
+export ZCCCFG="$Z88DK/lib/config/"
 
 export CCACHE_BASEDIR="$Z88DK"
 ccache -z >/dev/null

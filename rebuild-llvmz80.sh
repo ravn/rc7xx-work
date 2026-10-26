@@ -7,6 +7,7 @@
 #
 # Usage:  ./rebuild-llvmz80.sh [options] [TARGET...]
 #   --reconfigure  re-run cmake (needed after Z80.cmake changes or a new tree)
+#   --clean        `ninja -t clean` first (full rebuild; ccache makes it cheap)
 #   --stats        show ccache statistics after the build
 #   -j N           parallel jobs (default: nproc)
 #   -h|--help      this text
@@ -30,10 +31,11 @@ JOBS="$(nproc)"
 LOG_DIR="$ROOT/scratch/tmp"
 LOG="$LOG_DIR/llvmz80-build.log"
 
-RECONF=0 STATS=0 TARGETS=()
+RECONF=0 CLEAN=0 STATS=0 TARGETS=()
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		--reconfigure) RECONF=1 ;;
+		--clean)       CLEAN=1 ;;
 		--stats)       STATS=1 ;;
 		-j)            JOBS="$2"; shift ;;
 		-j*)           JOBS="${1#-j}" ;;
@@ -76,6 +78,10 @@ if ((RECONF)) || [[ ! -f "$BUILD/build.ninja" ]]; then
 fi
 
 export CCACHE_BASEDIR="$LLVM_Z80"
+if ((CLEAN)); then
+	echo "=== ninja -t clean ==="
+	ninja -C "$BUILD" -t clean >"$LOG_DIR/llvmz80-clean.log" 2>&1
+fi
 ccache -z >/dev/null
 
 echo "=== ninja -j$JOBS ${TARGETS[*]} (log $LOG) ==="
