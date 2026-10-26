@@ -85,6 +85,14 @@ The generic branch tries to simulate smallc under a R-to-L clang by reversing th
 ### Watch for
 - A new backend-synthesized memop pattern that doesn't resolve to `__z80_*_builtin` or `asm_*` → will fail link under either workaround. Covered by `test/llvmz80/memops_emission.c` + `check_memops_emission.sh` on `ravn/z88dk:llvmz80-runtime-testsuite` (not yet in PR #90).
 
+### Verified empirically 2026-10-26 — `-clib=ixiy` is NOT an ABI trap
+Initially suspected: `-clib=ixiy` might pull sdcc_ix R-to-L `_strcpy_callee` into an L-to-R llvmz80 build → arg swap. **Not the case.** z80nm'd `z80iy_crt0.lib`: `strcpy_callee` object is built from `string/c/sccz80/strcpy_callee.asm` and exports `strcpy_callee`, `_strcpy_callee`, `___strcpy_callee` as aliases of the same L-to-R implementation. `-clib=ixiy` refers to IX/IY register-allocation strategy in crt0 only, not to sdcc_ix ABI selection for `_callee` variants. Runtime probe `strcpy(dst, src)` with asymmetric buffers copies correctly. The dangling `libsrc/string/c/sdcc_ix/strcpy_callee.asm` is for a different clib build (`-clib=sdcc_ix`) that targets SDCC, not llvmz80.
+
+Underscore-prefix mechanics (verified via asm emission + nm):
+- LLVM emits `call _strcpy_callee` (WITH underscore) regardless of `__smallc` / `__z88dk_callee` attributes.
+- sccz80 library asm defines **both** `strcpy_callee` and `_strcpy_callee` as aliases → resolves either way.
+- `qsort`/`bsearch` have NO `_callee` form, so the underscore selects the sdcc-R-to-L entry → fix: `__asm__("qsort")` symbol override in `stdlib.h` under `__LLVMZ80`.
+
 ## Related memory
 
 See [[reference_z88dk_evaluation_doc]] for broader llvmz80+z88dk compatibility status.
