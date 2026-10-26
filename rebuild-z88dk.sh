@@ -22,7 +22,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$ROOT/scripts/build-progress.sh"
 
 Z88DK="$ROOT/z88dk"
-JOBS="$(nproc)"
+JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu)"
 LOG_DIR="$ROOT/scratch/tmp"
 LOG="$LOG_DIR/z88dk-build.log"
 

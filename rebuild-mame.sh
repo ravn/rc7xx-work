@@ -32,7 +32,7 @@ source "$ROOT/scripts/build-progress.sh"
 PROGRESS_RE='^(Compiling|Compressing|Archiving|Linking) '
 SUBTARGET=regnecentralen
 SOURCES="${SOURCES:-src/mame/regnecentralen/rc702.cpp,src/mame/regnecentralen/rc759.cpp,src/mame/regnecentralen/rc750.cpp}"
-JOBS="${JOBS:-$(nproc)}"
+JOBS="${JOBS:-$(nproc 2>/dev/null || sysctl -n hw.ncpu)}"
 
 VARIANTS=(release debug)
 REGENIE=0 CLEAN=0 STATS=0

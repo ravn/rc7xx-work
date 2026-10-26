@@ -27,7 +27,7 @@ CACHE="$LLVM_Z80/clang/cmake/caches/Z80.cmake"
 if [[ "$(uname -s)" == Darwin ]]; then BUILD_DIR=build-macos; else BUILD_DIR=build-linux; fi
 BUILD="$LLVM_Z80/$BUILD_DIR"
 TOOLS=(clang lld llvm-objcopy llvm-objdump llvm-nm llc opt FileCheck)
-JOBS="$(nproc)"
+JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu)"
 LOG_DIR="$ROOT/scratch/tmp"
 LOG="$LOG_DIR/llvmz80-build.log"
 
@@ -63,7 +63,7 @@ if ((RECONF)) || [[ ! -f "$BUILD/build.ninja" ]]; then
 		-DCMAKE_C_COMPILER_LAUNCHER=ccache \
 		-DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
 		-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
-		-DLLVM_USE_LINKER=lld \
+		$([[ "$(uname -s)" != Darwin ]] && echo "-DLLVM_USE_LINKER=lld") \
 		-DLLVM_PARALLEL_LINK_JOBS=4 \
 		-DLLVM_INCLUDE_BENCHMARKS=OFF \
 		-DLLVM_INCLUDE_EXAMPLES=OFF \
