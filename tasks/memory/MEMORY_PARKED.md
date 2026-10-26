@@ -45,3 +45,11 @@
 - [z88dk runtime verify: ntvcm not ticks](reference_z88dk_runtime_verify_ntvcm.md) — +cpm .COM under ntvcm/ntvcm; z88dk-ticks does NOT emulate +test $ED$FE trap
 - [z88dk RC700 subtype build](reference_z88dk_rc700_subtype_build.md) — make -C libsrc TARGETS=rc700; -Cz+cpmdisk -f rc700-8dd; examples/rc700/
 
+
+
+## Moved out of MEMORY.md (2026-10-27 compaction)
+
+- **[zcc+llvmz80 z88dk triple RESOLVED](project_zcc_llvmz80_sdcc_triple_blocker.md) — RESOLVED 2026-10-14: Triple::Z88DK in runtime-4-z88dk; zcc uses z80-unknown-none-z88dk; branch work/zcc-z88dk-env-20261014**
+- **[zsdcc autoload paused](project_zsdcc_autoload_boot_investigation.md) — builds (3861 B) but CTC CH2 ISR never fires in MAME; byte-level setup verified correct; next step needs MAME-debugger breakpoint on 0x78AD. Branch: work/zsdcc-sccz80-builds-20261012.**
+- **[Mistral Vibe agent](agent_mistralvibe_introduction.md) — capability profile + integration with Claude Code and Copilot**
+- [cmake after Xcode removal](reference_cmake_after_xcode_removal.md) — `-DCMAKE_LIBTOOL` + `-DLLVM_ENABLE_LIBEDIT=OFF` + `DEVELOPER_DIR=CommandLineTools` required

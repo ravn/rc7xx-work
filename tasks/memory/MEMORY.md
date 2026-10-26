@@ -59,11 +59,9 @@
 
 - **[+shadow-isr: EXX/EX AF,AF' ISR context save](reference_shadow_isr_feature.md) — autoload only; rcbios/cpnos unsafe (EXX in division legalizer)**
 - **[ZX0 PROMs: optimize compressed, not raw](feedback_zx0_optimize_compressed_not_raw.md) — HARD: autoload metric is compressed B; raw codegen wins can grow the PROM (add a,a chains are ZX0-free)**
-- **[Historical static-frame / closed-world / no-callbacks](feedback_static_stack_nonrecursive_only.md) — three historical mechanisms superseded by d6658ad; benchmarks are revision-specific. See linked files + [[reference_z80_ffreestanding_closed_world]] + [[reference_z80_assume_no_callbacks]]**
-- **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — prefer build-side (LTO+internalize) or upstream fix; NOT reinstating old AutoStaticFrame**
+- **[#316 adapt to upstream, don't diverge](feedback_adapt_to_upstream_static_frame.md) — prefer build-side (LTO+internalize) or upstream fix; NOT reinstating old AutoStaticFrame** · **[Historical static-frame / closed-world / no-callbacks](feedback_static_stack_nonrecursive_only.md) — three historical mechanisms superseded by d6658ad; benchmarks are revision-specific. See linked files + [[reference_z80_ffreestanding_closed_world]] + [[reference_z80_assume_no_callbacks]]**
 - **[Short and concise](feedback_short_and_concise.md) — HARD: brief responses/write-ups/filings; deep detail goes in project docs, not the reply**
-- **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping**
-- **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel ifeq COMPILER recipes must emit the SAME artifact set**
+- **[Check sibling subprojects](feedback_check_sibling_subprojects.md) — HARD: grep siblings for the same flag, mirror their wrapping** · **[Symmetric recipes per compiler](feedback_symmetric_recipes_per_compiler.md) — HARD: parallel ifeq COMPILER recipes must emit the SAME artifact set**
 - **[llvmz80 runtime-test gotchas](feedback_llvmz80_runtime_test_gotchas.md) — use -Cg-O2; verify const data in SHELL; classic clib only (newlib abandoned)**
 - **[Use --math32 for llvmz80 float builds](feedback_use_math32_flag.md) — HARD: literal --math32; triple-native calls to existing math32 entries; 2.4 facts are not 2.5**
 - [Z80 tool paths](reference_z80_tool_paths.md) — full paths + canonical invocations; native llc/clang in llvm-z80/build-macos/bin
@@ -80,11 +78,7 @@
 - **[zmac local labels are global](feedback_zmac_local_label_scope.md) — HARD: dotted locals collide across subroutines; prefix with initials**
 - **[Verify CMake fixes with compile_commands](feedback_verify_cmake_fixes.md) — HARD: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON + confirm actual -I flags**
 - **[Self-compact during long builds](feedback_self_compact_during_long_builds.md) — kør /compact selv mens ninja/docker/MAME kører i baggrund**
-- **[Rebuild scripts + pending state](project_rebuild_scripts_2026-10-26.md) — root rebuild-*.sh (mame/llvmz80/z88dk/OW); stale MAME objs, z88dk clean gotchas; READ at reboot**
-- [Builds: optimize + show progress](feedback_builds_optimized_with_progress.md) — ccache/-j + .progress file; never edit a running script in place
-
-- **[zcc+llvmz80 z88dk triple RESOLVED](project_zcc_llvmz80_sdcc_triple_blocker.md) — RESOLVED 2026-10-14: Triple::Z88DK in runtime-4-z88dk; zcc uses z80-unknown-none-z88dk; branch work/zcc-z88dk-env-20261014**
-- **[zsdcc autoload paused](project_zsdcc_autoload_boot_investigation.md) — builds (3861 B) but CTC CH2 ISR never fires in MAME; byte-level setup verified correct; next step needs MAME-debugger breakpoint on 0x78AD. Branch: work/zsdcc-sccz80-builds-20261012.**
+- **[Rebuild scripts + pending state](project_rebuild_scripts_2026-10-26.md) — root rebuild-*.sh (mame/llvmz80/z88dk/OW); stale MAME objs, z88dk clean gotchas; READ at reboot** · [Builds: optimize + show progress](feedback_builds_optimized_with_progress.md) — ccache/-j + .progress file; never edit a running script in place
 
 ## 5. llvm-z80 compiler / codegen changes
 
@@ -111,7 +105,6 @@
 - **[Screenshot to verify](feedback_screenshot_to_verify.md) — HARD: capture MAME screenshot; PASS lines alone are NOT enough**
 - **[Visual capture for display path changes](feedback_visual_capture_for_display.md) — HARD: CRT/DMA/8275/display BSS changes need multi-frame video verification**
 - **[Black screen is fatal](feedback_black_screen_fatal.md) — HARD: halts all other investigation**
-- **[MAME always windowed + timeout](feedback_mame_always_window_timeout.md) — see §0; ABSOLUTE: never raw; always -window + finite timeout**
 - **[Never concurrent builds, never kill a build](feedback_never_concurrent_or_kill_builds.md) — HARD: one ninja/make at a time; never pkill a build**
 - **[Disable MAME audio in ALL tests](feedback_disable_audio_in_tests.md) — HARD: -sound none; CoreAudio causes SIGPIPE under background load**
 - **[Headless host = no MAME window](feedback_host_no_graphics.md) — HARD: on sonnyboy use SDL_VIDEODRIVER=dummy**
@@ -120,7 +113,6 @@
 
 ## 7. Before file/script ops
 
-- **[NEVER traverse outside workspace root](feedback_no_home_search.md) — see §0; ABSOLUTE**
 - **[cpmtools at ~/.local/bin](reference_rc759_mame_c_verification.md) — invoke by full path; reads diskdefs from CURRENT DIR (DISKDEFS env IGNORED)**
 - **[No stale dump files](feedback_no_stale_dump_files.md) — HARD: rm -f artifact BEFORE producer, every iteration**
 - **[No DOTALL backtracking on source](feedback_no_dotall_backtracking.md) — HARD: no re.DOTALL + non-greedy over multi-line source; kill scans >10s**
@@ -141,8 +133,7 @@
 - **[Baseline before implementing](feedback_baseline_before_implementing.md) — HARD: capture control measurement on UNMODIFIED system first**
 - **[Extract rules from time-sinks](feedback_extract_rules_from_time_sinks.md) — HARD: after long debug sessions, propose new memory rules proactively**
 - **[Multi-pass marker interactions](feedback_multi_pass_marker_interactions.md) — HARD: -print-after-all when optimization "should fire" but doesn't**
-- **[ticks canonical exit = ED FE trap](reference_ticks_canonical_exit_trap.md) — HARD: ED FE syscall (A=CMD_EXIT, L=code); -output bypassed**
-- [ticks CP/M harness: ticks_cpm.py](reference_ticks_cpm_harness.md) — `scratch/dcc-clang-bench/ticks_cpm.py`; BDOS stub; ntvcm cycle counts wrong for prefixed opcodes
+- **[ticks canonical exit = ED FE trap](reference_ticks_canonical_exit_trap.md) — HARD: ED FE syscall (A=CMD_EXIT, L=code); -output bypassed** · [ticks CP/M harness: ticks_cpm.py](reference_ticks_cpm_harness.md) — `scratch/dcc-clang-bench/ticks_cpm.py`; BDOS stub; ntvcm cycle counts wrong for prefixed opcodes
 - **[Dig one level deeper before parking](feedback_dig_deeper_before_parking.md) — HARD: instrument + bisect 30 min before declaring deferred**
 - **[Minimal repro BEFORE source dive](feedback_minimal_repro_before_source_dive.md) — HARD: 30s repro first; no "suggested fix" in filed issues without repro proof**
 - **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: after 2-3 fixes of one class, find the systemic cause unprompted**
@@ -150,8 +141,7 @@
 
 ## 9. Code & source style
 
-- **[Clarity in C code](feedback_clarity_in_c_code.md) — HARD: readable call shapes; compiler glue confined to hal.h/intrinsic.h**
-- [Size over speed for cold paths](feedback_size_over_speed_for_cold_paths.md) — bytes are permanent, T-states aren't
+- **[Clarity in C code](feedback_clarity_in_c_code.md) — HARD: readable call shapes; compiler glue confined to hal.h/intrinsic.h** · [Size over speed for cold paths](feedback_size_over_speed_for_cold_paths.md) — bytes are permanent, T-states aren't
 
 ## 10. RC702 hardware facts
 
@@ -173,21 +163,16 @@
 
 - **[EXX-protokol: z88dk 32-bit kerne-ABI + legalizer](reference_exx_protocol_z88dk_32bit.md) — addSym; EXX uses/defs; gem IX ved dynamic frames**
 - [llvmz80 native runtime (bridge-eliminering)](project_llvmz80_bridge_elimination.md) — RTLIB + sdcccall(0); strict NaN-tests PASS
-
-- [cmake after Xcode removal](reference_cmake_after_xcode_removal.md) — `-DCMAKE_LIBTOOL` + `-DLLVM_ENABLE_LIBEDIT=OFF` + `DEVELOPER_DIR=CommandLineTools` required
 - [C_LINE debug + z88dk-dis -c](reference_z80asm_c_line_debug.md) — z80asm source maps; z88dk-dis -c shows source in disassembly
 - **[Canonical test aggregator](reference_run_all_tests.md) — tasks/tools/run-all-tests.sh; fast=A+C+D; run at merge/checkpoint**
 - **[llvmz80 + z88dk test scripts](reference_llvmz80_test_scripts.md) — `./run-llvmz80-tests.sh test` (816/841); `full` adds torture+utils; rel2elf must be built**
 - **[z80-utils lives in llvm-z80](reference_z80_utils_lives_in_llvm_z80.md) — test-runner path is llvm-z80/z80-utils/, NOT workspace-root z80-utils/ (silently misses new fixtures)**
-- **[sdcc _memcpy stub fix](feedback_sdcc_memcpy_stub_fix.md) — z88dk z0.lib conflicts w/ z80_rt.lib; fixed via ___z80_memcpy_builtin + ___memcpy stubs**
-- **[sdldz80 ar archives](feedback_sdldz80_ar_archives.md) — sdldz80 -k/-l CANNOT resolve ar archives; pass z80_rt.a as direct file arg (fixes #359)**
+- **[sdcc _memcpy stub fix](feedback_sdcc_memcpy_stub_fix.md) — z88dk z0.lib conflicts w/ z80_rt.lib; fixed via ___z80_memcpy_builtin + ___memcpy stubs** · **[sdldz80 ar archives](feedback_sdldz80_ar_archives.md) — sdldz80 -k/-l CANNOT resolve ar archives; pass z80_rt.a as direct file arg (fixes #359)**
 - **[z88dk llvmz80 evaluation doc](reference_z88dk_evaluation_doc.md) — tasks/z88dk-llvmz80-evaluation-2026-07-21.md; update after bridge/benchmark/float change**
 - **[Standing goal: z88dk full llvmz80 CP/M support](project_z88dk_llvmz80_full_support_goal.md) — prioritize closing evaluation-doc gaps + modern-C support**
 - [User Profile](user_profile.md) — experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, /home/ravn/z80, headless; upstream LLVM at ~/llvm-upstream/
 - [Memory lives in tasks/memory/](feedback_no_claude_memory.md) — canonical here; NEVER ~/.claude/; also MEMORY_LAYOUT.md + MEMORY_CODEGEN.md + MEMORY_PARKED.md
-- **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3**
-- **[Validate full feedback loop on first contradiction](feedback_validate_full_feedback_loop.md) — early gate before the fingerprint rule: verify artifact mtime/hash before forming any new hypothesis**
-- **[Mistral Vibe agent](agent_mistralvibe_introduction.md) — capability profile + integration with Claude Code and Copilot**
+- **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3** · **[Validate full feedback loop on first contradiction](feedback_validate_full_feedback_loop.md) — early gate before the fingerprint rule: verify artifact mtime/hash before forming any new hypothesis**
 
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->
