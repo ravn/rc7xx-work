@@ -80,6 +80,8 @@
 - **[zmac local labels are global](feedback_zmac_local_label_scope.md) — HARD: dotted locals collide across subroutines; prefix with initials**
 - **[Verify CMake fixes with compile_commands](feedback_verify_cmake_fixes.md) — HARD: cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON + confirm actual -I flags**
 - **[Self-compact during long builds](feedback_self_compact_during_long_builds.md) — kør /compact selv mens ninja/docker/MAME kører i baggrund**
+- **[Rebuild scripts + pending state](project_rebuild_scripts_2026-10-26.md) — root rebuild-*.sh (mame/llvmz80/z88dk/OW); stale MAME objs, z88dk clean gotchas; READ at reboot**
+- [Builds: optimize + show progress](feedback_builds_optimized_with_progress.md) — ccache/-j + .progress file; never edit a running script in place
 
 - **[zcc+llvmz80 z88dk triple RESOLVED](project_zcc_llvmz80_sdcc_triple_blocker.md) — RESOLVED 2026-10-14: Triple::Z88DK in runtime-4-z88dk; zcc uses z80-unknown-none-z88dk; branch work/zcc-z88dk-env-20261014**
 - **[zsdcc autoload paused](project_zsdcc_autoload_boot_investigation.md) — builds (3861 B) but CTC CH2 ISR never fires in MAME; byte-level setup verified correct; next step needs MAME-debugger breakpoint on 0x78AD. Branch: work/zsdcc-sccz80-builds-20261012.**

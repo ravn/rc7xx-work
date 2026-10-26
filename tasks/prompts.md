@@ -1563,3 +1563,29 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 26. understøtter zcc et versionstag der kan hjælpe dig med at sikre at det er den rigtige binære der testes
 27. var der andet jeg skulle forholde mig til?
 28. 1 commit, 2 mål hurtigt eksperimentielt i en branch, 3 lav et issue der samler disse, 4 slet dem vi er færdige med, 5 jatak, 6. jatak
+
+## 2026-10-26/27 (ccache rebuild scripts for MAME, llvm-z80, z88dk, Open Watcom)
+
+1. i want a script for rebuilding mame using ccache and other otpimizations in the root folder
+2. jeg er kun interesseret i regnecentralen and regnecentralend binaries for now
+3. run it and show the ccache stats
+4. stop script
+5. i want the build script to show progress
+6. yes (rerun with progress)
+7. i cannot see the progress lines
+8. is it running in parallel?
+9. increase the ccache to 50 gb
+10. show full ccache stats / can you see what the other projects are
+11. while we wait, also create compilation scripts for llvmz80 and z88dk
+12. remember to optimize the builds as much as you can, and show progress
+13. yes, run them after MAME finishes
+14. show stats / show progress (repeated)
+15. yes, please (commit); yes (push); Merge --no-ff then push
+16. please create a script to run build open-watcom too / run it
+17. jatak (fix guard + trim, commit)
+18. rebuild all four / try cleaning and rebuilding
+19. why is the cache not helping? / yes please (second OW clean run)
+20. stop for now
+21. pull first, then commit / note that macbook has added work / run submodule update
+22. no, commit and push
+23. save your knowledge in the project, i need to reboot
