@@ -1,5 +1,17 @@
 # Prompts
 
+## 2026-10-31 (persist and commit RC759 GSX knowledge)
+
+> gem din nye viden i projektet og commit
+
+## 2026-10-31 (continue byte-identical GSX-86 disassembly)
+
+> fortsæt opgaven med at lave byteidentisk disasssembly
+
+## 2026-10-31 (record RC759 GSX-86 emu2 test knowledge)
+
+> godt. det var ikke nemt, gem din nye viden i projketet
+
 ## 2026-10-13 (zcc+llvmz80 __smallc adaptation + upstream sync)
 
 > vi skal gentage arbejdet med at få zcc til at virke korrekt med llvmz80. zlfn har besluttet at opføre sig som en eksisterende compiler som bruger __smallc

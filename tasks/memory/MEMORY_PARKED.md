@@ -4,6 +4,7 @@
 ## RC759 / CP/M-86 references
 
 - [DRI C Programmer's Guide](reference_dri_cpm86_manuals_location.md) — DR C 1.11 ref already at cpm86-crossdev/docs/manuals/DRI_C_Programming_86.pdf
+- [RC759 GSX-86 emu2 verification](../rc700-gensmedet/tasks/memory/reference_rc759_gsx_emu2_verification.md) — current emu2 needs controlling PTY; OBJ/CMD match MAME byte-for-byte
 - [DR C float/8087 ABI](reference_drc_float_8087_abi.md) — no 8087 on RC759; double DX:CX:BX:AX, float BX:AX
 - [wlink vs DR C OMF/.L86](reference_wlink_drc_omf_l86.md) — wlink reads OMF fine; rejects .L86 container (E2012); unpack_l86.py
 - [CP/M-86 runtime RAM + wlink FARHEAP](reference_cpm86_runtime_memory_and_farheap.md) — BDOS 53-58; OPTION FARHEAP=<bytes> knob; farheap.c seam
