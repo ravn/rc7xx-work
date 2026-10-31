@@ -3,6 +3,8 @@
 
 ## RC759 / CP/M-86 references
 
+- [DRI GIOS skeleton guides](../../rc700-gensmedet/rc759-gsx/notes/05-dri-skeleton-guides.md) — original package names and H1 ESCAPE mapping
+- [RC759 GSX source comparison](../../rc700-gensmedet/rc759-gsx/notes/04-gsx11-source-comparison.md) — H1 sine/vector tables; GIOS11 is disassembled source
 - [DRI C Programmer's Guide](reference_dri_cpm86_manuals_location.md) — DR C 1.11 ref already at cpm86-crossdev/docs/manuals/DRI_C_Programming_86.pdf
 - [RC759 GSX-86 emu2 verification](../rc700-gensmedet/tasks/memory/reference_rc759_gsx_emu2_verification.md) — current emu2 needs controlling PTY; OBJ/CMD match MAME byte-for-byte
 - [DR C float/8087 ABI](reference_drc_float_8087_abi.md) — no 8087 on RC759; double DX:CX:BX:AX, float BX:AX

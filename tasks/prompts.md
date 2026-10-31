@@ -1,5 +1,29 @@
 # Prompts
 
+## 2026-10-31 (DRI skeleton configuration guides)
+
+> jeg har fundet mere interessant på https://www.df.lth.se/~pi/compis/cpm-manualer/gsx/writing_drivers/
+
+> du må gerne søge på nettet efter filer der er nævnt men ikke findes hér
+
+> du kan betragte skeletkilderne som orakler
+
+> giv gerne løbende tilbagemelding om fremskridt
+
+> måske indeholder denne noget interessant:  /Users/ravn/Downloads/gsx80_86
+
+> kopieret ind
+
+> file:/Users/ravn/z80/rc700-gensmedet/rc759-gsx/scratch/gsx80_86/
+
+## 2026-10-31 (historical GSX-86 driver sources)
+
+> der findes originale drivere med kildetekst på https://www.seasip.info/Cpm/software/gsx86.html.  Jeg vil gerne have du analyserer dem og bruger din nye viden til at forstå mere om vores driver
+
+> kopier gerne vigtige filer i projektet
+
+> gem er for nyt i forhold til gsx-86 tror jeg
+
 ## 2026-10-31 (persist and commit RC759 GSX knowledge)
 
 > gem din nye viden i projektet og commit
