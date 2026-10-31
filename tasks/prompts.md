@@ -1,5 +1,17 @@
 # Prompts
 
+## 2026-10-31 (EXTRA reservation and commit)
+
+> brug extra_segment_anchor rb 992 og commit
+
+## 2026-10-31 (sequential assembly layout)
+
+> i stedet for mange ORG-instruktioner, vil jeg hellere have at der fyldes op med DS eller lignende.
+
+## 2026-10-31 (commit source oracles and align H1 disassembly)
+
+> commit, så tilret disassembly til orakelviden
+
 ## 2026-10-31 (DRI skeleton configuration guides)
 
 > jeg har fundet mere interessant på https://www.df.lth.se/~pi/compis/cpm-manualer/gsx/writing_drivers/
