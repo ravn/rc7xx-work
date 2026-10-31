@@ -1,5 +1,47 @@
 # Prompts
 
+## 2026-11-01 (commit readable H1 disassembly)
+
+> commit
+
+## 2026-11-01 (GSX ABI field comments)
+
+> så vil jeg blot gerne have betydningen i kommentar ved siden af
+
+## 2026-11-01 (remaining numeric data addresses)
+
+> der er stadig  numeriske konstanter, som fx si der bruges til si+bx
+
+## 2026-11-01 (labels for every code reference)
+
+> du har tidligere antaget der skulle spares på labels, det er fikset.  Jeg vil gerne have labels på alle kodereferencer
+
+> meget gerne jvf skeletoraklerne
+
+## 2026-11-01 (structured pattern and console tables)
+
+> omform så det passer bedre til din nye viden
+
+## 2026-10-31 (visual fill comments)
+
+> visual kommentar
+
+## 2026-10-31 (visible binary fill tiles)
+
+> lav fillpattern om til binært kodede værdier så man kan se dem over inanden
+
+## 2026-10-31 (documented SIZ_TAB words)
+
+> tilsvarende siz_tab
+
+## 2026-10-31 (documented DEV_TAB words)
+
+> omskriv dev_tab til dw, og forklar hver af dem
+
+## 2026-10-31 (generated sine include)
+
+> jeg vil gerne have den rykket ud i en separat fil, og skrevet et python program der genererer dw værdierne
+
 ## 2026-10-31 (EXTRA reservation and commit)
 
 > brug extra_segment_anchor rb 992 og commit
