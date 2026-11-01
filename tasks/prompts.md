@@ -1,5 +1,206 @@
 # Prompts
 
+## 2026-11-01 (merge GSX reconstruction back to main)
+
+> og flet tilbage på main
+
+## 2026-11-01 (persist pixel-specialization analysis)
+
+> hvad med pixelberegninger, optimerede tilfælde
+
+> gem din nye viden i projektet
+
+## 2026-11-01 (short vector-text benchmark)
+
+> du må gerne lave en kort testbenchmark, jeg har ikke umiddelbart forslag til måder at måle forbrug på
+
+## 2026-11-01 (implementation optimality analysis)
+
+> jeg vil gerne have en analyse af hvor optimal implementationen er. der er ikke hjælpechips ud over måske dma
+
+## 2026-11-01 (commit and push full comment audit)
+
+> commit push
+
+## 2026-11-01 (full source-comment audit)
+
+> udfør fuld kontrol
+
+## 2026-11-01 (commit readability changes and remaining work)
+
+> commit. mangler der mere?
+
+## 2026-11-01 (pixel address algorithm comment)
+
+> og tilføj algoritmen som kommentar
+
+## 2026-11-01 (rename concat)
+
+> omdøb
+
+## 2026-11-01 (jump-pair spacing)
+
+> jeg vil også have en blank linje efter JNE+JMP til andre steder end den næste label
+
+## 2026-11-01 (descriptive reconstructed labels)
+
+> der er stadig en del labels der starter med sub_. det er formentligt rekonstruerede labelnavne. jeg vil gerne have de får mere sigende navne, analyser koden de bruges i først
+
+## 2026-11-01 (commit glyph atlas and locator analysis)
+
+> commit
+
+## 2026-11-01 (trailing locator-data reference audit)
+
+> undersøg om dette bruges af noget andetsteds i koden
+
+## 2026-11-01 (separate glyph source)
+
+> jeg vil gerne have glyphs ud i sin egen fil
+
+## 2026-11-01 (colored SVG glyph atlas)
+
+> kan du lave en svg med glyphs i tabelform, hver streg gerne i en anden farve og en pil på retningen for hver
+
+## 2026-11-01 (decoded glyph strokes and sketches)
+
+> for hver glyph så lav afkodningen i streger med koordinater som du har gjort her og den skematiske visning
+
+## 2026-11-01 (Unicode names for visible ASCII punctuation)
+
+> for øvrige labels i synlig ascii så brug unicode navnet i stedet fro decimal
+
+## 2026-11-01 (character-based glyph labels)
+
+> for glyphs der godt kan være tegn i en label vil jeg hellere have tegnet end decimalkoden
+
+## 2026-11-01 (symbolic glyph pointers)
+
+> ret den
+
+## 2026-11-01 (commit source-analysis annotations)
+
+> commit
+
+## 2026-11-01 (decimal comment values)
+
+> i kommentarer vil jeg have  værdier i decimal (undtagen for bitmønstre der godt må være i binær)
+
+## 2026-11-01 (known input-array assignment comments)
+
+> hvis du véd hvad "    mov    ax,es:2[di]
+>     mov    v_text_y,ax" dækker må du også gerne tilføje dem
+
+## 2026-11-01 (constant assignment comments)
+
+> også for direkte tildelinger af en konstant til en variabel
+
+## 2026-11-01 (BX variable-copy comments)
+
+> tilføj
+
+## 2026-11-01 (variable-copy comments)
+
+> der er en del hvor en værdi læses ind i ax fra en label, og gemmes i en ny .  det vil jeg gerne have kommentar på i stil med "; ny = gammel"
+
+## 2026-11-01 (apply historical source knowledge as comments)
+
+> tilføj din nye viden til koden
+
+## 2026-11-01 (historical Ratfor and other driver sources)
+
+> der er en del andre drivere med kildetekst i file:/Users/ravn/z80/rc700-gensmedet/rc759-gsx/scratch/gsx80_86/  (noget i ratfor).  undersøg om der er noget vi kan bruge
+
+## 2026-11-01 (commit readable H1 disassembly)
+
+> commit
+
+## 2026-11-01 (GSX ABI field comments)
+
+> så vil jeg blot gerne have betydningen i kommentar ved siden af
+
+## 2026-11-01 (remaining numeric data addresses)
+
+> der er stadig  numeriske konstanter, som fx si der bruges til si+bx
+
+## 2026-11-01 (labels for every code reference)
+
+> du har tidligere antaget der skulle spares på labels, det er fikset.  Jeg vil gerne have labels på alle kodereferencer
+
+> meget gerne jvf skeletoraklerne
+
+## 2026-11-01 (structured pattern and console tables)
+
+> omform så det passer bedre til din nye viden
+
+## 2026-10-31 (visual fill comments)
+
+> visual kommentar
+
+## 2026-10-31 (visible binary fill tiles)
+
+> lav fillpattern om til binært kodede værdier så man kan se dem over inanden
+
+## 2026-10-31 (documented SIZ_TAB words)
+
+> tilsvarende siz_tab
+
+## 2026-10-31 (documented DEV_TAB words)
+
+> omskriv dev_tab til dw, og forklar hver af dem
+
+## 2026-10-31 (generated sine include)
+
+> jeg vil gerne have den rykket ud i en separat fil, og skrevet et python program der genererer dw værdierne
+
+## 2026-10-31 (EXTRA reservation and commit)
+
+> brug extra_segment_anchor rb 992 og commit
+
+## 2026-10-31 (sequential assembly layout)
+
+> i stedet for mange ORG-instruktioner, vil jeg hellere have at der fyldes op med DS eller lignende.
+
+## 2026-10-31 (commit source oracles and align H1 disassembly)
+
+> commit, så tilret disassembly til orakelviden
+
+## 2026-10-31 (DRI skeleton configuration guides)
+
+> jeg har fundet mere interessant på https://www.df.lth.se/~pi/compis/cpm-manualer/gsx/writing_drivers/
+
+> du må gerne søge på nettet efter filer der er nævnt men ikke findes hér
+
+> du kan betragte skeletkilderne som orakler
+
+> giv gerne løbende tilbagemelding om fremskridt
+
+> måske indeholder denne noget interessant:  /Users/ravn/Downloads/gsx80_86
+
+> kopieret ind
+
+> file:/Users/ravn/z80/rc700-gensmedet/rc759-gsx/scratch/gsx80_86/
+
+## 2026-10-31 (historical GSX-86 driver sources)
+
+> der findes originale drivere med kildetekst på https://www.seasip.info/Cpm/software/gsx86.html.  Jeg vil gerne have du analyserer dem og bruger din nye viden til at forstå mere om vores driver
+
+> kopier gerne vigtige filer i projektet
+
+> gem er for nyt i forhold til gsx-86 tror jeg
+
+## 2026-10-31 (persist and commit RC759 GSX knowledge)
+
+> gem din nye viden i projektet og commit
+
+## 2026-10-31 (continue byte-identical GSX-86 disassembly)
+
+> fortsæt opgaven med at lave byteidentisk disasssembly
+
+## 2026-10-31 (record RC759 GSX-86 emu2 test knowledge)
+
+> godt. det var ikke nemt, gem din nye viden i projketet
+
 ## 2026-10-13 (zcc+llvmz80 __smallc adaptation + upstream sync)
 
 > vi skal gentage arbejdet med at få zcc til at virke korrekt med llvmz80. zlfn har besluttet at opføre sig som en eksisterende compiler som bruger __smallc

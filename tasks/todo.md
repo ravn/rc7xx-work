@@ -1,5 +1,34 @@
 # Z80 Code Density Optimization Todo
 
+## RC759 H1: short vector-text benchmark (2026-11-01)
+
+- [x] Run the unchanged SYS in a bounded 16-bit CPU harness; stub only
+  XIOS graphics initialization and expose instruction/profile counts.
+- [x] Validate default A pixels against hand-worked geometry; benchmark
+  repeated text at small/large sizes and zero/nonzero rotation.
+- [x] Report measured work and model-only speedup limits, with CPU timing
+  assumptions distinguished from real hardware measurements.
+
+## RC759 H1: full source-comment audit (2026-11-01)
+
+- [x] Read all comments in dd759h1.a86, glyphs.a86 and sine.a86;
+  establish the unchanged source/binary baseline.
+- [x] Cross-check register/array claims and capability meanings against
+  actual instruction paths and existing GSX/XIOS manuals.
+- [x] Independently check address annotations, glyph stroke coordinates,
+  schematic sketches, sine samples and binary pattern comments.
+- [x] Correct inaccurate comments only, record findings and limitations,
+  then verify unchanged tokens and a fresh byte-identical build.
+
+## RC759 H1: descriptive remaining sub-labels (2026-11-01)
+
+- [x] Read every remaining sub-label block and its callers; capture a
+  fresh unmodified build matching the original 8,576-byte SYS.
+- [x] Rename routine entries and internal branches according to verified
+  operations; preserve uncertain console-command meanings explicitly.
+- [x] Check symbol completeness, unchanged instruction/data tokens and a
+  fresh byte-identical build; record the routine-name analysis.
+
 ## Plan: korrekt modellering af Z80-minneoperander (2026-10-10)
 
 - [ ] Afgræns den første leverance: almindelige Z80 ALU-indlæsninger fra
