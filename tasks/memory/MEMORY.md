@@ -69,6 +69,7 @@
 - **[Read Z80.cmake header before improvising cmake call](feedback_read_cmake_cache_header.md) — HARD: flagene -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON står i Z80.cmake linje 4-5, læs før ad-hoc configure**
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
 - **[Compiler builds](feedback_parallel_compiler_builds.md) — genbrug builddir + ccache efter branchskift; separat kun til samtidige versioner**
+- [ccache hits kræver samme sti](reference_ccache_path_keyed_cross_tree.md) — worktrees deler ikke cache; mind brugeren om A/B/C hvis det gentager sig
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
 - **[pgrep BEFORE every new build](feedback_check_pgrep_before_ninja.md) — HARD: `pgrep -f ninja` first; empty task-output ≠ not started; if PID exists → wait, never start another**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**

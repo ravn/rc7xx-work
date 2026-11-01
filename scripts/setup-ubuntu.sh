@@ -82,6 +82,18 @@ PKGS_BUILD=(
     git
 )
 
+# z88dk native build (flex/bison/m4 are in PKGS_BUILD above):
+PKGS_Z88DK=(
+    re2c
+    ragel
+    dos2unix
+    texinfo
+    libxml2-dev
+    libgmp-dev
+    zlib1g-dev
+    libboost-all-dev
+)
+
 # Test-runner / value-oracle:
 PKGS_TEST_RUNNER=(
     rustup       # toolchain manager; we'll `rustup default stable` below
@@ -123,7 +135,7 @@ PKGS_UTIL=(
     fd-find
 )
 
-PKGS=("${PKGS_BUILD[@]}" "${PKGS_TEST_RUNNER[@]}" "${PKGS_TOOLING[@]}" "${PKGS_UTIL[@]}")
+PKGS=("${PKGS_BUILD[@]}" "${PKGS_Z88DK[@]}" "${PKGS_TEST_RUNNER[@]}" "${PKGS_TOOLING[@]}" "${PKGS_UTIL[@]}")
 (( INSTALL_MAME )) && PKGS+=("${PKGS_MAME[@]}")
 (( INSTALL_DOCKER )) && PKGS+=(docker.io docker-compose-v2)
 

@@ -20,6 +20,14 @@ else
   BUILD_DIR = build-linux
 endif
 
+# ccache is ALWAYS used for native builds (fails loudly if missing).
+CCACHE := $(shell command -v ccache 2>/dev/null)
+ifeq ($(CCACHE),)
+  $(error ccache not found - install it (scripts/setup-ubuntu.sh))
+endif
+# gcc/cc/g++/c++ -> ccache masquerade dir (used by the z88dk/zsdcc build)
+CCACHE_BIN = $(CURDIR)/scratch/bin
+
 LLVM_Z80 = $(CURDIR)/llvm-z80
 BIOS_DIR = $(CURDIR)/rc700-gensmedet/rcbios-in-c
 PROM_DIR = $(CURDIR)/rc700-gensmedet/autoload-in-c
@@ -53,6 +61,8 @@ $(LLVM_BUILD)/build.ninja: $(LLVM_Z80)/clang/cmake/caches/Z80.cmake
 	@echo "=== Configuring LLVM-Z80 for $(UNAME_S) in $(BUILD_DIR) ==="
 	$(CMAKE) -C $(LLVM_Z80)/clang/cmake/caches/Z80.cmake \
 		-G Ninja \
+		-DCMAKE_C_COMPILER_LAUNCHER=$(CCACHE) \
+		-DCMAKE_CXX_COMPILER_LAUNCHER=$(CCACHE) \
 		-DCMAKE_MAKE_PROGRAM=$(NINJA) \
 		-S $(LLVM_Z80)/llvm -B $(LLVM_BUILD)
 
@@ -138,9 +148,14 @@ $(Z88DK_DIR)/.macos-patched: $(Z88DK_PATCH)
 	  fi
 	@touch $@
 
-$(Z88DK_ZSDCC): | $(Z88DK_BOOST)/graph/adjacency_list.hpp $(Z88DK_DIR)/.macos-patched
+$(CCACHE_BIN)/gcc:
+	mkdir -p $(CCACHE_BIN)
+	for n in gcc cc g++ c++; do ln -sf $(CCACHE) $(CCACHE_BIN)/$$n; done
+
+$(Z88DK_ZSDCC): | $(CCACHE_BIN)/gcc $(Z88DK_BOOST)/graph/adjacency_list.hpp $(Z88DK_DIR)/.macos-patched
 	@echo "=== building z88dk + bundled zsdcc (~10-15 min first time) ==="
 	cd $(Z88DK_DIR) && \
+	  PATH=$(CCACHE_BIN):$$PATH CC=gcc CXX=g++ OCC=gcc \
 	  BUILD_SDCC=1 BUILD_SDCC_HTTP=1 \
 	  CPPFLAGS="-I$(Z88DK_DIR)/third_party" \
 	  CXXFLAGS="-I$(Z88DK_DIR)/third_party" \
