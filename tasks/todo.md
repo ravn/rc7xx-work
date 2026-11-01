@@ -1,5 +1,14 @@
 # Z80 Code Density Optimization Todo
 
+## RC759 driver-family inventory (2026-11-01)
+
+- [x] Parse all twelve original SYS files and compare CODE/DATA,
+  padding, allocation descriptors and relocation records.
+- [x] Inspect color pixel code and added locator paths; cross-check
+  graphics modes, mouse API and save-buffer sizes against the manual.
+- [x] Record verified distinctions and unresolved device/provenance
+  questions; correct the obsolete 1/4 plane-count hypothesis.
+
 ## RC759 H1: short vector-text benchmark (2026-11-01)
 
 - [x] Run the unchanged SYS in a bounded 16-bit CPU harness; stub only
@@ -2749,3 +2758,38 @@ if the mismatch persists with current runtime objects.
 2. Run the updated z88dk llvmz80 integration tests with the rebuilt compiler.
 3. Create non-fast-forward merge commits from the active feature branches into
    `origin/main` (llvm-z80) and `origin/master` (z88dk); push only after checks.
+### 2026-11-01 — RC759 GSX unified-source experiment
+
+1. Create `rc759-gsx-unified-source` in workspace and firmware repos,
+   preserving all unrelated dirty files. Capture a fresh H1 build and
+   full-image comparison against all twelve immutable originals.
+2. Extract shared assembly with compile-time rendering/locator choices;
+   retain the known-good H1 entry and build route. First prove H1/H4 and
+   mouse support, then extend color and serial where verified.
+3. Add a fresh-build variant matrix and document actual byte-comparison
+   results, including group padding, allocation and relocation trailers.
+   Do not commit or push.
+
+**Verified 2026-11-01:** both feature branches created; fresh baseline H1
+PASS/other eleven FAIL. Shared IF-based assembly now rebuilds all twelve
+original SYS files with identical full images. Final matrix:
+`rc700-gensmedet/rc759-gsx/scratch/unified-check-20261101-091928-653160/matrix.json`.
+Retained H1 launcher and regenerated glyph atlas verified unchanged;
+negative oracle control and invalid selector produce expected failures.
+Details/build commands in `rc759-gsx/notes/01-initial-findings.md`.
+No runtime/hardware checks, commits or pushes performed.
+### 2026-11-01 — RC759 assembler-derived structure sizes
+
+1. Capture fresh all-twelve control before edits (12/12 PASS:
+   `rc759-gsx/scratch/unified-check-20261101-092352-845821/matrix.json`).
+2. Derive dispatch bounds, copy counts, table/buffer lengths and
+   paragraph padding from assembler labels; retain hardware, mathematical
+   and protocol constants. Verify RASM-86 forward references directly.
+3. Rebuild all twelve and document exact scope/exclusions; no commit/push.
+
+**Verified:** 12/12 PASS after assembler-derived bounds/copies, glyph/color/
+fill/palette/serial counts, sequence lengths and CODE/DATA/EXTRA layout.
+All rebuild hashes equal the fresh pre-edit baseline. Evidence:
+`rc759-gsx/scratch/unified-check-20261101-092739-742727/matrix.json`.
+Retained H1 launcher and glyph atlas also pass. Scope/exclusions in
+`rc759-gsx/notes/01-initial-findings.md`; no commit/push or hardware tests.
