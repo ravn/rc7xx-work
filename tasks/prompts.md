@@ -1,5 +1,37 @@
 # Prompts
 
+## 2026-11-01 (commit glyph atlas and locator analysis)
+
+> commit
+
+## 2026-11-01 (trailing locator-data reference audit)
+
+> undersøg om dette bruges af noget andetsteds i koden
+
+## 2026-11-01 (separate glyph source)
+
+> jeg vil gerne have glyphs ud i sin egen fil
+
+## 2026-11-01 (colored SVG glyph atlas)
+
+> kan du lave en svg med glyphs i tabelform, hver streg gerne i en anden farve og en pil på retningen for hver
+
+## 2026-11-01 (decoded glyph strokes and sketches)
+
+> for hver glyph så lav afkodningen i streger med koordinater som du har gjort her og den skematiske visning
+
+## 2026-11-01 (Unicode names for visible ASCII punctuation)
+
+> for øvrige labels i synlig ascii så brug unicode navnet i stedet fro decimal
+
+## 2026-11-01 (character-based glyph labels)
+
+> for glyphs der godt kan være tegn i en label vil jeg hellere have tegnet end decimalkoden
+
+## 2026-11-01 (symbolic glyph pointers)
+
+> ret den
+
 ## 2026-11-01 (commit source-analysis annotations)
 
 > commit
