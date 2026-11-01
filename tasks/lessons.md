@@ -1,5 +1,16 @@
 # Lessons Learned
 
+## 2026-11-01: RC759 structure-size constants belong to the assembler
+
+Derive table bounds, record/copy counts and alignment from start/end
+labels, not parallel numeric constants in assembly or Python build tables.
+Keep protocol IDs, hardware geometry and chosen defaults distinct from
+structure limits. Test expression syntax with the actual legacy assembler:
+RASM-86 1.2 needs EQU definitions after their referenced labels and scalar
+OFFSET differences for MOD. Preserve historical byte/word mismatches when
+the task is byte-exact reconstruction, documenting them instead of fixing
+them incidentally.
+
 ## 2026-11-01: RC759 vector-text speed estimates need a weighted profile
 
 The initial speculative 1.5-2.5x text estimate exceeded the modeled
@@ -489,7 +500,6 @@ Never `@`-mention / tag any external individual (such as upstream authors or thi
 2. For toggle controls (which DIP switches are: `m_flags |= FIELD_FLAG_TOGGLE`), `ioport_field::frame_update()` interprets a digital press transition as a toggle switch event and invokes `select_next_setting()`.
 3. Consequently, calling `f:set_value(want)` on each run toggles the switch back and forth on alternate runs. When MAME persists modified input settings on exit into `cfg/<driver>.cfg`, the toggled value creates a deterministic mod-2 bistable multivibrator across consecutive runs.
 4. Correct practice: assign the persistent user setting directly via `f.user_value = want` (which maps to `ioport_field::set_user_settings`) and clear any programmatic digital override with `f:clear_value()`.
-
 
 
 

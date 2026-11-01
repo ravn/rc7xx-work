@@ -1,5 +1,17 @@
 # Prompts
 
+## 2026-11-01 (merge unified RC759 driver source)
+
+> merge til main
+
+## 2026-11-01 (estimate shared driver source)
+
+> kan du lave et groft estimat af hvor tæt på hinanden i kode (og om de kan laves fra samme kildetekst med if'er) de forskellige drivere er
+
+## 2026-11-01 (inventory remaining RC759 driver variants)
+
+> der er flere drivere, vi har bare kun kigget på den simpleste skærmdriver. undersøg hvad der ellers er
+
 ## 2026-11-01 (merge GSX reconstruction back to main)
 
 > og flet tilbage på main
@@ -1790,3 +1802,13 @@ Writeup: infozip-cpm86-builds/ZIP_DEFLATE_MAME_SOLVED_2026-08-25.md.
 21. pull first, then commit / note that macbook has added work / run submodule update
 22. no, commit and push
 23. save your knowledge in the project, i need to reboot
+## 2026-11-01 — RC759 GSX unified-source experiment
+
+User: “lav et forsøg i en ny branch” — unified RC759 GSX assembly source
+with conditional assembly for the twelve original SYS variants. Preserve
+unrelated work and do not commit or push. Execute and verify the experiment
+against the immutable original images.
+User follow-up (2026-11-01): “jeg vil gerne have at konstanter der
+afspejler størrelsen på en datastruktur også beregnes af assembleren
+og ikke hårdkodes”. Audit the shared RC759 source; derive structure
+sizes/counts from labels while preserving all twelve original images.
