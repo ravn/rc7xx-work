@@ -1,5 +1,14 @@
 # Lessons Learned
 
+## 2026-11-01: RC759 vector-text speed estimates need a weighted profile
+
+The initial speculative 1.5-2.5x text estimate exceeded the modeled
+transformation-only ceiling: executing the original driver put point
+transformation at 22.8% of standard-size text cost, hence at most 1.30x
+even with free replacements. Before estimating a local optimization's
+overall gain, collect weighted dynamic costs and calculate its Amdahl
+ceiling. Label cycle models separately from real hardware measurements.
+
 ## 2026-10-15: Signed vs unsigned 16-bit comparisons & GlobalISel operand swapping
 
 1. **Signed vs unsigned 16-bit comparisons on Z80:**
@@ -480,7 +489,6 @@ Never `@`-mention / tag any external individual (such as upstream authors or thi
 2. For toggle controls (which DIP switches are: `m_flags |= FIELD_FLAG_TOGGLE`), `ioport_field::frame_update()` interprets a digital press transition as a toggle switch event and invokes `select_next_setting()`.
 3. Consequently, calling `f:set_value(want)` on each run toggles the switch back and forth on alternate runs. When MAME persists modified input settings on exit into `cfg/<driver>.cfg`, the toggled value creates a deterministic mod-2 bistable multivibrator across consecutive runs.
 4. Correct practice: assign the persistent user setting directly via `f.user_value = want` (which maps to `ioport_field::set_user_settings`) and clear any programmatic digital override with `f:clear_value()`.
-
 
 
 

@@ -1,5 +1,14 @@
 # Z80 Code Density Optimization Todo
 
+## RC759 H1: short vector-text benchmark (2026-11-01)
+
+- [x] Run the unchanged SYS in a bounded 16-bit CPU harness; stub only
+  XIOS graphics initialization and expose instruction/profile counts.
+- [x] Validate default A pixels against hand-worked geometry; benchmark
+  repeated text at small/large sizes and zero/nonzero rotation.
+- [x] Report measured work and model-only speedup limits, with CPU timing
+  assumptions distinguished from real hardware measurements.
+
 ## RC759 H1: full source-comment audit (2026-11-01)
 
 - [x] Read all comments in dd759h1.a86, glyphs.a86 and sine.a86;

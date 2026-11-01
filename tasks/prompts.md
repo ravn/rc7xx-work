@@ -1,5 +1,23 @@
 # Prompts
 
+## 2026-11-01 (merge GSX reconstruction back to main)
+
+> og flet tilbage på main
+
+## 2026-11-01 (persist pixel-specialization analysis)
+
+> hvad med pixelberegninger, optimerede tilfælde
+
+> gem din nye viden i projektet
+
+## 2026-11-01 (short vector-text benchmark)
+
+> du må gerne lave en kort testbenchmark, jeg har ikke umiddelbart forslag til måder at måle forbrug på
+
+## 2026-11-01 (implementation optimality analysis)
+
+> jeg vil gerne have en analyse af hvor optimal implementationen er. der er ikke hjælpechips ud over måske dma
+
 ## 2026-11-01 (commit and push full comment audit)
 
 > commit push
