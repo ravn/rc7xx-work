@@ -1,5 +1,16 @@
 # Z80 Code Density Optimization Todo
 
+## RC759 H1: full source-comment audit (2026-11-01)
+
+- [x] Read all comments in dd759h1.a86, glyphs.a86 and sine.a86;
+  establish the unchanged source/binary baseline.
+- [x] Cross-check register/array claims and capability meanings against
+  actual instruction paths and existing GSX/XIOS manuals.
+- [x] Independently check address annotations, glyph stroke coordinates,
+  schematic sketches, sine samples and binary pattern comments.
+- [x] Correct inaccurate comments only, record findings and limitations,
+  then verify unchanged tokens and a fresh byte-identical build.
+
 ## RC759 H1: descriptive remaining sub-labels (2026-11-01)
 
 - [x] Read every remaining sub-label block and its callers; capture a

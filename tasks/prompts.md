@@ -1,5 +1,13 @@
 # Prompts
 
+## 2026-11-01 (commit and push full comment audit)
+
+> commit push
+
+## 2026-11-01 (full source-comment audit)
+
+> udfør fuld kontrol
+
 ## 2026-11-01 (commit readability changes and remaining work)
 
 > commit. mangler der mere?
