@@ -2793,3 +2793,19 @@ All rebuild hashes equal the fresh pre-edit baseline. Evidence:
 `rc759-gsx/scratch/unified-check-20261101-092739-742727/matrix.json`.
 Retained H1 launcher and glyph atlas also pass. Scope/exclusions in
 `rc759-gsx/notes/01-initial-findings.md`; no commit/push or hardware tests.
+
+### 2026-11-01 — Final RC759/emu2 audit
+
+1. Check final source/build workflow, open RASM86 issue and repository state.
+2. Validate all twelve drivers with the upstream-identical workspace emulator.
+3. Correct stale records and unsupported issue diagnoses; commit/push only
+   current-work files, preserving unrelated compiler and local tooling changes.
+
+**Verified:** the earlier experiment restrictions above are historical.
+Shared source, derived counts, all-twelve default build, originals rename
+and housekeeping were committed, merged and pushed. Requested obsolete
+branches were deleted. Emulator `a669fe9` matches upstream `c49b535`
+exactly; fresh final matrix is 12/12 PASS:
+`rc700-gensmedet/rc759-gsx/scratch/unified-check-20261101-151824-993069/matrix.json`.
+Current reconstruction has no observed build failure. ASM86 check remains
+skipped; CI integration and full device runtime validation are not claimed.

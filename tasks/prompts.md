@@ -1832,3 +1832,22 @@ User follow-up (2026-11-01): “jeg vil gerne have at konstanter der
 afspejler størrelsen på en datastruktur også beregnes af assembleren
 og ikke hårdkodes”. Audit the shared RC759 source; derive structure
 sizes/counts from labels while preserving all twelve original images.
+
+## 2026-11-01 — RC759 completion and emu2 upstream validation
+
+User requested merge, default builds of all twelve, a documented Makefile,
+comparison against originals, rename of bin to originals, commit/push,
+file cleanup and branch cleanup. User authorized deletion of
+cpnos-rc700-console, fdc-variant and feature/iobyte.
+
+Subsequent prompts: "status?", "hvad er der ellers af urørte ændringer?",
+"du undersøgte emu2 fordi rasm86 fejlede. kan du huske hvad du nåede frem til?",
+"såå vi kan godt synkronisere med upstream emu2?", "hvad er forskellen?",
+"hvordan fandt du ud af vi var nødt til at bevare S1?",
+"kan du undersøge i CP/M dokumentationen hvad S1-bitten betyder?",
+"prøv igen at bygge h1 med emu2 upstream",
+"er der andre ændringer for emu2 eller kan vi revertere til upstream?",
+"jatak", "hvad er asm86 testen?", "commit og push".
+
+Final request: "er der noget der mangler af det aktuelle arbejde?
+Analyser, opsummer, opret issues efter behov, commit og push".
