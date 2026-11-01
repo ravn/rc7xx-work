@@ -1,5 +1,25 @@
 # Prompts
 
+## 2026-11-01 (RC759 housekeeping)
+
+> jeg vil gerne have du rydder op - vigtige filer skal i git, uvigtige fjernes
+
+## 2026-11-01 (name original binary directory explicitly)
+
+> måske skal bin omdøbes til originals
+
+## 2026-11-01 (compare default builds with originals)
+
+> og at det sammenligner med de oprindelige versioner i bin/
+
+## 2026-11-01 (document RC759 builds with Makefile)
+
+> og at det er dokumenteret med en makefil
+
+## 2026-11-01 (default build of all RC759 variants)
+
+> jeg vil gerne have at buildscriptet som default bygger alle 12 varianter
+
 ## 2026-11-01 (merge unified RC759 driver source)
 
 > merge til main
