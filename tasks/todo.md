@@ -1,5 +1,14 @@
 # Z80 Code Density Optimization Todo
 
+## RC759 H1: descriptive remaining sub-labels (2026-11-01)
+
+- [x] Read every remaining sub-label block and its callers; capture a
+  fresh unmodified build matching the original 8,576-byte SYS.
+- [x] Rename routine entries and internal branches according to verified
+  operations; preserve uncertain console-command meanings explicitly.
+- [x] Check symbol completeness, unchanged instruction/data tokens and a
+  fresh byte-identical build; record the routine-name analysis.
+
 ## Plan: korrekt modellering af Z80-minneoperander (2026-10-10)
 
 - [ ] Afgræns den første leverance: almindelige Z80 ALU-indlæsninger fra

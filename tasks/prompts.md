@@ -1,5 +1,25 @@
 # Prompts
 
+## 2026-11-01 (commit readability changes and remaining work)
+
+> commit. mangler der mere?
+
+## 2026-11-01 (pixel address algorithm comment)
+
+> og tilføj algoritmen som kommentar
+
+## 2026-11-01 (rename concat)
+
+> omdøb
+
+## 2026-11-01 (jump-pair spacing)
+
+> jeg vil også have en blank linje efter JNE+JMP til andre steder end den næste label
+
+## 2026-11-01 (descriptive reconstructed labels)
+
+> der er stadig en del labels der starter med sub_. det er formentligt rekonstruerede labelnavne. jeg vil gerne have de får mere sigende navne, analyser koden de bruges i først
+
 ## 2026-11-01 (commit glyph atlas and locator analysis)
 
 > commit
