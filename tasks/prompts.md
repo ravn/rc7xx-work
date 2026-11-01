@@ -1,5 +1,9 @@
 # Prompts
 
+## 2026-11-01 (RC759 housekeeping)
+
+> jeg vil gerne have du rydder op - vigtige filer skal i git, uvigtige fjernes
+
 ## 2026-11-01 (name original binary directory explicitly)
 
 > måske skal bin omdøbes til originals
