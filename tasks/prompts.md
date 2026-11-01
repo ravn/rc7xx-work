@@ -1,5 +1,38 @@
 # Prompts
 
+## 2026-11-01 (commit source-analysis annotations)
+
+> commit
+
+## 2026-11-01 (decimal comment values)
+
+> i kommentarer vil jeg have  værdier i decimal (undtagen for bitmønstre der godt må være i binær)
+
+## 2026-11-01 (known input-array assignment comments)
+
+> hvis du véd hvad "    mov    ax,es:2[di]
+>     mov    v_text_y,ax" dækker må du også gerne tilføje dem
+
+## 2026-11-01 (constant assignment comments)
+
+> også for direkte tildelinger af en konstant til en variabel
+
+## 2026-11-01 (BX variable-copy comments)
+
+> tilføj
+
+## 2026-11-01 (variable-copy comments)
+
+> der er en del hvor en værdi læses ind i ax fra en label, og gemmes i en ny .  det vil jeg gerne have kommentar på i stil med "; ny = gammel"
+
+## 2026-11-01 (apply historical source knowledge as comments)
+
+> tilføj din nye viden til koden
+
+## 2026-11-01 (historical Ratfor and other driver sources)
+
+> der er en del andre drivere med kildetekst i file:/Users/ravn/z80/rc700-gensmedet/rc759-gsx/scratch/gsx80_86/  (noget i ratfor).  undersøg om der er noget vi kan bruge
+
 ## 2026-11-01 (commit readable H1 disassembly)
 
 > commit
