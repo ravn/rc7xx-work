@@ -7,7 +7,7 @@ metadata:
 
 **Why this exists:** the pinned `llvm-z80` `da06bcd8acc2` (= ravn/llvm-z80 origin/main) lacked `__builtin_z80_*`, `<intrinsic.h>`, `z80_critical` and `AS_IO`. The user needs machine instructions (DI/EI/HALT/NOP/IN/OUT/IM/LD I,A) from C **without losing static frames**. Inline asm costs static frames unless the #413 edge-stripping hack covers it. Root cause for intrinsics: `CallGraph.cpp:93` gives any declaration without `nocallback` an edge to CallsExternalNode ("could call anything"); the Z80 intrinsics were plain `Intrinsic<>` without it. `nocallback` alone is necessary and sufficient for `Z80NonReentrant`.
 
-**Done 2026-11-02 (LOCAL branches in `llvm-z80/`, stacked, NOT pushed; backup patches in `tasks/patches/llvm-z80-intrinsics-static-frames-2026-11-02/`):**
+**Done 2026-11-02 (branches in `llvm-z80/`, stacked, PUSHED 2026-11-02 to ravn/llvm-z80 as `s1/…`–`s4/…`; backup patches in `tasks/patches/llvm-z80-intrinsics-static-frames-2026-11-02/`):**
 - S1 `2a1f1ab9f81a` `IntrNoCallback` on llvm.z80.{in,out,halt,di,ei,nop} (+willreturn on in/out/nop only; halt/di/ei must not claim willreturn/nosync). Lit `static-frames-intrinsics.ll`.
 - S2 `7072c68396f4` constant port → `IN A,(n)`/`OUT (n),A` (−2 B each); `Defs/Uses=[A]` on `IN_A_n`/`OUT_n_A`. Lit `port-io-immediate.ll`. Refs ravn/llvm-z80#421. High address byte A15–A8 is *unspecified* (user decision).
 - S3 `575307b1713b` `llvm.z80.im0/im1/im2` (three, user decision) and `llvm.z80.set.i`; `LD_I_A` `Uses=[A]` (without it the COPY into A was dead → `ld i,a` used a stale A). Lit `intrinsics-im-set-i.ll`.
@@ -31,3 +31,5 @@ metadata:
 **Decisions (user):** `AS_IO`/address_space(2) NOT restored; use intrinsics/builtins (+ z88dk functions where fitting); high port byte unspecified; three im intrinsics; ISR mid-body `ei`: no C ISR does it today (autoload/cpnos ISRs are `__naked`; rcbios `ei` only in naked helpers) — keep stack frames there is possible later but not needed now.
 
 Refer to the fork owner only as "the fork owner" (never-mention rule, MEMORY.md §2). Related: [[reference_host_sonnyboy]], [[feedback_static_stack_nonrecursive_only]].
+
+**Handoff for another AI/machine:** `tasks/HANDOFF-z80-intrinsics-2026-11-02.md` (resume commands, expected test numbers, priorities, rules).
