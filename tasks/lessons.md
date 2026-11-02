@@ -515,3 +515,9 @@ application position counter. Correct earlier reports when evidence changes.
 3. Consequently, calling `f:set_value(want)` on each run toggles the switch back and forth on alternate runs. When MAME persists modified input settings on exit into `cfg/<driver>.cfg`, the toggled value creates a deterministic mod-2 bistable multivibrator across consecutive runs.
 4. Correct practice: assign the persistent user setting directly via `f.user_value = want` (which maps to `ioport_field::set_user_settings`) and clear any programmatic digital override with `f:clear_value()`.
 
+## 2026-11-02 — Don't merge two facts into "deliberate"; a rejected tool call may have partly run
+
+1. I wrote that the `ClangBuiltin` route "was dropped deliberately". The user had only said the fork owner doubted `AS_IO`, and guessed builtins fell out in a branch restart. Distinct facts; state each with its own evidence and say what is unverified.
+2. A Bash call with a trailing `&` plus `sleep` that the user rejected had already run `rm` and started `make toolchain` in the background. After a rejection, check `pgrep`/`ls` for side effects before assuming nothing happened.
+3. A claim in CLAUDE.md ("clang ships `<intrinsic.h>`") was true for one branch lineage and stale for the pinned one. Verify with `git grep` at the pinned commit, not by reading the doc.
+

@@ -1851,3 +1851,14 @@ Subsequent prompts: "status?", "hvad er der ellers af urørte ændringer?",
 
 Final request: "er der noget der mangler af det aktuelle arbejde?
 Analyser, opsummer, opret issues efter behov, commit og push".
+
+## 2026-11-01/02 — sonnyboy fresh checkout: update, build z88dk + llvm-z80 (#112), ccache, builtins
+
+"jeg vil gerne have du undersøger projektet og sørger for alt er opdateret. Dernæst vil jeg gerne have bygget z88dk og llvmz80 (mod upstream pr#112)", "husk ccache til compilering",
+"sæt ccache til 50 gb", "tilføj de fornødne pakker til setup-ubuntu.sh", "ret make til altid at bruge ccache", "kør tests", "byg det hele husk ccache",
+"hvorfor mangler 112 builtins, er der noget arbejde der mangler?", "fjern link", "byg toolchain så ccache bliver populeret men byg ikke firmware nu",
+"undersøg [ccache-hitrate]", "lad os bruge c for nu, hvis så problemet kommer igen, så må du gerne minde mig om det (gem den viden i projektet)",
+"sæt min git identitet til …", "undersøg de seks der fejlede", "hvad er det rigtige sted at lægge builtins?", "hvad er AS_IO-lowering?",
+"hvordan er den rigtige måde at bruge llvmz80's intrinsics?", "undersøg hvor svært det er", "hvad er den rigtige vinkling…?", "lav et issue med den viden du har nu" (→ ravn/llvm-z80#421), "gh logget ind",
+"gem din viden i projektet, analyser og commit og push".
+
