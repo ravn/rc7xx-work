@@ -1,0 +1,481 @@
+From 5746100bc287a5f82b1312369f37b2c4c391ecd3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thorbj=C3=B8rn=20Ravn=20Andersen?= <tra@ravnand.dk>
+Date: Mon, 2 Nov 2026 11:21:46 +0100
+Subject: [PATCH 4/4] [Z80] Add
+ __builtin_z80_{di,ei,halt,nop,in,out,im0,im1,im2,set_i} clang builtins
+
+C code can now emit DI, EI, HALT, NOP, IN, OUT, IM 0/1/2 and LD I,A without
+inline assembly.  Each builtin lowers to the matching llvm.z80.* intrinsic,
+which (since the nocallback change) does not cost the calling function its
+static frame -- inline assembly does.
+
+The clang plumbing (BuiltinsZ80.td, Z80TargetInfo builtin tables and the
+"z80" feature, CodeGen/TargetBuiltins/Z80.cpp, CGBuiltin dispatch) comes from
+2883cdd8bb73 (ravn/llvm-z80#42), which is not on main.  Only the clang parts
+are taken: the backend part exists on this branch in its own form, and the
+shipped <intrinsic.h> is deliberately not restored (the intrinsic_* mapping
+belongs in the firmware / z88dk headers).
+
+New compared with that commit: __builtin_z80_in/out and im0/im1.  in, out,
+im0/1/2 and set_i are gated on the "z80" feature, so sm83 (no IN/OUT, no
+interrupt modes, no I register) gets a clean frontend diagnostic.
+
+Tests: clang/test/CodeGen/z80-builtins.c, z80-builtins-sm83-gate.c.  An
+end-to-end C check with -ffreestanding +static-frame gives ld a,64 / ld i,a,
+im 2, out (16),a, in a,(17) and a static frame (L_helper.frame, no stack
+frame use).  llvm-lit CodeGen/Z80 159/160 (z88dk-runtime.ll fails identically
+on the base); 17/17 Z80 clang tests; cargo runtime 462/456/0/6, per-test
+results identical to the base.
+
+Rules-checked: lit tests added; both test tiers run before/after; local branch,
+not pushed.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+---
+ clang/include/clang/Basic/BuiltinsZ80.td    | 95 +++++++++++++++++++++
+ clang/include/clang/Basic/CMakeLists.txt    |  4 +
+ clang/include/clang/Basic/TargetBuiltins.h  | 11 +++
+ clang/lib/Basic/Targets/Z80.cpp             | 38 +++++++++
+ clang/lib/Basic/Targets/Z80.h               | 10 ++-
+ clang/lib/CodeGen/CGBuiltin.cpp             |  3 +
+ clang/lib/CodeGen/CMakeLists.txt            |  1 +
+ clang/lib/CodeGen/CodeGenFunction.h         |  1 +
+ clang/lib/CodeGen/TargetBuiltins/Z80.cpp    | 77 +++++++++++++++++
+ clang/test/CodeGen/z80-builtins-sm83-gate.c | 26 ++++++
+ clang/test/CodeGen/z80-builtins.c           | 51 +++++++++++
+ 11 files changed, 314 insertions(+), 3 deletions(-)
+ create mode 100644 clang/include/clang/Basic/BuiltinsZ80.td
+ create mode 100644 clang/lib/CodeGen/TargetBuiltins/Z80.cpp
+ create mode 100644 clang/test/CodeGen/z80-builtins-sm83-gate.c
+ create mode 100644 clang/test/CodeGen/z80-builtins.c
+
+diff --git a/clang/include/clang/Basic/BuiltinsZ80.td b/clang/include/clang/Basic/BuiltinsZ80.td
+new file mode 100644
+index 000000000000..e2e7220ee5ef
+--- /dev/null
++++ b/clang/include/clang/Basic/BuiltinsZ80.td
+@@ -0,0 +1,95 @@
++//===--- BuiltinsZ80.td - Z80 Builtin function database ---------*- C++ -*-===//
++//
++// Part of LLVM-Z80, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++//
++// Built-ins for Z80 privileged instructions that cannot be expressed in C.
++// Each lowers to the matching llvm.z80.* intrinsic.  None is const/pure, so
++// they carry side effects and are never CSE'd or removed.  ravn/llvm-z80#42.
++//
++//===----------------------------------------------------------------------===//
++
++include "clang/Basic/BuiltinsBase.td"
++
++// Disable interrupts (DI).
++def Z80DI : TargetBuiltin {
++  let Spellings = ["__builtin_z80_di"];
++  let Attributes = [NoThrow];
++  let Prototype = "void()";
++}
++
++// Enable interrupts (EI).
++def Z80EI : TargetBuiltin {
++  let Spellings = ["__builtin_z80_ei"];
++  let Attributes = [NoThrow];
++  let Prototype = "void()";
++}
++
++// Halt the CPU until the next interrupt (HALT).
++def Z80Halt : TargetBuiltin {
++  let Spellings = ["__builtin_z80_halt"];
++  let Attributes = [NoThrow];
++  let Prototype = "void()";
++}
++
++// No operation (NOP) -- useful for cycle-accurate timing.
++def Z80Nop : TargetBuiltin {
++  let Spellings = ["__builtin_z80_nop"];
++  let Attributes = [NoThrow];
++  let Prototype = "void()";
++}
++
++// Read a byte from an I/O port (IN).  Z80-only: SM83 has no IN/OUT.  The port
++// is an 8-bit number; the upper address byte is unspecified (see
++// IntrinsicsZ80.td).
++def Z80In : TargetBuiltin {
++  let Spellings = ["__builtin_z80_in"];
++  let Attributes = [NoThrow];
++  let Prototype = "unsigned char(unsigned char)";
++  let Features = "z80";
++}
++
++// Write a byte to an I/O port (OUT): __builtin_z80_out(port, value).
++def Z80Out : TargetBuiltin {
++  let Spellings = ["__builtin_z80_out"];
++  let Attributes = [NoThrow];
++  let Prototype = "void(unsigned char, unsigned char)";
++  let Features = "z80";
++}
++
++// Select interrupt mode 0 / 1 (IM 0, IM 1).  Z80-only, like IM 2.
++def Z80Im0 : TargetBuiltin {
++  let Spellings = ["__builtin_z80_im0"];
++  let Attributes = [NoThrow];
++  let Prototype = "void()";
++  let Features = "z80";
++}
++
++def Z80Im1 : TargetBuiltin {
++  let Spellings = ["__builtin_z80_im1"];
++  let Attributes = [NoThrow];
++  let Prototype = "void()";
++  let Features = "z80";
++}
++
++// Select interrupt mode 2 (IM 2).  Z80-only: SM83 (Game Boy) has no interrupt
++// modes, so this is gated on the "z80" feature (see Z80TargetInfo) to produce a
++// clean Sema diagnostic on sm83 instead of a backend cannot-select.
++def Z80Im2 : TargetBuiltin {
++  let Spellings = ["__builtin_z80_im2"];
++  let Attributes = [NoThrow];
++  let Prototype = "void()";
++  let Features = "z80";
++}
++
++// Load the interrupt vector register I from the given value (LD I,A).  Z80-only:
++// SM83 has no I register; gated on the "z80" feature (see Z80TargetInfo).
++def Z80SetI : TargetBuiltin {
++  let Spellings = ["__builtin_z80_set_i"];
++  let Attributes = [NoThrow];
++  let Prototype = "void(unsigned char)";
++  let Features = "z80";
++}
+diff --git a/clang/include/clang/Basic/CMakeLists.txt b/clang/include/clang/Basic/CMakeLists.txt
+index a328abf92797..974103341078 100644
+--- a/clang/include/clang/Basic/CMakeLists.txt
++++ b/clang/include/clang/Basic/CMakeLists.txt
+@@ -147,6 +147,10 @@ clang_tablegen(BuiltinsX86.inc -gen-clang-builtins
+   SOURCE BuiltinsX86.td
+   TARGET ClangBuiltinsX86)
+ 
++clang_tablegen(BuiltinsZ80.inc -gen-clang-builtins
++  SOURCE BuiltinsZ80.td
++  TARGET ClangBuiltinsZ80)
++
+ clang_tablegen(BuiltinsX86_64.inc -gen-clang-builtins
+   SOURCE BuiltinsX86_64.td
+   TARGET ClangBuiltinsX86_64)
+diff --git a/clang/include/clang/Basic/TargetBuiltins.h b/clang/include/clang/Basic/TargetBuiltins.h
+index f069b7e52d13..768044891ea7 100644
+--- a/clang/include/clang/Basic/TargetBuiltins.h
++++ b/clang/include/clang/Basic/TargetBuiltins.h
+@@ -143,6 +143,17 @@ namespace clang {
+   };
+   }
+ 
++  /// Z80 builtins
++  namespace Z80 {
++  enum {
++    LastTIBuiltin = clang::Builtin::FirstTSBuiltin - 1,
++#define GET_BUILTIN_ENUMERATORS
++#include "clang/Basic/BuiltinsZ80.inc"
++#undef GET_BUILTIN_ENUMERATORS
++    LastTSBuiltin
++  };
++  }
++
+   /// DirectX builtins
+   namespace DirectX {
+   enum {
+diff --git a/clang/lib/Basic/Targets/Z80.cpp b/clang/lib/Basic/Targets/Z80.cpp
+index ab9ee3ce4691..be206a01866f 100644
+--- a/clang/lib/Basic/Targets/Z80.cpp
++++ b/clang/lib/Basic/Targets/Z80.cpp
+@@ -12,11 +12,31 @@
+ 
+ #include "Z80.h"
+ #include "clang/Basic/MacroBuilder.h"
++#include "clang/Basic/TargetBuiltins.h"
+ #include "clang/Basic/TargetInfo.h"
+ #include "llvm/ADT/STLExtras.h"
+ 
++using namespace clang;
+ using namespace clang::targets;
+ 
++static constexpr int NumBuiltins =
++    clang::Z80::LastTSBuiltin - Builtin::FirstTSBuiltin;
++
++#define GET_BUILTIN_STR_TABLE
++#include "clang/Basic/BuiltinsZ80.inc"
++#undef GET_BUILTIN_STR_TABLE
++
++static constexpr Builtin::Info BuiltinInfos[] = {
++#define GET_BUILTIN_INFOS
++#include "clang/Basic/BuiltinsZ80.inc"
++#undef GET_BUILTIN_INFOS
++};
++static_assert(std::size(BuiltinInfos) == NumBuiltins);
++
++SmallVector<Builtin::InfosShard> Z80TargetInfo::getTargetBuiltins() const {
++  return {{&BuiltinStrings, BuiltinInfos}};
++}
++
+ Z80TargetInfo::Z80TargetInfo(const llvm::Triple &Triple, const TargetOptions &)
+     : TargetInfo(Triple) {
+   resetDataLayout();
+@@ -156,3 +176,21 @@ bool Z80TargetInfo::isValidFeatureName(StringRef Feature) const {
+   };
+   return llvm::is_contained(Known, Feature);
+ }
++
++bool Z80TargetInfo::initFeatureMap(
++    llvm::StringMap<bool> &Features, DiagnosticsEngine &Diags, StringRef CPU,
++    const std::vector<std::string> &FeaturesVec) const {
++  bool Ok = TargetInfo::initFeatureMap(Features, Diags, CPU, FeaturesVec);
++  // The base Z80 ISA is implied for the z80 triple but not for sm83 (Game Boy),
++  // which has no interrupt modes and no I register. This gates the z80-only
++  // builtins __builtin_z80_im2 / __builtin_z80_set_i (Features = "z80" in
++  // BuiltinsZ80.td) so Sema rejects them on sm83 with a clean diagnostic
++  // instead of a backend cannot-select.
++  if (!getTriple().isSM83())
++    Features["z80"] = true;
++  return Ok;
++}
++
++bool Z80TargetInfo::hasFeature(StringRef Feature) const {
++  return Feature == "z80" ? !getTriple().isSM83() : false;
++}
+diff --git a/clang/lib/Basic/Targets/Z80.h b/clang/lib/Basic/Targets/Z80.h
+index 923b2979dc37..775874b3bf76 100644
+--- a/clang/lib/Basic/Targets/Z80.h
++++ b/clang/lib/Basic/Targets/Z80.h
+@@ -29,9 +29,13 @@ public:
+   void getTargetDefines(const LangOptions &Opts,
+                         MacroBuilder &Builder) const override;
+ 
+-  SmallVector<Builtin::InfosShard> getTargetBuiltins() const override {
+-    return {};
+-  }
++  bool initFeatureMap(llvm::StringMap<bool> &Features, DiagnosticsEngine &Diags,
++                      StringRef CPU,
++                      const std::vector<std::string> &FeaturesVec) const override;
++
++  bool hasFeature(StringRef Feature) const override;
++
++  SmallVector<Builtin::InfosShard> getTargetBuiltins() const override;
+ 
+   BuiltinVaListKind getBuiltinVaListKind() const override {
+     return TargetInfo::VoidPtrBuiltinVaList;
+diff --git a/clang/lib/CodeGen/CGBuiltin.cpp b/clang/lib/CodeGen/CGBuiltin.cpp
+index 233609605fb2..ca824b8fa918 100644
+--- a/clang/lib/CodeGen/CGBuiltin.cpp
++++ b/clang/lib/CodeGen/CGBuiltin.cpp
+@@ -98,6 +98,9 @@ static Value *EmitTargetArchBuiltinExpr(CodeGenFunction *CGF,
+   case llvm::Triple::bpfeb:
+   case llvm::Triple::bpfel:
+     return CGF->EmitBPFBuiltinExpr(BuiltinID, E);
++  case llvm::Triple::z80:
++  case llvm::Triple::sm83:
++    return CGF->EmitZ80BuiltinExpr(BuiltinID, E);
+   case llvm::Triple::dxil:
+     return CGF->EmitDirectXBuiltinExpr(BuiltinID, E);
+   case llvm::Triple::x86:
+diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
+index f0dded5cf3d8..ba258ba84930 100644
+--- a/clang/lib/CodeGen/CMakeLists.txt
++++ b/clang/lib/CodeGen/CMakeLists.txt
+@@ -134,6 +134,7 @@ add_clang_library(clangCodeGen
+   TargetBuiltins/SystemZ.cpp
+   TargetBuiltins/WebAssembly.cpp
+   TargetBuiltins/X86.cpp
++  TargetBuiltins/Z80.cpp
+   TargetInfo.cpp
+   Targets/AArch64.cpp
+   Targets/AMDGPU.cpp
+diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
+index 00294ad547d5..8627849d1392 100644
+--- a/clang/lib/CodeGen/CodeGenFunction.h
++++ b/clang/lib/CodeGen/CodeGenFunction.h
+@@ -5040,6 +5040,7 @@ public:
+   llvm::Value *EmitAArch64BuiltinExpr(unsigned BuiltinID, const CallExpr *E,
+                                       llvm::Triple::ArchType Arch);
+   llvm::Value *EmitBPFBuiltinExpr(unsigned BuiltinID, const CallExpr *E);
++  llvm::Value *EmitZ80BuiltinExpr(unsigned BuiltinID, const CallExpr *E);
+ 
+   llvm::Value *BuildVector(ArrayRef<llvm::Value *> Ops);
+   llvm::Value *EmitX86BuiltinExpr(unsigned BuiltinID, const CallExpr *E);
+diff --git a/clang/lib/CodeGen/TargetBuiltins/Z80.cpp b/clang/lib/CodeGen/TargetBuiltins/Z80.cpp
+new file mode 100644
+index 000000000000..043f38082261
+--- /dev/null
++++ b/clang/lib/CodeGen/TargetBuiltins/Z80.cpp
+@@ -0,0 +1,77 @@
++//===-- Z80.cpp - Emit LLVM Code for Z80 builtins -------------------------===//
++//
++// Part of LLVM-Z80, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++//
++// This file emits Z80 builtin calls as the matching llvm.z80.* intrinsics.
++// ravn/llvm-z80#42.
++//
++//===----------------------------------------------------------------------===//
++
++#include "CodeGenFunction.h"
++#include "clang/Basic/TargetBuiltins.h"
++#include "llvm/IR/IntrinsicsZ80.h"
++
++using namespace clang;
++using namespace CodeGen;
++using namespace llvm;
++
++Value *CodeGenFunction::EmitZ80BuiltinExpr(unsigned BuiltinID,
++                                           const CallExpr *E) {
++  // Each privileged builtin lowers to its side-effecting llvm.z80.* intrinsic.
++  Intrinsic::ID IntID;
++  switch (BuiltinID) {
++  default:
++    return nullptr;
++  case clang::Z80::BI__builtin_z80_di:
++    IntID = Intrinsic::z80_di;
++    break;
++  case clang::Z80::BI__builtin_z80_ei:
++    IntID = Intrinsic::z80_ei;
++    break;
++  case clang::Z80::BI__builtin_z80_halt:
++    IntID = Intrinsic::z80_halt;
++    break;
++  case clang::Z80::BI__builtin_z80_nop:
++    IntID = Intrinsic::z80_nop;
++    break;
++  case clang::Z80::BI__builtin_z80_im0:
++    IntID = Intrinsic::z80_im0;
++    break;
++  case clang::Z80::BI__builtin_z80_im1:
++    IntID = Intrinsic::z80_im1;
++    break;
++  case clang::Z80::BI__builtin_z80_im2:
++    IntID = Intrinsic::z80_im2;
++    break;
++  case clang::Z80::BI__builtin_z80_in: {
++    // unsigned char __builtin_z80_in(unsigned char) -> llvm.z80.in(i8)
++    Value *Port = EmitScalarExpr(E->getArg(0));
++    Function *F =
++        Intrinsic::getOrInsertDeclaration(&CGM.getModule(), Intrinsic::z80_in);
++    return Builder.CreateCall(F, {Port});
++  }
++  case clang::Z80::BI__builtin_z80_out: {
++    // void __builtin_z80_out(unsigned char, unsigned char)
++    //   -> llvm.z80.out(i8 port, i8 value)
++    Value *Port = EmitScalarExpr(E->getArg(0));
++    Value *Val = EmitScalarExpr(E->getArg(1));
++    Function *F =
++        Intrinsic::getOrInsertDeclaration(&CGM.getModule(), Intrinsic::z80_out);
++    return Builder.CreateCall(F, {Port, Val});
++  }
++  case clang::Z80::BI__builtin_z80_set_i: {
++    // void __builtin_z80_set_i(unsigned char) -> llvm.z80.set.i(i8)
++    Value *Val = EmitScalarExpr(E->getArg(0));
++    Function *F =
++        Intrinsic::getOrInsertDeclaration(&CGM.getModule(), Intrinsic::z80_set_i);
++    return Builder.CreateCall(F, {Val});
++  }
++  }
++
++  Function *F = Intrinsic::getOrInsertDeclaration(&CGM.getModule(), IntID);
++  return Builder.CreateCall(F);
++}
+diff --git a/clang/test/CodeGen/z80-builtins-sm83-gate.c b/clang/test/CodeGen/z80-builtins-sm83-gate.c
+new file mode 100644
+index 000000000000..e7d7fc09f260
+--- /dev/null
++++ b/clang/test/CodeGen/z80-builtins-sm83-gate.c
+@@ -0,0 +1,26 @@
++// RUN: %clang_cc1 -triple z80  -emit-llvm -o /dev/null -verify=z80  %s
++// RUN: %clang_cc1 -triple sm83 -emit-llvm -o /dev/null -verify=sm83 %s
++//
++// ravn/llvm-z80#208: __builtin_z80_im0/1/2 (IM n), __builtin_z80_set_i (LD I,A)
++// and __builtin_z80_in/out (IN/OUT) are Z80-only -- SM83 (Game Boy) has no
++// interrupt modes, no I register and no port instructions.
++// They must be rejected on sm83 with a clean frontend diagnostic (gated on the
++// "z80" target feature), while di/ei/halt/nop stay available on both triples.
++//
++// z80-no-diagnostics
++
++void common(void) {
++  __builtin_z80_di();
++  __builtin_z80_ei();
++  __builtin_z80_halt();
++  __builtin_z80_nop();
++}
++
++void z80_only(void) {
++  __builtin_z80_im0();    // sm83-error {{'__builtin_z80_im0' needs target feature z80}}
++  __builtin_z80_im1();    // sm83-error {{'__builtin_z80_im1' needs target feature z80}}
++  __builtin_z80_im2();    // sm83-error {{'__builtin_z80_im2' needs target feature z80}}
++  (void)__builtin_z80_in(0); // sm83-error {{'__builtin_z80_in' needs target feature z80}}
++  __builtin_z80_out(0, 0);   // sm83-error {{'__builtin_z80_out' needs target feature z80}}
++  __builtin_z80_set_i(0); // sm83-error {{'__builtin_z80_set_i' needs target feature z80}}
++}
+diff --git a/clang/test/CodeGen/z80-builtins.c b/clang/test/CodeGen/z80-builtins.c
+new file mode 100644
+index 000000000000..d54e69f82d99
+--- /dev/null
++++ b/clang/test/CodeGen/z80-builtins.c
+@@ -0,0 +1,51 @@
++// RUN: %clang_cc1 -triple z80 -emit-llvm -o - %s | FileCheck %s
++//
++// ravn/llvm-z80#42 — the __builtin_z80_* privileged-instruction builtins must
++// lower to their side-effecting llvm.z80.* intrinsics so C code can emit DI/EI/
++// HALT/NOP/IM 0/1/2/LD I,A/IN/OUT without inline assembly (so that they do not
++// cost the function its static frame; see llvm/test/CodeGen/Z80/static-frames-intrinsics.ll).
++
++// CHECK-LABEL: define {{.*}}void @test_di()
++// CHECK: call void @llvm.z80.di()
++void test_di(void) { __builtin_z80_di(); }
++
++// CHECK-LABEL: define {{.*}}void @test_ei()
++// CHECK: call void @llvm.z80.ei()
++void test_ei(void) { __builtin_z80_ei(); }
++
++// CHECK-LABEL: define {{.*}}void @test_halt()
++// CHECK: call void @llvm.z80.halt()
++void test_halt(void) { __builtin_z80_halt(); }
++
++// CHECK-LABEL: define {{.*}}void @test_nop()
++// CHECK: call void @llvm.z80.nop()
++void test_nop(void) { __builtin_z80_nop(); }
++
++// CHECK-LABEL: define {{.*}}void @test_im0()
++// CHECK: call void @llvm.z80.im0()
++void test_im0(void) { __builtin_z80_im0(); }
++
++// CHECK-LABEL: define {{.*}}void @test_im1()
++// CHECK: call void @llvm.z80.im1()
++void test_im1(void) { __builtin_z80_im1(); }
++
++// CHECK-LABEL: define {{.*}}void @test_im2()
++// CHECK: call void @llvm.z80.im2()
++void test_im2(void) { __builtin_z80_im2(); }
++
++// CHECK-LABEL: define {{.*}}void @test_set_i(
++// CHECK: call void @llvm.z80.set.i(i8
++void test_set_i(unsigned char v) { __builtin_z80_set_i(v); }
++
++// CHECK-LABEL: define {{.*}}i8 @test_in(
++// CHECK: call i8 @llvm.z80.in(i8
++unsigned char test_in(unsigned char p) { return __builtin_z80_in(p); }
++
++// CHECK-LABEL: define {{.*}}void @test_out(
++// CHECK: call void @llvm.z80.out(i8 {{.*}}, i8
++void test_out(unsigned char p, unsigned char v) { __builtin_z80_out(p, v); }
++
++// A constant port stays a constant operand of the intrinsic.
++// CHECK-LABEL: define {{.*}}void @test_out_const(
++// CHECK: call void @llvm.z80.out(i8 16, i8
++void test_out_const(unsigned char v) { __builtin_z80_out(16, v); }
+-- 
+2.53.0
+

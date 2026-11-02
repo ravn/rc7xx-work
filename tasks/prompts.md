@@ -1862,3 +1862,10 @@ Analyser, opsummer, opret issues efter behov, commit og push".
 "hvordan er den rigtige måde at bruge llvmz80's intrinsics?", "undersøg hvor svært det er", "hvad er den rigtige vinkling…?", "lav et issue med den viden du har nu" (→ ravn/llvm-z80#421), "gh logget ind",
 "gem din viden i projektet, analyser og commit og push".
 
+## 2026-11-02 (cont.) — intrinsics/static frames, Opus analysis, S1–S4, firmware
+
+"jeg mener vi fandt ud af at hvis intrinsics lowered til builtins og ikke inline asm så kan nonreentrant godt finde ud af det", "jeg husker nok forkert. jeg ønsker en løsning på at bruge maskinkodeinstruktioner med static frames…",
+"måske skal du bede opus om en analyse?", "bed opus lave en plan", "1 - ikke specificeret, 2 tre forskellige, 3 hvad vil du foreslå?, 4 venter vi med, 5 - forklar fordele og ulemper, 6 - ikke forstået",
+"6 - lav den lokalt og hvis det virker så rykker vi det op, 5 - undersøg og vend tilbage, 3 - målet er at få z88dk til at virke korrekt. Der er ikke andre der bruger det her arbejde førend jeg frigiver det", "fortsæt" (×3),
+"jeg har brug for \"ld i,a\" så den skal virke", "ja, men vær målrettet. jeg skal snart gå", "er der noget inline asm tilbage i autoload?", "byg rcbios", "gem status og ny viden i projektet, commit og push".
+

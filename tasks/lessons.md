@@ -521,3 +521,10 @@ application position counter. Correct earlier reports when evidence changes.
 2. A Bash call with a trailing `&` plus `sleep` that the user rejected had already run `rm` and started `make toolchain` in the background. After a rejection, check `pgrep`/`ls` for side effects before assuming nothing happened.
 3. A claim in CLAUDE.md ("clang ships `<intrinsic.h>`") was true for one branch lineage and stale for the pinned one. Verify with `git grep` at the pinned commit, not by reading the doc.
 
+## 2026-11-02 — TableGen intrinsic names, silent unknown `llvm.*` functions, and measuring before "fixing"
+
+1. `def int_z80_set_i` is spelled `llvm.z80.set.i` in IR (`_` → `.`). A wrong spelling is NOT an error: it is an unknown external function, the call silently disappears and the caller also loses its static frame. Check IR names with `opt -passes=verify -S` (a real intrinsic prints attributes).
+2. Test the *mechanism* before designing a fix: the "intrinsics block static frames" and "inline asm blocks static frames" claims were both half-true on different builds; a four-row table (none/asm/in/halt × two builds) settled it in minutes.
+3. A new lit test must be shown to FAIL without the fix (run it on the old compiler, or remove the line and rebuild). Two tests here were wrong at first (FileCheck `DAG` cannot use a variable defined in the same group; `CHECK-NEXT` breaks on `; %bb.0:` comment lines).
+4. Firmware built against a compiler lacking the builtins fails with `unknown builtin`; check the pinned commit with `git grep` before debugging headers.
+

@@ -1,0 +1,206 @@
+From 2a1f1ab9f81a09bb9f3015f30851451fbd62a621 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thorbj=C3=B8rn=20Ravn=20Andersen?= <tra@ravnand.dk>
+Date: Mon, 2 Nov 2026 10:40:42 +0100
+Subject: [PATCH 1/4] [Z80] Mark llvm.z80.{in,out,halt,di,ei,nop} nocallback
+
+CallGraph adds an edge to CallsExternalNode for every declaration without
+nocallback ("could call anything").  The Z80 intrinsics were plain
+Intrinsic<> with only [IntrNoMem, IntrHasSideEffects], so any function that
+used IN/OUT/DI/EI/HALT/NOP was seen as reaching external code; Z80NonReentrant
+then marked it and everything reachable from the external context as
+reentrant, and no static frame was allocated.
+
+The instructions cannot transfer control into module code (interrupts are
+modelled separately by "interrupt" context roots), so add IntrNoCallback.
+IN/OUT/NOP also get IntrWillReturn; HALT/DI/EI do not (di; halt never
+returns, DI/EI synchronise with interrupts).  IntrNoMem + IntrHasSideEffects
+is kept (memory(unknown) in IR), so they remain full compiler barriers.
+
+New lit test static-frames-intrinsics.ll: static frames incl. a/b overlap and
+an ISR with ei, "nonreentrant" attribute, declaration attributes, and a
+negative control (ordinary external declaration keeps the stack frame).
+Fails without the .td change.
+
+Tests: llvm-lit CodeGen/Z80 157/158 (z88dk-runtime.ll fails identically on
+the base da06bcd8acc2); cargo runtime 462 total / 456 pass / 0 fail / 6 skip,
+per-test results identical to the base.
+
+Rules-checked: lit test added; both test tiers run before/after; local branch,
+not pushed.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+---
+ llvm/include/llvm/IR/IntrinsicsZ80.td         | 30 ++++--
+ .../CodeGen/Z80/static-frames-intrinsics.ll   | 97 +++++++++++++++++++
+ 2 files changed, 121 insertions(+), 6 deletions(-)
+ create mode 100644 llvm/test/CodeGen/Z80/static-frames-intrinsics.ll
+
+diff --git a/llvm/include/llvm/IR/IntrinsicsZ80.td b/llvm/include/llvm/IR/IntrinsicsZ80.td
+index f14395ce0177..f209fbebc828 100644
+--- a/llvm/include/llvm/IR/IntrinsicsZ80.td
++++ b/llvm/include/llvm/IR/IntrinsicsZ80.td
+@@ -10,6 +10,18 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++// None of these instructions can transfer control into code of the module:
++// IN/OUT/NOP/HALT/DI/EI do not call anything, and interrupts are asynchronous
++// (the "interrupt" function attribute models them as separate contexts).
++// IntrNoCallback says so, which keeps the call graph from treating the
++// declaration as "could call anything" (CallGraph.cpp adds an edge to
++// CallsExternalNode for every declaration without nocallback), and so lets
++// Z80NonReentrant keep static frames in functions that use them.
++//
++// IntrNoMem + IntrHasSideEffects is deliberately kept: it yields
++// memory(unknown) in IR, so these stay full compiler barriers (no CSE,
++// hoisting or reordering around volatile accesses).  willreturn is left off
++// HALT/DI/EI (di; halt never returns; DI/EI synchronise with interrupts).
+ let TargetPrefix = "z80" in {  // All intrinsics start with "llvm.z80."
+ 
+   // Port I/O intrinsics
+@@ -18,27 +30,33 @@ let TargetPrefix = "z80" in {  // All intrinsics start with "llvm.z80."
+   // Read a byte from an I/O port
+   // i8 @llvm.z80.in(i8 port)
+   def int_z80_in : Intrinsic<[llvm_i8_ty], [llvm_i8_ty],
+-                             [IntrNoMem, IntrHasSideEffects]>;
++                             [IntrNoMem, IntrHasSideEffects, IntrNoCallback,
++                              IntrWillReturn]>;
+ 
+   // Write a byte to an I/O port
+   // void @llvm.z80.out(i8 port, i8 value)
+   def int_z80_out : Intrinsic<[], [llvm_i8_ty, llvm_i8_ty],
+-                              [IntrNoMem, IntrHasSideEffects]>;
++                              [IntrNoMem, IntrHasSideEffects, IntrNoCallback,
++                               IntrWillReturn]>;
+ 
+   // Halt the CPU (useful for ending programs)
+   // void @llvm.z80.halt()
+-  def int_z80_halt : Intrinsic<[], [], [IntrNoMem, IntrHasSideEffects]>;
++  def int_z80_halt : Intrinsic<[], [], [IntrNoMem, IntrHasSideEffects,
++                                        IntrNoCallback]>;
+ 
+   // Disable interrupts
+   // void @llvm.z80.di()
+-  def int_z80_di : Intrinsic<[], [], [IntrNoMem, IntrHasSideEffects]>;
++  def int_z80_di : Intrinsic<[], [], [IntrNoMem, IntrHasSideEffects,
++                                      IntrNoCallback]>;
+ 
+   // Enable interrupts
+   // void @llvm.z80.ei()
+-  def int_z80_ei : Intrinsic<[], [], [IntrNoMem, IntrHasSideEffects]>;
++  def int_z80_ei : Intrinsic<[], [], [IntrNoMem, IntrHasSideEffects,
++                                      IntrNoCallback]>;
+ 
+   // No operation (useful for timing loops)
+   // void @llvm.z80.nop()
+-  def int_z80_nop : Intrinsic<[], [], [IntrNoMem, IntrHasSideEffects]>;
++  def int_z80_nop : Intrinsic<[], [], [IntrNoMem, IntrHasSideEffects,
++                                       IntrNoCallback, IntrWillReturn]>;
+ 
+ }
+diff --git a/llvm/test/CodeGen/Z80/static-frames-intrinsics.ll b/llvm/test/CodeGen/Z80/static-frames-intrinsics.ll
+new file mode 100644
+index 000000000000..eaa4892af5cd
+--- /dev/null
++++ b/llvm/test/CodeGen/Z80/static-frames-intrinsics.ll
+@@ -0,0 +1,97 @@
++; RUN: rm -rf %t && split-file %s %t
++; RUN: llc -mtriple=z80 -O1 -z80-static-frames -verify-machineinstrs < %t/pos.ll | FileCheck %s --check-prefix=POS
++; RUN: llc -mtriple=z80 -O1 -z80-static-frames -print-after=z80-nonreentrant -o /dev/null < %t/pos.ll 2>&1 | FileCheck %s --check-prefix=ATTR
++; RUN: opt -passes=verify -S < %t/pos.ll | FileCheck %s --check-prefix=DECL
++; RUN: llc -mtriple=z80 -O1 -z80-static-frames -verify-machineinstrs < %t/neg.ll | FileCheck %s --check-prefix=NEG
++
++; The llvm.z80.* intrinsics cannot call back into the module, so they must be
++; declared nocallback.  Without that, CallGraph.cpp gives the declaration an
++; edge to CallsExternalNode ("could call anything"), Z80NonReentrant sees every
++; externally callable function reachable from it, and no function that uses
++; IN/OUT/DI/EI/HALT/NOP can have a static frame.
++;
++; C equivalent of the positive module (through the intrinsics):
++;   void a(void) { volatile char buf[8]; buf[0] = 1; nop(); }
++;   void b(void) { volatile char buf[8]; buf[0] = 2; }
++;   int main(void) { volatile int v = 1; port_out(5, port_in(4)); di(); ei();
++;                    a(); b(); halt(); return v; }
++;   void isr(void) __attribute__((interrupt)) { volatile int v = 7; ei(); }
++
++;--- pos.ll
++declare i8 @llvm.z80.in(i8)
++declare void @llvm.z80.out(i8, i8)
++declare void @llvm.z80.halt()
++declare void @llvm.z80.di()
++declare void @llvm.z80.ei()
++declare void @llvm.z80.nop()
++
++define void @a() {
++  %buf = alloca [8 x i8], align 1
++  store volatile i8 1, ptr %buf, align 1
++  call void @llvm.z80.nop()
++  ret void
++}
++
++define void @b() {
++  %buf = alloca [8 x i8], align 1
++  store volatile i8 2, ptr %buf, align 1
++  ret void
++}
++
++define i16 @main() {
++  %buf = alloca i16, align 1
++  store volatile i16 1, ptr %buf, align 1
++  %x = call i8 @llvm.z80.in(i8 4)
++  call void @llvm.z80.out(i8 5, i8 %x)
++  call void @llvm.z80.di()
++  call void @llvm.z80.ei()
++  call void @a()
++  call void @b()
++  call void @llvm.z80.halt()
++  %v = load volatile i16, ptr %buf, align 1
++  ret i16 %v
++}
++
++define void @isr() #0 {
++  %buf = alloca i16, align 1
++  store volatile i16 7, ptr %buf, align 1
++  call void @llvm.z80.ei()
++  ret void
++}
++
++attributes #0 = { "interrupt" }
++
++; Everything keeps a static frame, and a and b (never active together) overlap.
++; POS-DAG: L_main.frame = L___static_frames
++; POS-DAG: L_isr.frame = L___static_frames
++; POS-DAG: L_a.frame = L___static_frames+[[OFF:[0-9]+]]
++; POS-DAG: L_b.frame = L___static_frames+[[OFF]]
++; POS-NOT: add hl,sp
++
++; The pass proves main non-recursive and non-reentrant.
++; ATTR: define i16 @main() #[[M:[0-9]+]]
++; ATTR: attributes #[[M]] = { {{.*}}"nonreentrant"
++
++; The declarations carry nocallback (IN/OUT/NOP also willreturn); HALT/DI/EI
++; must not claim willreturn.
++; DECL: declare i8 @llvm.z80.in(i8) #[[IN:[0-9]+]]
++; DECL: declare void @llvm.z80.halt() #[[H:[0-9]+]]
++; DECL: declare void @llvm.z80.nop() #[[IN]]
++; DECL-DAG: attributes #[[IN]] = { nocallback nounwind willreturn }
++; DECL-DAG: attributes #[[H]] = { nocallback nounwind }
++
++;--- neg.ll
++; Negative control: an ordinary external declaration (no nocallback) still
++; means "could call anything", so main keeps a stack frame.
++declare void @ext()
++
++define i16 @main() {
++  %buf = alloca i16, align 1
++  store volatile i16 1, ptr %buf, align 1
++  call void @ext()
++  %v = load volatile i16, ptr %buf, align 1
++  ret i16 %v
++}
++
++; NEG-NOT: L_main.frame
++; NEG: add hl,sp
+-- 
+2.53.0
+

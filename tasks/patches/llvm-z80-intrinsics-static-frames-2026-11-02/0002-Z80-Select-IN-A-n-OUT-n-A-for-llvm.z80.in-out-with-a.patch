@@ -1,0 +1,229 @@
+From 7072c68396f452c83682ce1de2570cd71f87b6bc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thorbj=C3=B8rn=20Ravn=20Andersen?= <tra@ravnand.dk>
+Date: Mon, 2 Nov 2026 10:46:40 +0100
+Subject: [PATCH 2/4] [Z80] Select IN A,(n) / OUT (n),A for llvm.z80.in/out
+ with a constant port
+
+The z80_in/z80_out selection always copied the port into C and emitted
+IN r,(C) / OUT (C),r, even for a constant port: LD C,n + IN/OUT (C),r is 4
+bytes where IN A,(n) / OUT (n),A is 2.
+
+When the port operand is a G_CONSTANT, emit IN_A_n / OUT_n_A (with a COPY
+from/to A).  A variable port keeps the (C) forms.  IN_A_n and OUT_n_A had no
+register effects at all; give them Defs=[A] / Uses=[A] (IN A,(n) leaves the
+flags unchanged, so no FLAGS def).
+
+The upper address byte (A15-A8) is A for the (n) forms and B for the (C)
+forms; document it as unspecified for an 8-bit port number.
+
+Measured on six small functions (instruction sizes incl. ret): rd 5->3,
+wr 7->5, wrv 5->3, poll 9->7, two 10->9, echo (variable port) 6->6;
+the old column comes from an llc built from a revision that always used the
+(C) form.  llvm-objdump shows db 10 / d3 11.
+
+New lit test port-io-immediate.ll (MIR + asm, polling loop, variable-port
+control); fails on the old compiler.  llvm-lit CodeGen/Z80: 158/159
+(z88dk-runtime.ll fails identically on the base); cargo runtime 462 total /
+456 pass / 0 fail / 6 skip, per-test results identical to the base.
+
+Refs ravn/llvm-z80#421.
+
+Rules-checked: lit test added; both test tiers run before/after; local branch,
+not pushed.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+---
+ llvm/include/llvm/IR/IntrinsicsZ80.td         |  5 +-
+ llvm/lib/Target/Z80/Z80InstrInfo.td           |  2 +
+ .../lib/Target/Z80/Z80InstructionSelector.cpp | 32 ++++++-
+ llvm/test/CodeGen/Z80/port-io-immediate.ll    | 88 +++++++++++++++++++
+ 4 files changed, 122 insertions(+), 5 deletions(-)
+ create mode 100644 llvm/test/CodeGen/Z80/port-io-immediate.ll
+
+diff --git a/llvm/include/llvm/IR/IntrinsicsZ80.td b/llvm/include/llvm/IR/IntrinsicsZ80.td
+index f209fbebc828..a487bec8aa9b 100644
+--- a/llvm/include/llvm/IR/IntrinsicsZ80.td
++++ b/llvm/include/llvm/IR/IntrinsicsZ80.td
+@@ -25,7 +25,10 @@
+ let TargetPrefix = "z80" in {  // All intrinsics start with "llvm.z80."
+ 
+   // Port I/O intrinsics
+-  // These map directly to Z80 IN and OUT instructions
++  // These map directly to Z80 IN and OUT instructions.  The port number is
++  // 8 bits; what is driven on the upper address lines A15-A8 is unspecified
++  // (a constant port selects IN A,(n)/OUT (n),A, which put A there; a
++  // variable port selects IN r,(C)/OUT (C),r, which put B there).
+ 
+   // Read a byte from an I/O port
+   // i8 @llvm.z80.in(i8 port)
+diff --git a/llvm/lib/Target/Z80/Z80InstrInfo.td b/llvm/lib/Target/Z80/Z80InstrInfo.td
+index 580bcaf26140..2cc105ed5ed8 100644
+--- a/llvm/lib/Target/Z80/Z80InstrInfo.td
++++ b/llvm/lib/Target/Z80/Z80InstrInfo.td
+@@ -221,11 +221,13 @@ def RETN : InstED8<"retn", 0x45>, InstReturn;
+ // IN A,(n)
+ def IN_A_n : Inst16<"in a,", 0xDB, PortMode> {
+   let AsmString = "in a, ( $imm )";
++  let Defs = [A];   // flags are unchanged, unlike IN r,(C)
+ }
+ 
+ // OUT (n),A
+ def OUT_n_A : Inst16<"out", 0xD3, PortMode> {
+   let AsmString = "out ( $imm ), a";
++  let Uses = [A];
+ }
+ 
+ // IN r,(C) - ED prefixed (sets flags)
+diff --git a/llvm/lib/Target/Z80/Z80InstructionSelector.cpp b/llvm/lib/Target/Z80/Z80InstructionSelector.cpp
+index 8dc926b2d709..2812fb392e32 100644
+--- a/llvm/lib/Target/Z80/Z80InstructionSelector.cpp
++++ b/llvm/lib/Target/Z80/Z80InstructionSelector.cpp
+@@ -3947,11 +3947,24 @@ bool Z80InstructionSelector::select(MachineInstr &MI) {
+       Register DstReg = MI.getOperand(0).getReg();
+       Register PortReg = MI.getOperand(2).getReg();
+ 
++      if (!RBI.constrainGenericRegister(DstReg, Z80::GR8RegClass, MRI))
++        return false;
++
++      // Constant port: IN A,(n) is 2 bytes and needs no LD C,n.  The upper
++      // address byte (A15-A8) is the contents of A here, B for the (C) form;
++      // it is unspecified for an 8-bit port number either way.
++      if (auto Port = getIConstantVRegVal(PortReg, MRI)) {
++        BuildMI(MBB, MI, MI.getDebugLoc(), TII.get(Z80::IN_A_n))
++            .addImm(Port->getZExtValue() & 0xFF);
++        BuildMI(MBB, MI, MI.getDebugLoc(), TII.get(TargetOpcode::COPY), DstReg)
++            .addReg(Z80::A);
++        MI.eraseFromParent();
++        return true;
++      }
++
+       // Constrain port register to C
+       if (!RBI.constrainGenericRegister(PortReg, Z80::GR8RegClass, MRI))
+         return false;
+-      if (!RBI.constrainGenericRegister(DstReg, Z80::GR8RegClass, MRI))
+-        return false;
+ 
+       // Move port to C if not already there
+       BuildMI(MBB, MI, MI.getDebugLoc(), TII.get(TargetOpcode::COPY), Z80::C)
+@@ -3970,11 +3983,22 @@ bool Z80InstructionSelector::select(MachineInstr &MI) {
+       Register PortReg = MI.getOperand(1).getReg();
+       Register ValueReg = MI.getOperand(2).getReg();
+ 
++      if (!RBI.constrainGenericRegister(ValueReg, Z80::GR8RegClass, MRI))
++        return false;
++
++      // Constant port: OUT (n),A is 2 bytes and needs no LD C,n.
++      if (auto Port = getIConstantVRegVal(PortReg, MRI)) {
++        BuildMI(MBB, MI, MI.getDebugLoc(), TII.get(TargetOpcode::COPY), Z80::A)
++            .addReg(ValueReg);
++        BuildMI(MBB, MI, MI.getDebugLoc(), TII.get(Z80::OUT_n_A))
++            .addImm(Port->getZExtValue() & 0xFF);
++        MI.eraseFromParent();
++        return true;
++      }
++
+       // Constrain registers
+       if (!RBI.constrainGenericRegister(PortReg, Z80::GR8RegClass, MRI))
+         return false;
+-      if (!RBI.constrainGenericRegister(ValueReg, Z80::GR8RegClass, MRI))
+-        return false;
+ 
+       // Move port to C
+       BuildMI(MBB, MI, MI.getDebugLoc(), TII.get(TargetOpcode::COPY), Z80::C)
+diff --git a/llvm/test/CodeGen/Z80/port-io-immediate.ll b/llvm/test/CodeGen/Z80/port-io-immediate.ll
+new file mode 100644
+index 000000000000..790433f53284
+--- /dev/null
++++ b/llvm/test/CodeGen/Z80/port-io-immediate.ll
+@@ -0,0 +1,88 @@
++; RUN: llc -mtriple=z80 -O2 -stop-after=instruction-select < %s | FileCheck %s --check-prefix=MIR
++; RUN: llc -verify-machineinstrs -mtriple=z80 -O2 < %s | FileCheck %s
++;
++; A constant port number selects IN A,(n) / OUT (n),A (2 bytes, no LD C,n).
++; A variable port keeps IN r,(C) / OUT (C),r (see port-io-any-register.ll).
++; The upper address byte (A15-A8) is unspecified for an 8-bit port number.
++;
++; C equivalent (through the intrinsics):
++;   u8   rd(void)       { return port_in(16); }
++;   void wr(void)       { port_out(17, 65); }
++;   void wrv(u8 v)      { port_out(16, v); }
++;   void poll(void)     { while (!(port_in(16) & 1)) ; }
++;   u8   two(void)      { return port_in(16) + port_in(17); }
++;   void echo(u8 p)     { port_out(p, port_in(p)); }
++
++declare i8 @llvm.z80.in(i8)
++declare void @llvm.z80.out(i8, i8)
++
++; MIR-LABEL: name: rd
++; MIR:       IN_A_n 16, implicit-def $a
++; CHECK-LABEL: _rd:
++; CHECK:       in a,(16)
++; CHECK-NEXT:  ret
++define i8 @rd() {
++  %v = call i8 @llvm.z80.in(i8 16)
++  ret i8 %v
++}
++
++; MIR-LABEL: name: wr
++; MIR:       OUT_n_A 17, implicit $a
++; CHECK-LABEL: _wr:
++; CHECK:       ld a,65
++; CHECK-NEXT:  out (17),a
++define void @wr() {
++  call void @llvm.z80.out(i8 17, i8 65)
++  ret void
++}
++
++; The value is already in A, so the whole function is one instruction.
++; CHECK-LABEL: _wrv:
++; CHECK:       out (16),a
++; CHECK-NEXT:  ret
++define void @wrv(i8 %v) {
++  call void @llvm.z80.out(i8 16, i8 %v)
++  ret void
++}
++
++; The port is re-read on every iteration; nothing is hoisted out of the loop.
++; CHECK-LABEL: _poll:
++; CHECK:       [[L:\.LBB[0-9_]+]]:
++; CHECK:       in a,(16)
++; CHECK:       jr z,[[L]]
++define void @poll() {
++entry:
++  br label %loop
++loop:
++  %v = call i8 @llvm.z80.in(i8 16)
++  %b = and i8 %v, 1
++  %z = icmp eq i8 %b, 0
++  br i1 %z, label %loop, label %done
++done:
++  ret void
++}
++
++; Both reads are kept, in order.
++; CHECK-LABEL: _two:
++; CHECK:       in a,(16)
++; CHECK:       in a,(17)
++define i8 @two() {
++  %a = call i8 @llvm.z80.in(i8 16)
++  %b = call i8 @llvm.z80.in(i8 17)
++  %c = add i8 %a, %b
++  ret i8 %c
++}
++
++; Control: a variable port still uses the (C) forms.
++; MIR-LABEL: name: echo
++; MIR:       IN8_C
++; MIR:       OUT8_C
++; CHECK-LABEL: _echo:
++; CHECK:       ld c,a
++; CHECK-NEXT:  in [[R:[a-z]]],(c)
++; CHECK-NEXT:  out (c),[[R]]
++define void @echo(i8 %p) {
++  %v = call i8 @llvm.z80.in(i8 %p)
++  call void @llvm.z80.out(i8 %p, i8 %v)
++  ret void
++}
+-- 
+2.53.0
+
