@@ -108,6 +108,25 @@ rejects `-piob cpnet_bridge`; `_check-mame-irq` confirms its source tree lacks
 committed locally as `adca21931a5f` on the isolated branch; it remains absent
 from the primary checkout.
 
+### 2026-11-03 final compiler and firmware validation
+
+The branch commit `adca21931a5f` is present on origin's
+`fix/cpnos-lto-null-streamer`. Rebuilt the isolated S4 toolchain in
+`scratch-unused/build-macos-asserts`; its generated Ninja rules invoked the
+workspace ccache wrapper. Cache delta for this isolated build was 6 hits and
+101 misses from 107 cacheable calls.
+
+The module-assembly C reproducer compiled with and without debug info, and
+`llvm-nm` reported `_alias` and `_f` from both bitcode outputs. With the
+rebuilt S4 tools, forced Makefile builds all passed: autoload PROM 2035 B,
+rcbios BIOS 5761 B, and cpnos PROM1 artifact 2048 B (Makefile-padded to the
+2 KB cap). The cpnos invocation used `TRANSPORT=pio-irq`,
+`CPNOS_DEFAULT_DRIVE=0x04`, and `MIRROR_SIOB=1`; its ZX0 round trips passed.
+No MAME boot was run; the configured MAME checkout has no `cpnet_bridge.cpp`
+and the boot gate remains blocked. Existing tracking is
+`ravn/llvm-z80#411` for the streamer/LTO issue and
+`ravn/mame-rc702-rc759-rc750#50` / `#54` for the parked bridge work.
+
 1. **cpnos MAME boot gate** when a bridge-enabled emulator is available (currently blocked; details above). 2. Switch autoload `set_i_reg`/`intrinsic_im_2` to `__builtin_z80_set_i/im2`, measure bytes
 and the MAME boot gate via Makefile targets, compare with the inline-asm version (plan stage S5). 3. `intrinsic_*` mapping
 for clang in `z88dk/include/intrinsic.h` (`#if defined(__LLVMZ80) || defined(__CLANG)` block, currently only `intrinsic_label`),
