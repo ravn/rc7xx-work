@@ -49,16 +49,66 @@ without the fix. Quick demo that must keep working (C → asm, static frame kept
 ## Firmware status with the S4 clang (make targets only — NEVER run mame directly)
 - `make -C rc700-gensmedet/autoload-in-c prom` → OK, 2035 B (cap 2048). Boot gate NOT run yet (`make mame` in that dir).
 - `make -C rc700-gensmedet/rcbios-in-c bios` → OK, 5761 B (CLAUDE.md says 5462 B from June; +299 B unexplained). Boot test NOT run.
-- `make -C rc700-gensmedet/cpnos-in-c prom1-lineprog COMPILER=clang` → **FAILS**: (a) attribute `z80_preserves_regs`
-  (commit `70eed199d837`, not on main; ignored with a warning) and (b) backend `report_fatal_error` "target did not
-  implement null MCTargetStreamer" when compiling `src/snios_c.c`, `src/transport_pio.c` with `-flto -g -Oz ... +static-frame`
-  (cause unknown — start by bisecting flags / checking the `-g` + inline-asm path; CMake note "exclude llvm-mc-affected sources").
+- `make -C rc700-gensmedet/cpnos-in-c prom1-lineprog COMPILER=clang` had failed compiling
+  `src/snios_c.c` and `src/transport_pio.c` with "target did not implement null MCTargetStreamer".
+  The isolated S4 fix makes both object compilations pass with `-flto -g`; `z80_preserves_regs`
+  (commit `70eed199d837`, not on main) is still ignored with a warning. The full PROM build
+  now passes at 2024/2048 bytes; the MAME boot remains blocked by the configured emulator's
+  missing `cpnet_bridge` device (details below).
 - Headers using the builtins: `autoload-in-c/rom.h`, `autoload-in-c/clang/intrinsic.h`, `rcbios-in-c/hal.h`,
   `rcbios-in-c/clang/intrinsic.h`, `cpnos-in-c/src/hal.h`, `cpnos-in-c/compiler/compat.h`. Inline asm still in autoload:
   replaceable `clang/intrinsic.h:28` (`ld i,a`) and `rom.h:295` (`im 2`); not replaceable: `jump_to` (rom.h:144), `SET_SP`, ISRs, boot_rom.c layout asm.
 
 ## Open tasks, in priority order
-1. **cpnos build** (above). 2. Switch autoload `set_i_reg`/`intrinsic_im_2` to `__builtin_z80_set_i/im2`, measure bytes
+
+### Mac continuation, 2026-11-02
+
+The cpnos fatal error also reproduces on clean PR112 clang `042a1d72651c`.
+The minimal input is `repro/module-asm-lto.c` in the backup patch directory.
+Both commands fail with `target did not implement null MCTargetStreamer`:
+
+```bash
+scratch/llvmz80-pr112-build-20261101/bin/clang --target=z80 -Oz -flto -g -c tasks/patches/llvm-z80-intrinsics-static-frames-2026-11-02/repro/module-asm-lto.c -o scratch/tmp/module-asm-lto.bc
+scratch/llvmz80-pr112-build-20261101/bin/clang --target=z80 -Oz -flto -c tasks/patches/llvm-z80-intrinsics-static-frames-2026-11-02/repro/module-asm-lto.c -o scratch/tmp/module-asm-lto-nog.bc
+```
+
+Thus `-g` is not necessary for this failure.
+A control with function-body `__asm__ volatile("nop")` passes with and without `-g`, under LTO.
+The crash occurs during `BitcodeWriterPass`, through `ModuleSymbolTable::CollectAsmSymbols`.
+Confirmed on S4 by the before/after lit test: Z80 lacked a null target-streamer
+registration, which `ModuleSymbolTable.cpp` requires when scanning module assembly.
+
+Existing work located after the user's reminder:
+- `work/null-target-streamer`: regression test `af64d7c7ac61`, fix `2f64893170a8`.
+- `work/inline-compatible-single-use` also contains `2f64893170a8`.
+- `work/experiment-intrinsics`: alternative subclass implementation `ab18f4f51b4f`.
+The old test checks bitcode symbol extraction with `llvm-nm` for Z80 and SM83.
+S4 does not contain `2f64893170a8`.
+Reuse and revalidate the existing test and fix rather than implementing another version.
+
+Reused the minimal five-line registration from `2f64893170a8` on isolated
+branch `fix/cpnos-lto-null-streamer` at `5746100bc287`.
+The worktree is `llvm-z80/scratch-unused`.
+Added `llvm/test/CodeGen/Z80/module-asm-symbols.ll`, with Z80, SM83 and
+`opt -module-summary` checks.
+The test failed before the fix with the null-streamer fatal error.
+After rebuilding `llvm-nm`, `opt`, `clang`, `llc`, and the lit helpers, focused
+lit passed all four RUN lines. The original C reproducer also compiled to
+bitcode with and without `-g`; `llvm-nm` listed `_alias` and `_f` in both.
+The full Z80 CodeGen suite passed 160/161 tests; the sole failure,
+`z88dk-runtime.ll`, is recorded as pre-existing on the S4 base.
+The two cpnos objects that failed before (`snios_c.c` and `transport_pio.c`)
+also compile with the S4 clang, `-flto`, and `-g`. On 2026-11-03, the full
+PROM1 build passed with `TRANSPORT=pio-irq`, `CPNOS_DEFAULT_DRIVE=0x04`,
+and `MIRROR_SIOB=1`: 2024/2048 bytes (24 free); both ZX0 round-trips passed.
+Round-trip artifacts were redirected to workspace scratch for this run.
+A no-autoboot MAME boot attempt was blocked because the configured emulator
+rejects `-piob cpnet_bridge`; `_check-mame-irq` confirms its source tree lacks
+`cpnet_bridge.cpp`. No boot result is verified. The compiler change is
+committed locally as `adca21931a5f` on the isolated branch; it remains absent
+from the primary checkout.
+
+1. **cpnos MAME boot gate** when a bridge-enabled emulator is available (currently blocked; details above). 2. Switch autoload `set_i_reg`/`intrinsic_im_2` to `__builtin_z80_set_i/im2`, measure bytes
 and the MAME boot gate via Makefile targets, compare with the inline-asm version (plan stage S5). 3. `intrinsic_*` mapping
 for clang in `z88dk/include/intrinsic.h` (`#if defined(__LLVMZ80) || defined(__CLANG)` block, currently only `intrinsic_label`),
 guarded with `__has_builtin`; z88dk's `intrinsic_*` are otherwise real `extern` calls (= external calls, lose static frames).

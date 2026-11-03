@@ -528,3 +528,18 @@ application position counter. Correct earlier reports when evidence changes.
 3. A new lit test must be shown to FAIL without the fix (run it on the old compiler, or remove the line and rebuild). Two tests here were wrong at first (FileCheck `DAG` cannot use a variable defined in the same group; `CHECK-NEXT` breaks on `; %bb.0:` comment lines).
 4. Firmware built against a compiler lacking the builtins fails with `unknown builtin`; check the pinned commit with `git grep` before debugging headers.
 
+## 2026-11-01 — Distinguish `/tmp` from authorized workspace scratch
+
+A restriction on `/tmp` does not prohibit temporary files under an explicitly
+authorized workspace path such as `/Users/ravn/z80/scratch/tmp`. When the user
+clarifies the allowed scratch path, update any incorrect blocker notes and
+resume the tests there instead of treating all temporary directories as banned.
+
+## 2026-11-02 — Search branch history before recreating a compiler fix
+
+The null target streamer failure already had a test and fix on `work/null-target-streamer`.
+Before implementing a reproduced failure, search `git log --all` and workspace plans for existing work.
+Check whether the current base contains that fix, then reuse and revalidate it.
+For LTO failures involving module-level assembly, cover the target's null streamer
+path with a regression test that fails on the unmodified base; separately test
+the original reproducer and affected source files after rebuilding the tools.

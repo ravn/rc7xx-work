@@ -1869,3 +1869,8 @@ Analyser, opsummer, opret issues efter behov, commit og push".
 "6 - lav den lokalt og hvis det virker så rykker vi det op, 5 - undersøg og vend tilbage, 3 - målet er at få z88dk til at virke korrekt. Der er ikke andre der bruger det her arbejde førend jeg frigiver det", "fortsæt" (×3),
 "jeg har brug for \"ld i,a\" så den skal virke", "ja, men vær målrettet. jeg skal snart gå", "er der noget inline asm tilbage i autoload?", "byg rcbios", "gem status og ny viden i projektet, commit og push".
 
+
+## 2026-11-03 — Null target streamer and missing cpnos tests
+
+> gem din nye viden i projektet, commit og push
+> kør de manglende test

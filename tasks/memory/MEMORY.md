@@ -69,7 +69,7 @@
 - **[Read Z80.cmake header before improvising cmake call](feedback_read_cmake_cache_header.md) — HARD: flagene -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON står i Z80.cmake linje 4-5, læs før ad-hoc configure**
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
 - **[Compiler builds](feedback_parallel_compiler_builds.md) — genbrug builddir + ccache efter branchskift; separat kun til samtidige versioner**
-- **[llvm-z80 intrinsics + static frames S1–S4](project_z80_intrinsics_static_frames_2026-11-02.md) — LOCAL branches s1..s4, patches in tasks/patches; firmware status; open items**
+- [S1–S4 intrinsics](project_z80_intrinsics_static_frames_2026-11-02.md); [LTO module asm](reference_module_asm_null_target_streamer.md)
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
 - **[pgrep BEFORE every new build](feedback_check_pgrep_before_ninja.md) — HARD: `pgrep -f ninja` first; empty task-output ≠ not started; if PID exists → wait, never start another**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
