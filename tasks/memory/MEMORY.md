@@ -1,6 +1,5 @@
 <!-- CANONICAL: tasks/memory/MEMORY.md. Read at session start (CLAUDE.md §Memory).
-     Separate files: MEMORY_LAYOUT.md (§3), MEMORY_CODEGEN.md (§5), MEMORY_PARKED.md (RC759/one-offs).
-     Hard limit: ~180 lines. Every entry ≤130 chars. Never write to ~/.claude/. -->
+     Separate files: MEMORY_LAYOUT.md (§3), MEMORY_CODEGEN.md (§5), MEMORY_PARKED.md; ~180 lines, entries ≤130 chars; never ~/.claude/. -->
 <!-- **HARD** = rule with documented damage or session-ending failure. Other rules: important but lower blast radius. -->
 
 ## 0. ABSOLUTE BAN — check before EVERY find/ls/grep/gh/git-push
@@ -71,6 +70,7 @@
 - **[Compiler builds](feedback_parallel_compiler_builds.md) — genbrug builddir + ccache efter branchskift; separat kun til samtidige versioner**
 - [S1–S4 intrinsics](project_z80_intrinsics_static_frames_2026-11-02.md); [LTO module asm](reference_module_asm_null_target_streamer.md)
 - **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
+- **[Gem fuld ninja-log](feedback_save_full_ninja_log.md) — HARD: aldrig pipe ninja til grep/tail i background; gem til scratch/tmp/build-<target>.log og grep bagefter**
 - **[pgrep BEFORE every new build](feedback_check_pgrep_before_ninja.md) — HARD: `pgrep -f ninja` first; empty task-output ≠ not started; if PID exists → wait, never start another**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
 - **[ld.lld LTO bypasses addIRPasses](reference_lld_lto_bypasses_addIRPasses.md) — HARD: `-flto` under ld.lld does NOT run custom Z80PassConfig passes (incl. NonReentrant) → silent static-frame regression**
@@ -119,6 +119,7 @@
 - **[No DOTALL backtracking on source](feedback_no_dotall_backtracking.md) — HARD: no re.DOTALL + non-greedy over multi-line source; kill scans >10s**
 - **[NEVER unquoted === in shell](feedback_no_double_equals.md) — HARD: zsh silently truncates; use `---` as separator**
 - **[NEVER use sed to view files](feedback_no_sed_to_view_files.md) — HARD: use view_file with StartLine/EndLine, NEVER sed shell pipes**
+- **[Python pakker: altid i venv](feedback_python_use_venv.md) — brug kun system-wide pakker der allerede findes; nye pakker SKAL i venv, aldrig `pip install` system-wide**
 
 ## 8. Test / debug discipline
 
@@ -176,5 +177,8 @@
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, /home/ravn/z80, headless; upstream LLVM at ~/llvm-upstream/
 - [Memory lives in tasks/memory/](feedback_no_claude_memory.md) — canonical here; NEVER ~/.claude/; also MEMORY_LAYOUT.md + MEMORY_CODEGEN.md + MEMORY_PARKED.md
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3** · **[Validate full feedback loop on first contradiction](feedback_validate_full_feedback_loop.md) — early gate before the fingerprint rule: verify artifact mtime/hash before forming any new hypothesis**
+
+- [Rebase 2026-11-13](project_llvm_z80_rebase_20261113.md) — main rebased til upstream/main; 16 ravn+6 zlfn-WIP commits; z88dk-wip branch; reimpl-plan
+- [Reimplementeringsplan](../llvm-z80/tasks/plan-ravn-commits-reimplementation.md) — 17-trins plan fra upstream/main; Fase 7 = #74 no-callback (kræver fork-owner go-ahead)
 
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->

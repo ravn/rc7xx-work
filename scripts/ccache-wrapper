@@ -1,0 +1,6 @@
+#!/bin/sh
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+export CCACHE_CONFIGPATH="$PROJECT_ROOT/ccache.conf"
+exec "$PROJECT_ROOT/ccache/build/ccache" "$@"

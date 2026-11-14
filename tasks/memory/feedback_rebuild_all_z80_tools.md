@@ -52,6 +52,13 @@ prints confirmed BOTH paths reach `Dir=LDDR` once the binaries match.
 test invoke?* and confirm it was in the last `ninja` target list.  LTO /
 PROM / `-flto` ⇒ `ld.lld`.  When in doubt, build all three.
 
+**Extended rule for rebase / Triple.h edits (2026-11-13):** If a commit touches
+`llvm/include/llvm/TargetParser/Triple.h`, `llvm/include/llvm/IR/RuntimeLibcalls.td`,
+or `llvm/include/llvm/BinaryFormat/ELF.h`, rebuild ALL tools — not just clang+llc.
+In the 2026-11-13 rebase, stale `ld.lld` (from 3-nov) produced ELF flags=0x0
+(instead of 0x1=Z80) causing z80-run to reject all executables. ccache hits from
+old `Triple.h` masked the issue for one build cycle before it surfaced.
+
 **Extended rule for LLVM core lib edits (2026-09-25):** If a commit touches
 `llvm/lib/Transforms/Utils/BuildLibCalls.cpp`, `llvm/lib/Analysis/TargetLibraryInfo.cpp`,
 or other core libs, ALSO rebuild `opt`:

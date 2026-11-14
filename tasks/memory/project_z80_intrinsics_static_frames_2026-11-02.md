@@ -22,7 +22,9 @@ metadata:
 - Build in the existing `llvm-z80/build-linux` (same path → ccache hits); the checkout now sits on branch `s4/…`; restore the pin with `git switch --detach da06bcd8acc2`. See [[feedback_ccache_llvm_build]].
 - `z80_rt.a` must be built explicitly: `ninja -C llvm-z80/build-linux lib/z80/z80_rt.a` (rcbios link needs it).
 
-**Firmware with the S4 clang (2026-11-02):** autoload `make prom` OK, 2035 B (cap 2048). rcbios `make bios` OK, 5761 B (CLAUDE.md's 5462 B is from June; cause of +299 B not investigated; no boot test run). cpnos `make prom1-lineprog` FAILS: attribute `z80_preserves_regs` (commit `70eed199d837`, absent on main → ignored) and a backend `report_fatal_error` "target did not implement null MCTargetStreamer" with `-flto -g` (cause unknown). NO MAME boot gate run yet — use Makefile targets only.
+**Firmware with the S4 clang (2026-11-02, gammel main):** autoload OK, 2035 B. rcbios OK, 5761 B. cpnos FAILS (MCTargetStreamer + z80_preserves_regs). No MAME boot gate run.
+
+**Firmware with the S4 clang (2026-11-14, ny main rebased oven på upstream/main `0331c1ca`):** autoload OK, **1920 B** (−115 B vs gammel main). rcbios OK, **5675 B** (−86 B vs gammel main). cpnos still FAILS (same MCTargetStreamer error). No MAME boot gate run. The gains come from upstream #134/#135 (PUSH/POP spills) and #136–#139 (tail calls).
 
 **Inline asm left in autoload:** replaceable by builtins: `clang/intrinsic.h:28` (`ld i,a`), `rom.h:295` (`im 2`). Not replaceable: `jump_to` (`push;ret`, rom.h:144), `SET_SP`, ISRs (`rom.c`), boot_rom.c layout asm. #413 stays until all asm is migrated (user: wait).
 

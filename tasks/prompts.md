@@ -1,5 +1,26 @@
 # Prompts
 
+## 2026-11-14 (upstream aktivitet + reimplementeringsplan)
+
+> der er en del aktivitet på issues upstream
+> betyder det er at noget af det arbejde der har været lavet nu er gjort overflødigt?
+> forklar push/pop spill i upstream
+> er vores rettelser i forhold ti main af en kvalitet vi kan tillade os at sende afsted? Jeg er især interesseret i at al ny kode skal have et testcase i c der viser problemet
+> jeg har ikke tokens nok til at kunne fikse det med dig her og nu. jeg vil derfor gerne have du laver en plan med opus for hvordan det her skal reimplementeres fra upstream master som antigravty ai kan implementere på ny. Funktionalitet upstream har skal prioriteres, funktionalitet upstrream har tænkt sig skal overvejes. Hvis autoload eller rcbios skal ændres for at give en bedre løsning, må det gerne overvejes. Instruktionerne skal være i projektet
+> 1 - jeg synes vi skal give et forslag til implementering af 74, 2 forklar z88dk stakken?, 3 hvilket commit, 4 forklar
+> browse #74
+> du må ikke skrive kommentar på #74, forklar mig det her
+> hvad mangler du svar på?
+> 3 hvis upstream kode ikke skal med, så skal det fjernes via et pull requets
+> forklar hvad du vil
+> hvorfor skal det fjernes?
+> ok, fortsæt
+> det er formentligt fordi vi har kigget på at z88dk pr's blev taget ind fra upstream og ikke ren main
+> det langsigtede mål er stadig at få z88dk til at virke korrekt, men jeg vil gerne have mesy muligt arbejde upstream nu
+> opdater planen til antigravity. spørg opus om der er noget der mangler
+> ja
+> analyser, opsummer, og gem din nye viden i projketet, commit
+
 ## 2026-11-01 (RC759 housekeeping)
 
 > jeg vil gerne have du rydder op - vigtige filer skal i git, uvigtige fjernes
@@ -57,6 +78,16 @@
 ## 2026-11-01 (full source-comment audit)
 
 > udfør fuld kontrol
+
+## 2026-11-01 (execute z88dk update plan)
+
+> Execute the approved z88dk update plan end-to-end in an isolated worktree.
+> Pin upstream at 02ce61be8d51f271f6d133b88698fba1954af2c2 and preserve the
+> existing dirty tree. Apply only the final local integration delta and final
+> test/llvmz80 from local HEAD 680664d. Build from the new tree with the fixed
+> clean #112 compiler and matching runtime archive. Do not commit, push, or
+> create a PR. Validate tool and library paths, run the integration suite, and
+> update the plan with evidence. Do not use /tmp or temporary directories.
 
 ## 2026-11-01 (commit readability changes and remaining work)
 
@@ -1869,6 +1900,34 @@ Analyser, opsummer, opret issues efter behov, commit og push".
 "6 - lav den lokalt og hvis det virker så rykker vi det op, 5 - undersøg og vend tilbage, 3 - målet er at få z88dk til at virke korrekt. Der er ikke andre der bruger det her arbejde førend jeg frigiver det", "fortsæt" (×3),
 "jeg har brug for \"ld i,a\" så den skal virke", "ja, men vær målrettet. jeg skal snart gå", "er der noget inline asm tilbage i autoload?", "byg rcbios", "gem status og ny viden i projektet, commit og push".
 
+## 2026-11-01 — Plan for renewed z88dk integration
+
+User: "jeg vil arbejde på noget andet. llvmz80 upstream har truffet
+nogen designbeslutninger der betyder at jeg skal gentage tilpasningen
+til z88dk. Jeg vil gerne have du undersøger upstream og giver en vurdering".
+
+Follow-up: "det lyder fornuftigt. Analyser grundigt og lav en plan".
+Plan: `tasks/plan-z88dk-upstream-integration-2026-11-01.md`.
+
+## 2026-11-01 — Execute approved z88dk update
+
+User: execute `tasks/plan-z88dk-update-2026-11-01.md` end-to-end in an
+isolated worktree pinned to upstream `02ce61be8d51f271f6d133b88698fba1954af2c2`,
+preserving the dirty tree at local HEAD `680664d`. Apply only the final
+`compiler.h`, `stdlib.h`, and zcc runtime-supplement integration plus final
+`test/llvmz80` changes. Build new-tree tools and required classic CP/M
+libraries, use the fixed clean #112 compiler/archive, verify paths do not
+resolve to the old z88dk tree, run the full integration suite and plan checks,
+update the plan with evidence, and do not commit, push, or open a PR.
+
+Follow-up: use `/Users/ravn/z80/scratch/tmp` for temporary test/build
+directories; set `PATH` and `ZCCCFG` to the new worktree; diagnose the
+copy-output error from logs and fix the build invocation rather than changing
+unrelated source. Use `apply_patch` for manual edits and continue until
+validated or blocked by concrete evidence.
+
+Follow-up: provide concise progress milestones to the parent while continuing
+autonomously.
 
 ## 2026-11-03 — Null target streamer and missing cpnos tests
 
