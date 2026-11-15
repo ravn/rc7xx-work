@@ -1,5 +1,66 @@
 # Z80 Code Density Optimization Todo
 
+## Plan: Packet-Parser Codegen-Optimeringer (#431, #432, #433, #434) (2026-11-15)
+
+Plan fil: `tasks/plan-packet-parser-codegen-full-2026-11-15.md`
+Branch: `work/packet-parser-codegen` (i `llvm-z80`, forgrenet fra `reimpl`)
+
+- [x] **Fase 1: Frigivelse af `IX` til pointere og In-Place RMW (#432 fundament)**
+  - [x] Un-reserve `Z80::IX` når `!hasFP(MF) && !STI.hasSM83()` i `Z80RegisterInfo.cpp`
+  - [x] Ret `getLargestLegalSuperClass` med `hasSuperClassEq(&Z80::GR16RegClass)` for at forhindre `GR16` i at falde igennem til `Any16`
+  - [x] Sænk 16-bit skalar frame index loads til `RELOAD_ANY16` i `Z80InstructionSelector.cpp`
+  - [x] Tilføj `HLI` registerklasse til `SET8_IND`, `RES8_IND`, `INC8_IND`, `DEC8_IND` i `Z80InstrInfo.td` og ekspandér med `+0` i `Z80InstrInfo.cpp`
+  - [x] TDD: Verificér lit test `ix-allocatable-pointer.ll` og grøn testsuite (183/183 pass)
+  - [x] Commit Fase 1 til ny branch `work/packet-parser-codegen` (`8bd17ba41690`)
+- [x] **Fase 2: GISel Store-Sink Combiner for CISC RMW In-Place Ops**
+  - [x] Skriv faldende lit-test for `store (phi [or ..., inc ...]), %ptr` der skal generere `set 7,(ix+0)` og `inc (ix+0)` (`f5160d15a9ad`)
+  - [x] Implementér pass `Z80StorePhiSink` der sinker `G_STORE` (og fjerner loop-carried PHI) tilbage i forgænger-blokkene
+  - [x] Verificér at `store` forsvinder fra `if.end`, og at akkumulator `A` ikke røres i grenene (`c1256d987428`)
+- [x] **Fase 3: Loop-Invariant Hoisting i `A` & Spill-Eliminering (#431 & #433)**
+  - [x] Skriv faldende lit-test for invariant i `A` og 0 B `.bss` for match-tæller (`e1fb71951697`)
+  - [x] Knyt invariant `delim` til `A` i loop-preheaderen for `cp (hl)` (`9a8a991ad438`)
+  - [x] Verificér at `matches` tildeles `C`/`E` og at statisk frame forbliver 0 bytes (76 B text, 0 B .bss)
+- [x] **Fase 4: Coalescing af Sekventielle Stak-Argumenter i Prologen (#434)**
+  - [x] Skriv faldende lit-test for konsekutive stak-loads (`8da98502c5d2`)
+  - [x] Implementér sekventiel traversal med `inc hl` fra base `HL = SP + offset` i `Z80PreEmitPeephole.cpp` (`f0eff4dace61`)
+  - [x] Verificér samlet kode-størrelse for `packet-parser.c` mod det optimale baseline (76 B text, 0 B .bss)
+- [x] **Upstream Issue Udkast (uden kode, arkitektonisk dialog)**
+  - [x] Opret `tasks/upstream-issue-packet-parser-codegen.md` med empirisk progression (118 B -> 74 B vs 63 B asm), rodårsager og arkitektoniske spørgsmål til upstream-forfatteren
+- [x] **Prolog Push/Pop Elision for `add hl, de`**
+  - [x] Skriv faldende lit-test `elide-push-de-add-hl.ll` for elidering af `push de`/`pop de` (`ff6b70983337`)
+  - [x] Implementér `elidePushDePushHlBeforeAdd` i `Z80PreEmitPeephole.cpp` (`794c5dd878dc`)
+  - [x] Verificér reduktion fra 76 B til 74 B med 100% grøn testsuite (187/187 lit, 92/92 e2e)
+- [x] **Eliminering af redundant scratch-register kopi i preheaderen**
+  - [x] Skriv faldende lit-test `fold-scratch-acc-copy.ll` (`b38dce8c88ce`)
+  - [x] Implementér `foldScratchAccTransfer` og `removeLiveIn` i `Z80PreEmitPeephole.cpp` (`6642ef74409e`)
+  - [x] Verificér reduktion fra 74 B til 73 B med 100% grøn testsuite (188/188 lit, 92/92 e2e)
+- [x] **Fase 5: Inverteret Loop Latch Rotation & DJNZ loop-tæller tildeling**
+  - [x] Skriv faldende lit-test `rotate-inverted-loop.ll` for rotation af loop latch til kanonisk orden (`bfbf58289206`)
+  - [x] Implementér `rotateInvertedLoops` i `Z80BranchCleanup.cpp` der inverterer bagvendte loops og fjerner preheader trampolinhop (`8c81ef3cf986`)
+  - [x] Tilføj `def BReg : Z80Reg8Class<(add B)>;` i `Z80RegisterInfo.td`
+  - [x] Implementér `Z80SplitDjnzCounters` der tildeler countdown loop-tællere til `BReg` før Greedy RA (`6bd28225977b`)
+  - [x] Verificér hardware `DJNZ` i `_parse_packet_c` inderste løkke (16 bytes loop-kerne)
+  - [x] 100% testsuite verifikation (189/189 lit tests PASS, 92/92 e2e tests PASS)
+- [x] **Fase 6: Elidering af Push/Pop BC i Preheaderen**
+  - [x] Skriv faldende lit-test `elide-push-pop-bc-preheader.ll` (`b91f41a3c54e`)
+  - [x] Implementér `hoistAddHlBeforeReloads` i `Z80PushPopSpills.cpp` der flytter `ADD HL, DE` foran stak-reloads før PEI (`d590f1ec2045`)
+  - [x] Fjern `push bc` og `pop bc` så `DE` genbruges som scratch register til `IX`
+  - [x] Verificér reduktion fra 74 B til 72 B under `-Os` (og 77 B til 75 B under `-O3`)
+  - [x] 100% testsuite verifikation (190/190 lit tests PASS, 92/92 e2e tests PASS)
+- [x] **Fase 7: Direkte foldning af stak-indlæsning af invariant til akkumulatoren**
+  - [x] Skriv faldende lit-test `fold-scratch-hlind-acc.ll` (`a321e336ba60`)
+  - [x] Udvid `foldScratchAccTransfer` i `Z80PreEmitPeephole.cpp` til at understøtte `LD_r_HLind` (`4832bc8ebbae`)
+  - [x] Fjern `ld a, c` og indlæs direkte med `ld a, (hl)`
+  - [x] Verificér reduktion fra 72 B til 71 B under `-Os` (og 75 B til 74 B under `-O3`)
+  - [x] 100% testsuite verifikation (191/191 lit tests PASS, 92/92 e2e tests PASS)
+- [x] **Fase 8: Indhentning af de Sidste 4 Bytes (71 B -> 67 B)**
+  - Plan: `tasks/plan-recovering-final-four-bytes.md`
+  - [x] Trin 1: Skriv faldende lit-test `coalesce-contiguous-arg-reloads.ll` (`87e7e396bf5d`)
+  - [x] Trin 2: Implementér `hoistPreheaderReloadsIntoPredecessor` i `Z80PushPopSpills.cpp` for at hejse reloads til forgængeren med eksisterende reloads
+  - [x] Trin 3: Hejs `ADD HL, rr` til toppen af forgængeren for at dræbe `DE` tidligt og fjerne `push bc / pop bc`
+  - [x] Trin 4: Verificér reduktion fra 71 B til præcis **67 B** (0 B `.bss`, 16 B DJNZ inner loop) — det absolutte teoretiske minimum for compliant C!
+  - [x] Trin 5: Kør fuld regressionstest (192/192 lit tests PASS, 92/92 e2e tests PASS) (`58bce35ae06e`)
+
 ## RC759 driver-family inventory (2026-11-01)
 
 - [x] Parse all twelve original SYS files and compare CODE/DATA,

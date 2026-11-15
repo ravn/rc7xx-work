@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## 2026-11-15: Z80 IX pointer allocation, Ninja signal handling, and InstCombine CISC RMW
+
+1. **Allocatable IX register & proper superclass inflation (`hasSuperClassEq`):**
+   Un-reserving `IX` (`!hasFP(MF)`) previously caused MachineVerifier crashes (`isRenamable set on reserved register ($ixl)`) on functions that manipulated 8-bit subregisters of 16-bit integer variables. The root cause was `RC->hasSuperClass(&Z80::GR16RegClass)` in `getLargestLegalSuperClass`: TableGen's `hasSuperClass()` checks for *proper* (strict) subclasses. Because `GR16` is not a proper subclass of itself, it fell through to `Any16`. This allowed Greedy RA to place general 16-bit integers in `IX` and subsequently attempt to read `IXL`/`IXH`. Changing to `hasSuperClassEq(&Z80::GR16RegClass)` ensures `GR16` inflates only to `GR16`.
+   In addition, lowering 16-bit stack argument reloads (`G_FRAME_INDEX`) to `RELOAD_ANY16` (instead of `RELOAD_GR16`) allows Greedy RA to pass and allocate pointer arguments directly into `IX`. Expanding `SET8_IND` / `RES8_IND` / `INC8_IND` / `DEC8_IND` on `HLI` generates clean 0-offset `set 7,(ix+0)` and `inc (ix+0)` instructions.
+
+2. **Generic InstCombine store-merging destroys CISC in-place RMW:**
+   In loops with conditional stores (`if (c) *p |= 0x80; else (*p)++;`), generic LLVM InstCombine merges identical-address stores into a single `store` of a `phi` node at `if.end`. On Z80, this completely prevents the emission of `SET (IX)` and `INC (IX)`, forcing values through accumulator `A`, clobbering `A` across loop iterations, and emitting redundant memory loads and stores. In MachineIR (e.g. `Z80PreLegalizerCombiner`), sinking and cloning `G_STORE` with `G_PHI` operands back into predecessor blocks recovers the in-place RMW operations.
+
+3. **Ninja crash resilience and recovery:**
+   Killing Ninja with `SIGKILL` (`kill -9`) truncates `.ninja_deps` mid-write without closing headers, producing `ninja: warning: premature end of file; recovering` and triggering a cascading rebuild of 1800+ targets. Ninja must only be stopped with `SIGINT` (Ctrl-C / `kill -2`) or `SIGTERM` (`kill -15`), which allow Ninja to flush its log cleanly. If `.ninja_deps` is ever corrupted, `ninja -C <build-dir> -t recompact` repairs the binary log in seconds, restoring clean incremental state.
+
 ## 2026-11-01: RC759 structure-size constants belong to the assembler
 
 Derive table bounds, record/copy counts and alignment from start/end

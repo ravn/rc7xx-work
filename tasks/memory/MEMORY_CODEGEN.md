@@ -41,6 +41,8 @@ Read this file before ANY llvm-z80 compiler/codegen/ABI change.
 
 ## Z80IndexIV / register pressure
 
+- **[Packet-Parser 118B -> 67B Gap-Closing Blueprint](reference_packet_parser_codegen_closing_gap_67b.md) — complete architecture: unreserving IX, StorePhiSink, BReg DJNZ, invariant in A, and preheader reload coalescing**
+- **[IX pointer allocation & in-place RMW](reference_ix_allocatable_pointer_2026_11_15.md) — unreserved when !hasFP; hasSuperClassEq stops GR16 inflation to Any16; RELOAD_ANY16 enables stack pointers in IX; HLI for SET/INC/DEC**
 - **[Z80IndexIV: pressure check, not stride guard](feedback_z80indexiv_pressure_not_stride.md) — HARD: unit-stride skip (79ea93e4) is heuristic; principled fix = skip if 2×N_GEPs > 3 register pairs; stride-2 with 2 pointers ALSO broken**
 
 ## Known issues / parked

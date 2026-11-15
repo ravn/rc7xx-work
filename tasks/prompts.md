@@ -1,5 +1,55 @@
 # Prompts
 
+## 2026-11-15 (packet-parser optimering, IX allokering, Ninja resilience)
+
+> kan vi lære c compileren at bruge disse tricks?
+> vi har tidligere fundet ud af med z88dk at det virkede hvis enten IX eller IY var reserveret til runtimen, og den anden frigivet. Kan vi arbejde med dette frigivne register?
+> ja. opdater issues med din nye viden først så en anden AI kan tage over hvis du løber tør for tokens
+> fortsæt
+> vis fremskridt når du kører ninja
+> du må meget gerne overveje hvorfor ninja byggene altid misser mange gange, kan vores arbejdsgang ændres?
+> hvorfor ændrer vi på ting der rammer hele llvm i stedet for bare de z80 specifikke?
+> hvordan stoppes ninja normalt, kan man fx køre KILL -1 så den lukker pænt ned og ikke smadrer sine filer?
+> hvordan skal instruksserne ændres så fremtidige sessioner husker at stoppe ninja sådan?
+> jatak
+> tilføj din nye vidn til pojektet
+> træd tilbage og lav en ny plan for hvordan dette skal implementeres
+> gem planen i projektet og gå i gang på en ny branch
+> fortsæt
+> hvad mangler der så nu?
+> det der skal ske med den aktuelle leverance er at vi skal se hvor godt vi kan gøre det i forhold til optimal assembler, og så lave et upstream issue der forklarer hvor vi beviseligt kan komme hen, men uden kode, og så lade zlfn besltute hvordan han vil gribe det an.
+> vi har før kunnet få DJNZ til at virke i den inderste løkke, ved at lave en delgruppe der kun indeholdt B registeret og derved lade register allokatoren sikre at B var til geængeligt og så enten generere DJNZ direkte, eller peepholeotpimere "dec b, jr nz" til djnz.
+> jeg ønsker at vi kommer så tæt på optimalt som muligt med et fornuftigt tidsforbrug som det næste, inden vi går upstream
+> kan det løses?
+> b
+> er der mere at hente tilbage?
+> luk lokalt
+> det skal kun gå hurtigere ved O3 optimerg, det skal blive mindst muligt ved størrelsesoptimering, som er det vi går efter her
+> fjern pushpop
+> hvad er de fem bytes fra 67 til 72?
+> er registerallokeringen optimal?
+> kan vi løse disse tre problemer?  Fortæl mig planen
+> 1+2 og giv status
+> er det realistisk at vi kan indhente de sidste fire bytes ?
+> jeg er interesseret i at finde ud af om det overhovedet kan lade sig gøre.  Lav en plan
+> jatak
+> vis hvad de fire bytes fra 63-67 gør
+> var ix ikke fri?
+> det var rigtigt godt. gem din nye viden i projektet så du senere kan lave et oplæg med der viser forskellen i genereret maskinkode og en oversigt over de ændringer der var nødvendige for at komme derhen med et forslag for hver til hvordan det kan gøres.
+
+## 2026-11-14 (antigravity session start)
+
+> jeg skal til at fortsætte llvmz80 compiler arbejde fra claude.  undersøg projektet og historikken og gør klar til at forrtsætte.  hvilken model vil du foreslå jeg vruger
+> jeg bliver ikke tilbudt gemini pro
+> Gemini 4 Argon / Gemini 4 Hydrogen / Gemini 3.8 Flash / Claude Opus 5.5 / Claude Sonnet 5.5
+> jeg har valgt sonnet
+> jeg vil gerne have at du foreslår opus ved de svære opgaver
+> 1 (byg build-macos-asserts) / vis fremskridt løbende
+> vær opmærksom på at ccache skal bruges. Der er scripts i roden der kan hjælpe
+> jeg forøgede cache størrelsen er den stadig 30gb? / kig grundigere på det, jeg vil have een fælles konfiguration i projektet
+> 30 gb for nu, sæt et notat om at undersøge senere og evt justere
+> undersøg også andre build scripts/konfigurationer der oversætter for at sikre de alle bruger ccache ens
+
 ## 2026-11-14 (upstream aktivitet + reimplementeringsplan)
 
 > der er en del aktivitet på issues upstream
@@ -1937,3 +1987,57 @@ autonomously.
 ## 2026-11-03 — Persist findings, analyze issues, commit and push
 
 > gem din nye viden i projektet, analyser og opret issues, commit push
+
+## 2026-11-15 — Codegen optimization plan for reimpl
+
+> nyt mål: implemnter alle fire i reimpl. Bed opus lave en plan
+> gem planen i projektet
+
+Plan: `tasks/plan-reimpl-codegen-optimizations-2026-11-15.md`.
+Implements 4 backend codegen optimizations on `reimpl` to bridge the gap
+between compiler output (118 B / 4 B .bss) and hand-crafted Z80 assembly (63 B / 0 B .bss):
+1. Invert `cp (hl)` with loop-invariant in `A`. (Commit `98c81d228e54`)
+2. In-place bit/byte memory ops via `SET/RES (HL)` (`SET8_IND`/`RES8_IND`). (Commit `a57eb8390efa`)
+3. Loop induction variable in `B` and `DJNZ` emission. (Commit `3fe973feb7e9`)
+4. Fold global variable increment to `ld hl, _var; inc (hl)`. (Pre-existing on `reimpl` `104c1f9d2e77`)
+
+> du skal være meget omhyggelig nu vi ikke har opus til at hjælpe.
+> ja tak, forsæt selv uden at spørge så meget du kan
+
+Alle 4 optimeringer er implementeret, fuldt verificeret med TDD-tests (faldende test først, commit, grøn test), 182/182 CodeGen/Z80 lit-tests og samtlige 4.658 tests i `check-z80` består uden regressioner. Code size på `packet-parser.c` er reduceret markant fra 118 bytes text + 4 bytes bss til 101 bytes text + 1 byte bss.
+
+> opret issues for alle fire
+> 1
+
+Oprettet 4 issues på `ravn/llvm-z80` til sporing af de resterende 38 bytes mod optimal Z80 assembly:
+- [#431](https://github.com/ravn/llvm-z80/issues/431): `[Z80] Hoist loop-invariant comparison operand into A across pointer loops`
+- [#432](https://github.com/ravn/llvm-z80/issues/432): `[Z80] Keep pointer argument in index register (IX/IY) for in-place memory operations in loops`
+- [#433](https://github.com/ravn/llvm-z80/issues/433): `[Z80] Avoid spilling 8-bit loop match/accumulator counter to static frame (.bss)`
+- [#434](https://github.com/ravn/llvm-z80/issues/434): `[Z80] Coalesce consecutive stack argument loads into sequential SP post-increments`
+
+> træd tilbage og undersøg nærmere
+> du kan ikke bruge de historiske fund i 1 til noget. At det ikke lykkedes dengagn, betyer ikke det er umuligt.
+> hvad betyder restrict?
+> betyder det at vores optimerede assembler kode antager noget, som C compileren ikke har lov til uden yderligere hints?
+> kan vi lære c compileren at bruge disse tricks?
+> vi har tidligere fundet ud af med z88dk at det virkede hvis enten IX eller IY var reserveret til runtimen, og den anden frigivet. Kan vi arbejde med dette frigivne register?
+> ja. opdater issues med din nye viden først så en anden AI kan tage over hvis du løber tør for tokens
+
+Opdateret alle 4 GitHub issues med den nye viden:
+- #432 er nøglen: Frigivelse af `IX` når `!hasFP(MF)` + tilføjelse af 16-bit PUSH/POP kopier i `copyPhysReg`.
+- #431 er låst op af #432: `A` overskrives ikke af memory stores, så `delim` kan holdes i `A` i hele løkken.
+- #433 er låst op af #432 og #431: Registerpresset fjernes helt, så `matches` forbliver i et 8-bit register (`C` eller `E`) med 0 bytes `.bss`.
+- #434 er uafhængigt: Sekventiel stak-loading i prologen sparer ~14-20 bytes.
+Dokumenteret lokalt i `tasks/draft-issues-packet-parser-codegen.md`.
+
+> b (Option B: implementér loop-rotation og BReg lokalt først)
+
+Gennemført implementering af loop-rotation og DJNZ:
+1. `rotate-inverted-loop.ll` faldende TDD lit test oprettet (`bfbf58289206`).
+2. `rotateInvertedLoops` implementeret i `Z80BranchCleanup.cpp` (`8c81ef3cf986`): inverterer bagvendte loops og fjerner 2-byte preheader hop.
+3. `def BReg : Z80Reg8Class<(add B)>;` tilføjet i `Z80RegisterInfo.td`.
+4. `Z80SplitDjnzCounters` implementeret og indsat før Greedy RA (`6bd28225977b`).
+5. Inderste løkke i `_parse_packet_c` emitterer nu hardware `DJNZ` (16 bytes kerne, 0 B `.bss`).
+6. Alle tests verificeret: 189/189 lit tests (100% PASS), 92/92 e2e tests (100% PASS).
+
+

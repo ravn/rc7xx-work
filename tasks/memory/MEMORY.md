@@ -10,6 +10,7 @@
 - **[ALL PRs ALWAYS draft](feedback_upstream_prs_always_draft.md) — ABSOLUTE: `gh pr create` SKAL have `--draft`. ALTID. Ingen undtagelser. Ingen repo-undtagelser. Aldrig non-draft.**
 - **[ravn/\* open, upstream NEVER](feedback_ravn_open_upstream_never.md) — HARD (user 2026-10-11): act directly in ravn/\* (push, comment, close, draft PR); upstream (llvm, z88dk, mamedev, …) requires explicit "ja post" this turn.**
 - **[Ravn's patches rebase onto zlfn's decisions](feedback_ravn_patches_rebase_onto_zlfn.md) — HARD (user 2026-10-11): ravn/llvm-z80 is downstream of zlfn; conflict resolution always keeps zlfn's version, cherry-pick ravn-unique bits on top. Never parallel-implement; wait for zlfn's design.**
+- **[zlfn upstream samarbejde: maks 1-2 PRs, ingen paraply](feedback_zlfn_pr_collaboration_rules.md) — HARD (zlfn 2026-11-15): 1-2 PRs ad gangen i prioriteret rækkefølge; brug write-access til stacked PRs; ingen paraply-PRs.**
 - **[NEVER run raw MAME](feedback_mame_always_window_timeout.md) — ABSOLUTE: no raw mame/rc702test; use Makefiles or scripts with -window + timeout.**
 - [Reviewer feedback: show before push (non-ravn/\*)](feedback_upstream_review_local_first.md) — on external PRs: show diff/results in chat, wait for OK, then push.
 - **AGENTS.md + lignende meta-filer må ALDRIG inkluderes i upstream PRs** — de er lokale arbejdsaftaler, ikke kodeændringer.
@@ -69,7 +70,7 @@
 - **[Record macOS utility surprises](feedback_record_macos_utility_surprises.md) — HARD: BSD vs GNU; save memory note + workaround**
 - **[Compiler builds](feedback_parallel_compiler_builds.md) — genbrug builddir + ccache efter branchskift; separat kun til samtidige versioner**
 - [S1–S4 intrinsics](project_z80_intrinsics_static_frames_2026-11-02.md); [LTO module asm](reference_module_asm_null_target_streamer.md)
-- **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: SIGKILL truncates .ninja_log -> 1700+ step rebuild; Ctrl-C ONCE**
+- **[Don't kill ninja mid-build](feedback_dont_kill_ninja.md) — HARD: stop SIGINT/TERM, ALDRIG kill -9; fix via ninja -t recompact**
 - **[Gem fuld ninja-log](feedback_save_full_ninja_log.md) — HARD: aldrig pipe ninja til grep/tail i background; gem til scratch/tmp/build-<target>.log og grep bagefter**
 - **[pgrep BEFORE every new build](feedback_check_pgrep_before_ninja.md) — HARD: `pgrep -f ninja` first; empty task-output ≠ not started; if PID exists → wait, never start another**
 - **[Ninja clang+llc together](feedback_ninja_clang_llc_together.md) — HARD: after backend change, `ninja clang llc` BOTH**
@@ -180,5 +181,6 @@
 
 - [Rebase 2026-11-13](project_llvm_z80_rebase_20261113.md) — main rebased til upstream/main; 16 ravn+6 zlfn-WIP commits; z88dk-wip branch; reimpl-plan
 - [Reimplementeringsplan](../llvm-z80/tasks/plan-ravn-commits-reimplementation.md) — 17-trins plan fra upstream/main; Fase 7 = #74 no-callback (kræver fork-owner go-ahead)
+- **[ccache: ÉN fælles config](project_ccache_single_config_2026-11-14.md) — HARD: kun `scripts/ccache-z80.conf` via CCACHE_CONFIGPATH/wrapper (30G provisorisk, TODO justér); bar `ccache` i sandbox trimmer cachen til 5G**
 
 <!-- Parked / RC759 / CP/M-86 / one-offs -> MEMORY_PARKED.md -->
