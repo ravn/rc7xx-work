@@ -51,4 +51,8 @@ if [ -z "$NTVCM" ]; then
 fi
 export NTVCM
 
-exec sh "$TEST_DIR/run_all.sh" "$@"
+if [ -f "$TEST_DIR/run_all.sh" ]; then
+    exec sh "$TEST_DIR/run_all.sh" "$@"
+else
+    exec sh "$TEST_DIR/run_minimal.sh" "$@"
+fi
