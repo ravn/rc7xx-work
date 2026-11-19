@@ -13,6 +13,12 @@
 # LOG.progress (watch -n2 cat LOG.progress). Ctrl-C once is forwarded to the
 # build as SIGINT (clean stop, never SIGKILL).
 
+# Shared ccache setup for every rebuild-*.sh: the workspace ccache binary
+# first on PATH and the single shared config (scripts/ccache-z80.conf).
+_BP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[[ -x "$_BP_DIR/../ccache/build/ccache" ]] && PATH="$_BP_DIR/../ccache/build:$PATH"
+export CCACHE_CONFIGPATH="$_BP_DIR/ccache-z80.conf"
+
 PROGRESS_INTERVAL=2
 PROGRESS_RE="${PROGRESS_RE:-.}"
 

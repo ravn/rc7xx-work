@@ -2,5 +2,6 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-export CCACHE_CONFIGPATH="$PROJECT_ROOT/ccache.conf"
+# Single shared ccache config for the whole workspace (see ccache-z80.conf).
+export CCACHE_CONFIGPATH="$SCRIPT_DIR/ccache-z80.conf"
 exec "$PROJECT_ROOT/ccache/build/ccache" "$@"

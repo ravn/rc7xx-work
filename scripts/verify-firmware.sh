@@ -35,6 +35,9 @@ case "$(uname -s)-$(uname -m)" in
     echo "ERROR: unknown host $(uname -s)-$(uname -m)"; exit 1 ;;
 esac
 
+# Single shared ccache config (scripts/ccache-z80.conf).
+export CCACHE_CONFIGPATH="$WORKSPACE/scripts/ccache-z80.conf"
+
 LLVM=$WORKSPACE/llvm-z80
 BUILD=$LLVM/$BUILD_DIR
 
