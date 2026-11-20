@@ -60,8 +60,39 @@ funktion-prologue (`push si / push di / call ...`).
 SYSDAT-segment-værdien, ikke en gyldig kode-adresse. Det TYDER på at nogle
 entries patches af GENSYS ved boot. Verificering via MAME-trace er næste skridt.
 
+## Fase 1.2 — XIOS entry() ved 0x8C (DONE 2026-11-20)
+
+`JMP entry` i XIOS-headeren peger på `POP BP / RET` ved XIOS+0x8C.
+
+**Konklusion**: Det er en **ubrugt placeholder**. Der er ingen matchende
+`PUSH BP` i init() og ingen eksterne kaldere af XIOS-header fra kode.
+RC759 XIOS bruger IKKE DRI's standard JMP init/JMP entry-konvention —
+alle XIOS-kald sker via:
+
+1. Dispatch-tabellen ved CS:0x16A4 (io_const, io_conin, ...)
+2. RTM service-tabellen ved SYSDAT+0xAA (RTM AL-funktioner)
+
+Både init()-fald-gennem og JMP entry lander samme sted (0x8C) som bare returnerer.
+
+## Fase 1.3 — Inter-modul søgeloop (DONE 2026-11-20)
+
+XIOS+0x4EE3 har `JMP 0x4F20` (bytes E9 3A 00) — koden fra 0x4EE6 til
+0x4F17 er **sprunget over** i den statiske binær.
+
+**Konklusion**: Søgeloopet er en **GENSYS extension point** til multi-modul
+XIOS-konfigurationer. Søgnøglen ved 0x2B0 (maskinkode fra RTM-kerne!) ville
+aldrig matche tabellen ved 0x15F3 (boot-banner-tekst "3.1\r\nCopyright...").
+GENSYS kunne patche starten til ikke at springe over, hvis der var flere
+XIOS-moduler at dispatch mellem. RC759 bruger single-modul XIOS så koden
+er bypass'et.
+
+Den reelle dispatch (brugt i praksis): `JMP CS:[BX + 0x16A4]` ved XIOS+0x4F12,
+med BX = funktionsnummer × 2. Dette er allerede kortlagt i xios_map.json.
+
 ## Næste
 
-- Fase 1.2: XIOS entry() ved 0x8C — hvorfor peger dispatch på midt-i-funktion?
-- Fase 1.3: Inter-modul søgeloop XIOS+0x4EEF, tabel ved 0x15F3
-- Fase 2.1: iSBX ISR (den faktiske hardware-læse-interrupt)
+- Fase 2.1: **iSBX ISR** (den faktiske hardware-læse-interrupt på port 0x302)
+  — vigtigste resterende punkt for konsol-sporet.
+- Fase 3.1: FDC/DMA fuld annotation (afventer fase 1.1 fuld klarhed om RTM fn 2).
+- Fase 4.1: io_conout escape-parser (RC759 dansk-specifikke sekvenser).
+- Fase 5.1: dd759*.sys device drivers (separate drivere, ikke undersøgt endnu).
