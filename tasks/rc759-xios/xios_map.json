@@ -1,0 +1,1555 @@
+{
+  "meta": {
+    "file": "ccpm.sys",
+    "file_size": 77568,
+    "load_para": "0x0048",
+    "xios_start": "0x0B163",
+    "total_code_bytes": 5851,
+    "total_instructions": 2337,
+    "total_symbols": 116
+  },
+  "symbols": {
+    "642": {
+      "label": "rtm_core",
+      "file_offset": "0x00282",
+      "seg_offset": "0x0282",
+      "size_approx": 75,
+      "callers": [
+        "0x0324"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "787": {
+      "label": "rtm_dispatcher",
+      "file_offset": "0x00313",
+      "seg_offset": "0x0313",
+      "size_approx": 40,
+      "callers": [
+        "0x0576",
+        "0x0597",
+        "0x08b0",
+        "0x08c1",
+        "0x0998",
+        "0x09bc"
+      ],
+      "calls": [
+        "0x0282"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "1367": {
+      "label": "io_conin_rtm_helper",
+      "file_offset": "0x00557",
+      "seg_offset": "0x0557",
+      "size_approx": 40,
+      "callers": [],
+      "calls": [
+        "0x0313"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "1371": {
+      "label": "io_conin",
+      "file_offset": "0x0055b",
+      "seg_offset": "0x055b",
+      "size_approx": 36,
+      "callers": [],
+      "calls": [
+        "0x0313"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "2177": {
+      "label": "io_switch",
+      "file_offset": "0x00881",
+      "seg_offset": "0x0881",
+      "size_approx": 127,
+      "callers": [],
+      "calls": [
+        "0x0313",
+        "0x0b2d"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "2396": {
+      "label": "io_statline",
+      "file_offset": "0x0095c",
+      "seg_offset": "0x095c",
+      "size_approx": 117,
+      "callers": [],
+      "calls": [
+        "0x0313",
+        "0x0b1c"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "2482": {
+      "label": "io_seldsk",
+      "file_offset": "0x009b2",
+      "seg_offset": "0x09b2",
+      "size_approx": 31,
+      "callers": [],
+      "calls": [
+        "0x0313"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "2553": {
+      "label": "sub_09f9",
+      "file_offset": "0x009f9",
+      "seg_offset": "0x09f9",
+      "size_approx": 20,
+      "callers": [
+        "0x09f4"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "2565": {
+      "label": "io_read",
+      "file_offset": "0x00a05",
+      "seg_offset": "0x0a05",
+      "size_approx": 8,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "2667": {
+      "label": "io_write",
+      "file_offset": "0x00a6b",
+      "seg_offset": "0x0a6b",
+      "size_approx": 13,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "2671": {
+      "label": "io_flushbuf",
+      "file_offset": "0x00a6f",
+      "seg_offset": "0x0a6f",
+      "size_approx": 9,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "2716": {
+      "label": "sub_0a9c",
+      "file_offset": "0x00a9c",
+      "seg_offset": "0x0a9c",
+      "size_approx": 15,
+      "callers": [
+        "0x05a8"
+      ],
+      "calls": [
+        "0x0aab",
+        "0x0ac8"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "2731": {
+      "label": "sub_0aab",
+      "file_offset": "0x00aab",
+      "seg_offset": "0x0aab",
+      "size_approx": 25,
+      "callers": [
+        "0x0aa5"
+      ],
+      "calls": [
+        "0x0ad9"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "2760": {
+      "label": "sub_0ac8",
+      "file_offset": "0x00ac8",
+      "seg_offset": "0x0ac8",
+      "size_approx": 17,
+      "callers": [
+        "0x0a9f"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "2777": {
+      "label": "sub_0ad9",
+      "file_offset": "0x00ad9",
+      "seg_offset": "0x0ad9",
+      "size_approx": 5,
+      "callers": [
+        "0x0abf"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "2810": {
+      "label": "io_polldev",
+      "file_offset": "0x00afa",
+      "seg_offset": "0x0afa",
+      "size_approx": 11,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "2844": {
+      "label": "sub_0b1c",
+      "file_offset": "0x00b1c",
+      "seg_offset": "0x0b1c",
+      "size_approx": 9,
+      "callers": [
+        "0x0992"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "2861": {
+      "label": "sub_0b2d",
+      "file_offset": "0x00b2d",
+      "seg_offset": "0x0b2d",
+      "size_approx": 8,
+      "callers": [
+        "0x05bc",
+        "0x08f7"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "5796": {
+      "label": "__dispatch_table__",
+      "file_offset": "0x016a4",
+      "seg_offset": "0x16a4",
+      "size_approx": 0,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "10131": {
+      "label": "rtm_call_0x80",
+      "file_offset": "0x02793",
+      "seg_offset": "0x2793",
+      "size_approx": 6,
+      "callers": [
+        "0x2875"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "10284": {
+      "label": "io_const",
+      "file_offset": "0x0282c",
+      "seg_offset": "0x282c",
+      "size_approx": 31,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "10339": {
+      "label": "io_const_rtm_helper",
+      "file_offset": "0x02863",
+      "seg_offset": "0x2863",
+      "size_approx": 29,
+      "callers": [
+        "0x284b"
+      ],
+      "calls": [
+        "0x2793"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "15906": {
+      "label": "sub_3e22",
+      "file_offset": "0x03e22",
+      "seg_offset": "0x3e22",
+      "size_approx": 73,
+      "callers": [
+        "0x3cc6",
+        "0x3e82",
+        "0x3ed1"
+      ],
+      "calls": [
+        "0x4215",
+        "0x5561"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "15979": {
+      "label": "sub_3e6b",
+      "file_offset": "0x03e6b",
+      "seg_offset": "0x3e6b",
+      "size_approx": 136,
+      "callers": [
+        "0x3cc1"
+      ],
+      "calls": [
+        "0x3e22",
+        "0x3efd",
+        "0x3f20"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16115": {
+      "label": "sub_3ef3",
+      "file_offset": "0x03ef3",
+      "seg_offset": "0x3ef3",
+      "size_approx": 10,
+      "callers": [
+        "0x3caf"
+      ],
+      "calls": [
+        "0x3efd"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16125": {
+      "label": "sub_3efd",
+      "file_offset": "0x03efd",
+      "seg_offset": "0x3efd",
+      "size_approx": 7,
+      "callers": [
+        "0x3eee",
+        "0x3ef3"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16132": {
+      "label": "sub_3f04",
+      "file_offset": "0x03f04",
+      "seg_offset": "0x3f04",
+      "size_approx": 4,
+      "callers": [
+        "0x3ca2"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16136": {
+      "label": "sub_3f08",
+      "file_offset": "0x03f08",
+      "seg_offset": "0x3f08",
+      "size_approx": 24,
+      "callers": [
+        "0x3cac"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16160": {
+      "label": "sub_3f20",
+      "file_offset": "0x03f20",
+      "seg_offset": "0x3f20",
+      "size_approx": 11,
+      "callers": [
+        "0x3ea0"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16171": {
+      "label": "sub_3f2b",
+      "file_offset": "0x03f2b",
+      "seg_offset": "0x3f2b",
+      "size_approx": 15,
+      "callers": [
+        "0x3d68",
+        "0x3d77",
+        "0x3dce",
+        "0x3df2",
+        "0x3df8"
+      ],
+      "calls": [
+        "0x3f3a"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16186": {
+      "label": "sub_3f3a",
+      "file_offset": "0x03f3a",
+      "seg_offset": "0x3f3a",
+      "size_approx": 15,
+      "callers": [
+        "0x3d32",
+        "0x3d44",
+        "0x3e01",
+        "0x3e1d",
+        "0x3f2f"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16201": {
+      "label": "sub_3f49",
+      "file_offset": "0x03f49",
+      "seg_offset": "0x3f49",
+      "size_approx": 12,
+      "callers": [
+        "0x54cd"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16213": {
+      "label": "sub_3f55",
+      "file_offset": "0x03f55",
+      "seg_offset": "0x3f55",
+      "size_approx": 50,
+      "callers": [
+        "0x431e",
+        "0x4327"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16387": {
+      "label": "sub_4003",
+      "file_offset": "0x04003",
+      "seg_offset": "0x4003",
+      "size_approx": 9,
+      "callers": [
+        "0x4699",
+        "0x46d2"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16396": {
+      "label": "sub_400c",
+      "file_offset": "0x0400c",
+      "seg_offset": "0x400c",
+      "size_approx": 9,
+      "callers": [
+        "0x43ac",
+        "0x444a",
+        "0x465d"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16405": {
+      "label": "sub_4015",
+      "file_offset": "0x04015",
+      "seg_offset": "0x4015",
+      "size_approx": 39,
+      "callers": [
+        "0x456c"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16738": {
+      "label": "sub_4162",
+      "file_offset": "0x04162",
+      "seg_offset": "0x4162",
+      "size_approx": 8,
+      "callers": [
+        "0x4178",
+        "0x4196",
+        "0x41a0",
+        "0x41ab"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16746": {
+      "label": "sub_416a",
+      "file_offset": "0x0416a",
+      "seg_offset": "0x416a",
+      "size_approx": 25,
+      "callers": [
+        "0x47ac"
+      ],
+      "calls": [
+        "0x4162"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16783": {
+      "label": "sub_418f",
+      "file_offset": "0x0418f",
+      "seg_offset": "0x418f",
+      "size_approx": 41,
+      "callers": [
+        "0x4215"
+      ],
+      "calls": [
+        "0x4162"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16917": {
+      "label": "sub_4215",
+      "file_offset": "0x04215",
+      "seg_offset": "0x4215",
+      "size_approx": 15,
+      "callers": [
+        "0x3e43"
+      ],
+      "calls": [
+        "0x418f"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16947": {
+      "label": "sub_4233",
+      "file_offset": "0x04233",
+      "seg_offset": "0x4233",
+      "size_approx": 12,
+      "callers": [
+        "0x47de",
+        "0x5545",
+        "0x5553"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16959": {
+      "label": "sub_423f",
+      "file_offset": "0x0423f",
+      "seg_offset": "0x423f",
+      "size_approx": 4,
+      "callers": [
+        "0x426c",
+        "0x47c4"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16963": {
+      "label": "sub_4243",
+      "file_offset": "0x04243",
+      "seg_offset": "0x4243",
+      "size_approx": 11,
+      "callers": [
+        "0x4351",
+        "0x489d",
+        "0x5514"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "16974": {
+      "label": "sub_424e",
+      "file_offset": "0x0424e",
+      "seg_offset": "0x424e",
+      "size_approx": 11,
+      "callers": [
+        "0x4837",
+        "0x4928",
+        "0x4b38",
+        "0x4da8"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17004": {
+      "label": "sub_426c",
+      "file_offset": "0x0426c",
+      "seg_offset": "0x426c",
+      "size_approx": 8,
+      "callers": [
+        "0x4746"
+      ],
+      "calls": [
+        "0x423f"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17012": {
+      "label": "sub_4274",
+      "file_offset": "0x04274",
+      "seg_offset": "0x4274",
+      "size_approx": 6,
+      "callers": [
+        "0x4286"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17024": {
+      "label": "sub_4280",
+      "file_offset": "0x04280",
+      "seg_offset": "0x4280",
+      "size_approx": 6,
+      "callers": [
+        "0x5585"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17054": {
+      "label": "sub_429e",
+      "file_offset": "0x0429e",
+      "seg_offset": "0x429e",
+      "size_approx": 7,
+      "callers": [
+        "0x48c3",
+        "0x4914"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17061": {
+      "label": "sub_42a5",
+      "file_offset": "0x042a5",
+      "seg_offset": "0x42a5",
+      "size_approx": 7,
+      "callers": [
+        "0x48b4",
+        "0x490c",
+        "0x5600"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17078": {
+      "label": "sub_42b6",
+      "file_offset": "0x042b6",
+      "seg_offset": "0x42b6",
+      "size_approx": 11,
+      "callers": [
+        "0x42c1",
+        "0x5630"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17089": {
+      "label": "sub_42c1",
+      "file_offset": "0x042c1",
+      "seg_offset": "0x42c1",
+      "size_approx": 9,
+      "callers": [
+        "0x4942"
+      ],
+      "calls": [
+        "0x42b6"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17098": {
+      "label": "sub_42ca",
+      "file_offset": "0x042ca",
+      "seg_offset": "0x42ca",
+      "size_approx": 10,
+      "callers": [
+        "0x55a7"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17108": {
+      "label": "sub_42d4",
+      "file_offset": "0x042d4",
+      "seg_offset": "0x42d4",
+      "size_approx": 16,
+      "callers": [
+        "0x42eb",
+        "0x42f6"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17124": {
+      "label": "sub_42e4",
+      "file_offset": "0x042e4",
+      "seg_offset": "0x42e4",
+      "size_approx": 28,
+      "callers": [
+        "0x4371",
+        "0x472a"
+      ],
+      "calls": [
+        "0x42d4"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17152": {
+      "label": "sub_4300",
+      "file_offset": "0x04300",
+      "seg_offset": "0x4300",
+      "size_approx": 16,
+      "callers": [
+        "0x472d"
+      ],
+      "calls": [
+        "0x5525"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17168": {
+      "label": "sub_4310",
+      "file_offset": "0x04310",
+      "seg_offset": "0x4310",
+      "size_approx": 12,
+      "callers": [
+        "0x562a"
+      ],
+      "calls": [
+        "0x5525"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17189": {
+      "label": "sub_4325",
+      "file_offset": "0x04325",
+      "seg_offset": "0x4325",
+      "size_approx": 17,
+      "callers": [
+        "0x457b"
+      ],
+      "calls": [
+        "0x3f55"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17308": {
+      "label": "sub_439c",
+      "file_offset": "0x0439c",
+      "seg_offset": "0x439c",
+      "size_approx": 4,
+      "callers": [
+        "0x3f8b",
+        "0x48e2",
+        "0x55fd"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17312": {
+      "label": "sub_43a0",
+      "file_offset": "0x043a0",
+      "seg_offset": "0x43a0",
+      "size_approx": 29,
+      "callers": [
+        "0x47cd",
+        "0x48df"
+      ],
+      "calls": [
+        "0x400c"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17391": {
+      "label": "sub_43ef",
+      "file_offset": "0x043ef",
+      "seg_offset": "0x43ef",
+      "size_approx": 269,
+      "callers": [
+        "0x4626"
+      ],
+      "calls": [
+        "0x400c",
+        "0x4716"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17697": {
+      "label": "sub_4521",
+      "file_offset": "0x04521",
+      "seg_offset": "0x4521",
+      "size_approx": 23,
+      "callers": [
+        "0x4833"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17720": {
+      "label": "sub_4538",
+      "file_offset": "0x04538",
+      "seg_offset": "0x4538",
+      "size_approx": 44,
+      "callers": [
+        "0x46b7"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17771": {
+      "label": "sub_456b",
+      "file_offset": "0x0456b",
+      "seg_offset": "0x456b",
+      "size_approx": 35,
+      "callers": [
+        "0x4693",
+        "0x46be",
+        "0x46cc"
+      ],
+      "calls": [
+        "0x4015",
+        "0x4325"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "17814": {
+      "label": "sub_4596",
+      "file_offset": "0x04596",
+      "seg_offset": "0x4596",
+      "size_approx": 19,
+      "callers": [
+        "0x4753"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18198": {
+      "label": "sub_4716",
+      "file_offset": "0x04716",
+      "seg_offset": "0x4716",
+      "size_approx": 10,
+      "callers": [
+        "0x4447",
+        "0x4651",
+        "0x4696",
+        "0x46cf"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18208": {
+      "label": "sub_4720",
+      "file_offset": "0x04720",
+      "seg_offset": "0x4720",
+      "size_approx": 16,
+      "callers": [
+        "0x48b9",
+        "0x4911"
+      ],
+      "calls": [
+        "0x42e4",
+        "0x4300",
+        "0x4763"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18224": {
+      "label": "sub_4730",
+      "file_offset": "0x04730",
+      "seg_offset": "0x4730",
+      "size_approx": 35,
+      "callers": [
+        "0x4791"
+      ],
+      "calls": [
+        "0x426c",
+        "0x4753"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18259": {
+      "label": "sub_4753",
+      "file_offset": "0x04753",
+      "seg_offset": "0x4753",
+      "size_approx": 16,
+      "callers": [
+        "0x474b"
+      ],
+      "calls": [
+        "0x4596"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18275": {
+      "label": "sub_4763",
+      "file_offset": "0x04763",
+      "seg_offset": "0x4763",
+      "size_approx": 102,
+      "callers": [
+        "0x4720",
+        "0x5609"
+      ],
+      "calls": [
+        "0x416a",
+        "0x423f",
+        "0x4730"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18377": {
+      "label": "sub_47c9",
+      "file_offset": "0x047c9",
+      "seg_offset": "0x47c9",
+      "size_approx": 37,
+      "callers": [
+        "0x4356"
+      ],
+      "calls": [
+        "0x4233",
+        "0x43a0",
+        "0x59f2"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18414": {
+      "label": "sub_47ee",
+      "file_offset": "0x047ee",
+      "seg_offset": "0x47ee",
+      "size_approx": 24,
+      "callers": [
+        "0x4807"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18438": {
+      "label": "sub_4806",
+      "file_offset": "0x04806",
+      "seg_offset": "0x4806",
+      "size_approx": 14,
+      "callers": [
+        "0x4876"
+      ],
+      "calls": [
+        "0x47ee"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18452": {
+      "label": "sub_4814",
+      "file_offset": "0x04814",
+      "seg_offset": "0x4814",
+      "size_approx": 10,
+      "callers": [
+        "0x481f",
+        "0x48e5"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18487": {
+      "label": "sub_4837",
+      "file_offset": "0x04837",
+      "seg_offset": "0x4837",
+      "size_approx": 28,
+      "callers": [
+        "0x493f"
+      ],
+      "calls": [
+        "0x424e"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18585": {
+      "label": "sub_4899",
+      "file_offset": "0x04899",
+      "seg_offset": "0x4899",
+      "size_approx": 48,
+      "callers": [
+        "0x553f"
+      ],
+      "calls": [
+        "0x4243",
+        "0x429e",
+        "0x42a5",
+        "0x4720",
+        "0x586c",
+        "0x58f7"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "18881": {
+      "label": "sub_49c1",
+      "file_offset": "0x049c1",
+      "seg_offset": "0x49c1",
+      "size_approx": 18,
+      "callers": [
+        "0x4b3b"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "19241": {
+      "label": "sub_4b29",
+      "file_offset": "0x04b29",
+      "seg_offset": "0x4b29",
+      "size_approx": 55,
+      "callers": [
+        "0x4925",
+        "0x4f9b"
+      ],
+      "calls": [
+        "0x424e",
+        "0x49c1"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "19461": {
+      "label": "sub_4c05",
+      "file_offset": "0x04c05",
+      "seg_offset": "0x4c05",
+      "size_approx": 9,
+      "callers": [
+        "0x437b"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "19872": {
+      "label": "sub_4da0",
+      "file_offset": "0x04da0",
+      "seg_offset": "0x4da0",
+      "size_approx": 13,
+      "callers": [
+        "0x4daf"
+      ],
+      "calls": [
+        "0x424e"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "19887": {
+      "label": "sub_4daf",
+      "file_offset": "0x04daf",
+      "seg_offset": "0x4daf",
+      "size_approx": 29,
+      "callers": [
+        "0x4f8f"
+      ],
+      "calls": [
+        "0x4da0"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "20364": {
+      "label": "io_conout",
+      "file_offset": "0x04f8c",
+      "seg_offset": "0x4f8c",
+      "size_approx": 21,
+      "callers": [],
+      "calls": [
+        "0x4b29",
+        "0x4daf"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "21704": {
+      "label": "sub_54c8",
+      "file_offset": "0x054c8",
+      "seg_offset": "0x54c8",
+      "size_approx": 66,
+      "callers": [
+        "0x5518"
+      ],
+      "calls": [
+        "0x3f49"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "21770": {
+      "label": "sub_550a",
+      "file_offset": "0x0550a",
+      "seg_offset": "0x550a",
+      "size_approx": 3,
+      "callers": [
+        "0x553a",
+        "0x55cc"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "21773": {
+      "label": "sub_550d",
+      "file_offset": "0x0550d",
+      "seg_offset": "0x550d",
+      "size_approx": 20,
+      "callers": [
+        "0x468c"
+      ],
+      "calls": [
+        "0x4243",
+        "0x54c8"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "21797": {
+      "label": "sub_5525",
+      "file_offset": "0x05525",
+      "seg_offset": "0x5525",
+      "size_approx": 14,
+      "callers": [
+        "0x430a",
+        "0x4310",
+        "0x46a4",
+        "0x559e"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "21857": {
+      "label": "sub_5561",
+      "file_offset": "0x05561",
+      "seg_offset": "0x5561",
+      "size_approx": 143,
+      "callers": [
+        "0x3e2e"
+      ],
+      "calls": [
+        "0x4280",
+        "0x42ca",
+        "0x550a",
+        "0x5525",
+        "0x55f0"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "22000": {
+      "label": "sub_55f0",
+      "file_offset": "0x055f0",
+      "seg_offset": "0x55f0",
+      "size_approx": 74,
+      "callers": [
+        "0x55b1",
+        "0x55e4"
+      ],
+      "calls": [
+        "0x42a5",
+        "0x42b6",
+        "0x4310",
+        "0x439c",
+        "0x4763"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "22636": {
+      "label": "sub_586c",
+      "file_offset": "0x0586c",
+      "seg_offset": "0x586c",
+      "size_approx": 5,
+      "callers": [
+        "0x48af"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "22646": {
+      "label": "sub_5876",
+      "file_offset": "0x05876",
+      "seg_offset": "0x5876",
+      "size_approx": 17,
+      "callers": [
+        "0x5918",
+        "0x59fa"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "22720": {
+      "label": "sub_58c0",
+      "file_offset": "0x058c0",
+      "seg_offset": "0x58c0",
+      "size_approx": 50,
+      "callers": [
+        "0x5924",
+        "0x5a02"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "22775": {
+      "label": "sub_58f7",
+      "file_offset": "0x058f7",
+      "seg_offset": "0x58f7",
+      "size_approx": 14,
+      "callers": [
+        "0x48a5"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "22789": {
+      "label": "sub_5905",
+      "file_offset": "0x05905",
+      "seg_offset": "0x5905",
+      "size_approx": 75,
+      "callers": [
+        "0x59ff"
+      ],
+      "calls": [
+        "0x5876",
+        "0x58c0"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "23026": {
+      "label": "sub_59f2",
+      "file_offset": "0x059f2",
+      "seg_offset": "0x59f2",
+      "size_approx": 21,
+      "callers": [
+        "0x47d0"
+      ],
+      "calls": [
+        "0x5876",
+        "0x58c0",
+        "0x5905"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "30929": {
+      "label": "sub_78d1",
+      "file_offset": "0x078d1",
+      "seg_offset": "0x78d1",
+      "size_approx": 2,
+      "callers": [
+        "0x9f56"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "30931": {
+      "label": "sub_78d3",
+      "file_offset": "0x078d3",
+      "seg_offset": "0x78d3",
+      "size_approx": 22,
+      "callers": [
+        "0x9d5d"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "32716": {
+      "label": "sub_7fcc",
+      "file_offset": "0x07fcc",
+      "seg_offset": "0x7fcc",
+      "size_approx": 35,
+      "callers": [
+        "0xc449"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "39195": {
+      "label": "sub_991b",
+      "file_offset": "0x0991b",
+      "seg_offset": "0x991b",
+      "size_approx": 91,
+      "callers": [
+        "0xc1ad"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "40270": {
+      "label": "fdc_fcr_setup",
+      "file_offset": "0x09d4e",
+      "seg_offset": "0x9d4e",
+      "size_approx": 20,
+      "callers": [],
+      "calls": [
+        "0x78d3"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "40379": {
+      "label": "sub_9dbb",
+      "file_offset": "0x09dbb",
+      "seg_offset": "0x9dbb",
+      "size_approx": 13,
+      "callers": [
+        "0xa13f"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "40448": {
+      "label": "fdc_fcr_write",
+      "file_offset": "0x09e00",
+      "seg_offset": "0x9e00",
+      "size_approx": 5,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "40710": {
+      "label": "fdc_send_cmd",
+      "file_offset": "0x09f06",
+      "seg_offset": "0x9f06",
+      "size_approx": 8,
+      "callers": [],
+      "calls": [
+        "0x9f4d"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "40781": {
+      "label": "fdc_wait",
+      "file_offset": "0x09f4d",
+      "seg_offset": "0x9f4d",
+      "size_approx": 13,
+      "callers": [
+        "0x9f0a",
+        "0xa00f"
+      ],
+      "calls": [
+        "0x78d1"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "40971": {
+      "label": "fdc_read_path",
+      "file_offset": "0x0a00b",
+      "seg_offset": "0xa00b",
+      "size_approx": 10,
+      "callers": [],
+      "calls": [
+        "0x9f4d"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "41662": {
+      "label": "fdc_force_int",
+      "file_offset": "0x0a2be",
+      "seg_offset": "0xa2be",
+      "size_approx": 29,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "44071": {
+      "label": "floppy_ack",
+      "file_offset": "0x0ac27",
+      "seg_offset": "0xac27",
+      "size_approx": 26,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "44388": {
+      "label": "floppy_status_check",
+      "file_offset": "0x0ad64",
+      "seg_offset": "0xad64",
+      "size_approx": 15,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "45411": {
+      "label": "xios_jmp_init",
+      "file_offset": "0x0b163",
+      "seg_offset": "0xb163",
+      "size_approx": 142,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "45414": {
+      "label": "xios_jmp_entry",
+      "file_offset": "0x0b166",
+      "seg_offset": "0xb166",
+      "size_approx": 139,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "45417": {
+      "label": "xios_init",
+      "file_offset": "0x0b169",
+      "seg_offset": "0xb169",
+      "size_approx": 136,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "45551": {
+      "label": "xios_entry_0x8C",
+      "file_offset": "0x0b1ef",
+      "seg_offset": "0xb1ef",
+      "size_approx": 2,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "49290": {
+      "label": "crt_fcr_cmd",
+      "file_offset": "0x0c08a",
+      "seg_offset": "0xc08a",
+      "size_approx": 118,
+      "callers": [],
+      "calls": [
+        "0xc43f",
+        "0xc468"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "50239": {
+      "label": "sub_c43f",
+      "file_offset": "0x0c43f",
+      "seg_offset": "0xc43f",
+      "size_approx": 19,
+      "callers": [
+        "0xc0d7",
+        "0xc0fa",
+        "0xc14d",
+        "0xc17f",
+        "0xc2e1",
+        "0xc33c",
+        "0xc3d9",
+        "0xc41a",
+        "0xc42d"
+      ],
+      "calls": [
+        "0x7fcc"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "50280": {
+      "label": "sub_c468",
+      "file_offset": "0x0c468",
+      "seg_offset": "0xc468",
+      "size_approx": 51,
+      "callers": [
+        "0xc0d1",
+        "0xc0f4",
+        "0xc179",
+        "0xc2db",
+        "0xc336",
+        "0xc3d3"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "52017": {
+      "label": "fdc_release",
+      "file_offset": "0x0cb31",
+      "seg_offset": "0xcb31",
+      "size_approx": 11,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "65645": {
+      "label": "xios_imod_dispatch_shl",
+      "file_offset": "0x1006d",
+      "seg_offset": "0x1006d",
+      "size_approx": 13,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "65653": {
+      "label": "xios_imod_dispatch_jmp",
+      "file_offset": "0x10075",
+      "seg_offset": "0x10075",
+      "size_approx": 5,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    }
+  }
+}
