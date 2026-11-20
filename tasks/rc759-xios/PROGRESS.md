@@ -478,3 +478,15 @@ Alle issues (#16-#19) nu lukkede. RE fuldstændig afsluttet.
 4. i82730 styres via IRST+CA — port 0x060 bruges **aldrig**
 5. Dansk tegnsæt: **ISO-646-DK** gennemgående
 6. ESC-parser er i konsol-manager (modul 3), ikke i XIOS io_conout
+
+---
+
+## Uafsluttet arbejde: BDOS dispatch-tabel-dump (2026-11-20)
+
+MAME Lua-script `scratch/tmp/bdos_dispatch_dump.lua` kørte t=301s og returnerede
+data — men dataene er **forkerte** (ASCII-tekst "Computer Denmark..." i stedet for
+dispatch-pointere). Årsag: `CS_BASE = 0x0480` er load-adressen for hele ccpm.sys,
+men BDOS-modulerne (1-3) har egne CS-segmenter sat af MEMIF-loaderen.
+
+Korrekt CS for BDOS1 (modul 1) ≈ paragraph 0x01AC (physical 0x1AC0).
+Se `HANDOFF-2026-11-20.md` for komplet analyse og næste-skridt.
