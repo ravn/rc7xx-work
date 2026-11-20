@@ -376,10 +376,83 @@ Beregner scroll-offset fra en far-pointer (`cs:[0x4225]`) og udfylder en tabel v
 
 ---
 
-## Næste
+## Fase #18 — Dansk tegnsæt og ÆØÅ-encoding (DONE 2026-11-20)
 
-- **#16**: RTM fn 2 runtime-patch — MAME-trace for at bekræfte præcis handler-adresse
-  (optionelt; arkitektur er klar fra statisk analyse)
-- **#18**: Dansk oversættelse (ÆØÅ): charset-pointer ved cs:[0x6228] er udgangspunktet
-- **#19**: LUKKET — port 0x060 bruges ikke i ccpm.sys
-- Symbolkort-opdatering: `fdc_force_int` → `fdc_isr`; `crt_fcr_cmd` → bedre navn
+### Encoding: ISO-646-DK (streng substitution)
+
+Alle danske strenge i ccpm.sys bruger **ISO-646-DK**:
+
+| Byte | Tegn | Eksempel i kode → læsning |
+|------|------|--------------------------|
+| 0x5B | Æ | — |
+| 0x5C | Ø | — |
+| 0x5D | Å | — |
+| 0x7B | æ | `indl{sni` → "indlæsning" |
+| 0x7C | ø | (strenge med ø) |
+| 0x7D | å | `}bnes` → "åbnes", `lagergr{nse` → "lagergrænse" |
+
+Ingen ISO-8859-1 i tekststrenge — alle 0xC6/0xD8/0xC5-forekomster er kode-bytes.
+
+### Danske UI-strenge (alle i modul 4, ISO-646-DK)
+
+```
+0x0B34E: "759 SKÆRMTRIMNING"
+0x0B361: "Markør Blink"  "Markør Højde"  "Blød Rulning"
+0x0B397: "Sluk Skærm   sort  blå  grøn  cyan  rød  magenta  gul  hvid   NEJ JA"
+0x0B42B: "Dynamisk  Bufferet  Buffer  Låst  LÅS  - Tryk på en tast"
+0x0B4F9: "** Venter på fælles diskettestation"
+0x0B59B: "PICCOLINE XIOS version 2.3 - Marts 1985"
+0x0B767: "Winchester disk x har dårlig konfigurations sektor"
+0x10E20: "Program indlæsning"
+0x10F04: "Løsen passer ikke"
+0x11146: "Program løsen: "
+0x111DA: "Menu kø kan ikke åbnes"
+0x111F5: "Ulovlig lagergrænse, (16-768 K)"
+```
+
+### Keyboard layout (dansk QWERTY) ved 0x9802
+
+```
+0x09802: "qwertyuiopæå\r"    (lowercase rad 3)
+0x0981D: "øzxcvbnm,./"      (lowercase rad 4)
+0x09865: "QWERTYUIOPÆÅ\r"   (uppercase rad 3)
+0x09880: "ØZXCVBNM<>?"      (uppercase rad 4)
+```
+
+XLAT-tabel ved 0x2C52 (256 bytes): high-bit værdier er special keys, ikke
+printable. Danske bogstaver sidder ved ISO-646-DK-positionerne i ASCII-delen.
+
+### ESC-sekvenstabel ved 0x112BD
+
+RC759-specifik escape-sæt (ikke VT100):
+```
+ESC M         → Reverse Index (scroll up)
+ESC : <A..o>  → ~16 kommandoer (cursor-movement, scroll, erase, ...)
+```
+Behandles af konsol-manager (modul 3), ikke af XIOS `io_conout` —
+bekræfter fase 4.1-fund (io_conout er rå buffer-skriver).
+
+### Charset ved 0x7C55
+
+Charset-tabellen indeholder eksplicit Æ Ø Å og æ ø å ved ISO-646-DK-positionerne.
+i82730 character generator lades med disse glyphs ved mode-switch.
+
+---
+
+## Status 2026-11-20 (afslutning)
+
+**Alle 11 Opus-faser + #18 gennemført**.
+
+**Åbne issues**:
+- **#16**: RTM fn 2 runtime-patch (MAME-trace) — optionelt; statisk arkitektur klar
+- **#17**: LUKKET (fase 5.1)
+- **#18**: LUKKET (ovenfor)
+- **#19**: LUKKET (fase 6.1)
+
+**Vigtigste arkitektoniske fund**:
+1. XIOS bruger IKKE DRI's standard JMP init/JMP entry
+2. Konsol-input er **polling** via RTM-scheduler (ikke interrupts)
+3. FDC-I/O er **cooperative yield** — fdc_isr er en rigtig ISR med IRET
+4. i82730 styres via IRST+CA — port 0x060 bruges **aldrig**
+5. Dansk tegnsæt: **ISO-646-DK** gennemgående
+6. ESC-parser er i konsol-manager (modul 3), ikke i XIOS io_conout
