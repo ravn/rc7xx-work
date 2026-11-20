@@ -4,20 +4,58 @@
     "file_size": 77568,
     "load_para": "0x0048",
     "xios_start": "0x0B163",
-    "total_code_bytes": 5851,
-    "total_instructions": 2337,
-    "total_symbols": 116
+    "total_code_bytes": 7004,
+    "total_instructions": 2797,
+    "total_symbols": 140
   },
   "symbols": {
+    "254": {
+      "label": "mod0_rtm_init",
+      "file_offset": "0x000fe",
+      "seg_offset": "0x00fe",
+      "size_approx": 388,
+      "callers": [],
+      "calls": [
+        "0x028d",
+        "0x0313"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
     "642": {
       "label": "rtm_core",
       "file_offset": "0x00282",
       "seg_offset": "0x0282",
-      "size_approx": 75,
+      "size_approx": 11,
       "callers": [
+        "0x0303",
         "0x0324"
       ],
       "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "653": {
+      "label": "sub_028d",
+      "file_offset": "0x0028d",
+      "seg_offset": "0x028d",
+      "size_approx": 64,
+      "callers": [
+        "0x0201"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "762": {
+      "label": "mod0_rtm_entry",
+      "file_offset": "0x002fa",
+      "seg_offset": "0x02fa",
+      "size_approx": 21,
+      "callers": [],
+      "calls": [
+        "0x0282"
+      ],
       "io_ports": [],
       "is_known": true
     },
@@ -27,6 +65,8 @@
       "seg_offset": "0x0313",
       "size_approx": 40,
       "callers": [
+        "0x025a",
+        "0x030f",
         "0x0576",
         "0x0597",
         "0x08b0",
@@ -232,8 +272,18 @@
       "io_ports": [],
       "is_known": false
     },
+    "5771": {
+      "label": "mod1_bdos1_init",
+      "file_offset": "0x0168b",
+      "seg_offset": "0x168b",
+      "size_approx": 33,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
     "5796": {
-      "label": "__dispatch_table__",
+      "label": "__xios_dispatch_table__",
       "file_offset": "0x016a4",
       "seg_offset": "0x16a4",
       "size_approx": 0,
@@ -242,12 +292,48 @@
       "io_ports": [],
       "is_known": true
     },
+    "5856": {
+      "label": "mod1_bdos1_entry",
+      "file_offset": "0x016e0",
+      "seg_offset": "0x16e0",
+      "size_approx": 12,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "9995": {
+      "label": "mod2_bdos2_init",
+      "file_offset": "0x0270b",
+      "seg_offset": "0x270b",
+      "size_approx": 1,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "10022": {
+      "label": "mod2_bdos2_entry",
+      "file_offset": "0x02726",
+      "seg_offset": "0x2726",
+      "size_approx": 109,
+      "callers": [],
+      "calls": [
+        "0x2793"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
     "10131": {
-      "label": "rtm_call_0x80",
+      "label": "rtm_call_0x80_entry",
       "file_offset": "0x02793",
       "seg_offset": "0x2793",
       "size_approx": 6,
       "callers": [
+        "0x272f",
+        "0x2740",
+        "0x2785",
+        "0x278b",
         "0x2875"
       ],
       "calls": [],
@@ -277,6 +363,68 @@
       ],
       "io_ports": [],
       "is_known": true
+    },
+    "12843": {
+      "label": "mod3_bdos3_init",
+      "file_offset": "0x0322b",
+      "seg_offset": "0x322b",
+      "size_approx": 1,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "12902": {
+      "label": "mod3_bdos3_entry",
+      "file_offset": "0x03266",
+      "seg_offset": "0x3266",
+      "size_approx": 10,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "15132": {
+      "label": "mod4_xios_init",
+      "file_offset": "0x03b1c",
+      "seg_offset": "0x3b1c",
+      "size_approx": 1,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "15277": {
+      "label": "mod4_xios_entry",
+      "file_offset": "0x03bad",
+      "seg_offset": "0x3bad",
+      "size_approx": 32,
+      "callers": [],
+      "calls": [
+        "0x3bec"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "15340": {
+      "label": "sub_3bec",
+      "file_offset": "0x03bec",
+      "seg_offset": "0x3bec",
+      "size_approx": 566,
+      "callers": [
+        "0x3bc0"
+      ],
+      "calls": [
+        "0x3e22",
+        "0x3e6b",
+        "0x3ef3",
+        "0x3f04",
+        "0x3f08",
+        "0x3f2b",
+        "0x3f3a"
+      ],
+      "io_ports": [],
+      "is_known": false
     },
     "15906": {
       "label": "sub_3e22",
@@ -398,6 +546,7 @@
       "seg_offset": "0x3f3a",
       "size_approx": 15,
       "callers": [
+        "0x3c05",
         "0x3d32",
         "0x3d44",
         "0x3e01",
@@ -1296,11 +1445,32 @@
       "seg_offset": "0x78d3",
       "size_approx": 22,
       "callers": [
+        "0x9325",
         "0x9d5d"
       ],
       "calls": [],
       "io_ports": [],
       "is_known": false
+    },
+    "31895": {
+      "label": "sub_7c97",
+      "file_offset": "0x07c97",
+      "seg_offset": "0x7c97",
+      "size_approx": 22,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "32273": {
+      "label": "sub_7e11",
+      "file_offset": "0x07e11",
+      "seg_offset": "0x7e11",
+      "size_approx": 6,
+      "callers": [],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
     },
     "32716": {
       "label": "sub_7fcc",
@@ -1309,6 +1479,143 @@
       "size_approx": 35,
       "callers": [
         "0xc449"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "34071": {
+      "label": "rtm_al80_poll_console",
+      "file_offset": "0x08517",
+      "seg_offset": "0x8517",
+      "size_approx": 26,
+      "callers": [],
+      "calls": [
+        "0x85d3",
+        "0x8a54",
+        "0x8a95"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "34078": {
+      "label": "rtm_al87_blocking_read",
+      "file_offset": "0x0851e",
+      "seg_offset": "0x851e",
+      "size_approx": 19,
+      "callers": [],
+      "calls": [
+        "0x85d3",
+        "0x8a54",
+        "0x8a95"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "34259": {
+      "label": "sub_85d3",
+      "file_offset": "0x085d3",
+      "seg_offset": "0x85d3",
+      "size_approx": 74,
+      "callers": [
+        "0x852b"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": true
+    },
+    "35412": {
+      "label": "sub_8a54",
+      "file_offset": "0x08a54",
+      "seg_offset": "0x8a54",
+      "size_approx": 62,
+      "callers": [
+        "0x8520",
+        "0x8a92"
+      ],
+      "calls": [
+        "0x8b5e"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "35477": {
+      "label": "sub_8a95",
+      "file_offset": "0x08a95",
+      "seg_offset": "0x8a95",
+      "size_approx": 89,
+      "callers": [
+        "0x8528"
+      ],
+      "calls": [
+        "0x8b27",
+        "0x8b5e"
+      ],
+      "io_ports": [],
+      "is_known": true
+    },
+    "35623": {
+      "label": "sub_8b27",
+      "file_offset": "0x08b27",
+      "seg_offset": "0x8b27",
+      "size_approx": 55,
+      "callers": [
+        "0x8aa6"
+      ],
+      "calls": [],
+      "io_ports": [],
+      "is_known": false
+    },
+    "35678": {
+      "label": "sub_8b5e",
+      "file_offset": "0x08b5e",
+      "seg_offset": "0x8b5e",
+      "size_approx": 16,
+      "callers": [
+        "0x8a62",
+        "0x8aa3"
+      ],
+      "calls": [
+        "0x9220"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "37408": {
+      "label": "sub_9220",
+      "file_offset": "0x09220",
+      "seg_offset": "0x9220",
+      "size_approx": 15,
+      "callers": [
+        "0x8b5f"
+      ],
+      "calls": [
+        "0x9312"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "37650": {
+      "label": "sub_9312",
+      "file_offset": "0x09312",
+      "seg_offset": "0x9312",
+      "size_approx": 29,
+      "callers": [
+        "0x9229"
+      ],
+      "calls": [
+        "0x78d3"
+      ],
+      "io_ports": [],
+      "is_known": false
+    },
+    "38401": {
+      "label": "sub_9601",
+      "file_offset": "0x09601",
+      "seg_offset": "0x9601",
+      "size_approx": 25,
+      "callers": [
+        "0x96ed"
       ],
       "calls": [],
       "io_ports": [],

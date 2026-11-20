@@ -15,13 +15,24 @@ from collections import defaultdict
 
 # ── Konfiguration ──────────────────────────────────────────────────────────────
 CCPM_SYS  = "/tmp/ccpm.sys"
-OUT_JSON  = "/Users/ravn/z80/scratch/rc759-xios/xios_map.json"
-OUT_TXT   = "/Users/ravn/z80/scratch/rc759-xios/xios_map.txt"
+OUT_JSON  = "/Users/ravn/z80/tasks/rc759-xios/xios_map.json"
+OUT_TXT   = "/Users/ravn/z80/tasks/rc759-xios/xios_map.txt"
 FILE_SIZE = 77568          # 0x12F00
 
 # Kendte labels (fil-offset → navn)
 KNOWN_LABELS = {
-    # XIOS JMP-header
+    # Modul-entrypoints (fra fase 0.2 MEMIF-headers)
+    0x000FE: "mod0_rtm_init",
+    0x002FA: "mod0_rtm_entry",
+    0x0168B: "mod1_bdos1_init",
+    0x016E0: "mod1_bdos1_entry",
+    0x0270B: "mod2_bdos2_init",
+    0x02726: "mod2_bdos2_entry",
+    0x0322B: "mod3_bdos3_init",
+    0x03266: "mod3_bdos3_entry",
+    0x03B1C: "mod4_xios_init",    # RETF — pre-init?
+    0x03BAD: "mod4_xios_entry",
+    # XIOS JMP-header (inde i modul 4)
     0x0B163: "xios_jmp_init",
     0x0B166: "xios_jmp_entry",
     # XIOS init()
@@ -29,13 +40,13 @@ KNOWN_LABELS = {
     # XIOS entry/dispatch
     0x0B1EF: "xios_entry_0x8C",   # 'pop bp / ret' — uklareret
     # RTM-kerne og dispatcher
-    0x0282:  "rtm_core",
-    0x0313:  "rtm_dispatcher",
+    0x0282:  "rtm_core",           # SI=AL*2, opslag i SYSDAT+0xAA
+    0x0313:  "rtm_dispatcher",     # DS=SYSDAT, kalder 0x282
     # XIOS inter-modul dispatch
-    0x0B163+0x4F0A: "xios_imod_dispatch_shl",   # shl ax,1
-    0x0B163+0x4F12: "xios_imod_dispatch_jmp",   # jmp cs:[bx+0x16A4]
+    0x0B163+0x4F0A: "xios_imod_dispatch_shl",
+    0x0B163+0x4F12: "xios_imod_dispatch_jmp",
     # Dispatch-tabel (data, ikke kode)
-    0x16A4: "__dispatch_table__",   # 16-bit function pointers
+    0x16A4: "__xios_dispatch_table__",
     # XIOS-funktioner (fra dispatch-tabellen)
     0x282C:  "io_const",
     0x055B:  "io_conin",
@@ -47,12 +58,20 @@ KNOWN_LABELS = {
     0x0A6B:  "io_write",
     0x0A6F:  "io_flushbuf",
     0x0AFA:  "io_polldev",
+    # RTM service-handlers (fase 1.1 fund — fra SYSDAT+0xAA tabel)
+    0x8517:  "rtm_al80_poll_console",    # AL=0x80 io_const poll
+    0x851E:  "rtm_al87_blocking_read",   # AL=0x87 io_conin blocking
+    0x7C97:  "sub_7c97",
+    0x7E11:  "sub_7e11",
+    0x85D3:  "sub_85d3",
+    0x8A54:  "sub_8a54",   # test byte ptr [bx+0x6b], 4
+    0x8A95:  "sub_8a95",   # test word ptr [bx+0x6b], 0x200
     # io_const helpers
     0x2863:  "io_const_rtm_helper",
-    0x2793:  "rtm_call_0x80",
+    0x2793:  "rtm_call_0x80_entry",
     # io_conin helpers
     0x0557:  "io_conin_rtm_helper",
-    # Disk-driver
+    # Disk-driver (RTM fn 2 patch-target, formodet)
     0x09D4E: "fdc_fcr_setup",
     0x09E00: "fdc_fcr_write",
     0x09F06: "fdc_send_cmd",

@@ -5,18 +5,27 @@ Fil: ccpm.sys  77568 bytes  load-paragraph 0x0048
 ========================================================================
 
 Statistik:
-  Kode-bytes kortlagt: 5851 / 77568
-  Instruktioner:       2337
-  Symboler:            116
+  Kode-bytes kortlagt: 7004 / 77568
+  Instruktioner:       2797
+  Symboler:            140
 
 SYMBOLER (sorteret efter adresse):
 ------------------------------------------------------------------------
 
-★ 0x00282  rtm_core                        (~75 B)
-   Kaldt fra: 0x0324
+★ 0x000fe  mod0_rtm_init                   (~388 B)
+   Kalder:    0x028d, 0x0313
+
+★ 0x00282  rtm_core                        (~11 B)
+   Kaldt fra: 0x0303, 0x0324
+
+  0x0028d  sub_028d                        (~64 B)
+   Kaldt fra: 0x0201
+
+★ 0x002fa  mod0_rtm_entry                  (~21 B)
+   Kalder:    0x0282
 
 ★ 0x00313  rtm_dispatcher                  (~40 B)
-   Kaldt fra: 0x0576, 0x0597, 0x08b0, 0x08c1, 0x0998, 0x09bc
+   Kaldt fra: 0x025a, 0x030f, 0x0576, 0x0597, 0x08b0, 0x08c1, 0x0998, 0x09bc
    Kalder:    0x0282
 
 ★ 0x00557  io_conin_rtm_helper             (~40 B)
@@ -65,16 +74,38 @@ SYMBOLER (sorteret efter adresse):
   0x00b2d  sub_0b2d                        (~8 B)
    Kaldt fra: 0x05bc, 0x08f7
 
-★ 0x016a4  __dispatch_table__              (~0 B)
+★ 0x0168b  mod1_bdos1_init                 (~33 B)
 
-★ 0x02793  rtm_call_0x80                   (~6 B)
-   Kaldt fra: 0x2875
+★ 0x016a4  __xios_dispatch_table__         (~0 B)
+
+★ 0x016e0  mod1_bdos1_entry                (~12 B)
+
+★ 0x0270b  mod2_bdos2_init                 (~1 B)
+
+★ 0x02726  mod2_bdos2_entry                (~109 B)
+   Kalder:    0x2793
+
+★ 0x02793  rtm_call_0x80_entry             (~6 B)
+   Kaldt fra: 0x272f, 0x2740, 0x2785, 0x278b, 0x2875
 
 ★ 0x0282c  io_const                        (~31 B)
 
 ★ 0x02863  io_const_rtm_helper             (~29 B)
    Kaldt fra: 0x284b
    Kalder:    0x2793
+
+★ 0x0322b  mod3_bdos3_init                 (~1 B)
+
+★ 0x03266  mod3_bdos3_entry                (~10 B)
+
+★ 0x03b1c  mod4_xios_init                  (~1 B)
+
+★ 0x03bad  mod4_xios_entry                 (~32 B)
+   Kalder:    0x3bec
+
+  0x03bec  sub_3bec                        (~566 B)
+   Kaldt fra: 0x3bc0
+   Kalder:    0x3e22, 0x3e6b, 0x3ef3, 0x3f04, 0x3f08, 0x3f2b, 0x3f3a
 
   0x03e22  sub_3e22                        (~73 B)
    Kaldt fra: 0x3cc6, 0x3e82, 0x3ed1
@@ -105,7 +136,7 @@ SYMBOLER (sorteret efter adresse):
    Kalder:    0x3f3a
 
   0x03f3a  sub_3f3a                        (~15 B)
-   Kaldt fra: 0x3d32, 0x3d44, 0x3e01, 0x3e1d, 0x3f2f
+   Kaldt fra: 0x3c05, 0x3d32, 0x3d44, 0x3e01, 0x3e1d, 0x3f2f
 
   0x03f49  sub_3f49                        (~12 B)
    Kaldt fra: 0x54cd
@@ -326,10 +357,49 @@ SYMBOLER (sorteret efter adresse):
    Kaldt fra: 0x9f56
 
   0x078d3  sub_78d3                        (~22 B)
-   Kaldt fra: 0x9d5d
+   Kaldt fra: 0x9325, 0x9d5d
+
+★ 0x07c97  sub_7c97                        (~22 B)
+
+★ 0x07e11  sub_7e11                        (~6 B)
 
   0x07fcc  sub_7fcc                        (~35 B)
    Kaldt fra: 0xc449
+
+★ 0x08517  rtm_al80_poll_console           (~26 B)
+   Kalder:    0x85d3, 0x8a54, 0x8a95
+
+★ 0x0851e  rtm_al87_blocking_read          (~19 B)
+   Kalder:    0x85d3, 0x8a54, 0x8a95
+
+★ 0x085d3  sub_85d3                        (~74 B)
+   Kaldt fra: 0x852b
+
+★ 0x08a54  sub_8a54                        (~62 B)
+   Kaldt fra: 0x8520, 0x8a92
+   Kalder:    0x8b5e
+
+★ 0x08a95  sub_8a95                        (~89 B)
+   Kaldt fra: 0x8528
+   Kalder:    0x8b27, 0x8b5e
+
+  0x08b27  sub_8b27                        (~55 B)
+   Kaldt fra: 0x8aa6
+
+  0x08b5e  sub_8b5e                        (~16 B)
+   Kaldt fra: 0x8a62, 0x8aa3
+   Kalder:    0x9220
+
+  0x09220  sub_9220                        (~15 B)
+   Kaldt fra: 0x8b5f
+   Kalder:    0x9312
+
+  0x09312  sub_9312                        (~29 B)
+   Kaldt fra: 0x9229
+   Kalder:    0x78d3
+
+  0x09601  sub_9601                        (~25 B)
+   Kaldt fra: 0x96ed
 
   0x0991b  sub_991b                        (~91 B)
    Kaldt fra: 0xc1ad
@@ -388,6 +458,71 @@ DISASSEMBLY AF KENDTE FUNKTIONER
 ========================================================================
 
 ; ────────────────────────────────────────────────────────────
+; mod0_rtm_init  (fil 0x000fe)
+; ────────────────────────────────────────────────────────────
+  00fe:  fa            cli 
+  00ff:  fc            cld 
+  0100:  8cd8          mov ax, ds
+  0102:  8ed0          mov ss, ax
+  0104:  bce005        mov sp, 0x5e0
+  0107:  bba104        mov bx, 0x4a1
+  010a:  b8e004        mov ax, 0x4e0
+  010d:  b104          mov cl, 4
+  010f:  d3e8          shr ax, cl
+  0111:  2e03060600    add ax, word ptr cs:[6]
+  0116:  894710        mov word ptr [bx + 0x10], ax
+  0119:  8ec0          mov es, ax
+  011b:  268c1e2e00    mov word ptr es:[0x2e], ds
+  0120:  1e            push ds
+  0121:  33c0          xor ax, ax
+  0123:  8ed8          mov ds, ax
+  0125:  c70680033401  mov word ptr [0x380], 0x134
+  012b:  8c0e8203      mov word ptr [0x382], cs
+  012f:  1f            pop ds
+  0130:  b8ffff        mov ax, 0xffff
+  0133:  a38c00        mov word ptr [0x8c], ax
+  0136:  bb0400        mov bx, 4
+  0139:  53            push bx
+  013a:  ff5f08        lcall [bx + 8]
+  013d:  5b            pop bx
+  013e:  53            push bx
+  013f:  ff5f10        lcall [bx + 0x10]
+  0142:  5b            pop bx
+  0143:  f606460008    test byte ptr [0x46], 8
+  0148:  7405          je 0x14f
+  014a:  53            push bx
+  014b:  ff5f20        lcall [bx + 0x20]
+  014e:  5b            pop bx
+  014f:  f606460010    test byte ptr [0x46], 0x10
+  0154:  7405          je 0x15b
+  0156:  53            push bx
+  0157:  ff5f18        lcall [bx + 0x18]
+  015a:  5b            pop bx
+  015b:  f606460020    test byte ptr [0x46], 0x20
+  0160:  7407          je 0x169
+  0162:  1e            push ds
+  0163:  06            push es
+  0164:  ff5f28        lcall [bx + 0x28]
+  0167:  07            pop es
+  0168:  1f            pop ds
+  0169:  8cd8          mov ax, ds
+  016b:  2bdb          sub bx, bx
+  016d:  8edb          mov ds, bx
+  016f:  c70680033401  mov word ptr [0x380], 0x134
+  0175:  8c0e8203      mov word ptr [0x382], cs
+  0179:  8ed8          mov ds, ax
+  017b:  b192          mov cl, 0x92
+  017d:  cde0          int 0xe0
+  017f:  b19e          mov cl, 0x9e
+  0181:  cde0          int 0xe0
+  0183:  2e8e1e0600    mov ds, word ptr cs:[6]
+  0188:  8b0e4200      mov cx, word ptr [0x42]
+  018c:  e320          jcxz 0x1ae
+  018e:  8ec1          mov es, cx
+  0190:  26a10000      mov ax, word ptr es:[0]
+  ... (fortsat)
+
+; ────────────────────────────────────────────────────────────
 ; rtm_core  (fil 0x00282)
 ; ────────────────────────────────────────────────────────────
   0282:  84ed          test ch, ch
@@ -395,7 +530,7 @@ DISASSEMBLY AF KENDTE FUNKTIONER
   0286:  8bc1          mov ax, cx
   0288:  eb43          jmp 0x2cd
   028a:  e9e900        jmp 0x376
-  028d:  8bc1          mov ax, cx
+  028d:  8bc1          mov ax, cx  ; ← kaldt fra 0x0201
   028f:  3c50          cmp al, 0x50
   0291:  7614          jbe 0x2a7
   0293:  2c11          sub al, 0x11
@@ -424,6 +559,20 @@ DISASSEMBLY AF KENDTE FUNKTIONER
   02c8:  7403          je 0x2cd
   02ca:  8bc3          mov ax, bx
   02cc:  c3            ret 
+
+; ────────────────────────────────────────────────────────────
+; mod0_rtm_entry  (fil 0x002fa)
+; ────────────────────────────────────────────────────────────
+  02fa:  81f98500      cmp cx, 0x85
+  02fe:  750f          jne 0x30f
+  0300:  b90302        mov cx, 0x203
+  0303:  e87cff        call 0x282
+  0306:  8bc3          mov ax, bx
+  0308:  40            inc ax
+  0309:  7402          je 0x30d
+  030b:  33c9          xor cx, cx
+  030d:  48            dec ax
+  030e:  cb            retf 
 
 ; ────────────────────────────────────────────────────────────
 ; rtm_dispatcher  (fil 0x00313)
@@ -628,7 +777,91 @@ DISASSEMBLY AF KENDTE FUNKTIONER
   0b04:  c3            ret 
 
 ; ────────────────────────────────────────────────────────────
-; rtm_call_0x80  (fil 0x02793)
+; mod1_bdos1_init  (fil 0x0168b)
+; ────────────────────────────────────────────────────────────
+  168b:  bb3800        mov bx, 0x38
+  168e:  c707e203      mov word ptr [bx], 0x3e2
+  1692:  8c4f02        mov word ptr [bx + 2], cs
+  1695:  bb3c00        mov bx, 0x3c
+  1698:  c7076204      mov word ptr [bx], 0x462
+  169c:  8c4f02        mov word ptr [bx + 2], cs
+  169f:  8b1e6800      mov bx, word ptr [0x68]
+  16a3:  c747285b05    mov word ptr [bx + 0x28], 0x55b
+  16a8:  8c4f2a        mov word ptr [bx + 0x2a], cs
+  16ab:  cb            retf 
+
+; ────────────────────────────────────────────────────────────
+; mod1_bdos1_entry  (fil 0x016e0)
+; ────────────────────────────────────────────────────────────
+  16e0:  32ed          xor ch, ch
+  16e2:  d1e1          shl cx, 1
+  16e4:  8bf1          mov si, cx
+  16e6:  2eff946c00    call word ptr cs:[si + 0x6c]
+  16eb:  cb            retf 
+
+; ────────────────────────────────────────────────────────────
+; mod2_bdos2_init  (fil 0x0270b)
+; ────────────────────────────────────────────────────────────
+  270b:  cb            retf 
+
+; ────────────────────────────────────────────────────────────
+; mod2_bdos2_entry  (fil 0x02726)
+; ────────────────────────────────────────────────────────────
+  2726:  53            push bx
+  2727:  51            push cx
+  2728:  52            push dx
+  2729:  bbf506        mov bx, 0x6f5
+  272c:  b91502        mov cx, 0x215
+  272f:  e86100        call 0x2793
+  2732:  fe06f406      inc byte ptr [0x6f4]
+  2736:  803ef40601    cmp byte ptr [0x6f4], 1
+  273b:  751f          jne 0x275c
+  273d:  b91702        mov cx, 0x217
+  2740:  e85000        call 0x2793
+  2743:  5a            pop dx
+  2744:  59            pop cx
+  2745:  5b            pop bx
+  2746:  8c167206      mov word ptr [0x672], ss
+  274a:  89267006      mov word ptr [0x670], sp
+  274e:  8cd8          mov ax, ds
+  2750:  9c            pushf 
+  2751:  5d            pop bp
+  2752:  fa            cli 
+  2753:  8ed0          mov ss, ax
+  2755:  bcf406        mov sp, 0x6f4
+  2758:  55            push bp
+  2759:  9d            popf 
+  275a:  eb03          jmp 0x275f
+  275c:  5a            pop dx
+  275d:  59            pop cx
+  275e:  5b            pop bx
+  275f:  b500          mov ch, 0
+  2761:  d1e1          shl cx, 1
+  2763:  8bf1          mov si, cx
+  2765:  2eff944c00    call word ptr cs:[si + 0x4c]
+  276a:  fe0ef406      dec byte ptr [0x6f4]
+  276e:  7520          jne 0x2790
+  2770:  9c            pushf 
+  2771:  58            pop ax
+  2772:  fa            cli 
+  2773:  8e167206      mov ss, word ptr [0x672]
+  2777:  8b267006      mov sp, word ptr [0x670]
+  277b:  50            push ax
+  277c:  9d            popf 
+  277d:  53            push bx
+  277e:  51            push cx
+  277f:  bbf506        mov bx, 0x6f5
+  2782:  b91602        mov cx, 0x216
+  2785:  e80b00        call 0x2793
+  2788:  b91802        mov cx, 0x218
+  278b:  e80500        call 0x2793
+  278e:  59            pop cx
+  278f:  5b            pop bx
+  2790:  8bc3          mov ax, bx
+  2792:  cb            retf 
+
+; ────────────────────────────────────────────────────────────
+; rtm_call_0x80_entry  (fil 0x02793)
 ; ────────────────────────────────────────────────────────────
   2793:  2eff1e0800    lcall cs:[8]
   2798:  c3            ret 
@@ -675,6 +908,41 @@ DISASSEMBLY AF KENDTE FUNKTIONER
   287f:  c3            ret 
 
 ; ────────────────────────────────────────────────────────────
+; mod3_bdos3_init  (fil 0x0322b)
+; ────────────────────────────────────────────────────────────
+  322b:  cb            retf 
+
+; ────────────────────────────────────────────────────────────
+; mod3_bdos3_entry  (fil 0x03266)
+; ────────────────────────────────────────────────────────────
+  3266:  d1e1          shl cx, 1
+  3268:  8bf1          mov si, cx
+  326a:  2eff944c00    call word ptr cs:[si + 0x4c]
+  326f:  cb            retf 
+
+; ────────────────────────────────────────────────────────────
+; mod4_xios_init  (fil 0x03b1c)
+; ────────────────────────────────────────────────────────────
+  3b1c:  cb            retf 
+
+; ────────────────────────────────────────────────────────────
+; mod4_xios_entry  (fil 0x03bad)
+; ────────────────────────────────────────────────────────────
+  3bad:  32ed          xor ch, ch
+  3baf:  8bf1          mov si, cx
+  3bb1:  d1e6          shl si, 1
+  3bb3:  03f1          add si, cx
+  3bb5:  81c64d00      add si, 0x4d
+  3bb9:  2ef6440201    test byte ptr cs:[si + 2], 1
+  3bbe:  7405          je 0x3bc5
+  3bc0:  e82900        call 0x3bec
+  3bc3:  eb05          jmp 0x3bca
+  3bc5:  33db          xor bx, bx
+  3bc7:  2eff14        call word ptr cs:[si]
+  3bca:  8bc3          mov ax, bx
+  3bcc:  cb            retf 
+
+; ────────────────────────────────────────────────────────────
 ; io_conout  (fil 0x04f8c)
 ; ────────────────────────────────────────────────────────────
   4f8c:  ba2000        mov dx, 0x20
@@ -685,6 +953,146 @@ DISASSEMBLY AF KENDTE FUNKTIONER
   4f96:  c606c80800    mov byte ptr [0x8c8], 0
   4f9b:  e88bfb        call 0x4b29
   4f9e:  e9e5f2        jmp 0x4286
+
+; ────────────────────────────────────────────────────────────
+; sub_7c97  (fil 0x07c97)
+; ────────────────────────────────────────────────────────────
+  7c97:  8b7776        mov si, word ptr [bx + 0x76]
+  7c9a:  b114          mov cl, 0x14
+  7c9c:  3c0c          cmp al, 0xc
+  7c9e:  7208          jb 0x7ca8
+  7ca0:  2c0c          sub al, 0xc
+  7ca2:  81c6f000      add si, 0xf0
+  7ca6:  b104          mov cl, 4
+  7ca8:  f6e1          mul cl
+  7caa:  03f0          add si, ax
+  7cac:  c3            ret 
+
+; ────────────────────────────────────────────────────────────
+; sub_7e11  (fil 0x07e11)
+; ────────────────────────────────────────────────────────────
+  7e11:  894f72        mov word ptr [bx + 0x72], cx
+  7e14:  e9b818        jmp 0x96cf
+
+; ────────────────────────────────────────────────────────────
+; rtm_al80_poll_console  (fil 0x08517)
+; ────────────────────────────────────────────────────────────
+  8517:  8b777d        mov si, word ptr [bx + 0x7d]
+  851a:  3bfe          cmp di, si
+  851c:  722f          jb 0x854d
+rtm_al87_blocking_read:
+  851e:  56            push si
+  851f:  57            push di
+  8520:  e83105        call 0x8a54
+  8523:  5f            pop di
+  8524:  5e            pop si
+  8525:  ff577b        call word ptr [bx + 0x7b]
+  8528:  e86a05        call 0x8a95
+  852b:  e8a500        call 0x85d3
+  852e:  e96600        jmp 0x8597
+
+; ────────────────────────────────────────────────────────────
+; rtm_al87_blocking_read  (fil 0x0851e)
+; ────────────────────────────────────────────────────────────
+  851e:  56            push si
+  851f:  57            push di
+  8520:  e83105        call 0x8a54
+  8523:  5f            pop di
+  8524:  5e            pop si
+  8525:  ff577b        call word ptr [bx + 0x7b]
+  8528:  e86a05        call 0x8a95
+  852b:  e8a500        call 0x85d3
+  852e:  e96600        jmp 0x8597
+
+; ────────────────────────────────────────────────────────────
+; sub_85d3  (fil 0x085d3)
+; ────────────────────────────────────────────────────────────
+  85d3:  8b7f66        mov di, word ptr [bx + 0x66]
+  85d6:  8b7764        mov si, word ptr [bx + 0x64]
+  85d9:  d1e6          shl si, 1
+  85db:  8b10          mov dx, word ptr [bx + si]
+  85dd:  d1e7          shl di, 1
+  85df:  03d7          add dx, di
+  85e1:  895762        mov word ptr [bx + 0x62], dx
+  85e4:  f6476b04      test byte ptr [bx + 0x6b], 4
+  85e8:  7403          je 0x85ed
+  85ea:  e9a504        jmp 0x8a92
+  85ed:  f7476b0302    test word ptr [bx + 0x6b], 0x203
+  85f2:  7528          jne 0x861c
+  85f4:  8a7764        mov dh, byte ptr [bx + 0x64]
+  85f7:  8a5766        mov dl, byte ptr [bx + 0x66]
+  85fa:  f6476b10      test byte ptr [bx + 0x6b], 0x10
+  85fe:  7417          je 0x8617
+  8600:  2a774b        sub dh, byte ptr [bx + 0x4b]
+  8603:  7218          jb 0x861d
+  8605:  2a574a        sub dl, byte ptr [bx + 0x4a]
+  8608:  7213          jb 0x861d
+  860a:  3a7742        cmp dh, byte ptr [bx + 0x42]
+  860d:  730e          jae 0x861d
+  860f:  3a5744        cmp dl, byte ptr [bx + 0x44]
+  8612:  7309          jae 0x861d
+  8614:  035736        add dx, word ptr [bx + 0x36]
+  8617:  2e8916be5f    mov word ptr cs:[0x5fbe], dx
+  861c:  c3            ret 
+
+; ────────────────────────────────────────────────────────────
+; sub_8a54  (fil 0x08a54)
+; ────────────────────────────────────────────────────────────
+  8a54:  f6476b04      test byte ptr [bx + 0x6b], 4
+  8a58:  7437          je 0x8a91
+  8a5a:  f7476b0002    test word ptr [bx + 0x6b], 0x200
+  8a5f:  7530          jne 0x8a91
+  8a61:  1e            push ds
+  8a62:  e8f900        call 0x8b5e
+  8a65:  2e8b16d01f    mov dx, word ptr cs:[0x1fd0]
+  8a6a:  2e8b36d31f    mov si, word ptr cs:[0x1fd3]
+  8a6f:  2e8b3ed51f    mov di, word ptr cs:[0x1fd5]
+  8a74:  3034          xor byte ptr [si], dh
+  8a76:  2e803ed71f02  cmp byte ptr cs:[0x1fd7], 2
+  8a7c:  7404          je 0x8a82
+  8a7e:  3015          xor byte ptr [di], dl
+  8a80:  eb0a          jmp 0x8a8c
+  8a82:  3015          xor byte ptr [di], dl
+  8a84:  2ea0d21f      mov al, byte ptr cs:[0x1fd2]
+  8a88:  30840002      xor byte ptr [si + 0x200], al
+  8a8c:  1f            pop ds
+  8a8d:  c6473500      mov byte ptr [bx + 0x35], 0
+  8a91:  c3            ret 
+
+; ────────────────────────────────────────────────────────────
+; sub_8a95  (fil 0x08a95)
+; ────────────────────────────────────────────────────────────
+  8a95:  f7476b0002    test word ptr [bx + 0x6b], 0x200
+  8a9a:  75f5          jne 0x8a91
+  8a9c:  8b4764        mov ax, word ptr [bx + 0x64]
+  8a9f:  8b5766        mov dx, word ptr [bx + 0x66]
+  8aa2:  1e            push ds
+  8aa3:  e8b800        call 0x8b5e
+  8aa6:  e87e00        call 0x8b27
+  8aa9:  83c612        add si, 0x12
+  8aac:  83c712        add di, 0x12
+  8aaf:  2e803ed71f02  cmp byte ptr cs:[0x1fd7], 2
+  8ab5:  740b          je 0x8ac2
+  8ab7:  ba00fe        mov dx, 0xfe00
+  8aba:  d3ca          ror dx, cl
+  8abc:  3034          xor byte ptr [si], dh
+  8abe:  3015          xor byte ptr [di], dl
+  8ac0:  eb17          jmp 0x8ad9
+  8ac2:  bafcff        mov dx, 0xfffc
+  8ac5:  8ae2          mov ah, dl
+  8ac7:  32c0          xor al, al
+  8ac9:  d3ea          shr dx, cl
+  8acb:  d3e8          shr ax, cl
+  8acd:  3034          xor byte ptr [si], dh
+  8acf:  3015          xor byte ptr [di], dl
+  8ad1:  30840002      xor byte ptr [si + 0x200], al
+  8ad5:  2ea2d21f      mov byte ptr cs:[0x1fd2], al
+  8ad9:  2e8916d01f    mov word ptr cs:[0x1fd0], dx
+  8ade:  2e8936d31f    mov word ptr cs:[0x1fd3], si
+  8ae3:  2e893ed51f    mov word ptr cs:[0x1fd5], di
+  8ae8:  1f            pop ds
+  8ae9:  c6473500      mov byte ptr [bx + 0x35], 0
+  8aed:  c3            ret 
 
 ; ────────────────────────────────────────────────────────────
 ; fdc_fcr_setup  (fil 0x09d4e)
