@@ -125,6 +125,31 @@ Den tidlige ISR-kandidat ved 0xB110-0xB24B er **reconfigurations-kode** for
 iSBX MCS1 (port 0x314/0x316), ikke konsol-input. ISR'en genbruger XIOS init()-koden
 (hopper til 0xB169) for at genprogrammere iSBX-kortet.
 
+## Fase 5.1 — dd*.sys er GSX-86 drivere, ikke XIOS drivere (DONE 2026-11-20)
+
+**Opklaring**: dd*.sys er IKKE XIOS device drivers — de er **GSX-86 drivere**
+(Graphics System Extension fra Digital Research). "Not Enough Disk Space for
+Object List" er en GSX-specifik fejl: GSX bufferer tegne-kommandoer i "object
+lists" på disk (`GSXTMP.$$$`) når RAM-bufferen er fuld.
+
+**Driverklasser**:
+- `dd759*.sys` (12 varianter, 7.9–8.6 KB): RC759 SKÆRM-drivere
+  - Konvention: h/m × d/m-suffix × 1/4 (resolution × mode × farve-antal)
+- `dd604*.sys` (4 varianter, 16.6 KB): PRINTER-drivere
+  - C. Itoh 8510A HR A4 (dot-matrix, sort/hvid + color varianter)
+- `dd621.sys` (13.8 KB): plotter? (indeholder DRI C runtime 1.10)
+
+**Status**: Alle 12 dd759*.sys er ALLEREDE fuldt reverse engineerede i
+`rc700-gensmedet/rc759-gsx/` (fælles `src/dd759.a86` kilde, 100% byte-match
+mod `originals/`, verificeret 2026-11-01). Se:
+- `rc700-gensmedet/rc759-gsx/notes/01-initial-findings.md`
+- `rc700-gensmedet/rc759-gsx/notes/04-gsx11-source-comparison.md`
+- `tasks/memory/reference_rc759_82730_graphics.md` (hvordan GSX tegner via
+  82730's programmerbare char-generator)
+
+Fase 5.1 behøver intet yderligere arbejde fra RC759 XIOS RE-sporet.
+Issue #17 kan lukkes med pointer til eksisterende arbejde.
+
 ## Fase 4.2 — Tastatur HLE (DONE 2026-11-20)
 
 Tastatur-handler ved **0x7A99** (ikke ISR, hybrid polling/interrupt):
