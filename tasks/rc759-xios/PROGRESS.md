@@ -125,6 +125,43 @@ Den tidlige ISR-kandidat ved 0xB110-0xB24B er **reconfigurations-kode** for
 iSBX MCS1 (port 0x314/0x316), ikke konsol-input. ISR'en genbruger XIOS init()-koden
 (hopper til 0xB169) for at genprogrammere iSBX-kortet.
 
+## Fase 4.1 — io_conout og escape-sekvenser (DONE 2026-11-20)
+
+**io_conout** (fil 0x4F8C) er en **buffer-baseret skriver** — ingen escape-parsing!
+
+```asm
+4F8C: mov dx, 0x20         ; parameter til helper
+4F8F: call 0x4DAF          ; "tilføj tegn til buffer"
+4F92: pop bx / pop ax
+4F94: mov [bx], al          ; gem tegnet i ring-buffer
+4F96: mov byte [0x8C8], 0   ; opdater status-flag
+4F9B: call 0x4B29           ; "flush eller signal"
+4F9E: jmp 0x4286            ; retur til hovedloop
+```
+
+**Søgte efter ESC (0x1B) i ccpm.sys**: 0 forekomster af `CMP AL, 0x1B` i nogen form.
+Der er INGEN ANSI/VT terminal-escape-parser i XIOS.
+
+**i82730 CRT-kommandoer** sendes via port 0x230 (reset) + 0x240 (channel attention).
+Kun 4 kaldesteder — og de er initialisering, ikke terminal-tolkning:
+- Fil 0x7BFE: init-sekvens (reset + CA)
+- Fil 0x9607: "post command to CRT and wait for completion" (polling [0x5FA4])
+- Fil 0xB9B7: mode-switching
+
+**Konklusion**: 
+- XIOS leverer tegn RÅ til en lokal ring-buffer per konsol
+- CRT-chip (i82730) læser direkte fra VRAM via DMA
+- Terminal-escape-sekvenser (hvis understøttet) må være implementeret:
+  1. I et separat screen-manager-modul (ikke fundet i ccpm.sys)
+  2. ELLER håndteres kun af GSX-driveren (dd759*.sys) i grafik-mode
+  3. ELLER CCPM's console er basalt rå (ingen cursor-movement via ESC)
+
+**For dansk-fasen**: Terminal-escape-dansk-kodning er IKKE issue for XIOS
+niveau. Dansk håndteres via:
+- Tastatur-XLAT-tabel (fase 4.2: 0x2C52)
+- Boot-banner strenge (ordene "hoved lager", "Diskette", "konsol" m.fl.)
+- ASCII-niveau tegn-koder (ÆØÅ via høj-bit eller ISO-646 DK {|}[\\])
+
 ## Fase 5.1 — dd*.sys er GSX-86 drivere, ikke XIOS drivere (DONE 2026-11-20)
 
 **Opklaring**: dd*.sys er IKKE XIOS device drivers — de er **GSX-86 drivere**
