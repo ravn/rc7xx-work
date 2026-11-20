@@ -89,10 +89,46 @@ er bypass'et.
 Den reelle dispatch (brugt i praksis): `JMP CS:[BX + 0x16A4]` ved XIOS+0x4F12,
 med BX = funktionsnummer × 2. Dette er allerede kortlagt i xios_map.json.
 
+## Fase 2.1 — iSBX konsol-I/O (DONE 2026-11-20) — POLLING, ikke interrupt!
+
+**Overraskende fund**: CCPM 3.1 på RC759 bruger **polling** for konsol-input,
+ikke interrupt-drevet. Der er INGEN ISR for iSBX seriel i den statiske binær.
+
+**Konsol status-polling** (`sub_AD8E`):
+```asm
+AD8E: mov dx, 0x302         ; iSBX seriel data/status
+AD91: in al, dx              ; læs
+AD92: test al, 0x80          ; bit 7 = "data klar"?
+AD94: mov ax, 0xFFFF
+AD97: jne 0xAD9A              ; hvis ja, returner 0xFFFF
+AD99: inc ax                  ; ellers AX = 0x0000
+AD9A: ret
+```
+
+**Konsol data-læsning** (`sub_B032`):
+```asm
+B032: mov dx, 0x302           ; iSBX seriel
+B035: in al, dx                ; læs status/data byte
+B036-B05D: bit-pak til AL (bit 7→8, bit 4→4, bit 2→1, bit 1→0x20)
+B05D: ret
+```
+
+Returnerer kodet statusord: bit 4 (0x80 status) → 0x08; bit 2 (strømfejl?) → 0x04;
+bit 1 (overrun?) → 0x01; bit 0 (data ready?) → 0x20.
+
+**Arkitektur**: RTM-scheduleren tillader multitasking mens konsol-polling kører.
+io_const (0x282C) kalder RTM fn 0x80 der til sidst poller via 0xAD8E.
+Ingen ringbuffer-udfyldning via interrupts — tegn læses direkte når RTM-polling
+schedules.
+
+Den tidlige ISR-kandidat ved 0xB110-0xB24B er **reconfigurations-kode** for
+iSBX MCS1 (port 0x314/0x316), ikke konsol-input. ISR'en genbruger XIOS init()-koden
+(hopper til 0xB169) for at genprogrammere iSBX-kortet.
+
 ## Næste
 
-- Fase 2.1: **iSBX ISR** (den faktiske hardware-læse-interrupt på port 0x302)
-  — vigtigste resterende punkt for konsol-sporet.
-- Fase 3.1: FDC/DMA fuld annotation (afventer fase 1.1 fuld klarhed om RTM fn 2).
+- Fase 3.1: FDC/DMA fuld annotation (RTM fn 2 patch-target klarlagt via polling-model).
 - Fase 4.1: io_conout escape-parser (RC759 dansk-specifikke sekvenser).
-- Fase 5.1: dd759*.sys device drivers (separate drivere, ikke undersøgt endnu).
+- Fase 4.2: Tastatur HLE (port 0x020) — polling-analog til konsolsporet.
+- Fase 5.1: dd759*.sys device drivers.
+- Fase 6.1: i82730 CRT-driver (port 0x060/0x230/0x240).
