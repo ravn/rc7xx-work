@@ -119,14 +119,16 @@ for s in SEEDS:
     if s < FILE_SIZE:
         branch_targets.add(s)
 
-# ── Linear sweep over modul 0-3 (RTM + BDOS: 0x0000-0x03ACF) ─────────────────
-# CFG kan ikke følge GENSYS-patchede dispatch-tabeller, men disse moduler er
-# primært kode. Linear sweep finder "øer" som CFG ikke når.
+# ── Linear sweep over hele filen (modul 0-4) ──────────────────────────────────
+# Modul 0-3: primært kode — sweep finder dispatch-øer CFG ikke når.
+# Modul 4 (XIOS+SYSDAT): ~62KB — sweep dækker XIOS-kode-regioner.
+# SYSDAT-data-area (fil 0x6B20-0x7720) springes over via null-byte-filter
+# og looks_like_code heuristikken (rå data-tabeller er ikke valid kode).
 #
 # Heuristik for valid kode: mindst 3 instruktioner uden invalid opcode + ingen
 # for lange instruktioner (>7 bytes = typisk data-mismatch).
 #
-SWEEP_END = 0x03AD0  # slut af modul 0-3
+SWEEP_END = FILE_SIZE  # hele filen (modul 0-4)
 
 INVALID_OPCODES = {0xD6, 0xF1}  # udefinerede i 8086/80186
 
