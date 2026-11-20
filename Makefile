@@ -21,10 +21,15 @@ else
 endif
 
 # ccache is ALWAYS used for native builds (fails loudly if missing).
-CCACHE := $(shell command -v ccache 2>/dev/null)
+CCACHE := $(firstword $(wildcard $(CURDIR)/ccache/build/ccache) $(shell command -v ccache 2>/dev/null))
 ifeq ($(CCACHE),)
   $(error ccache not found - install it (scripts/setup-ubuntu.sh))
 endif
+# One shared ccache config for every build (see scripts/ccache-z80.conf).
+export CCACHE_CONFIGPATH := $(CURDIR)/scripts/ccache-z80.conf
+# cmake launcher: the wrapper re-applies the shared config even when ninja
+# is later run by hand without CCACHE_CONFIGPATH in the environment.
+CCACHE_LAUNCHER = $(CURDIR)/scripts/ccache-wrapper
 # gcc/cc/g++/c++ -> ccache masquerade dir (used by the z88dk/zsdcc build)
 CCACHE_BIN = $(CURDIR)/scratch/bin
 
@@ -61,8 +66,8 @@ $(LLVM_BUILD)/build.ninja: $(LLVM_Z80)/clang/cmake/caches/Z80.cmake
 	@echo "=== Configuring LLVM-Z80 for $(UNAME_S) in $(BUILD_DIR) ==="
 	$(CMAKE) -C $(LLVM_Z80)/clang/cmake/caches/Z80.cmake \
 		-G Ninja \
-		-DCMAKE_C_COMPILER_LAUNCHER=$(CCACHE) \
-		-DCMAKE_CXX_COMPILER_LAUNCHER=$(CCACHE) \
+		-DCMAKE_C_COMPILER_LAUNCHER=$(CCACHE_LAUNCHER) \
+		-DCMAKE_CXX_COMPILER_LAUNCHER=$(CCACHE_LAUNCHER) \
 		-DCMAKE_MAKE_PROGRAM=$(NINJA) \
 		-S $(LLVM_Z80)/llvm -B $(LLVM_BUILD)
 

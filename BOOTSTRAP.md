@@ -110,10 +110,13 @@ For macOS:
 * cmake + ninja come from the CLion bundle (`reference_build_binaries`).
 * No brew — see memory.
 * ccache lives at `~/z80/ccache/build/ccache` (built from source in the workspace).
-  Add to `~/.zshrc`:
+  All builds share ONE config, `scripts/ccache-z80.conf` (selected via
+  `CCACHE_CONFIGPATH`; `~/Library/Preferences/ccache` is not used). Use
+  `scripts/ccache-wrapper` as the cmake launcher; the Makefile and
+  `rebuild-*.sh` already do. Add to `~/.zshrc`:
   ```sh
-  export CMAKE_C_COMPILER_LAUNCHER=/Users/ravn/z80/ccache/build/ccache
-  export CMAKE_CXX_COMPILER_LAUNCHER=/Users/ravn/z80/ccache/build/ccache
+  export CMAKE_C_COMPILER_LAUNCHER=/Users/ravn/z80/scripts/ccache-wrapper
+  export CMAKE_CXX_COMPILER_LAUNCHER=/Users/ravn/z80/scripts/ccache-wrapper
   alias llvmcmake='cmake -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON -DLLVM_CCACHE_BUILD=ON'
   ```
   Then configure llvm-z80 with:

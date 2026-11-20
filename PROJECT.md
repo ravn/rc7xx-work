@@ -51,6 +51,12 @@ CP/M BIOS, CP/NOS) booted in MAME.
 - After a Z80 backend change, build via **`make toolchain`** from workspace root
   (uses ccache + Ninja, rebuilds clang, llc, lld, llvm-nm, llvm-objcopy, opt, FileCheck,
   auto-detecting macOS/Linux); add a lit test under `llvm/test/CodeGen/Z80/`.
+- **Stop Ninja pænt med SIGINT/SIGTERM (Ctrl-C eller `kill -2` / `kill -15`), ALDRIG `kill -9` / SIGKILL.**
+  `SIGKILL` afbryder skrivning til `.ninja_deps` og udløser `premature end of file; recovering` med 1800+ trins unødvendig fuld genopbygning. Ved korruption: kør straks `ninja -C <build-dir> -t recompact`. Under aktiv kode-iteration bygges kun det nødvendige mål (f.eks. `ninja llc`) og tests afvikles direkte med `llvm-lit`.
+- **Workflow mod upstream (`llvm-z80/llvm-z80`, maintainer zlfn):**
+  - **Maks 1–2 PRs åbne ad gangen** i prioriteret rækkefølge; gennemgå, revidér sammen og merge i et roligt flow. Ingen paraply-PRs eller serier af 5-10 PRs på én gang (zlfn 2026-11-15).
+  - Brug tildelt upstream skriveadgang (`Member`) til ægte stacked PRs direkte i upstream-repoet (`users/ravn/...`).
+  - Begrund altid PRs med det konkrete problem, der er observeret i praksis (hvilken toolchain, assembler eller testcase der fejlede).
 - Favor upstream fixes (GISel combiner, regalloc cost model, MIR DCE) over post-RA
   peepholes; question prior design decisions rather than band-aiding an immature
   backend.
