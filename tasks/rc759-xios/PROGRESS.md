@@ -237,10 +237,149 @@ til stede men kræver yderligere analyse under runtime.
 3. **Konsol-input bruger POLLING, ikke interrupts** (sub_AD8E + sub_B032).
 4. DPC delt-disk-reservation forklarer port 0x28E/0x290 i io_read/io_write.
 
+## Fase 3.1 — FDC/DMA fuld annotation (DONE 2026-11-20)
+
+**io_read-kæden** (statisk bekræftet):
+```asm
+0A05: push es
+0A06: mov cx, 2       ; RTM fn 2 = disk I/O
+0A09: jmp 0x313       ; → RTM-dispatcher (DS=SYSDAT, kalder 0x282)
+```
+RTM fn 2 patches af GENSYS ved boot — statisk binær har tabel-entry = SYSDAT-segment-adresse
+(0x06FA), ikke en kode-adresse. Runtime-tabellen sættes til fdc_fcr_setup-kæden.
+
+**io_write (0x0A6B)**: Betinget — checker `[bx+0x13]` (dirty flag), springes over hvis ren.
+
+**fdc_fcr_setup (0x09D4E)**:
+```asm
+OUT 0x288, AL    ; Floppy FCR: drive/motor/precomp
+CMP CH, 0        ; motor-delay?
+JNE .done
+MOV DX, 0x3C / MOV CL, 0x8D
+CALL 0x78D3      ; RTM-timer (cooperative delay)
+```
+
+**fdc_send_cmd (0x09F06)**: `OUT 0x280 (WD2797 cmd), AL → CALL fdc_wait`
+
+**fdc_wait (0x09F4D)** — *cooperative wait*, ikke busy-poll:
+```asm
+MOV byte cs:[0x376E], 1   ; sæt interrupt-venteflag
+MOV DX, 8
+CALL 0x78D1               ; RTM sover (yield), vågner ved interrupt
+```
+
+**fdc_read_path (0x0A00B)**: `OUT 0x280 (WD2797 Read Sector) → fdc_wait → JMP 0xA13C`
+
+**fdc_isr @ 0x0A2BE** *(fejlnavnet fdc_force_int — rettes)*: **Dette er FDC-ISR'en**:
+```asm
+OUT 0x280, 0xD8   ; Force Interrupt til WD2797
+...
+OUT 0xFF22, 0x8000  ; 80186 PCB: non-specific EOI
+IRET
+```
+
+**floppy_ack (0x0AC27)**: DPC-reservation via to separate kanaler:
+```asm
+; Drev 0: port 0x292 (DMA-ack)
+OUT 0x292, 0xFF → IN 0x292 → test bit 7  (0=ikke klar, 1=klar)
+; Drev 1: port 0x28E (DPC-ack)
+OUT 0x28E, 0xFF → IN 0x28E → test bit 7
+```
+
+**floppy_status_check (0x0AD64)** — **NY port opdaget**:
+```asm
+IN AL, 0x28C    ; test bit 4 (DMA ready?) + bit 3 (motor on?)
+IN AL, 0x260    ; drev 1 tilsvarende
+→ 0xFFFF hvis klar
+```
+Port 0x28C og 0x260 var ikke i hardware-kortet. Muligvis FCR-status read-back.
+
+**fdc_release (0x0CB31)**:
+```asm
+OUT 0x290, AL       ; frigiv DPC
+MOV cs:[0x5E42], 0  ; ryd DPC-reservation-flag
+```
+
+**Nyt hardware-korttillæg** (manglede i ref):
+| Port | Retning | Funktion |
+|------|---------|----------|
+| 0x28C | R | Floppy status/ready (drev 0) |
+| 0x260 | R | Floppy status/ready (drev 1) |
+| 0x292 | R/W | Floppy DMA-acknowledge |
+| 0x294 | W | DMA-kanal/scroll (uafklaret) |
+
+**Omdøbning i symbolkortet**: `fdc_force_int` → `fdc_isr`; `crt_fcr_cmd` → navn TBD
+(den skriver til 0x288+0x280+0x294, ikke CRT-porte).
+
+**#16-status**: Statisk analyse bekræfter at RTM fn 2 patches ved boot. MAME-trace
+kan verificere den præcise handler-adresse, men arkitekturen er klar.
+
+---
+
+## Fase 6.1 — i82730 CRT-driver (DONE 2026-11-20)
+
+**Afgørende fund: Port 0x060 bruges ALDRIG i ccpm.sys.** Nul søgeresultater for
+`OUT 0x060` eller `MOV DX, 0x060`. MAME behøver IKKE implementere port 0x060 for
+at køre CCPM 3.1 korrekt. **Issue #19 lukkes.**
+
+i82730 styres udelukkende via:
+- **0x230** (IRST reset): 1 sted — kun ved init
+- **0x240** (Channel Attention): 3 steder — init, post-cmd-loop, mode-switch
+
+**crt_init_reset+CA @ 0x7BFE**:
+```asm
+OUT 0x230, AX    ; IRST (hardware reset af i82730)
+OUT 0x240, AX    ; Channel Attention
+...
+OUT 0xFF5E, 0xC003/0xC002  ; 80186 PCB timer-register (display timing?)
+LCALL cs:[0x4325]           ; far callback (sandsynligvis VRTC-handler)
+CALL 0xAF11                 ; EOI
+```
+
+**crt_post_cmd+wait @ 0x9607** (hvad der sendes til 0x240 bestemmes af kalderen):
+```asm
+OUT 0x240, AL              ; Channel Attention
+CMP cs:[0x5FA4], AL / JE . ; poll completion-flag (sættes af VRTC ISR?)
+MOV cs:[0x5FA4], 0x900     ; reset status
+RET
+```
+Completion signaleres via shared variable — XIOS sender CA og venter på VRTC-ISR.
+
+**crt_mode_switch @ 0xB9B7**:
+```asm
+OUT 0x240, AL          ; Channel Attention (mode-kommando)
+; Clear VRAM
+MOV ES, cs:[0x2C45]    ; VRAM segment
+REP STOSW 0xFFFF × 0x4000 words  ; clear 32 KB VRAM
+; Upload charset
+LDS SI, cs:[0x6228]    ; charset-pointer
+LODSB / SHL AX,5       ; tegn-index × 32 → VRAM-offset
+MOV CX, 0xA / STOSW × 10  ; 10 × 2 bytes = 20 B per glyph-row
+```
+Charset-data hentes fra en far-pointer — kan opdateres runtime (f.eks. Danish charset).
+
+**crt_fcr_cmd @ 0xC08A** *(forkert navn — skriv til floppy/DMA, ikke CRT)*:
+```asm
+OUT 0x288, AL    ; Floppy FCR
+IN  AL, 0x280    ; WD2797 status
+OUT 0x294, AL    ; ukendt port (DMA-kanal scroll-offset?)
+```
+Beregner scroll-offset fra en far-pointer (`cs:[0x4225]`) og udfylder en tabel ved
+`cs:[0x3932]`. Muligvis displayscroll i forbindelse med floppy-DMA-state.
+
+**Konklusion**:
+- RC759 XIOS bruger i82730 via IRST+CA-protokol (reset+attention) — klassisk 82730 model
+- Ingen DMA-setup-kode for 82730 i XIOS (DMA-kanaler konfigureres sandsynligvis af CRT-
+  command blocks i VRAM, styret af 82730 selv)
+- port 0x060 er i82730 "Command Block Busy" (CBB) — bruges KUN hvis softwaren poller
+  CBB-status; RC759 XIOS bruger i stedet completion-flag i SYSDAT ([0x5FA4])
+
+---
+
 ## Næste
 
-- Fase 3.1: FDC/DMA fuld annotation (afventer #16 for RTM fn 2 verifikation).
-- Fase 4.1: io_conout escape-parser (relateret til #18).
-- Fase 4.2: Tastatur HLE (port 0x020) polling-analyse.
-- Fase 5.1: dd759*.sys device drivers (#17).
-- Fase 6.1: i82730 CRT-driver (#19).
+- **#16**: RTM fn 2 runtime-patch — MAME-trace for at bekræfte præcis handler-adresse
+  (optionelt; arkitektur er klar fra statisk analyse)
+- **#18**: Dansk oversættelse (ÆØÅ): charset-pointer ved cs:[0x6228] er udgangspunktet
+- **#19**: LUKKET — port 0x060 bruges ikke i ccpm.sys
+- Symbolkort-opdatering: `fdc_force_int` → `fdc_isr`; `crt_fcr_cmd` → bedre navn

@@ -5,9 +5,9 @@ Fil: ccpm.sys  77568 bytes  load-paragraph 0x0048
 ========================================================================
 
 Statistik:
-  Kode-bytes kortlagt: 7004 / 77568
-  Instruktioner:       2797
-  Symboler:            140
+  Kode-bytes kortlagt: 8427 / 77568
+  Instruktioner:       3363
+  Symboler:            166
 
 SYMBOLER (sorteret efter adresse):
 ------------------------------------------------------------------------
@@ -353,11 +353,21 @@ SYMBOLER (sorteret efter adresse):
    Kaldt fra: 0x47d0
    Kalder:    0x5876, 0x58c0, 0x5905
 
+  0x078c0  sub_78c0                        (~17 B)
+   Kaldt fra: 0x7c43
+   Kalder:    0x78dc
+
   0x078d1  sub_78d1                        (~2 B)
    Kaldt fra: 0x9f56
 
-  0x078d3  sub_78d3                        (~22 B)
+  0x078d3  sub_78d3                        (~9 B)
    Kaldt fra: 0x9325, 0x9d5d
+
+  0x078dc  sub_78dc                        (~13 B)
+   Kaldt fra: 0x78c3
+
+★ 0x07bfe  crt_init_irst_ca                (~83 B)
+   Kalder:    0x78c0, 0xaf11
 
 ★ 0x07c97  sub_7c97                        (~22 B)
 
@@ -372,8 +382,15 @@ SYMBOLER (sorteret efter adresse):
 ★ 0x0851e  rtm_al87_blocking_read          (~19 B)
    Kalder:    0x85d3, 0x8a54, 0x8a95
 
-★ 0x085d3  sub_85d3                        (~74 B)
+★ 0x085d3  sub_85d3                        (~26 B)
    Kaldt fra: 0x852b
+
+  0x085ed  sub_85ed                        (~48 B)
+   Kaldt fra: 0x8c4e
+
+  0x08941  sub_8941                        (~49 B)
+   Kaldt fra: 0x8c36
+   Kalder:    0x9621, 0x9623
 
 ★ 0x08a54  sub_8a54                        (~62 B)
    Kaldt fra: 0x8520, 0x8a92
@@ -390,16 +407,78 @@ SYMBOLER (sorteret efter adresse):
    Kaldt fra: 0x8a62, 0x8aa3
    Kalder:    0x9220
 
+  0x08bfb  sub_8bfb                        (~91 B)
+   Kaldt fra: 0xbb7b
+   Kalder:    0x85ed, 0x8941, 0x920b, 0x9243, 0x928e, 0x9333, 0x9601, 0x96b8
+
+  0x08c5f  sub_8c5f                        (~364 B)
+   Kaldt fra: 0xbb7e
+   Kalder:    0x8dd5, 0x8dde, 0x9312, 0x9473
+
+  0x08dd5  sub_8dd5                        (~9 B)
+   Kaldt fra: 0x8d6c
+
+  0x08dde  sub_8dde                        (~16 B)
+   Kaldt fra: 0x8cd2, 0x8d17
+
+  0x0920b  sub_920b                        (~21 B)
+   Kaldt fra: 0x8c0e
+
   0x09220  sub_9220                        (~15 B)
    Kaldt fra: 0x8b5f
    Kalder:    0x9312
 
+  0x09243  sub_9243                        (~21 B)
+   Kaldt fra: 0x8c51
+
+  0x0928e  sub_928e                        (~23 B)
+   Kaldt fra: 0x8c01
+
+  0x092a5  sub_92a5                        (~23 B)
+   Kaldt fra: 0xbb47
+
   0x09312  sub_9312                        (~29 B)
-   Kaldt fra: 0x9229
+   Kaldt fra: 0x8c6f, 0x9229
    Kalder:    0x78d3
 
+  0x09333  sub_9333                        (~1 B)
+   Kaldt fra: 0x8c2d
+
+  0x0946f  sub_946f                        (~1 B)
+   Kaldt fra: 0x949a
+
+  0x09473  sub_9473                        (~45 B)
+   Kaldt fra: 0x8da7
+   Kalder:    0x946f
+
   0x09601  sub_9601                        (~25 B)
-   Kaldt fra: 0x96ed
+   Kaldt fra: 0x8c45, 0x96ed, 0xbb70, 0xbb75
+
+★ 0x09607  crt_post_cmd_wait               (~19 B)
+
+  0x09621  sub_9621                        (~2 B)
+   Kaldt fra: 0x8968, 0x896e, 0xb9c3, 0xb9c9, 0xb9d2, 0xb9d8, 0xb9e2, 0xb9e9
+
+  0x09623  sub_9623                        (~13 B)
+   Kaldt fra: 0x8959
+   Kalder:    0x9630
+
+  0x09630  sub_9630                        (~19 B)
+   Kaldt fra: 0x9624
+
+  0x09643  sub_9643                        (~29 B)
+   Kaldt fra: 0xbafa
+
+  0x09694  sub_9694                        (~36 B)
+   Kaldt fra: 0x96c3
+
+  0x096b8  sub_96b8                        (~23 B)
+   Kaldt fra: 0x8c0b
+   Kalder:    0x9694
+
+  0x096cf  sub_96cf                        (~34 B)
+   Kaldt fra: 0x8c40
+   Kalder:    0x9601
 
   0x0991b  sub_991b                        (~91 B)
    Kaldt fra: 0xc1ad
@@ -422,11 +501,14 @@ SYMBOLER (sorteret efter adresse):
 ★ 0x0a00b  fdc_read_path                   (~10 B)
    Kalder:    0x9f4d
 
-★ 0x0a2be  fdc_force_int                   (~29 B)
+★ 0x0a2be  fdc_isr                         (~29 B)
 
 ★ 0x0ac27  floppy_ack                      (~26 B)
 
 ★ 0x0ad64  floppy_status_check             (~15 B)
+
+  0x0af11  sub_af11                        (~12 B)
+   Kaldt fra: 0x7c4b
 
 ★ 0x0b163  xios_jmp_init                   (~142 B)
 
@@ -436,7 +518,10 @@ SYMBOLER (sorteret efter adresse):
 
 ★ 0x0b1ef  xios_entry_0x8C                 (~2 B)
 
-★ 0x0c08a  crt_fcr_cmd                     (~118 B)
+★ 0x0b9b7  crt_mode_switch                 (~473 B)
+   Kalder:    0x8bfb, 0x8c5f, 0x92a5, 0x9601, 0x9621, 0x9643
+
+★ 0x0c08a  fdc_dma_scroll_cmd              (~118 B)
    Kalder:    0xc43f, 0xc468
 
   0x0c43f  sub_c43f                        (~19 B)
@@ -955,6 +1040,35 @@ DISASSEMBLY AF KENDTE FUNKTIONER
   4f9e:  e9e5f2        jmp 0x4286
 
 ; ────────────────────────────────────────────────────────────
+; crt_init_irst_ca  (fil 0x07bfe)
+; ────────────────────────────────────────────────────────────
+  7bfe:  ba3002        mov dx, 0x230
+  7c01:  ef            out dx, ax  ; port i DX
+  7c02:  ba4002        mov dx, 0x240
+  7c05:  ef            out dx, ax  ; port i DX
+  7c06:  2efe06b310    inc byte ptr cs:[0x10b3]
+  7c0b:  2e803eb11000  cmp byte ptr cs:[0x10b1], 0
+  7c11:  7425          je 0x7c38
+  7c13:  ba5eff        mov dx, 0xff5e
+  7c16:  2e803eb21000  cmp byte ptr cs:[0x10b2], 0
+  7c1c:  750a          jne 0x7c28
+  7c1e:  2ec606b21008  mov byte ptr cs:[0x10b2], 8
+  7c24:  b803c0        mov ax, 0xc003
+  7c27:  ef            out dx, ax  ; port i DX
+  7c28:  2efe0eb210    dec byte ptr cs:[0x10b2]
+  7c2d:  7509          jne 0x7c38
+  7c2f:  b802c0        mov ax, 0xc002
+  7c32:  ef            out dx, ax  ; port i DX
+  7c33:  2efe0eb110    dec byte ptr cs:[0x10b1]
+  7c38:  2e803e0c0c00  cmp byte ptr cs:[0xc0c], 0
+  7c3e:  7406          je 0x7c46
+  7c40:  ba0100        mov dx, 1
+  7c43:  e87afc        call 0x78c0
+  7c46:  2eff1e2543    lcall cs:[0x4325]
+  7c4b:  e8c332        call 0xaf11
+  7c4e:  e9ed32        jmp 0xaf3e
+
+; ────────────────────────────────────────────────────────────
 ; sub_7c97  (fil 0x07c97)
 ; ────────────────────────────────────────────────────────────
   7c97:  8b7776        mov si, word ptr [bx + 0x76]
@@ -1017,7 +1131,7 @@ rtm_al87_blocking_read:
   85e4:  f6476b04      test byte ptr [bx + 0x6b], 4
   85e8:  7403          je 0x85ed
   85ea:  e9a504        jmp 0x8a92
-  85ed:  f7476b0302    test word ptr [bx + 0x6b], 0x203
+  85ed:  f7476b0302    test word ptr [bx + 0x6b], 0x203  ; ← kaldt fra 0x8c4e
   85f2:  7528          jne 0x861c
   85f4:  8a7764        mov dh, byte ptr [bx + 0x64]
   85f7:  8a5766        mov dl, byte ptr [bx + 0x66]
@@ -1095,6 +1209,16 @@ rtm_al87_blocking_read:
   8aed:  c3            ret 
 
 ; ────────────────────────────────────────────────────────────
+; crt_post_cmd_wait  (fil 0x09607)
+; ────────────────────────────────────────────────────────────
+  9607:  ba4002        mov dx, 0x240
+  960a:  ee            out dx, al  ; port i DX
+  960b:  2e3806a45f    cmp byte ptr cs:[0x5fa4], al
+  9610:  74f9          je 0x960b
+  9612:  2ec706a45f0009  mov word ptr cs:[0x5fa4], 0x900
+  9619:  c3            ret 
+
+; ────────────────────────────────────────────────────────────
 ; fdc_fcr_setup  (fil 0x09d4e)
 ; ────────────────────────────────────────────────────────────
   9d4e:  ba8802        mov dx, 0x288
@@ -1140,7 +1264,7 @@ rtm_al87_blocking_read:
   a012:  e92701        jmp 0xa13c
 
 ; ────────────────────────────────────────────────────────────
-; fdc_force_int  (fil 0x0a2be)
+; fdc_isr  (fil 0x0a2be)
 ; ────────────────────────────────────────────────────────────
   a2be:  ba8002        mov dx, 0x280
   a2c1:  b0d8          mov al, 0xd8
@@ -1389,7 +1513,72 @@ xios_init:
   b1f0:  c3            ret 
 
 ; ────────────────────────────────────────────────────────────
-; crt_fcr_cmd  (fil 0x0c08a)
+; crt_mode_switch  (fil 0x0b9b7)
+; ────────────────────────────────────────────────────────────
+  b9b7:  ba4002        mov dx, 0x240
+  b9ba:  ee            out dx, al  ; port i DX
+  b9bb:  0e            push cs
+  b9bc:  07            pop es
+  b9bd:  bfaa5f        mov di, 0x5faa
+  b9c0:  b82660        mov ax, 0x6026
+  b9c3:  e85bdc        call 0x9621
+  b9c6:  b8ae60        mov ax, 0x60ae
+  b9c9:  e855dc        call 0x9621
+  b9cc:  bfc25f        mov di, 0x5fc2
+  b9cf:  b8ca5f        mov ax, 0x5fca
+  b9d2:  e84cdc        call 0x9621
+  b9d5:  b84261        mov ax, 0x6142
+  b9d8:  e846dc        call 0x9621
+  b9db:  b83661        mov ax, 0x6136
+  b9de:  50            push ax
+  b9df:  bf2660        mov di, 0x6026
+  b9e2:  e83cdc        call 0x9621
+  b9e5:  58            pop ax
+  b9e6:  bfae60        mov di, 0x60ae
+  b9e9:  e835dc        call 0x9621
+  b9ec:  2ea1452c      mov ax, word ptr cs:[0x2c45]
+  b9f0:  8ec0          mov es, ax
+  b9f2:  33ff          xor di, di
+  b9f4:  b90040        mov cx, 0x4000
+  b9f7:  b8ff00        mov ax, 0xff
+  b9fa:  f3ab          rep stosw word ptr es:[di], ax
+  b9fc:  1e            push ds
+  b9fd:  2ea1452c      mov ax, word ptr cs:[0x2c45]
+  ba01:  8ec0          mov es, ax
+  ba03:  2ec51e2862    lds bx, ptr cs:[0x6228]
+  ba08:  c537          lds si, ptr [bx]
+  ba0a:  ac            lodsb al, byte ptr [si]
+  ba0b:  b105          mov cl, 5
+  ba0d:  32e4          xor ah, ah
+  ba0f:  d3e0          shl ax, cl
+  ba11:  8bf8          mov di, ax
+  ba13:  b90a00        mov cx, 0xa
+  ba16:  b0ff          mov al, 0xff
+  ba18:  8a24          mov ah, byte ptr [si]
+  ba1a:  ab            stosw word ptr es:[di], ax
+  ba1b:  46            inc si
+  ba1c:  e2fa          loop 0xba18
+  ba1e:  ac            lodsb al, byte ptr [si]
+  ba1f:  0ac0          or al, al
+  ba21:  75e8          jne 0xba0b
+  ba23:  06            push es
+  ba24:  1e            push ds
+  ba25:  0e            push cs
+  ba26:  1f            pop ds
+  ba27:  b033          mov al, 0x33
+  ba29:  b99700        mov cx, 0x97
+  ba2c:  ba2450        mov dx, 0x5024
+  ba2f:  cd28          int 0x28
+  ba31:  b99800        mov cx, 0x98
+  ba34:  b033          mov al, 0x33
+  ba36:  ba4450        mov dx, 0x5044
+  ba39:  cd28          int 0x28
+  ba3b:  b034          mov al, 0x34
+  ba3d:  b99700        mov cx, 0x97
+  ... (fortsat)
+
+; ────────────────────────────────────────────────────────────
+; fdc_dma_scroll_cmd  (fil 0x0c08a)
 ; ────────────────────────────────────────────────────────────
   c08a:  ba8802        mov dx, 0x288
   c08d:  ee            out dx, al  ; port i DX

@@ -77,13 +77,17 @@ KNOWN_LABELS = {
     0x09F06: "fdc_send_cmd",
     0x09F4D: "fdc_wait",
     0x0A00B: "fdc_read_path",
-    0x0A2BE: "fdc_force_int",
+    0x0A2BE: "fdc_isr",         # ISR (IRET+EOI) — fejlnavnet fdc_force_int
     0x0CB31: "fdc_release",
     # Floppy reserve/ack
     0x0AC27: "floppy_ack",
     0x0AD64: "floppy_status_check",
     # CRT (XIOS del)
-    0x0C08A: "crt_fcr_cmd",
+    0x0C08A: "fdc_dma_scroll_cmd",  # skriver til 0x288+0x280+0x294, ikke CRT-porte
+    # CRT init + command helpers
+    0x07BFE: "crt_init_irst_ca",    # OUT 0x230 (IRST) + OUT 0x240 (CA)
+    0x09607: "crt_post_cmd_wait",   # OUT 0x240 CA + poll cs:[0x5FA4]
+    0x0B9B7: "crt_mode_switch",     # CA + VRAM-clear + charset-upload
 }
 
 # Hardware-porte (til annotation)
@@ -95,12 +99,14 @@ HW_PORTS = {
     0x060:"i82730 ctrl",
     0x070:"i8255 PPI-A",       0x072:"i8255 PPI-B",
     0x074:"i8255 PPI-C",       0x076:"i8255 PPI ctrl",
-    0x280:"WD2797 cmd/stat",   0x282:"WD2797 track",
-    0x284:"WD2797 sector",     0x286:"WD2797 data",
-    0x288:"Floppy FCR",        0x28E:"Floppy ack/reserve",
-    0x290:"Floppy release",    0x292:"Floppy DMA ack",
-    0x300:"iSBX MCS0",         0x302:"iSBX seriel+2",
-    0x310:"iSBX MCS1",
+    0x230:"i82730 IRST reset",  0x240:"i82730 Channel Attn",
+    0x260:"Floppy status drev1",0x280:"WD2797 cmd/stat",
+    0x282:"WD2797 track",       0x284:"WD2797 sector",
+    0x286:"WD2797 data",        0x288:"Floppy FCR",
+    0x28C:"Floppy status drev0",0x28E:"Floppy ack/reserve",
+    0x290:"Floppy release",     0x292:"Floppy DMA ack",
+    0x294:"DMA scroll/kanal",   0x300:"iSBX MCS0",
+    0x302:"iSBX seriel+2",      0x310:"iSBX MCS1",
 }
 
 # WD2797 kommandoer
