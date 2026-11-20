@@ -119,6 +119,88 @@ for s in SEEDS:
     if s < FILE_SIZE:
         branch_targets.add(s)
 
+# ── Linear sweep over modul 0-3 (RTM + BDOS: 0x0000-0x03ACF) ─────────────────
+# CFG kan ikke følge GENSYS-patchede dispatch-tabeller, men disse moduler er
+# primært kode. Linear sweep finder "øer" som CFG ikke når.
+#
+# Heuristik for valid kode: mindst 3 instruktioner uden invalid opcode + ingen
+# for lange instruktioner (>7 bytes = typisk data-mismatch).
+#
+SWEEP_END = 0x03AD0  # slut af modul 0-3
+
+INVALID_OPCODES = {0xD6, 0xF1}  # udefinerede i 8086/80186
+
+def looks_like_code(start, min_insns=4, max_insn_size=7):
+    """Returnér True hvis mindst min_insns valide instruktioner fra start."""
+    count = 0
+    off   = start
+    while off < min(start + 64, SWEEP_END):
+        insns = list(cs.disasm(d[off:off+10], off))
+        if not insns:
+            return False
+        i = insns[0]
+        if i.id == 0:              # capstone "invalid"
+            return False
+        if i.bytes[0] in INVALID_OPCODES:
+            return False
+        if i.size > max_insn_size:
+            return False
+        count += 1
+        if count >= min_insns:
+            return True
+        off += i.size
+    return count >= min_insns
+
+sweep_new = 0
+off = 0x00FE  # start fra modul 0 kode-begyndelse
+while off < SWEEP_END:
+    if code_bytes[off]:          # allerede kortlagt af CFG
+        off += 1
+        continue
+    if d[off] == 0x00:           # null-bytes er typisk data/padding
+        off += 1
+        continue
+    if looks_like_code(off):
+        # Kør mini-CFG fra dette offset
+        mini_q = [off]
+        while mini_q:
+            cur = mini_q.pop()
+            if cur in visited or cur >= SWEEP_END:
+                continue
+            visited.add(cur)
+            for insn in cs.disasm(d[cur:cur+16], cur):
+                sz = insn.size
+                for i in range(sz):
+                    if cur + i < FILE_SIZE:
+                        code_bytes[cur + i] = 1
+                insn_at[cur] = (insn.mnemonic, insn.op_str,
+                                bytes(d[cur:cur+sz]), sz)
+                sweep_new += 1
+                mnem = insn.mnemonic.lower()
+                ops  = insn.op_str
+                # Følg branches
+                tgt  = None
+                if mnem in ("call", "jmp") or mnem.startswith("j"):
+                    import re as _re
+                    m = _re.search(r'0x([0-9a-f]+)', ops)
+                    if m:
+                        tgt = int(m.group(1), 16)
+                if tgt and 0 <= tgt < SWEEP_END and tgt not in visited:
+                    branch_targets.add(tgt)
+                    mini_q.append(tgt)
+                is_term = mnem in TERM_MNEMONICS
+                is_ujmp = mnem in ("jmp", "jmp short", "jmp near", "ljmp")
+                if not is_term and not is_ujmp:
+                    nxt = cur + sz
+                    if nxt < SWEEP_END and nxt not in visited:
+                        mini_q.append(nxt)
+                break
+        off += 1
+    else:
+        off += 1
+
+print(f"Linear sweep: {sweep_new} nye instruktioner i modul 0-3")
+
 # ── Labels ─────────────────────────────────────────────────────────────────────
 KNOWN_LABELS = {
     0x000FE: "mod0_rtm_init",
