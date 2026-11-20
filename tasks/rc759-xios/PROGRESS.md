@@ -125,6 +125,39 @@ Den tidlige ISR-kandidat ved 0xB110-0xB24B er **reconfigurations-kode** for
 iSBX MCS1 (port 0x314/0x316), ikke konsol-input. ISR'en genbruger XIOS init()-koden
 (hopper til 0xB169) for at genprogrammere iSBX-kortet.
 
+## Fase 4.2 — Tastatur HLE (DONE 2026-11-20)
+
+Tastatur-handler ved **0x7A99** (ikke ISR, hybrid polling/interrupt):
+```asm
+7A99: PUSHA                  ; gem alle registers
+7AA1: push ds / pop es        ; ES = DS
+7AA3: CALL 0xAF11             ; send EOI
+7AA6: IN AL, 0x20             ; læs scancode fra tastatur
+7AA8: mov cs:[0x1044], al     ; gem scancode i buffer
+7ABE: mov bx, 0x2C52          ; XLAT-tabel pointer
+7AC1: XLATB                   ; konverter scancode → tegn
+7AC2: mov cs:[0x1040], al     ; gem konverteret tegn
+7AC9: call 0x78C0             ; videregiv til RTM
+...
+7B67: POPA / RET              ; returnér (NB: ikke IRET)
+```
+
+**EOI-helper ved 0xAF11**:
+```asm
+AF11: mov al, 0x20            ; EOI command
+AF13: out 0, al               ; send til 8259A PIC
+AF15: mov dx, 0xFF22          ; 80186 PCB EOI register
+AF18: mov ax, 0x8000          ; non-specific EOI
+AF1B: out dx, ax
+AF1C: ret
+```
+
+**Konklusion**: Både konsol OG tastatur bruger **polling-model**, ikke interrupts.
+EOI'en sendes dog fordi handleren kaldes efter en INT-indikation (sandsynligvis
+via RTM-flag). Scancode-tabellen ved 0x2C52 er 256 bytes, muligvis DS-afhængig
+ved runtime (statisk form ser ud som kode). Dansk-mapping (ÆØÅ/æøå) er
+til stede men kræver yderligere analyse under runtime.
+
 ## Status 2026-11-20 (dagsopsummering)
 
 **Gennemført**: 6 af 11 faser i Opus-planen (fase 0.1, 0.2, 1.1, 1.2, 1.3, 2.1).
