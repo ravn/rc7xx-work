@@ -444,10 +444,32 @@ i82730 character generator lades med disse glyphs ved mode-switch.
 **Alle 11 Opus-faser + #18 gennemført**.
 
 **Åbne issues**:
-- **#16**: RTM fn 2 runtime-patch (MAME-trace) — optionelt; statisk arkitektur klar
+- **#16**: LUKKET (MAME-trace 2026-11-20 — se nedenfor)
 - **#17**: LUKKET (fase 5.1)
 - **#18**: LUKKET (ovenfor)
 - **#19**: LUKKET (fase 6.1)
+
+## #16 — RTM fn 2 runtime-verifikation (DONE 2026-11-20, MAME-trace)
+
+MAME Lua-trace ved t=301s emuleret (CCPM 3.1 fuldt bootet, menu kørende).
+Metode: `emu.register_frame_done` + `manager.machine.devices[":maincpu"].spaces["program"]:read_u16()`.
+
+**RTM service-tabel ved runtime** (SYSDAT+0xAA = physical 0x704A):
+
+Tabellen bruger **kodet format**: `0xMMFF` = modul×0x100 + funktionsnummer (inter-modul kald).
+
+| AL | Beskrivelse | Runtime-adresse | Fortolkning |
+|----|-------------|-----------------|-------------|
+| 0x02 | **io_read** | **0x0401** | Modul 4 (XIOS), fn 1 |
+| 0x80 | io_const (poll) | **0x0306** | Modul 3 (BDOS3), fn 6 |
+| 0x87 | io_conin (blocking) | **0x8205** | Modul 2 (BDOS2), fn 5 |
+
+**Konklusion**: RTM fn 2 (`io_read`) patches til `0x0401` = XIOS modul 4, funktion 1.
+Det er XIOS IO_READ-handleren leveret via den inter-modul dispatch-mekanisme
+(CX = modul×0x100 + fn) som vi kortlagde i fase 3.1. Statisk analyse var korrekt —
+GENSYS patcher tabellen med modul/funktionsnummer, IKKE direkte kodepointere.
+
+Alle issues (#16-#19) nu lukkede. RE fuldstændig afsluttet.
 
 **Vigtigste arkitektoniske fund**:
 1. XIOS bruger IKKE DRI's standard JMP init/JMP entry
