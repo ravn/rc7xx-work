@@ -187,6 +187,55 @@ def label_for(off):
         return KNOWN_LABELS[off]
     return f"L_{off:05X}"
 
+# ── DRI struct-felt og SYSDAT-variable (fra PD.DEF + binær-analyse) ──────────
+PD_FIELDS = {
+    0x00: "p_link",   0x02: "p_thread", 0x04: "p_stat",    0x05: "p_prior",
+    0x06: "p_flag",   0x08: "p_name",   0x10: "p_uda",     0x12: "p_dsk",
+    0x13: "p_user",   0x14: "p_ldsk",   0x15: "p_luser",   0x16: "p_mem",
+    0x18: "p_cmod",   0x19: "p_tkcnt",  0x1A: "p_wait",    0x1C: "p_org",
+    0x1E: "p_parent", 0x20: "p_cns",    0x21: "p_abort",   0x22: "p_conmode",
+    0x24: "p_lst",    0x26: "p_sflag",  0x28: "p_userdisp",0x2C: "p_pret",
+    0x2E: "p_scratch",
+}
+
+# SYSDAT-variable: offset fra SYSDAT-segment-base (DS = 0x06FA i RTM)
+# Fundet via binær-analyse + DRI kilde-kryds
+SYSDAT_VARS = {
+    0x002E: "rlr",       # Running List Root (4× MOV AX,[002E] i modul 0)
+    0x0219: "indisp",    # In-dispatcher flag (9× CMP byte[0219], 0/1/0xFF)
+    0x0006: "sysdat",    # CS:[6] = SYSDAT segment (rtm_dispatcher)
+    0x00AA: "rtm_svc_tbl", # RTM service table (fra fase 1.1)
+    0x5FA4: "crt_comp_flag", # CRT completion flag (crt_post_cmd_wait)
+    0x5E42: "dpc_reserved",  # DPC reservation flag (fdc_release)
+    0x376E: "fdc_wait_flag",  # FDC cooperative wait flag (fdc_wait)
+    0x392F: "fdc_isr_save",   # FDC ISR saved state (fdc_isr)
+    0x1040: "kbd_char",       # Tastatur: konverteret tegn (kbd_handler)
+    0x1044: "kbd_scan",       # Tastatur: scancode (kbd_handler)
+    0x10B1: "crt_init_ctr1",  # CRT init counter 1 (crt_init_irst_ca)
+    0x10B2: "crt_init_ctr2",  # CRT init counter 2
+    0x10B3: "crt_init_ctr3",  # CRT init counter 3
+    0x2C45: "vram_seg",       # VRAM segment (crt_mode_switch)
+    0x2C52: "kbd_xlat",       # Keyboard XLAT tabel (kbd_handler)
+    0x6228: "charset_ptr",    # Charset far-pointer (crt_mode_switch)
+}
+
+def annotate_ops(ops):
+    """Tilføj DRI-symbolnavne til register+offset og direkte memory-accesses."""
+    # [bx + 0xNN] → p_field[bx]
+    def pd_replace(m):
+        reg = m.group(1)
+        off = int(m.group(2), 16)
+        name = PD_FIELDS.get(off)
+        return f"{name}[{reg}]" if name else m.group(0)
+    ops = re.sub(r'\[(bx|si|di|bp)\s*\+\s*(0x[0-9a-f]+)\]', pd_replace, ops)
+    # Hjælpefunktion for direkte memory-accesses [0xNNNN]
+    def sysdat_replace(m):
+        off = int(m.group(1), 16)
+        name = SYSDAT_VARS.get(off)
+        return f"[{name}]" if name else m.group(0)
+    ops = re.sub(r'\[(0x[0-9a-f]+)\]', sysdat_replace, ops)
+    return ops
+
 # ── NASM syntax-konvertering ───────────────────────────────────────────────────
 # Capstone Intel syntax → NASM syntax
 
@@ -279,7 +328,8 @@ while off < FILE_SIZE:
         # Kode-region: db med mnemonic som kommentar (garanterer byte-identisk encoding)
         mnem, ops, raw, sz = insn_at[off]
         mnem_disp, ops_disp = fixup_nasm(mnem, ops, raw)
-        asm_comment = f"{mnem_disp} {ops_disp}".strip()
+        ops_ann = annotate_ops(ops_disp)
+        asm_comment = f"{mnem_disp} {ops_ann}".strip()
         hex_vals = ", ".join(f"0x{b:02X}" for b in raw)
         out.append(f"  db {hex_vals:<40} ; {off:05X}  {asm_comment}")
         off += sz
