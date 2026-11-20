@@ -358,7 +358,10 @@ L_00339:  ; 00339
   db 0x0A, 0x04                               ; 00366  or al, byte [si]
   db 0x03, 0xC4                               ; 00368  add ax, sp
   db 0x03, 0xA8, 0x03, 0xC8                   ; 0036A  add bp, word [bx + si - 0x37fd]
-  db 0x0A, 0xB9, 0x01, 0x00                   ; 0036E  or bh, byte [bx + di + 1]
+  db 0x0A                                                         ; 0036E  .
+
+L_0036F:  ; 0036F
+  db 0xB9, 0x01, 0x00                         ; 0036F  mov cx, 1
   db 0xBB, 0xFF, 0xFF                         ; 00372  mov bx, 0xffff
   db 0xC3                                     ; 00375  ret
 
@@ -926,9 +929,13 @@ L_00805:  ; 00805
   db 0x83, 0xFB, 0xFF                         ; 00879  cmp bx, -1
   db 0x74, 0x25                               ; 0087C  je 0x8a3
   db 0x06                                     ; 0087E  push es
-  db 0x8E, 0x06, 0x99, 0x04                   ; 0087F  mov es, word [0x499]
-  db 0xBF, 0x6C, 0x00                         ; 00883  mov di, 0x6c
-  db 0xBE, 0x54, 0x04                         ; 00886  mov si, 0x454
+  db 0x8E, 0x06                                                   ; 0087F  ..
+
+io_switch:  ; 00881
+  db 0x99                                     ; 00881  cdq
+  db 0x04, 0xBF                               ; 00882  add al, 0xbf
+  db 0x6C                                     ; 00884  insb
+  db 0x00, 0xBE, 0x54, 0x04                   ; 00885  add byte [bp + 0x454], bh
   db 0x8B, 0x44, 0x18                         ; 00889  mov ax, word p_cmod[si]
   db 0x2D, 0xD2, 0x03                         ; 0088C  sub ax, 0x3d2
   db 0x05, 0x81, 0x00                         ; 0088F  add ax, 0x81
@@ -1148,14 +1155,14 @@ L_00A7D:  ; 00A7D
   db 0x8A, 0x16, 0x54, 0x04                   ; 00A7D  mov dl, byte [0x454]
   db 0x80, 0xFA, 0x00                         ; 00A81  cmp dl, 0
   db 0x74, 0x04                               ; 00A84  je 0xa8a
-  db 0xFE, 0xCA                               ; 00A86  dec dl
-  db 0xEB, 0x07                               ; 00A88  jmp short 0xa91
+  db 0xFE                                                         ; 00A86  .
+
+L_00A87:  ; 00A87
+  db 0xCA, 0xEB, 0x07                         ; 00A87  retf 0x7eb
 
 L_00A8A:  ; 00A8A
   db 0x8B, 0x1E, 0x68, 0x00                   ; 00A8A  mov bx, word [0x68]
   db 0x8A, 0x57, 0x12                         ; 00A8E  mov dl, byte p_dsk[bx]
-
-L_00A91:  ; 00A91
   db 0x80, 0xC2, 0x41                         ; 00A91  add dl, 0x41
   db 0xE8, 0x62, 0xFF                         ; 00A94  call 0x9f9
   db 0xB2, 0x3A                               ; 00A97  mov dl, 0x3a
@@ -1208,9 +1215,13 @@ L_00ADE:  ; 00ADE
   db 0xE8, 0x1E, 0x00                         ; 00AF0  call 0xb11
   db 0x58                                     ; 00AF3  pop ax
   db 0x25, 0x80, 0x00                         ; 00AF4  and ax, 0x80
-  db 0x8B, 0x36, 0x68, 0x00                   ; 00AF7  mov si, word [0x68]
-  db 0x81, 0xE6, 0x7F, 0xFF                   ; 00AFB  and si, 0xff7f
-  db 0x09, 0x44, 0x06                         ; 00AFF  or word [si + 6], ax
+  db 0x8B, 0x36, 0x68                                             ; 00AF7  .6h
+
+io_polldev:  ; 00AFA
+  db 0x00, 0x81, 0xE6, 0x7F                   ; 00AFA  add byte [bx + di + 0x7fe6], al
+  db 0xFF, 0x09                               ; 00AFE  dec word [bx + di]
+  db 0x44                                     ; 00B00  inc sp
+  db 0x06                                     ; 00B01  push es
   db 0x8B, 0xC3                               ; 00B02  mov ax, bx
   db 0xC3                                     ; 00B04  ret
 
@@ -2482,7 +2493,10 @@ L_01515:  ; 01515
   db 0x5B                                     ; 01520  pop bx
   db 0x5D                                     ; 01521  pop bp
   db 0x3C, 0x3E                               ; 01522  cmp al, 0x3e
-  db 0x20, 0x80, 0x3C, 0x20                   ; 01524  and byte [bx + si + 0x203c], al
+  db 0x20                                                         ; 01524   
+
+L_01525:  ; 01525
+  db 0x80, 0x3C, 0x20                         ; 01525  cmp byte [si], 0x20
   db 0x74, 0x06                               ; 01528  je 0x1530
   db 0x80, 0x3C, 0x09                         ; 0152A  cmp byte [si], 9
   db 0x74, 0x01                               ; 0152D  je 0x1530
@@ -2677,7 +2691,10 @@ L_01680:  ; 01680
   db 0x30, 0x34                               ; 01688  xor byte [si], dh
 
 L_0168A:  ; 0168A
-  db 0x31, 0xBB, 0x38, 0x00                   ; 0168A  xor word [bp + di + 0x38], di
+  db 0x31                                                         ; 0168A  1
+
+mod1_bdos1_init:  ; 0168B
+  db 0xBB, 0x38, 0x00                         ; 0168B  mov bx, 0x38
   db 0xC7, 0x07, 0xE2, 0x03                   ; 0168E  mov word [bx], 0x3e2
   db 0x8C, 0x4F, 0x02                         ; 01692  mov word [bx + 2], cs
   db 0xBB, 0x3C, 0x00                         ; 01695  mov bx, 0x3c
@@ -2710,8 +2727,10 @@ L_0168A:  ; 0168A
   db 0x5A                                     ; 016D8  pop dx
   db 0x01, 0xB2, 0x01, 0xD5                   ; 016D9  add word [bp + si - 0x2aff], si
   db 0x01, 0xD1                               ; 016DD  add cx, dx
-  db 0x01, 0x32                               ; 016DF  add word [bp + si], si
-  db 0xED                                     ; 016E1  in ax, dx
+  db 0x01                                                         ; 016DF  .
+
+mod1_bdos1_entry:  ; 016E0
+  db 0x32, 0xED                               ; 016E0  xor ch, ch
   db 0xD1, 0xE1                               ; 016E2  shl cx, 1
   db 0x8B, 0xF1                               ; 016E4  mov si, cx
   db 0x2E, 0xFF, 0x94, 0x6C, 0x00             ; 016E6  call word [cs:si + 0x6c]
@@ -2739,6 +2758,8 @@ L_0168A:  ; 0168A
   db 0x33, 0xDB                               ; 01727  xor bx, bx
   db 0xE9, 0x7A, 0x03                         ; 01729  jmp 0x1aa6
   db 0x26, 0x8C, 0x1E, 0x30, 0x00             ; 0172C  mov word [es:0x30], ds
+
+bdos1_func24_get_dlog:  ; 01731
   db 0x8B, 0x1E, 0x68, 0x00                   ; 01731  mov bx, word [0x68]
   db 0xC3                                     ; 01735  ret
   db 0xE8, 0x37, 0x01                         ; 01736  call 0x1870
@@ -3192,7 +3213,7 @@ L_01AF6:  ; 01AF6
   db 0xA1, 0x58, 0x06                         ; 01AFB  mov ax, word [0x658]
   db 0xE9, 0x9E, 0x03                         ; 01AFE  jmp 0x1e9f
 
-L_01B01:  ; 01B01
+bdos1_switch_stack:  ; 01B01
   db 0x26, 0x8C, 0x16, 0x1E, 0x00             ; 01B01  mov word [es:0x1e], ss
   db 0x26, 0x89, 0x26, 0x1C, 0x00             ; 01B06  mov word [es:0x1c], sp
   db 0x2E, 0x8E, 0x16, 0x06, 0x00             ; 01B0B  mov ss, word [cs:6]
@@ -4806,7 +4827,10 @@ L_02637:  ; 02637
   db 0x30, 0x30                               ; 02705  xor byte [bx + si], dh
   db 0x37                                     ; 02707  aaa
   db 0x30, 0x34                               ; 02708  xor byte [si], dh
-  db 0x31, 0xCB                               ; 0270A  xor bx, cx
+  db 0x31                                                         ; 0270A  1
+
+mod2_bdos2_init:  ; 0270B
+  db 0xCB                                     ; 0270B  retf
   db 0xDE, 0x00                               ; 0270C  fiadd word [bx + si]
   db 0x0A, 0x01                               ; 0270E  or al, byte [bx + di]
   db 0x32, 0x01                               ; 02710  xor al, byte [bx + di]
@@ -4819,7 +4843,11 @@ L_02637:  ; 02637
   db 0x7A, 0x06                               ; 0271E  jp 0x2726
   db 0x2B, 0x07                               ; 02720  sub ax, word [bx]
   db 0xA0, 0x08, 0x1E                         ; 02722  mov al, byte [0x1e08]
-  db 0x0A, 0x53, 0x51                         ; 02725  or dl, byte [bp + di + 0x51]
+  db 0x0A                                                         ; 02725  .
+
+mod2_bdos2_entry:  ; 02726
+  db 0x53                                     ; 02726  push bx
+  db 0x51                                     ; 02727  push cx
   db 0x52                                     ; 02728  push dx
   db 0xBB, 0xF5, 0x06                         ; 02729  mov bx, 0x6f5
   db 0xB9, 0x15, 0x02                         ; 0272C  mov cx, 0x215
@@ -4833,6 +4861,8 @@ L_02637:  ; 02637
   db 0x59                                     ; 02744  pop cx
   db 0x5B                                     ; 02745  pop bx
   db 0x8C, 0x16, 0x72, 0x06                   ; 02746  mov word [0x672], ss
+
+bdos2_switch_stack:  ; 0274A
   db 0x89, 0x26, 0x70, 0x06                   ; 0274A  mov word [0x670], sp
   db 0x8C, 0xD8                               ; 0274E  mov ax, ds
   db 0x9C                                     ; 02750  pushf
@@ -4859,6 +4889,8 @@ L_0275F:  ; 0275F
   db 0x9C                                     ; 02770  pushf
   db 0x58                                     ; 02771  pop ax
   db 0xFA                                     ; 02772  cli
+
+bdos2_restore_stack:  ; 02773
   db 0x8E, 0x16, 0x72, 0x06                   ; 02773  mov ss, word [0x672]
   db 0x8B, 0x26, 0x70, 0x06                   ; 02777  mov sp, word [0x670]
   db 0x50                                     ; 0277B  push ax
@@ -4873,7 +4905,7 @@ L_0275F:  ; 0275F
   db 0x59                                     ; 0278E  pop cx
   db 0x5B                                     ; 0278F  pop bx
 
-L_02790:  ; 02790
+bdos_exit:  ; 02790
   db 0x8B, 0xC3                               ; 02790  mov ax, bx
   db 0xCB                                     ; 02792  retf
 
@@ -6356,7 +6388,10 @@ L_03148:  ; 03148
   db 0x30, 0x30                               ; 03225  xor byte [bx + si], dh
   db 0x37                                     ; 03227  aaa
   db 0x30, 0x34                               ; 03228  xor byte [si], dh
-  db 0x31, 0xCB                               ; 0322A  xor bx, cx
+  db 0x31                                                         ; 0322A  1
+
+mod3_bdos3_init:  ; 0322B
+  db 0xCB                                     ; 0322B  retf
   db 0x6B, 0x03, 0x7E                         ; 0322C  imul ax, word [bp + di], 0x7e
   db 0x03, 0x8E, 0x03, 0x94                   ; 0322F  add cx, word [bp - 0x6bfd]
   db 0x03, 0x9A, 0x03, 0xFB                   ; 03233  add bx, word [bp + si - 0x4fd]
@@ -6378,9 +6413,11 @@ L_03148:  ; 03148
   db 0x46                                     ; 03260  inc si
   db 0x04, 0x57                               ; 03261  add al, 0x57
   db 0x04, 0x63                               ; 03263  add al, 0x63
-  db 0x04, 0xD1                               ; 03265  add al, 0xd1
-  db 0xE1, 0x8B                               ; 03267  loope 0x31f4
-  db 0xF1                                     ; 03269  int1
+  db 0x04                                                         ; 03265  .
+
+mod3_bdos3_entry:  ; 03266
+  db 0xD1, 0xE1                               ; 03266  shl cx, 1
+  db 0x8B, 0xF1                               ; 03268  mov si, cx
   db 0x2E, 0xFF, 0x94, 0x4C, 0x00             ; 0326A  call word [cs:si + 0x4c]
   db 0xCB                                     ; 0326F  retf
   db 0x2E, 0xFF, 0x1E, 0x08, 0x00             ; 03270  call far [cs:8]
@@ -6499,6 +6536,8 @@ L_03340:  ; 03340
   db 0x9D                                     ; 03340  popf
   db 0x33, 0xDB                               ; 03341  xor bx, bx
   db 0xC3                                     ; 03343  ret
+
+bdos3_xios_call:  ; 03344
   db 0x52                                     ; 03344  push dx
   db 0xBB, 0x0D, 0x07                         ; 03345  mov bx, 0x70d
   db 0xB9, 0x15, 0x02                         ; 03348  mov cx, 0x215

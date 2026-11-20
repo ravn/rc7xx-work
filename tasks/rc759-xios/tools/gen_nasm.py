@@ -151,6 +151,9 @@ def looks_like_code(start, min_insns=4, max_insn_size=7):
         off += i.size
     return count >= min_insns
 
+# Beskyttede adresser (SEEDS): sweep må IKKE skabe instruktioner der overlapper disse
+PROTECTED_ADDRS = set(s for s in SEEDS if 0 <= s < FILE_SIZE)
+
 sweep_new = 0
 off = 0x00FE  # start fra modul 0 kode-begyndelse
 while off < SWEEP_END:
@@ -170,11 +173,23 @@ while off < SWEEP_END:
             visited.add(cur)
             for insn in cs.disasm(d[cur:cur+16], cur):
                 sz = insn.size
+                # Tjek om instruktionen overlapper en beskyttet adresse
+                # Hvis ja: reducer til 1 byte (behandl som data)
+                for i in range(1, sz):
+                    if (cur + i) in PROTECTED_ADDRS or (cur + i) in insn_at:
+                        sz = i  # stop FØR den beskyttede adresse
+                        break
+                if sz == 0:
+                    sz = 1
+                raw = bytes(d[cur:cur+sz])
                 for i in range(sz):
                     if cur + i < FILE_SIZE:
                         code_bytes[cur + i] = 1
-                insn_at[cur] = (insn.mnemonic, insn.op_str,
-                                bytes(d[cur:cur+sz]), sz)
+                if sz == insn.size:
+                    insn_at[cur] = (insn.mnemonic, insn.op_str, raw, sz)
+                else:
+                    # Trunkeret — gem som data (ingen insn_at entry)
+                    pass
                 sweep_new += 1
                 mnem = insn.mnemonic.lower()
                 ops  = insn.op_str
@@ -207,8 +222,15 @@ KNOWN_LABELS = {
     0x002FA: "mod0_rtm_entry",
     0x0168B: "mod1_bdos1_init",
     0x016E0: "mod1_bdos1_entry",
+    # BDOS-funktioner identificeret via signatur-matching (2026-11-20)
+    0x01731: "bdos1_func24_get_dlog",   # mov bx,[0x68]; ret → func24: get dlog bitmap
+    0x01B01: "bdos1_switch_stack",      # save SS:SP til ES:[0x1e/0x1c], skift til BDOS-stak
     0x0270B: "mod2_bdos2_init",
     0x02726: "mod2_bdos2_entry",
+    0x0274A: "bdos2_switch_stack",      # save SS:SP til [0x672/0x670], skift til BDOS-stak
+    0x02773: "bdos2_restore_stack",     # restore SS:SP fra [0x672/0x670] (goback mod2)
+    0x02790: "bdos_exit",               # exit: mov ax,bx; retf (BDOSIF exit)
+    0x03344: "bdos3_xios_call",         # push dx; mov bx,0x70d; call intermod; mov[0x652],0xff; push ds
     0x0322B: "mod3_bdos3_init",
     0x03266: "mod3_bdos3_entry",
     0x03B1C: "mod4_xios_init",
