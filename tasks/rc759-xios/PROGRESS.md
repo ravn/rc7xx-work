@@ -125,10 +125,27 @@ Den tidlige ISR-kandidat ved 0xB110-0xB24B er **reconfigurations-kode** for
 iSBX MCS1 (port 0x314/0x316), ikke konsol-input. ISR'en genbruger XIOS init()-koden
 (hopper til 0xB169) for at genprogrammere iSBX-kortet.
 
+## Status 2026-11-20 (dagsopsummering)
+
+**Gennemført**: 6 af 11 faser i Opus-planen (fase 0.1, 0.2, 1.1, 1.2, 1.3, 2.1).
+**Instruktioner kortlagt**: 2797 (udvides automatisk når seeds tilføjes).
+**Åbne issues** (ravn/rc7xx-work):
+- #16 Verificer RTM fn 2 patches io_read handler ved runtime
+- #17 Disassembler dd759*.sys device drivers
+- #18 Kortlæg dansk oversættelse (strings + ÆØÅ + escape-sekvenser)
+- #19 MAME: verificer behov for port 0x060 (i82730 command block) emulation
+
+**Vigtigste arkitektoniske fund**:
+1. RC759 XIOS bruger IKKE DRI's standard JMP init/JMP entry — alle kald via
+   dispatch-tabel ved CS:0x16A4 + RTM service-tabel ved SYSDAT+0xAA.
+2. GENSYS extension point ved XIOS+0x4EE3 er bypass'et (single-modul XIOS).
+3. **Konsol-input bruger POLLING, ikke interrupts** (sub_AD8E + sub_B032).
+4. DPC delt-disk-reservation forklarer port 0x28E/0x290 i io_read/io_write.
+
 ## Næste
 
-- Fase 3.1: FDC/DMA fuld annotation (RTM fn 2 patch-target klarlagt via polling-model).
-- Fase 4.1: io_conout escape-parser (RC759 dansk-specifikke sekvenser).
-- Fase 4.2: Tastatur HLE (port 0x020) — polling-analog til konsolsporet.
-- Fase 5.1: dd759*.sys device drivers.
-- Fase 6.1: i82730 CRT-driver (port 0x060/0x230/0x240).
+- Fase 3.1: FDC/DMA fuld annotation (afventer #16 for RTM fn 2 verifikation).
+- Fase 4.1: io_conout escape-parser (relateret til #18).
+- Fase 4.2: Tastatur HLE (port 0x020) polling-analyse.
+- Fase 5.1: dd759*.sys device drivers (#17).
+- Fase 6.1: i82730 CRT-driver (#19).
