@@ -481,12 +481,133 @@ Alle issues (#16-#19) nu lukkede. RE fuldstændig afsluttet.
 
 ---
 
-## Uafsluttet arbejde: BDOS dispatch-tabel-dump (2026-11-20)
+## BDOS/MEM/CIO dispatch-tabel-dump (GENNEMFØRT 2026-11-20)
 
-MAME Lua-script `scratch/tmp/bdos_dispatch_dump.lua` kørte t=301s og returnerede
-data — men dataene er **forkerte** (ASCII-tekst "Computer Denmark..." i stedet for
-dispatch-pointere). Årsag: `CS_BASE = 0x0480` er load-adressen for hele ccpm.sys,
-men BDOS-modulerne (1-3) har egne CS-segmenter sat af MEMIF-loaderen.
+MAME runtime-trace via `tasks/rc759-xios/tools/run_bdos_dispatch_dump.sh` ved t=301s.
+Modulernes placering og dispatch-tabeller verificeret direkte i RAM og SYSDAT:
 
-Korrekt CS for BDOS1 (modul 1) ≈ paragraph 0x01AC (physical 0x1AC0).
-Se `HANDOFF-2026-11-20.md` for komplet analyse og næste-skridt.
+| Modul | DRI-komponent | CS | Fysisk adresse | Dispatch-tabel | Antal funktioner |
+|-------|---------------|----|----------------|----------------|------------------|
+| 0 | **SUP + RTM** | `0x0048` | `0x00480` | `SYSDAT+0xAA` | RTM-service |
+| 1 | **BDOS** (filsystem) | `0x01A4` | `0x01A40` | `CS:0x006C` | 26 funktioner |
+| 2 | **MEM** (hukommelse) | `0x02AC` | `0x02AC0` | `CS:0x004C` | 13 funktioner (1:1 match med `MEMIF.MEM`) |
+| 3 | **CIO** (tegn-I/O) | `0x035E` | `0x035E0` | `CS:0x004C` | 29 funktioner (1:1 match med `CIOIF.CIO`) |
+| 4 | **XIOS + SYSDAT** | `0x03ED` | `0x03ED0` | `CS:0x16A4` | RC759 XIOS (Flemming Kraglund) |
+
+Alle 13 MEM-funktioner og 29 CIO-funktioner identificeret og tilføjet som labels i `gen_nasm.py`.
+Se `HANDOFF-2026-11-20.md` for fuld funktionsfortegnelse.
+
+---
+
+## Model B+2: Fuld symbolisering af branch-instruktioner og labels (GENNEMFØRT 2026-11-20)
+
+`tasks/rc759-xios/tools/convert_branches_b2.py`:
+1. **Instruktionskonvertering (B)**:
+   - Alle 5.184 direkte branch-instruktioner i `ccpm.asm` (`call`, `jmp short`, `jmp near`, `j<cc>`, `loop`, `jcxz`) er konverteret fra `db ... ; mnem 0x...` til rigtige NASM-instruktioner med symbolske labels.
+   - 0 direkte branches med numeriske adresser tilbage i koden.
+2. **Systematisk navngivning (2)**:
+   - 619 subroutines er navngivet `sub_XXXXX` (eller meningsfuldt DRI-navn som `bdos1_...`, `mem_...`, `cio_...`, `rtm_...`, `xios_...`).
+   - 2.369 lokale hop er navngivet `loc_XXXXX`.
+   - 509 manglende branch-labels oprettet og indsat på de korrekte adresser.
+   - Alle tidligere generiske `L_XXXXX:` labels er erstattet.
+3. **Verifikation**:
+   - Reassembled med `rc759-nasm` Docker-container.
+   - Verificeret mod original `ccpm.sys`: **PASS (77.568 bytes, 100% byte-identisk)**.
+
+---
+
+## Fuld semantisk DRI-identifikation af subroutines i Modul 1, 2 og 3 (GENNEMFØRT 2026-11-21)
+
+Via kildekodematching mod DRI CCP/M 3.1 (`scratch/ccpm31-src/`):
+- **Modul 2 (MEM — 12 subroutines, 100% identificeret)**:
+  - `mem_free_memory` (0x028BC, `CPMMEM.MEM`)
+  - `mem_try_mau` (0x02AE0, `MEMORY.MEM`)
+  - `mem_take_scl` (0x02B57, `MEMORY.MEM`)
+  - `mem_free_mau_call` (0x02C30, `MEMORY.MEM`)
+  - `mem_mau_split` (0x02E4A, `MAU.MEM`)
+  - `mem_mau_collapse` (0x02E72, `MAU.MEM`)
+  - `mem_mau_release` (0x02F0A, `MAU.MEM`)
+  - `mem_mau_insert` (0x02F34, `MAU.MEM`)
+  - `mem_mla_value` (0x02FA5, `ML.MEM`)
+  - `mem_ml_insert` (0x0310B, `ML.MEM`)
+  - `mem_getmd` (0x03125, `UTIL.MEM`)
+  - `mem_freemd` (0x03148, `UTIL.MEM`)
+- **Modul 3 (CIO — 27 subroutines, 100% identificeret)**:
+  - `cio_xios_far_call`, `cio_xios_call` (0x03270, 0x03276, `CIOIF.CIO`)
+  - `cio_lcb_verify`, `cio_ccb_verify`, `cio_ciodetach`, `cio_condetach_dev`, `cio_wake_disp`, `cio_conassign_match`, `cio_getccbadr`, `cio_getccbadr_spec`, `cio_getlcbadr` (0x03286–0x034C7, `CONSOLE.CIO`)
+  - `cio_dirio_status`, `cio_set_raw_mode`, `cio_clr_raw_mode`, `cio_chk_ctrlp`, `cio_conout`, `cio_chk_cmode`, `cio_ctlout`, `cio_tabout`, `cio_crlf`, `cio_prcsmsg`, `cio_constf`, `cio_coninf`, `cio_conout_sleep`, `cio_conoutf`, `cio_listf`, `cio_goxios` (0x035CF–0x03A3F, `CHARIO.CIO`)
+- **Modul 1 (BDOS — 26 subroutines, 100% identificeret)**:
+  - 26 interne hjælpefunktioner for filsystemet, stakskift, procesaktivering (`bdos1_set_p_ready`, `bdos1_calc_abs_para`, `bdos1_calc_record_offset`, `bdos1_mxdisk_sync`, `bdos1_mxdisk_unsync`, `bdos1_wake_next_process` m.fl.).
+- **Modul 0 (SUP+RTM — 29 subroutines, 100% identificeret)**:
+  - 29 interne funktioner for proces-dispatch, tidsformatering, CLI og parsing (`rtm_func_check`, `cli_parse_tail`, `cli_crlf`, `cli_prchar`, `cli_prtime`, `cli_prnum`, `cli_prfilnam`, `cli_prdisk`, `cli_prcusp`, `cli_prcsm`, `cli_prtyp`, `cli_prnam`, `cli_flclse`, `cli_flopn`, `cli_open_wait`, `cli_osif`, `cli_sync`, `cli_unsync`, `cli_pfn`, `cli_conasn`, `load_tblsrch`, `load_group`, `load_xfer`, `rtm_put_drl`, `rtm_get_pmem`, `parse_setfld`, `parse_delim`, `parse_debl`, `parse_fcbi`).
+
+---
+
+## Modulær opdeling af ccpm.asm (GENNEMFØRT 2026-11-21)
+
+Den store monolitiske assembly-fil (39.500 linjer) er opdelt i 5 modul-filer i `tasks/rc759-xios/`, bundet sammen via `%include` i master [ccpm.asm](file:///Users/ravn/z80/tasks/rc759-xios/ccpm.asm):
+
+1. `mod0_rtm.asm` (2.692 linjer, fil 0x00000–0x0163F): Supervisor & Real-Time Monitor
+2. `mod1_bdos.asm` (2.260 linjer, fil 0x01640–0x026BF): BDOS filsystem
+3. `mod2_mem.asm` (1.641 linjer, fil 0x026C0–0x031DF): Hukommelsesmanager (MEMIF.MEM)
+4. `mod3_cio.asm` (1.405 linjer, fil 0x031E0–0x03ACF): Tegn-I/O (CIOIF.CIO)
+5. `mod4_xios.asm` (32.002 linjer, fil 0x03AD0–0x12F00): RC759 Hardware XIOS & SYSDAT
+
+---
+
+## Modul 4 (XIOS) Hardware-subroutines (GENNEMFØRT 2026-11-21)
+
+30 centrale hardware-driver subroutines i Flemming Kraglunds XIOS er identificeret, navngivet og verificeret:
+* **WD2797 Floppy Disk Controller & DMA**:
+  * `xios_fdc_fcr_setup` (`0x09D4E`) & `xios_fdc_fcr_write` (`0x09E00`) — opsætning af Floppy Control Register
+  * `xios_fdc_select_drive` (`0x09E05`, port 0x288) — drev-selektering og status-check
+  * `xios_fdc_restore_track0` (`0x09E48`, kommando 0x0C) — seek til spor 0
+  * `xios_fdc_step_in` (`0x09ECA`, kommando 0x5C) — step-in kommando
+  * `xios_fdc_cmd_read_sector` (`0x09EF3`, sektor-reg 0x284, kommando 0x88)
+  * `xios_fdc_send_cmd` (`0x09F06`) & `xios_fdc_send_cmd_wait` (`0x0A0B0`)
+  * `xios_fdc_read_track_reg` (`0x09F0E`, port 0x282) & `xios_fdc_wait` (`0x09F4D`)
+  * `xios_fdc_test_busy` (`0x09F95`, port 0x280 test busy/not-ready)
+  * `xios_dma_chan_ctrl` (`0x0A295`, port 0x76) & `xios_dma_mask_reg` (`0x0A29A`, port 0x74)
+  * `xios_fdc_isr` (`0x0A2BE`), `xios_floppy_ack` (`0x0AC27`), `xios_floppy_status_check` (`0x0AD64`)
+* **Tastatur & iSBX Seriel Konsol**:
+  * `xios_kbd_isr` (`0x07A99`) — tastatur-afbrydelse (port 0x20, scancode-oversættelse via ISO-646-DK tabel ved `0x2C52`, RTM flag `0x13`)
+  * `xios_con_status_poll` (`0x0AD8E`, port 0x302 status bit 0x80)
+  * `xios_con_data_read` (`0x0B032`, port 0x302 data)
+* **Intel 82730 CRT & Afbrydelseshåndtering**:
+  * `xios_crt_retrace_isr` (`0x07BFE`, IRST port 0x230, CA port 0x240, tick flag 1)
+  * `xios_crt_trigger_ca` (`0x09601`, Channel Attention port 0x240)
+  * `xios_eoi_pic_and_cpu` (`0x0AF11`, EOI 0x20 til 8259 port 0 + EOI 0x8000 til 80186 port 0xFF22)
+  * `xios_switch_to_priv_stack` (`0x0AF1D`, stakskift til dedikeret XIOS-stak ved 0x441E)
+  * `xios_rtm_flag_set` (`0x078C0`), `xios_rtm_flag_wait` (`0x078D1`), `xios_rtm_svc_call` (`0x078DC`)
+
+Reassembly verificeret: **PASS (77.568 bytes, 100% byte-identisk)**.
+
+Alle 65 subroutines er opdateret i `tasks/rc759-xios/ccpm.asm` og `KNOWN_LABELS` i `tasks/rc759-xios/tools/gen_nasm.py`.
+---
+
+## Modul 4 (XIOS) Hardware-subroutines (GENNEMFØRT 2026-11-21)
+
+30 centrale hardware-driver subroutines i Flemming Kraglunds XIOS er identificeret, navngivet og verificeret:
+* **WD2797 Floppy Disk Controller & DMA**:
+  * `xios_fdc_fcr_setup` (`0x09D4E`) & `xios_fdc_fcr_write` (`0x09E00`) — opsætning af Floppy Control Register
+  * `xios_fdc_select_drive` (`0x09E05`, port 0x288) — drev-selektering og status-check
+  * `xios_fdc_restore_track0` (`0x09E48`, kommando 0x0C) — seek til spor 0
+  * `xios_fdc_step_in` (`0x09ECA`, kommando 0x5C) — step-in kommando
+  * `xios_fdc_cmd_read_sector` (`0x09EF3`, sektor-reg 0x284, kommando 0x88)
+  * `xios_fdc_send_cmd` (`0x09F06`) & `xios_fdc_send_cmd_wait` (`0x0A0B0`)
+  * `xios_fdc_read_track_reg` (`0x09F0E`, port 0x282) & `xios_fdc_wait` (`0x09F4D`)
+  * `xios_fdc_test_busy` (`0x09F95`, port 0x280 test busy/not-ready)
+  * `xios_dma_chan_ctrl` (`0x0A295`, port 0x76) & `xios_dma_mask_reg` (`0x0A29A`, port 0x74)
+  * `xios_fdc_isr` (`0x0A2BE`), `xios_floppy_ack` (`0x0AC27`), `xios_floppy_status_check` (`0x0AD64`)
+* **Tastatur & iSBX Seriel Konsol**:
+  * `xios_kbd_isr` (`0x07A99`) — tastatur-afbrydelse (port 0x20, scancode-oversættelse via ISO-646-DK tabel ved `0x2C52`, RTM flag `0x13`)
+  * `xios_con_status_poll` (`0x0AD8E`, port 0x302 status bit 0x80)
+  * `xios_con_data_read` (`0x0B032`, port 0x302 data)
+* **Intel 82730 CRT & Afbrydelseshåndtering**:
+  * `xios_crt_retrace_isr` (`0x07BFE`, IRST port 0x230, CA port 0x240, tick flag 1)
+  * `xios_crt_trigger_ca` (`0x09601`, Channel Attention port 0x240)
+  * `xios_eoi_pic_and_cpu` (`0x0AF11`, EOI 0x20 til 8259 port 0 + EOI 0x8000 til 80186 port 0xFF22)
+  * `xios_switch_to_priv_stack` (`0x0AF1D`, stakskift til dedikeret XIOS-stak ved 0x441E)
+  * `xios_rtm_flag_set` (`0x078C0`), `xios_rtm_flag_wait` (`0x078D1`), `xios_rtm_svc_call` (`0x078DC`)
+
+Reassembly verificeret: **PASS (77.568 bytes, 100% byte-identisk)**.

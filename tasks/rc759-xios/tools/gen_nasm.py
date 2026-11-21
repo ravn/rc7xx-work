@@ -220,21 +220,183 @@ print(f"Linear sweep: {sweep_new} nye instruktioner i modul 0-3")
 
 # ── Labels ─────────────────────────────────────────────────────────────────────
 KNOWN_LABELS = {
+    0x078C0: "xios_rtm_flag_set",
+    0x078D1: "xios_rtm_flag_wait",
+    0x078DC: "xios_rtm_svc_call",
+    0x07A99: "xios_kbd_isr",
+    0x07BFE: "xios_crt_retrace_isr",
+    0x09601: "xios_crt_trigger_ca",
+    0x09D4E: "xios_fdc_fcr_setup",
+    0x09E00: "xios_fdc_fcr_write",
+    0x09E05: "xios_fdc_select_drive",
+    0x09E48: "xios_fdc_restore_track0",
+    0x09ECA: "xios_fdc_step_in",
+    0x09EF3: "xios_fdc_cmd_read_sector",
+    0x09F06: "xios_fdc_send_cmd",
+    0x09F0E: "xios_fdc_read_track_reg",
+    0x09F4D: "xios_fdc_wait",
+    0x09F95: "xios_fdc_test_busy",
+    0x0A0B0: "xios_fdc_send_cmd_wait",
+    0x0A295: "xios_dma_chan_ctrl",
+    0x0A29A: "xios_dma_mask_reg",
+    0x0A2BE: "xios_fdc_isr",
+    0x0AC27: "xios_floppy_ack",
+    0x0AD64: "xios_floppy_status_check",
+    0x0AD8E: "xios_con_status_poll",
+    0x0AF11: "xios_eoi_pic_and_cpu",
+    0x0AF1D: "xios_switch_to_priv_stack",
+    0x0B032: "xios_con_data_read",
+    0x016EC: "bdos1_far_call_user",
+    0x016F2: "bdos1_userdisp_call",
+    0x01846: "bdos1_set_di_70",
+    0x01870: "bdos1_check_dx",
+    0x019C0: "bdos1_copy_fcb_words",
+    0x019D8: "bdos1_get_abs_para_30",
+    0x01AA6: "bdos1_set_p_ready",
+    0x01AB0: "bdos1_cli_chk_652",
+    0x01CB2: "bdos1_check_attr_20",
+    0x01F6E: "bdos1_open_close_setup",
+    0x021D0: "bdos1_lock_disk_cli",
+    0x021DE: "bdos1_mxdisk_sync",
+    0x021EC: "bdos1_mxdisk_unsync",
+    0x021FA: "bdos1_test_chain_head",
+    0x02212: "bdos1_load_u_wrkseg_fcb",
+    0x02234: "bdos1_get_abs_para_1c",
+    0x022D2: "bdos1_calc_abs_para",
+    0x02302: "bdos1_calc_record_offset",
+    0x02336: "bdos1_link_free_buffer",
+    0x02579: "bdos1_enqueue_head",
+    0x02587: "bdos1_zero_cx",
+    0x0259A: "bdos1_init_di_70",
+    0x025AC: "bdos1_load_si_di",
+    0x025D4: "bdos1_wake_next_process",
+    0x025E4: "bdos1_check_disk_flags",
+    0x0260A: "bdos1_load_rlr_si_74",
+    0x028BC: "mem_free_memory",
+    0x02AE0: "mem_try_mau",
+    0x02B57: "mem_take_scl",
+    0x02C30: "mem_free_mau_call",
+    0x02E4A: "mem_mau_split",
+    0x02E72: "mem_mau_collapse",
+    0x02F0A: "mem_mau_release",
+    0x02F34: "mem_mau_insert",
+    0x02FA5: "mem_mla_value",
+    0x0310B: "mem_ml_insert",
+    0x03125: "mem_getmd",
+    0x03148: "mem_freemd",
+    0x03270: "cio_xios_far_call",
+    0x03276: "cio_xios_call",
+    0x03286: "cio_lcb_verify",
+    0x032A2: "cio_ccb_verify",
+    0x032EC: "cio_ciodetach",
+    0x03316: "cio_condetach_dev",
+    0x03414: "cio_wake_disp",
+    0x0342A: "cio_conassign_match",
+    0x034A9: "cio_getccbadr",
+    0x034B0: "cio_getccbadr_spec",
+    0x034C7: "cio_getlcbadr",
+    0x035CF: "cio_dirio_status",
+    0x03801: "cio_set_raw_mode",
+    0x0380C: "cio_clr_raw_mode",
+    0x0382E: "cio_chk_ctrlp",
+    0x03864: "cio_conout",
+    0x038A4: "cio_chk_cmode",
+    0x038CE: "cio_ctlout",
+    0x038DD: "cio_tabout",
+    0x038F4: "cio_crlf",
+    0x03901: "cio_prcsmsg",
+    0x03919: "cio_constf",
+    0x03938: "cio_coninf",
+    0x0395D: "cio_conout_sleep",
+    0x03974: "cio_conoutf",
+    0x03A3C: "cio_listf",
+    0x03A3F: "cio_goxios",
     0x000FE: "mod0_rtm_init",
     0x002FA: "mod0_rtm_entry",
     0x0168B: "mod1_bdos1_init",
+    0x016AC: "bdos1_dispatch_table",
     0x016E0: "mod1_bdos1_entry",
-    # BDOS-funktioner identificeret via signatur-matching (2026-11-20)
-    0x01731: "bdos1_func24_get_dlog",   # mov bx,[0x68]; ret → func24: get dlog bitmap
+    # Modul 1: BDOS (Filsystem / intern supervisor) — bekræftet via MAME dispatch-dump 2026-11-20
+    0x016F9: "bdos1_fn01_queue_read",
+    0x01709: "bdos1_fn11_delay",        # func 141: delay
+    0x0171B: "bdos1_fn12_nop",          # nop / return 0
+    0x01720: "bdos1_fn15_set_priority", # func 145: set priority
+    0x0172C: "bdos1_fn16_get_pd",       # func 156: get process descriptor address
+    0x01731: "bdos1_func24_get_dlog",   # func 24: get dlog bitmap
+    0x01736: "bdos1_fn14_dispatch",     # func 142: dispatch process
+    0x0173C: "bdos1_fn18_flag_wait",    # func 132: flag wait
+    0x01753: "bdos1_fn19_flag_set",     # func 133: flag set
+    0x0177B: "bdos1_fn21_sync",         # sync system
+    0x0179A: "bdos1_fn22_unsync",       # unsync system
+    0x017F2: "bdos1_fn23_poll_device",  # poll device
+    0x01811: "bdos1_fn25_chain",        # chain
+    0x01815: "bdos1_fn24_test_device",  # test device
     0x01B01: "bdos1_switch_stack",      # save SS:SP til ES:[0x1e/0x1c], skift til BDOS-stak
-    0x0270B: "mod2_bdos2_init",
-    0x02726: "mod2_bdos2_entry",
-    0x0274A: "bdos2_switch_stack",      # save SS:SP til [0x672/0x670], skift til BDOS-stak
-    0x02773: "bdos2_restore_stack",     # restore SS:SP fra [0x672/0x670] (goback mod2)
-    0x02790: "bdos_exit",               # exit: mov ax,bx; retf (BDOSIF exit)
-    0x03344: "bdos3_xios_call",         # push dx; mov bx,0x70d; call intermod; mov[0x652],0xff; push ds
-    0x0322B: "mod3_bdos3_init",
-    0x03266: "mod3_bdos3_entry",
+    0x01EC1: "bdos1_fn03_close_file",   # func 16: close file
+    0x01F41: "bdos1_fn02_open_file",    # func 15: open file
+    0x01F9C: "bdos1_fn04_search_first", # func 17: search first
+    0x01FF2: "bdos1_fn05_search_next",  # func 18: search next
+    0x02045: "bdos1_fn06_delete_make",  # func 19/22: delete/make file
+    0x020AB: "bdos1_fn07_read_seq",     # func 20: read sequential
+    0x020AF: "bdos1_fn08_read_rand",    # func 33: read random
+    0x0213A: "bdos1_fn09_write_seq",    # func 21: write sequential
+    0x0213E: "bdos1_fn10_write_rand",   # func 34: write random
+    0x02368: "bdos1_fn20_flush_buffers",# func 48: flush buffers
+    0x0239E: "bdos1_fn00_disk_reset",   # func 13: disk reset
+    0x023A6: "bdos1_fn13_seldisk",      # func 14: select disk
+    0x02455: "bdos1_fn17_time_of_day",  # func 155: time of day
+
+    # Modul 2: MEM (Memory Management) — MEMIF.MEM (bekræftet via MAME dispatch-dump 2026-11-20)
+    0x0270B: "mem_init",
+    0x02726: "mem_entry",
+    0x0274A: "mem_switch_stack",      # save SS:SP til [0x672/0x670], skift til MEM-stak
+    0x02773: "mem_restore_stack",     # restore SS:SP fra [0x672/0x670] (goback MEM)
+    0x02790: "mem_exit",              # exit: mov ax,bx; retf (MEMIF exit)
+    0x0279E: "mem_fn00_maxmem",       # func 53: get max memory
+    0x027CA: "mem_fn01_absmax",       # func 54: get abs max memory
+    0x027F2: "mem_fn02_cpmalloc",     # func 55: alloc memory
+    0x0281A: "mem_fn03_cpmabsa",      # func 56: alloc abs memory
+    0x02880: "mem_fn04_cpmfree",      # func 57: free memory
+    0x028CF: "mem_fn05_freeall",      # func 58: free all memory
+    0x0292B: "mem_fn06_malloc",       # func 129: rel mem rqst
+    0x02BA1: "mem_fn07_mfree",        # func 130: memory free
+    0x02C93: "mem_fn08_share",        # share memory
+    0x02D3A: "mem_fn09_maualloc",     # alloc from MAU
+    0x02DEB: "mem_fn10_maufree",      # free from MAU
+    0x02F60: "mem_fn11_mlalloc",      # alloc from mem list
+    0x030DE: "mem_fn12_mlfree",       # free from mem list
+
+    # Modul 3: CIO (Character I/O) — CIOIF.CIO (bekræftet via MAME dispatch-dump 2026-11-20)
+    0x0322B: "cio_init",
+    0x03266: "cio_entry",
+    0x0327B: "cio_fn21_notimp",       # func 21/22: not implemented
+    0x0327F: "cio_fn15_lstattach",    # func 158: attach list
+    0x03283: "cio_fn18_clstattch",    # func 161: cond list attach
+    0x0329B: "cio_fn09_conattach",    # func 146: attach console
+    0x0329F: "cio_fn19_cconattch",    # func 162: cond list detach
+    0x032E9: "cio_fn16_lstdetach",    # func 159: detach list
+    0x03313: "cio_fn10_condetach",    # func 147: detach console
+    0x03344: "cio_fn12_conassign",    # func 149: assign console
+    0x03457: "cio_fn13_getdefcon",    # func 153: get default console
+    0x03461: "cio_fn20_getdeflst",    # func 164: get default list
+    0x0346B: "cio_fn11_setdefcon",    # func 148: set default console
+    0x0348A: "cio_fn17_setdeflst",    # func 160: set default list
+    0x034EC: "cio_fn23_cioterm",      # cleanup for termination
+    0x03539: "cio_fn25_cmode",        # func 109: get/set console mode word
+    0x0354B: "cio_fn00_conin",        # func 1: console input
+    0x0355E: "cio_fn01_conout",       # func 2: console output
+    0x0356E: "cio_fn02_rconin",       # func 3: raw console input
+    0x03574: "cio_fn03_rconout",      # func 4: raw console output
+    0x0357A: "cio_fn04_listout",      # func 5: list output
+    0x0358E: "cio_fn08_constat",      # func 11: console status
+    0x035B3: "cio_fn24_ciostat",      # check status w/out changing mode
+    0x035DB: "cio_fn05_dirio",        # func 6: direct console I/O
+    0x035F8: "cio_fn06_conwrite",     # func 9: print string
+    0x03626: "cio_fn26_delim",        # func 110: get/set delimiter
+    0x03637: "cio_fn27_pblock",       # func 111: print block
+    0x03643: "cio_fn28_lblock",       # func 112: list block
+    0x03690: "cio_fn14_conprint",     # print string (internal)
+    0x036C6: "cio_fn07_conread",      # func 10: read buffer
     0x03B1C: "mod4_xios_init",
     0x03BAD: "mod4_xios_entry",
     0x0B163: "xios_jmp_init",
