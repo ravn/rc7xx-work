@@ -5,6 +5,16 @@
 BITS 16
 ORG 0x0000
 
+; ISO-646-DK tegnkonstanter for RC759 Piccoline
+; Giver mulighed for at skrive æ, ø, å, Æ, Ø, Å direkte i tekster,
+; så NASM genererer Piccolines 7-bit koder (0x7B, 0x7C, 0x7D, 0x5B, 0x5C, 0x5D).
+%define æ 0x7B
+%define ø 0x7C
+%define å 0x7D
+%define Æ 0x5B
+%define Ø 0x5C
+%define Å 0x5D
+
 ; Modul 0: Supervisor & Real-Time Monitor (SUP+RTM)
 %include "mod0_rtm.asm"
 
