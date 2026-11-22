@@ -147,7 +147,7 @@ sequenceDiagram
 | `005Ah` | MM58167 RTC | RTC Data-register |
 | `005Ch` | MM58167 RTC | RTC Adresse- og kontrolregister |
 | `0070h` | 8255 PPI Port A | Bit 4–5: Hukommelsesstørrelse (256K, 384K, 512K, 640K) |
-| `0072h` | 8255 PPI Port B | Bit 6: Monitor-type (0=50Hz, 1=60Hz); Bit 7: Remote debug på iSBX |
+| `0072h` | 8255 PPI Port B | Status: Bit 1: RTC type; Bit 2: Lyd READY; Bit 6: Skærm (0=50Hz Piccoline, 1=60Hz Partner); Bit 7: iSBX multimodul (0=tilstede) |
 | `0074h` | 8255 PPI Port C | Bit 4–5: NVRAM bank switch; Bit 7: Tastatur enable |
 | `0076h` | 8255 PPI Kontrol | Konfigurationsord: Mode 0, Port A/B input, Port C output (`0x92`) |
 | `0080h–00FFh`| NVRAM | 128 bytes CMOS NVRAM (bank 0–3 styret via port 74h) |

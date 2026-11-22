@@ -46,8 +46,10 @@ LAN_BUFFER_ALT_SEGMENT  EQU 03000h                       ; Intel 82586 LAN buffe
 SEGMENT DATA_F800 AT ROM_DATA_SEGMENT
 ORG 0000h
 
-i82730_header_and_signature:
-    DB  059h, 0F4h, 0FAh, 037h, 0FFh   ; Hardware signatur / 82730 header
+rom_header_signature:
+    DB  059h, 0F4h                     ; ROM signatur ('Y', F4h)
+isbx_uart_init_stream:
+    DB  0FAh, 037h, 0FFh               ; iSBX Slot 0 (8251A UART): Mode (FAh), Command (37h), End-of-Stream (FFh)
 
 i82730_scb_block:
     ; Intel 82730 System Configuration Block (SCB, 7 bytes) -> kopieres til D000:6000
@@ -1182,7 +1184,7 @@ io_rtc_data                EQU  005Ah    ; MM58167 RTC Data register
 io_rtc_addr                EQU  005Ch    ; MM58167 RTC Address / Control register
 io_i82730_ca               EQU  0060h    ; 82730 Channel Attention (CA) trigger
 io_ppi_porta               EQU  0070h    ; 8255 PPI Port A (Memory size, Cassette, iSBX)
-io_ppi_portb               EQU  0072h    ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type)
+io_ppi_portb               EQU  0072h    ; 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1)
 io_ppi_portc               EQU  0074h    ; 8255 PPI Port C (Kbd enable, Gfx mode, NVRAM bank)
 io_ppi_ctrl                EQU  0076h    ; 8255 PPI Control word (Mode setup)
 io_nvram_base              EQU  0080h    ; NVRAM start (128 bytes bank-switched, 80h-FFh)
@@ -1359,7 +1361,16 @@ init_pic_8259:
     OUT     DX, AL                                           ; [0089: EE]
     MOV     AL, ED                       ; 8259A OCW1: Maskér alle IRQs undtagen IR1 tastatur og IR4 CRT (EDh) ; [008A: B0 ED]
     OUT     DX, AL                                           ; [008C: EE]
-    IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [008D: E4 72]
+
+; ----------------------------------------------------------------------------
+; check_isbx_baud_rate_timer (ROM: 38CDh, FB84:008Dh)
+; iSBX Slot 1 Baud-rate Generator Check:
+; Læser 8255 PPI Port B bit 7. Hvis et iSBX multimodul er monteret (bit 7 = 0),
+; konfigureres 8253 timeren på Slot 1 med divisor 32 for at levere baud-rate
+; clock til den serielle kommunikationskanal.
+; ----------------------------------------------------------------------------
+check_isbx_baud_rate_timer:
+    IN      AL, io_ppi_portb             ; 8255 Port B bit 7: Test for iSBX modul / remote debug (0 = tilstede); 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [008D: E4 72]
     TEST    AL, 80                                           ; [008F: A8 80]
     JNZ     init_i186_timer0                                 ; [0091: 75 10]
     MOV     AL, B6                       ; iSBX Slot 1 8253: Counter 2, Mode 3 firkantbølge, LSB/MSB (B6h) ; [0093: B0 B6]
@@ -1386,12 +1397,23 @@ init_i186_timer0:
     ADD     DX, +02                                          ; [00B5: 83 C2 02]
     MOV     AX, C002                     ; 80186 Timer 1 kontrol T1CON: Enable, continuous run, intern prescaler (C002h) ; [00B8: B8 02 C0]
     OUT     DX, AX                                           ; [00BB: EF]
-    IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [00BC: E4 72]
+
+; ----------------------------------------------------------------------------
+; check_isbx_module_present (ROM: 38FCh, FB84:00BCh)
+; iSBX Multimodule Detektering og Initialisering:
+; Læser 8255 PPI Port B bit 7. Hvis bit 7 = 0 (aktiv lav), er et iSBX serielt modul
+; (f.eks. Intel iSBX 351) tilsluttet. Koden sender initialiseringssekvensen i ROM
+; (isbx_uart_init_stream: FAh, 37h) til UART kontrolporten på iSBX Slot 0 (port 0302h)
+; for at opsætte 8251A USART (8 databits, 2 stopbits, Tx/Rx enable).
+; Hvis modulet ikke er monteret (bit 7 = 1), springes direkte til init_palette.
+; ----------------------------------------------------------------------------
+check_isbx_module_present:
+    IN      AL, io_ppi_portb             ; 8255 Port B bit 7: Test for iSBX modul / remote debug (0 = tilstede); 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [00BC: E4 72]
     TEST    AL, 80                                           ; [00BE: A8 80]
     JNZ     init_palette                                     ; [00C0: 75 17]
     MOV     AX, [CS:rom_segment_base]                        ; [00C2: 2E A1 00 00]
     MOV     ES, AX                                           ; [00C6: 8E C0]
-    MOV     DI, 0002                                         ; [00C8: BF 02 00]
+    MOV     DI, isbx_uart_init_stream    ; isbx_uart_init_stream: 8251A UART init-sekvens i ROM (FAh, 37h, FFh) ; [00C8: BF 02 00]
     MOV     DX, io_isbx0_ctrl            ; iSBX Multimodule Slot 0 Control / Status ; [00CB: BA 02 03]
 isbx_init_stream_loop:
     MOV     AL, BYTE [ES:DI]                                 ; [00CE: 26 8A 05]
@@ -1441,7 +1463,7 @@ post_send_selftest_banner:
 ; serial_tx_banner_loop (ROM: 395Ch, FB84:011Ch)
 ; ----------------------------------------------------------------------------
 serial_tx_banner_loop:
-    IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [011C: E4 72]
+    IN      AL, io_ppi_portb             ; 8255 Port B bit 7: Send kun banner hvis iSBX modul er tilstede; 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [011C: E4 72]
     TEST    AL, 80                                           ; [011E: A8 80]
     JNZ     serial_tx_banner_done                            ; [0120: 75 1B]
     MOV     DX, io_isbx0_ctrl            ; iSBX Multimodule Slot 0 Control / Status ; [0122: BA 02 03]
@@ -1470,7 +1492,7 @@ serial_tx_banner_done:
 ; Afslutter med JMP DI for coroutine-retur.
 ; ----------------------------------------------------------------------------
 serial_tx_hex_word:
-    IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [013F: E4 72]
+    IN      AL, io_ppi_portb             ; 8255 Port B bit 7: Send kun diagnostik hvis iSBX modul er tilstede; 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [013F: E4 72]
     TEST    AL, 80                                           ; [0141: A8 80]
     JNZ     serial_tx_hex_done                               ; [0143: 75 40]
     MOV     AH, 02                                           ; [0145: B4 02]
@@ -1520,7 +1542,7 @@ char_out_helper:
     PUSH    AX                                               ; [0187: 50]
     PUSH    DX                                               ; [0188: 52]
     XCHG    AH, AL                                           ; [0189: 86 C4]
-    IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [018B: E4 72]
+    IN      AL, io_ppi_portb             ; 8255 Port B bit 7: Send kun tegn hvis iSBX modul er tilstede; 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [018B: E4 72]
     TEST    AL, 80                                           ; [018D: A8 80]
     JNZ     loc_01a5                                         ; [018F: 75 14]
 loc_0191:
@@ -1988,7 +2010,7 @@ loc_047c:
 
 isr_fdc_wd2797:
     PUSH    AX                                               ; [0483: 50]
-    IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [0484: E4 72]
+    IN      AL, io_ppi_portb             ; 8255 Port B bit 7: Modtag seriel data fra iSBX modul som tastaturtegn; 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [0484: E4 72]
     TEST    AL, 80                                           ; [0486: A8 80]
     JNZ     loc_0495                                         ; [0488: 75 0B]
     CALL    sub_01a8                                         ; [048A: E8 1B FD]
@@ -2277,7 +2299,7 @@ init_vram_clear_and_fonts:
     CALL    setup_interrupt_vectors                          ; [0698: E8 90 04]
     MOV     AX, [CS:rom_segment_base]                        ; [069B: 2E A1 00 00]
     MOV     DS, AX                                           ; [069F: 8E D8]
-    MOV     DX, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [06A1: BA 72 00]
+    MOV     DX, io_ppi_portb             ; 8255 Port B bit 6: Skærmfrekvens (0 = 50 Hz DK710 Piccoline, 40h = 60 Hz DK914 Partner); 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [06A1: BA 72 00]
     IN      AL, DX                                           ; [06A4: EC]
     AND     AL, 40                                           ; [06A5: 24 40]
     JNZ     load_fonts_60hz                                  ; [06A7: 75 32]
@@ -2423,7 +2445,7 @@ loc_0786:
 
 loc_0799:
     REP MOVSB                                                ; [0799: F3 A4]
-    MOV     DX, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [079B: BA 72 00]
+    MOV     DX, io_ppi_portb             ; 8255 Port B bit 6: Vælg 82730 displayparametre (0 = 50 Hz, 40h = 60 Hz); 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [079B: BA 72 00]
     IN      AL, DX                                           ; [079E: EC]
     AND     AL, 40                                           ; [079F: 24 40]
     JNZ     loc_07ac                                         ; [07A1: 75 09]
@@ -3111,7 +3133,7 @@ loc_0c02:
     MOV     ES, AX                                           ; [0C18: 8E C0]
     MOV     DI, 0000                                         ; [0C1A: BF 00 00]
     MOV     CX, 1000                                         ; [0C1D: B9 00 10]
-    MOV     DX, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [0C20: BA 72 00]
+    MOV     DX, io_ppi_portb             ; 8255 Port B bit 6: Display timing (0 = 50 Hz, 40h = 60 Hz); 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [0C20: BA 72 00]
     IN      AL, DX                                           ; [0C23: EC]
     AND     AL, 40                                           ; [0C24: 24 40]
     JNZ     loc_0c2c                                         ; [0C26: 75 04]
@@ -3924,7 +3946,7 @@ loc_11e7:
     MOV     WORD [BX], 0003                                  ; [1222: C7 07 03 00]
     INC     BX                                               ; [1226: 43]
     INC     BX                                               ; [1227: 43]
-    MOV     DX, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [1228: BA 72 00]
+    MOV     DX, io_ppi_portb             ; 8255 Port B bit 1: RTC type (0 = MM58167, 02h = CDP1879); 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [1228: BA 72 00]
     IN      AL, DX                                           ; [122B: EC]
     MOV     AH, AL                                           ; [122C: 8A E0]
     MOV     DL, 02                                           ; [122E: B2 02]
@@ -4862,7 +4884,7 @@ loc_197f:
     PUSH    ES                                               ; [198F: 06]
     POP     DS                                               ; [1990: 1F]
     POP     ES                                               ; [1991: 07]
-    IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [1992: E4 72]
+    IN      AL, io_ppi_portb             ; 8255 Port B bit 7: Sæt 'R' (Remote debug) i konfigurationstabel hvis tilstede; 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [1992: E4 72]
     TEST    AL, 80                                           ; [1994: A8 80]
     JNZ     loc_199f                                         ; [1996: 75 07]
     MOV     BX, 641A                                         ; [1998: BB 1A 64]
@@ -5224,7 +5246,7 @@ sub_1c59:
 loc_1c81:
     MOV     BX, 01DD                                         ; [1C81: BB DD 01]
     MOV     SI, 000B                                         ; [1C84: BE 0B 00]
-    MOV     DX, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [1C87: BA 72 00]
+    MOV     DX, io_ppi_portb             ; 8255 Port B bit 6: Vælg font (0 = 15 kHz DK710 Piccoline, 40h = 22 kHz DK914 Partner); 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [1C87: BA 72 00]
     IN      AL, DX                                           ; [1C8A: EC]
     AND     AL, 40                                           ; [1C8B: 24 40]
     JZ      loc_1c95                                         ; [1C8D: 74 06]
@@ -6462,7 +6484,7 @@ loc_259f:
     RETN                                                     ; [25A8: C3]
 
 sub_25a9:
-    MOV     DX, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [25A9: BA 72 00]
+    MOV     DX, io_ppi_portb             ; 8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1) ; [25A9: BA 72 00]
     IN      AL, DX                                           ; [25AC: EC]
     RETN                                                     ; [25AD: C3]
 

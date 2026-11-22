@@ -35,7 +35,9 @@ KNOWN_CODE_LABELS = {
     0x003B: "mute_sn76494_channel",
     0x005F: "init_interrupt_controllers",
     0x0084: "init_pic_8259",
+    0x008D: "check_isbx_baud_rate_timer",
     0x00A3: "init_i186_timer0",
+    0x00BC: "check_isbx_module_present",
     0x00D9: "init_palette",
     0x011C: "serial_tx_banner_loop",
     0x013F: "serial_tx_hex_word",
@@ -106,7 +108,8 @@ KNOWN_CODE_LABELS = {
 
 # Known data labels (ROM offset -> name)
 KNOWN_DATA_LABELS = {
-    0x0000: "i82730_header_and_signature",
+    0x0000: "rom_header_signature",
+    0x0002: "isbx_uart_init_stream",
     0x0005: "i82730_scb_block",
     0x000C: "i82730_cb_block",
     0x0032: "i82730_mode_params_50hz",
@@ -159,7 +162,7 @@ IO_PORT_SYMBOLS = {
     0x005C: ("io_rtc_addr", "MM58167 RTC Address / Control register"),
     0x0060: ("io_i82730_ca", "82730 Channel Attention (CA) trigger"),
     0x0070: ("io_ppi_porta", "8255 PPI Port A (Memory size, Cassette, iSBX)"),
-    0x0072: ("io_ppi_portb", "8255 PPI Port B (Monitor type 50/60Hz, RTC type)"),
+    0x0072: ("io_ppi_portb", "8255 PPI Port B (Status: iSBX bit 7, 50/60Hz bit 6, RTC bit 1)"),
     0x0074: ("io_ppi_portc", "8255 PPI Port C (Kbd enable, Gfx mode, NVRAM bank)"),
     0x0076: ("io_ppi_ctrl", "8255 PPI Control word (Mode setup)"),
     0x0080: ("io_nvram_base", "NVRAM start (128 bytes bank-switched, 80h-FFh)"),
@@ -509,31 +512,42 @@ INSTRUCTION_ANNOTATIONS = {
     0x0084: "8259A ICW3: Master uden slave-PICs på IR-indgange (00h)",
     0x0087: "8259A ICW4: 8086 mode, Special Fully Nested, Buffered Master (1Dh)",
     0x008A: "8259A OCW1: Maskér alle IRQs undtagen IR1 tastatur og IR4 CRT (EDh)",
+    0x008D: "8255 Port B bit 7: Test for iSBX modul / remote debug (0 = tilstede)",
     0x0093: "iSBX Slot 1 8253: Counter 2, Mode 3 firkantbølge, LSB/MSB (B6h)",
     0x009C: "iSBX Slot 1 8253: Baud-rate divisor = 32 decimal (0020h)",
 
     # -------------------------------------------------------------------------
-    # Timere og Palet (FB84:00A6 - 01E5)
+    # Timere, iSBX Init og Palet (FB84:00A6 - 01E5)
     # -------------------------------------------------------------------------
     0x00A6: "80186 Timer 1 start-tæller T1CNT (0000h)",
     0x00AD: "80186 Timer 1 komparator T1CMPA (1000 decimal ticks / 1 ms)",
     0x00B8: "80186 Timer 1 kontrol T1CON: Enable, continuous run, intern prescaler (C002h)",
+    0x00BC: "8255 Port B bit 7: Test for iSBX modul / remote debug (0 = tilstede)",
+    0x00C8: "isbx_uart_init_stream: 8251A UART init-sekvens i ROM (FAh, 37h, FFh)",
     0x00DF: "Palette RAM init-mønster (F0h / 0Fh invertering)",
+    0x011C: "8255 Port B bit 7: Send kun banner hvis iSBX modul er tilstede",
+    0x013F: "8255 Port B bit 7: Send kun diagnostik hvis iSBX modul er tilstede",
+    0x018B: "8255 Port B bit 7: Send kun tegn hvis iSBX modul er tilstede",
     0x01E5: "80186 Timer kontrol nulstilling (C0h)",
 
     # -------------------------------------------------------------------------
     # Timer & EOI Rutiner (FB84:04A0 - 0B22)
     # -------------------------------------------------------------------------
+    0x0484: "8255 Port B bit 7: Modtag seriel data fra iSBX modul som tastaturtegn",
     0x04A0: "80186 Timer 2 start-tæller T2CNT (0000h)",
     0x04B0: "80186 Timer 2 kontrol T2CON: Enable, prescaled clock (C003h)",
     0x04BA: "80186 Timer 2 kontrol T2CON: Enable, continuous run (C002h)",
+    0x06A1: "8255 Port B bit 6: Skærmfrekvens (0 = 50 Hz DK710 Piccoline, 40h = 60 Hz DK914 Partner)",
+    0x079B: "8255 Port B bit 6: Vælg 82730 displayparametre (0 = 50 Hz, 40h = 60 Hz)",
     0x0AEA: "8259A OCW3: Læs In-Service Register ISR (0Bh)",
     0x0B02: "8259A OCW2: Non-Specific End-Of-Interrupt / EOI (20h)",
     0x0B22: "80186 EOI register: Non-Specific End-Of-Interrupt (8000h)",
+    0x0C20: "8255 Port B bit 6: Display timing (0 = 50 Hz, 40h = 60 Hz)",
 
     # -------------------------------------------------------------------------
     # Selftest og Diagnostik (FB84:128F - 1F20)
     # -------------------------------------------------------------------------
+    0x1228: "8255 Port B bit 1: RTC type (0 = MM58167, 02h = CDP1879)",
     0x128F: "Floppy Reserve: Reserver diskettebus til selftest (FFh)",
     0x12A9: "Floppy Control: Motor 0 ON, Drev B, DDEN, 2MHz ur (47h)",
     0x12C7: "Floppy Control: Motor 0 ON, Drev A, DDEN, 2MHz ur (46h)",
@@ -565,6 +579,7 @@ INSTRUCTION_ANNOTATIONS = {
     0x174B: "80186 Timer 2 test: T2CON enable med interrupt (E000h)",
     0x177A: "80186 INTC test: Maskér alle undtagen Timer 0/1 (00FCh)",
     0x18F3: "8259A OCW1: Unmask IR5 (WD2797 FDC) til LAN/FDC selftest (DFh)",
+    0x1992: "8255 Port B bit 7: Sæt 'R' (Remote debug) i konfigurationstabel hvis tilstede",
     0x1B8C: "8255 BSR: Sæt Port C bit 1 (Båndoptager motor off)",
     0x1B8F: "8255 BSR: Nulstil Port C bit 0 (Båndoptager interface disable)",
     0x1B95: "80186 Timer 0 test: T0CMPA = 750 decimal ticks (02EEh)",
@@ -574,6 +589,7 @@ INSTRUCTION_ANNOTATIONS = {
     0x1BB8: "80186 Timer 0 kontrol: Genstart tæller (C013h)",
     0x1BE9: "80186 Timer 0 kontrol: Genstart tæller (C013h)",
     0x1BFA: "8255 BSR: Nulstil Port C bit 0 (Båndoptager interface disable)",
+    0x1C87: "8255 Port B bit 6: Vælg font (0 = 15 kHz DK710 Piccoline, 40h = 22 kHz DK914 Partner)",
     0x1CD1: "Intel 82730 Display test: Palet-testmønster (F0h)",
     0x1D53: "8255 BSR: Nulstil Port C bit 6 (Skærm timing test)",
     0x1D69: "8255 BSR: Sæt Port C bit 6 (Skærm timing test)",
@@ -640,6 +656,20 @@ CODE_BLOCK_COMMENTS = {
         "; Initialisering af afbrydelsescontrollere:",
         "; Konfigurerer 80186 integrerede INTC (INT 1/2 kontrol, poll og maske)",
         "; samt ekstern 8259A Master PIC (ICW1 = 19h, ICW2 = 20h base vektor).",
+    ],
+    0x008D: [
+        "; iSBX Slot 1 Baud-rate Generator Check:",
+        "; Læser 8255 PPI Port B bit 7. Hvis et iSBX multimodul er monteret (bit 7 = 0),",
+        "; konfigureres 8253 timeren på Slot 1 med divisor 32 for at levere baud-rate",
+        "; clock til den serielle kommunikationskanal.",
+    ],
+    0x00BC: [
+        "; iSBX Multimodule Detektering og Initialisering:",
+        "; Læser 8255 PPI Port B bit 7. Hvis bit 7 = 0 (aktiv lav), er et iSBX serielt modul",
+        "; (f.eks. Intel iSBX 351) tilsluttet. Koden sender initialiseringssekvensen i ROM",
+        "; (isbx_uart_init_stream: FAh, 37h) til UART kontrolporten på iSBX Slot 0 (port 0302h)",
+        "; for at opsætte 8251A USART (8 databits, 2 stopbits, Tx/Rx enable).",
+        "; Hvis modulet ikke er monteret (bit 7 = 1), springes direkte til init_palette.",
     ],
     0x013F: [
         "; Seriel Hex Word Transmit (iSBX Slot 0 Debug):",
@@ -764,6 +794,7 @@ NAMED_CODE_LABELS = {
 }
 
 LINK_REGISTER_DI_SYMBOLS = {
+    "0002": "isbx_uart_init_stream",
     "0026": "mute_sound_channel_1",
     "002D": "mute_sound_channel_2",
     "0034": "mute_sound_channel_3",
@@ -1001,8 +1032,10 @@ def main():
     lines.append("SEGMENT DATA_F800 AT ROM_DATA_SEGMENT")
     lines.append("ORG 0000h")
     lines.append("")
-    lines.append("i82730_header_and_signature:")
-    lines.append("    DB  059h, 0F4h, 0FAh, 037h, 0FFh   ; Hardware signatur / 82730 header")
+    lines.append("rom_header_signature:")
+    lines.append("    DB  059h, 0F4h                     ; ROM signatur ('Y', F4h)")
+    lines.append("isbx_uart_init_stream:")
+    lines.append("    DB  0FAh, 037h, 0FFh               ; iSBX Slot 0 (8251A UART): Mode (FAh), Command (37h), End-of-Stream (FFh)")
     lines.append("")
     lines.append("i82730_scb_block:")
     lines.append("    ; Intel 82730 System Configuration Block (SCB, 7 bytes) -> kopieres til D000:6000")
