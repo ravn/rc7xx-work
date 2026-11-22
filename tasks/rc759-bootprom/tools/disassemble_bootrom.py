@@ -963,7 +963,11 @@ def main():
                 pass
         elif mnem in BRANCH_OPS and len(a1) == 4:
             try:
-                jump_targets.add(int(a1, 16))
+                target = int(a1, 16)
+                if mnem == "LOOP" and target == scan_ip:
+                    pass  # Self-loop busy-wait delay: rendered as LOOP $ without dummy label
+                else:
+                    jump_targets.add(target)
             except ValueError:
                 pass
 
@@ -1557,10 +1561,22 @@ def main():
         arg2 = op.arg2.decode("latin1", errors="replace")
 
         # Resolve branch targets to symbolic labels
+        delay_comment = None
         if mnemonic in BRANCH_OPS and len(arg1) == 4:
             try:
                 target_ip = int(arg1, 16)
-                if target_ip in all_labels:
+                if mnemonic == "LOOP" and target_ip == code_ip:
+                    arg1 = "$"
+                    # Beregn varighed ud fra forudgående MOV CX, imm16
+                    if pos >= 0x3843 and rom[pos - 3] == 0xB9:
+                        cx_val = rom[pos - 2] | (rom[pos - 1] << 8)
+                        cycles = cx_val * 6
+                        us_time = cycles / 6.0
+                        if us_time >= 1000.0:
+                            delay_comment = f"Busy-wait delay: {cx_val} loops ({cycles} CPU-cykler = {us_time/1000.0:.1f} ms ved 6 MHz)"
+                        else:
+                            delay_comment = f"Busy-wait delay: {cx_val} loops ({cycles} CPU-cykler = {us_time:.1f} µs ved 6 MHz)"
+                elif target_ip in all_labels:
                     arg1 = all_labels[target_ip]
             except ValueError:
                 pass
@@ -1571,7 +1587,7 @@ def main():
         elif op.arg_n >= 2:
             args = f"{arg1}, {arg2}"
 
-        comment = annotate_instruction(mnemonic, args, code_ip, section=3)
+        comment = delay_comment if delay_comment else annotate_instruction(mnemonic, args, code_ip, section=3)
         comment_str = f" ; {comment}" if comment else ""
 
         args = replace_ram_symbols(args)

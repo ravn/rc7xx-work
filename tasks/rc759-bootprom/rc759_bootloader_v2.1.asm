@@ -1308,22 +1308,18 @@ mute_sn76494_channel:
     XCHG    AL, AH                                           ; [003B: 86 E0]
     IN      AL, io_sn76494_sound         ; SN76494 Sound Generator (Volume / Frequency) ; [003D: E4 56]
     MOV     CX, 001E                                         ; [003F: B9 1E 00]
-loc_0042:
-    LOOP    loc_0042                                         ; [0042: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 30 loops (180 CPU-cykler = 30.0 µs ved 6 MHz) ; [0042: E2 FE]
     MOV     AL, 00                       ; MM58167 RTC register-pointer 00h (Millisekunder / status) ; [0044: B0 00]
     OUT     io_rtc_addr, AL              ; MM58167 RTC Address / Control register ; [0046: E6 5C]
     MOV     CX, 001E                                         ; [0048: B9 1E 00]
-loc_004b:
-    LOOP    loc_004b                                         ; [004B: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 30 loops (180 CPU-cykler = 30.0 µs ved 6 MHz) ; [004B: E2 FE]
     XCHG    AL, AH                                           ; [004D: 86 E0]
     OUT     io_rtc_data, AL              ; MM58167 RTC Data register ; [004F: E6 5A]
     MOV     CX, 001E                                         ; [0051: B9 1E 00]
-loc_0054:
-    LOOP    loc_0054                                         ; [0054: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 30 loops (180 CPU-cykler = 30.0 µs ved 6 MHz) ; [0054: E2 FE]
     OUT     io_sn76494_sound, AL         ; SN76494 Sound Generator (Volume / Frequency) ; [0056: E6 56]
     MOV     CX, 001E                                         ; [0058: B9 1E 00]
-loc_005b:
-    LOOP    loc_005b                                         ; [005B: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 30 loops (180 CPU-cykler = 30.0 µs ved 6 MHz) ; [005B: E2 FE]
     JMP     DI                                               ; [005D: FF E7]
 
 ; ----------------------------------------------------------------------------
@@ -4742,8 +4738,7 @@ sub_184c:
     MOV     DX, 0100                                         ; [1855: BA 00 01]
     IN      AL, DX                                           ; [1858: EC]
     MOV     CX, 03E8                                         ; [1859: B9 E8 03]
-loc_185c:
-    LOOP    loc_185c                                         ; [185C: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 1000 loops (6000 CPU-cykler = 1.0 ms ved 6 MHz) ; [185C: E2 FE]
     MOV     BX, 640A                                         ; [185E: BB 0A 64]
     MOV     WORD [BX], 0000                                  ; [1861: C7 07 00 00]
     MOV     WORD [BX+02], 0000                               ; [1865: C7 47 02 00 00]
@@ -4945,8 +4940,7 @@ loc_1a17:
     IN      AL, DX                                           ; [1A26: EC]
     STI                                                      ; [1A27: FB]
     MOV     CX, 0FA0                                         ; [1A28: B9 A0 0F]
-loc_1a2b:
-    LOOP    loc_1a2b                                         ; [1A2B: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 4000 loops (24000 CPU-cykler = 4.0 ms ved 6 MHz) ; [1A2B: E2 FE]
     CLI                                                      ; [1A2D: FA]
     CMP     BYTE [var_selftest_error_flags], 05 ; Selftest error flags buffer ; [1A2E: 80 3E 20 01 05]
     JNZ     loc_1a3a                                         ; [1A33: 75 05]
@@ -5606,8 +5600,7 @@ loc_1f1d:
 loc_1f26:
     PUSH    CX                                               ; [1F26: 51]
     MOV     CX, 000A                                         ; [1F27: B9 0A 00]
-loc_1f2a:
-    LOOP    loc_1f2a                                         ; [1F2A: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 10 loops (60 CPU-cykler = 10.0 µs ved 6 MHz) ; [1F2A: E2 FE]
     POP     CX                                               ; [1F2C: 59]
     LOOP    loc_1f26                                         ; [1F2D: E2 F7]
     CALL    sub_1e59                                         ; [1F2F: E8 27 FF]
@@ -8492,8 +8485,7 @@ loc_3704:
     MOV     DX, 0100                                         ; [3713: BA 00 01]
     IN      AL, DX                                           ; [3716: EC]
     MOV     CX, 0064                                         ; [3717: B9 64 00]
-loc_371a:
-    LOOP    loc_371a                                         ; [371A: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 100 loops (600 CPU-cykler = 100.0 µs ved 6 MHz) ; [371A: E2 FE]
     PUSH    ES                                               ; [371C: 06]
     PUSH    DS                                               ; [371D: 1E]
     MOV     AX, LAN_BUFFER_SEGMENT                           ; [371E: B8 00 36]
@@ -8525,8 +8517,7 @@ loc_374e:
     MOV     DX, 0100                                         ; [375A: BA 00 01]
     IN      AL, DX                                           ; [375D: EC]
     MOV     CX, 0064                                         ; [375E: B9 64 00]
-loc_3761:
-    LOOP    loc_3761                                         ; [3761: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 100 loops (600 CPU-cykler = 100.0 µs ved 6 MHz) ; [3761: E2 FE]
     MOV     BYTE [var_boot_status], 00                       ; [3763: C6 06 14 00 00]
     CMP     BYTE [var_lan_rx_ready_flag], 01                 ; [3768: 80 3E 9F 4B 01]
     JNZ     loc_377a                                         ; [376D: 75 0B]
@@ -8786,8 +8777,7 @@ loc_394c:
 loc_3950:
     PUSH    CX                                               ; [3950: 51]
     MOV     CX, 000A                                         ; [3951: B9 0A 00]
-loc_3954:
-    LOOP    loc_3954                                         ; [3954: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 10 loops (60 CPU-cykler = 10.0 µs ved 6 MHz) ; [3954: E2 FE]
     POP     CX                                               ; [3956: 59]
     LOOP    loc_3950                                         ; [3957: E2 F7]
     MOV     DX, io_wd2797_status_cmd     ; WD2797 FDC Status / Command register ; [3959: BA 80 02]
@@ -8888,8 +8878,7 @@ loc_39ff:
 loc_3a12:
     PUSH    CX                                               ; [3A12: 51]
     MOV     CX, 0009                                         ; [3A13: B9 09 00]
-loc_3a16:
-    LOOP    loc_3a16                                         ; [3A16: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 9 loops (54 CPU-cykler = 9.0 µs ved 6 MHz) ; [3A16: E2 FE]
     POP     CX                                               ; [3A18: 59]
     LOOP    loc_39ff                                         ; [3A19: E2 E4]
     STC                                                      ; [3A1B: F9]
@@ -8981,8 +8970,7 @@ sub_3a91:
     PUSH    DX                                               ; [3A92: 52]
     MOV     DX, io_wd2797_status_cmd     ; WD2797 FDC Status / Command register ; [3A93: BA 80 02]
     MOV     CX, 000B                                         ; [3A96: B9 0B 00]
-loc_3a99:
-    LOOP    loc_3a99                                         ; [3A99: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 11 loops (66 CPU-cykler = 11.0 µs ved 6 MHz) ; [3A99: E2 FE]
     MOV     CX, FFFF                                         ; [3A9B: B9 FF FF]
 loc_3a9e:
     IN      AL, DX                                           ; [3A9E: EC]
@@ -8993,18 +8981,15 @@ loc_3a9e:
     MOV     AL, D8                       ; WD2797 Kommando D8h: Force Interrupt på Index puls ; [3AA8: B0 D8]
     OUT     DX, AL                                           ; [3AAA: EE]
     MOV     CX, 0009                                         ; [3AAB: B9 09 00]
-loc_3aae:
-    LOOP    loc_3aae                                         ; [3AAE: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 9 loops (54 CPU-cykler = 9.0 µs ved 6 MHz) ; [3AAE: E2 FE]
     IN      AL, DX                                           ; [3AB0: EC]
     PUSH    AX                                               ; [3AB1: 50]
     MOV     CX, 0009                                         ; [3AB2: B9 09 00]
-loc_3ab5:
-    LOOP    loc_3ab5                                         ; [3AB5: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 9 loops (54 CPU-cykler = 9.0 µs ved 6 MHz) ; [3AB5: E2 FE]
     MOV     AL, D0                       ; WD2797 Kommando D0h: Force Interrupt (afbryd igangværende kommando) ; [3AB7: B0 D0]
     OUT     DX, AL                                           ; [3AB9: EE]
     MOV     CX, 0009                                         ; [3ABA: B9 09 00]
-loc_3abd:
-    LOOP    loc_3abd                                         ; [3ABD: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 9 loops (54 CPU-cykler = 9.0 µs ved 6 MHz) ; [3ABD: E2 FE]
     POP     AX                                               ; [3ABF: 58]
 loc_3ac0:
     POP     DX                                               ; [3AC0: 5A]
@@ -9015,8 +9000,7 @@ sub_3ac3:
     PUSH    CX                                               ; [3AC3: 51]
     PUSH    DX                                               ; [3AC4: 52]
     MOV     CX, 0009                                         ; [3AC5: B9 09 00]
-loc_3ac8:
-    LOOP    loc_3ac8                                         ; [3AC8: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 9 loops (54 CPU-cykler = 9.0 µs ved 6 MHz) ; [3AC8: E2 FE]
 loc_3aca:
     MOV     DX, io_wd2797_status_cmd     ; WD2797 FDC Status / Command register ; [3ACA: BA 80 02]
     IN      AL, DX                                           ; [3ACD: EC]
@@ -9030,13 +9014,11 @@ loc_3aca:
     MOV     AL, D8                       ; WD2797 Kommando D8h: Force Interrupt på Index puls ; [3ADF: B0 D8]
     OUT     DX, AL                                           ; [3AE1: EE]
     MOV     CX, 0009                                         ; [3AE2: B9 09 00]
-loc_3ae5:
-    LOOP    loc_3ae5                                         ; [3AE5: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 9 loops (54 CPU-cykler = 9.0 µs ved 6 MHz) ; [3AE5: E2 FE]
     MOV     AL, D0                       ; WD2797 Kommando D0h: Force Interrupt (afbryd igangværende kommando) ; [3AE7: B0 D0]
     OUT     DX, AL                                           ; [3AE9: EE]
     MOV     CX, 0009                                         ; [3AEA: B9 09 00]
-loc_3aed:
-    LOOP    loc_3aed                                         ; [3AED: E2 FE]
+    LOOP    $                            ; Busy-wait delay: 9 loops (54 CPU-cykler = 9.0 µs ved 6 MHz) ; [3AED: E2 FE]
     XOR     AX, AX                                           ; [3AEF: 33 C0]
 loc_3af1:
     POP     DX                                               ; [3AF1: 5A]
