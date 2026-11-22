@@ -453,7 +453,6 @@ special_glyphs_01_to_1f:
 ; ----------------------------------------------------------------------------
 %include "font_60hz_dk914.inc"
 
-
 ; ============================================================================
 ; SECTION 2: LOOKUP TABLES, SYSTEM STRINGS & IVT PROTOTYPE (2162h - 383Fh)
 ; ============================================================================
@@ -480,34 +479,34 @@ str_selftest_error_messages:
 
 ; --- prototype_ivt_table: Initialiseringsvektorer for Interrupt Vector Table (IVT 0000:0000) (2248h - 22B8h) ---
 prototype_ivt_table:
-    DW  00AB5h, CODE_SEGMENT_BASE  ; Int 00h (0000:0000h): Divide Error ISR (FB84:0AB5h)
-    DW  00AB5h, CODE_SEGMENT_BASE  ; Int 01h (0000:0004h): Single Step / Debug ISR (FB84:0AB5h)
-    DW  00AC1h, CODE_SEGMENT_BASE  ; Int 02h (0000:0008h): NMI Non-Maskable Interrupt ISR (FB84:0AC1h)
-    DW  00AB5h, CODE_SEGMENT_BASE  ; Int 03h (0000:000Ch): Breakpoint ISR (FB84:0AB5h)
-    DW  00AB5h, CODE_SEGMENT_BASE  ; Int 04h (0000:0010h): Overflow (INTO) ISR (FB84:0AB5h)
-    DW  00AB5h, CODE_SEGMENT_BASE  ; Int 05h (0000:0014h): Print Screen / BOUND ISR (FB84:0AB5h)
-    DW  00AB5h, CODE_SEGMENT_BASE  ; Int 06h (0000:0018h): Invalid Opcode ISR (FB84:0AB5h)
-    DW  00AB5h, CODE_SEGMENT_BASE  ; Int 07h (0000:001Ch): Coprocessor Not Available ISR (FB84:0AB5h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 08h (0000:0020h): IRQ 0 System Timer ISR (FB84:0AD7h)
-    DW  00ABBh, CODE_SEGMENT_BASE  ; Int 09h (0000:0024h): IRQ 1 Keyboard ISR (FB84:0ABBh)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 0Ah (0000:0028h): IRQ 2 Slave PIC / Reserved ISR (FB84:0AD7h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 0Bh (0000:002Ch): IRQ 3 Serial COM2 ISR (FB84:0AD7h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 0Ch (0000:0030h): IRQ 4 Serial COM1 ISR (FB84:0AD7h)
-    DW  00483h, CODE_SEGMENT_BASE  ; Int 0Dh (0000:0034h): IRQ 5 Floppy Disk Controller (WD2797) ISR (FB84:0483h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 0Eh (0000:0038h): IRQ 6 Centronics Printer ISR (FB84:0AD7h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 0Fh (0000:003Ch): IRQ 7 Real Time Clock (MM58167) ISR (FB84:0AD7h)
-    DW  00ABBh, CODE_SEGMENT_BASE  ; Int 10h (0000:0040h): 80186 Internal Timer 0 ISR (FB84:0ABBh)
-    DW  00ABBh, CODE_SEGMENT_BASE  ; Int 11h (0000:0044h): 80186 Internal Timer 1 ISR (FB84:0ABBh)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 12h (0000:0048h): 80186 Internal Timer 2 ISR (FB84:0AD7h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 13h (0000:004Ch): 80186 DMA Channel 0 ISR (FB84:0AD7h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 14h (0000:0050h): 80186 DMA Channel 1 ISR (FB84:0AD7h)
-    DW  00428h, CODE_SEGMENT_BASE  ; Int 15h (0000:0054h): 80186 Internal Interrupt ISR (FB84:0428h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 16h (0000:0058h): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 17h (0000:005Ch): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
-    DW  00A60h, CODE_SEGMENT_BASE  ; Int 18h (0000:0060h): DMA Channel 0 Handler ISR (FB84:0A60h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 19h (0000:0064h): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 1Ah (0000:0068h): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
-    DW  00AD7h, CODE_SEGMENT_BASE  ; Int 1Bh (0000:006Ch): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
+    DW  isr_default_trap        , CODE_SEGMENT_BASE  ; Int 00h (0000:0000h): Divide Error ISR (FB84:0AB5h)
+    DW  isr_default_trap        , CODE_SEGMENT_BASE  ; Int 01h (0000:0004h): Single Step / Debug ISR (FB84:0AB5h)
+    DW  isr_nmi                 , CODE_SEGMENT_BASE  ; Int 02h (0000:0008h): NMI Non-Maskable Interrupt ISR (FB84:0AC1h)
+    DW  isr_default_trap        , CODE_SEGMENT_BASE  ; Int 03h (0000:000Ch): Breakpoint ISR (FB84:0AB5h)
+    DW  isr_default_trap        , CODE_SEGMENT_BASE  ; Int 04h (0000:0010h): Overflow (INTO) ISR (FB84:0AB5h)
+    DW  isr_default_trap        , CODE_SEGMENT_BASE  ; Int 05h (0000:0014h): Print Screen / BOUND ISR (FB84:0AB5h)
+    DW  isr_default_trap        , CODE_SEGMENT_BASE  ; Int 06h (0000:0018h): Invalid Opcode ISR (FB84:0AB5h)
+    DW  isr_default_trap        , CODE_SEGMENT_BASE  ; Int 07h (0000:001Ch): Coprocessor Not Available ISR (FB84:0AB5h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 08h (0000:0020h): IRQ 0 System Timer ISR (FB84:0AD7h)
+    DW  isr_keyboard_raw        , CODE_SEGMENT_BASE  ; Int 09h (0000:0024h): IRQ 1 Keyboard ISR (FB84:0ABBh)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Ah (0000:0028h): IRQ 2 Slave PIC / Reserved ISR (FB84:0AD7h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Bh (0000:002Ch): IRQ 3 Serial COM2 ISR (FB84:0AD7h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Ch (0000:0030h): IRQ 4 Serial COM1 ISR (FB84:0AD7h)
+    DW  isr_fdc_wd2797          , CODE_SEGMENT_BASE  ; Int 0Dh (0000:0034h): IRQ 5 Floppy Disk Controller (WD2797) ISR (FB84:0483h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Eh (0000:0038h): IRQ 6 Centronics Printer ISR (FB84:0AD7h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Fh (0000:003Ch): IRQ 7 Real Time Clock (MM58167) ISR (FB84:0AD7h)
+    DW  isr_keyboard_raw        , CODE_SEGMENT_BASE  ; Int 10h (0000:0040h): 80186 Internal Timer 0 ISR (FB84:0ABBh)
+    DW  isr_keyboard_raw        , CODE_SEGMENT_BASE  ; Int 11h (0000:0044h): 80186 Internal Timer 1 ISR (FB84:0ABBh)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 12h (0000:0048h): 80186 Internal Timer 2 ISR (FB84:0AD7h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 13h (0000:004Ch): 80186 DMA Channel 0 ISR (FB84:0AD7h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 14h (0000:0050h): 80186 DMA Channel 1 ISR (FB84:0AD7h)
+    DW  isr_i186_internal       , CODE_SEGMENT_BASE  ; Int 15h (0000:0054h): 80186 Internal Interrupt ISR (FB84:0428h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 16h (0000:0058h): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 17h (0000:005Ch): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
+    DW  isr_82730_command_done  , CODE_SEGMENT_BASE  ; Int 18h (0000:0060h): DMA Channel 0 Handler ISR (FB84:0A60h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 19h (0000:0064h): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 1Ah (0000:0068h): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
+    DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 1Bh (0000:006Ch): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
 
 ; --- str_snooper_commands: Snooper monitor / memory debugger prompt-tekster (22B8h - 2379h) ---
 str_snooper_commands:
@@ -1252,7 +1251,6 @@ rom_segment_base:
 ram_segment_base:
     DW  0000h                  ; [CS:0002] = Base segment for RAM (0000h)
 
-
 ; ----------------------------------------------------------------------------
 ; cold_boot_entry (ROM: 3844h, FB84:0004h)
 ; ----------------------------------------------------------------------------
@@ -1273,17 +1271,24 @@ cold_boot_entry:
     MOV     AL, 0F                                           ; [001C: B0 0F]
     OUT     DX, AL                                           ; [001E: EE]
     MOV     AL, 9F                                           ; [001F: B0 9F]
-    MOV     DI, 0026                                         ; [0021: BF 26 00]
+    MOV     DI, loc_0026                                     ; [0021: BF 26 00]
     JMPS    loc_003b                                         ; [0024: EB 15]
+
+loc_0026:
     MOV     AL, BF                                           ; [0026: B0 BF]
-    MOV     DI, 002D                                         ; [0028: BF 2D 00]
+    MOV     DI, loc_002d                                     ; [0028: BF 2D 00]
     JMPS    loc_003b                                         ; [002B: EB 0E]
+
+loc_002d:
     MOV     AL, DF                                           ; [002D: B0 DF]
-    MOV     DI, 0034                                         ; [002F: BF 34 00]
+    MOV     DI, loc_0034                                     ; [002F: BF 34 00]
     JMPS    loc_003b                                         ; [0032: EB 07]
+
+loc_0034:
     MOV     AL, FF                                           ; [0034: B0 FF]
-    MOV     DI, 005F                                         ; [0036: BF 5F 00]
+    MOV     DI, loc_005f                                     ; [0036: BF 5F 00]
     JMPS    loc_003b                                         ; [0039: EB 00]
+
 loc_003b:
     XCHG    AL, AH                                           ; [003B: 86 E0]
     IN      AL, io_sn76494_sound         ; SN76494 Sound Generator (Volume / Frequency) ; [003D: E4 56]
@@ -1305,6 +1310,8 @@ loc_0054:
 loc_005b:
     LOOP    loc_005b                                         ; [005B: E2 FE]
     JMP     DI                                               ; [005D: FF E7]
+
+loc_005f:
     MOV     DX, io_i186_int1_ctrl        ; 80186 INTC INT 1 Control register ; [005F: BA 38 FF]
     MOV     AX, 003F                                         ; [0062: B8 3F 00]
     OUT     DX, AX                                           ; [0065: EF]
@@ -1408,7 +1415,7 @@ loc_010a:
     MOV     DS, AX                                           ; [010E: 8E D8]
     MOV     BX, 2396                                         ; [0110: BB 96 23]
     MOV     CX, FFFF                                         ; [0113: B9 FF FF]
-    MOV     DI, 04D1                                         ; [0116: BF D1 04]
+    MOV     DI, test_prom_checksum                           ; [0116: BF D1 04]
     JMPN    serial_tx_banner_loop                            ; [0119: E9 00 00]
 
 ; ----------------------------------------------------------------------------
@@ -1435,6 +1442,7 @@ loc_0125:
     LOOP    serial_tx_banner_loop                            ; [013B: E2 DF]
 loc_013d:
     JMP     DI                                               ; [013D: FF E7]
+
 loc_013f:
     IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [013F: E4 72]
     TEST    AL, 80                                           ; [0141: A8 80]
@@ -1455,6 +1463,7 @@ loc_0153:
     JNC     loc_0164                                         ; [015D: 73 05]
     ADD     CH, 30                                           ; [015F: 80 C5 30]
     JMPS    loc_0167                                         ; [0162: EB 03]
+
 loc_0164:
     ADD     CH, 37                                           ; [0164: 80 C5 37]
 loc_0167:
@@ -1470,6 +1479,7 @@ loc_0167:
     OUT     DX, AL                                           ; [017A: EE]
     MOV     CH, BL                                           ; [017B: 8A EB]
     JMPS    loc_0153                                         ; [017D: EB D4]
+
 loc_017f:
     MOV     CH, CL                                           ; [017F: 8A E9]
     DEC     AH                                               ; [0181: FE CC]
@@ -1502,6 +1512,7 @@ loc_01a5:
     POP     DX                                               ; [01A5: 5A]
     POP     AX                                               ; [01A6: 58]
     RETN                                                     ; [01A7: C3]
+
 sub_01a8:
     PUSH    DX                                               ; [01A8: 52]
     MOV     DX, io_isbx0_ctrl            ; iSBX Multimodule Slot 0 Control / Status ; [01A9: BA 02 03]
@@ -1551,6 +1562,7 @@ loc_01e7:
     POP     BX                                               ; [01F0: 5B]
     POP     AX                                               ; [01F1: 58]
     RETN                                                     ; [01F2: C3]
+
 sub_01f3:
     PUSH    AX                                               ; [01F3: 50]
     PUSH    CX                                               ; [01F4: 51]
@@ -1577,11 +1589,13 @@ sub_01f3:
     MOV     ES, AX                                           ; [0224: 8E C0]
     MOV     DS, AX                                           ; [0226: 8E D8]
     JMPS    loc_022a                                         ; [0228: EB 00]
+
 loc_022a:
     REP MOVSW                                                ; [022A: F3 A5]
     MOV     AL, 20                                           ; [022C: B0 20]
     MOV     BYTE [ES:BX+04], AL                              ; [022E: 26 88 47 04]
     JMPS    loc_025f                                         ; [0232: EB 2B]
+
 loc_0234:
     CMP     AH, 2F                                           ; [0234: 80 FC 2F]
     JC      loc_025f                                         ; [0237: 72 26]
@@ -1597,6 +1611,7 @@ loc_0234:
     MOV     ES, AX                                           ; [0251: 8E C0]
     MOV     DS, AX                                           ; [0253: 8E D8]
     JMPS    loc_0257                                         ; [0255: EB 00]
+
 loc_0257:
     REP MOVSW                                                ; [0257: F3 A5]
     MOV     AL, 20                                           ; [0259: B0 20]
@@ -1610,6 +1625,7 @@ loc_025f:
     POP     CX                                               ; [0264: 59]
     POP     AX                                               ; [0265: 58]
     RETN                                                     ; [0266: C3]
+
 sub_0267:
     PUSH    DS                                               ; [0267: 1E]
     PUSH    BP                                               ; [0268: 55]
@@ -1634,6 +1650,7 @@ loc_027c:
     SUB     AL, 50                                           ; [0280: 2C 50]
     INC     AH                                               ; [0282: FE C4]
     JMPS    loc_027c                                         ; [0284: EB F6]
+
 loc_0286:
     MOV     BX, WORD [CS:ram_segment_base]                   ; [0286: 2E 8B 1E 02 00]
     MOV     DS, BX                                           ; [028B: 8E DB]
@@ -1666,6 +1683,7 @@ conout_char:
     MOV     BX, 5000                                         ; [02B9: BB 00 50]
     MOV     DH, 00                                           ; [02BC: B6 00]
     JMPS    loc_02cb                                         ; [02BE: EB 0B]
+
 loc_02c0:
     CMP     DH, 18                                           ; [02C0: 80 FE 18]
     JC      loc_02cb                                         ; [02C3: 72 06]
@@ -1688,6 +1706,7 @@ loc_02e5:
     INC     AH                                               ; [02EE: FE C4]
     CALL    set_cursor_pos                                   ; [02F0: E8 86 FF]
     JMPS    loc_033e                                         ; [02F3: EB 49]
+
 loc_02f5:
     ADD     BL, DL                                           ; [02F5: 02 DA]
     ADD     BL, DL                                           ; [02F7: 02 DA]
@@ -1727,6 +1746,7 @@ loc_033e:
     POP     BX                                               ; [0342: 5B]
     POP     AX                                               ; [0343: 58]
     RETN                                                     ; [0344: C3]
+
 sub_0345:
     PUSH    AX                                               ; [0345: 50]
     PUSH    BX                                               ; [0346: 53]
@@ -1748,6 +1768,7 @@ loc_0358:
     JNC     loc_0369                                         ; [0362: 73 05]
     ADD     CH, 30                                           ; [0364: 80 C5 30]
     JMPS    loc_036c                                         ; [0367: EB 03]
+
 loc_0369:
     ADD     CH, 37                                           ; [0369: 80 C5 37]
 loc_036c:
@@ -1755,6 +1776,7 @@ loc_036c:
     CALL    conout_char                                      ; [036E: E8 27 FF]
     MOV     CH, BL                                           ; [0371: 8A EB]
     JMPS    loc_0358                                         ; [0373: EB E3]
+
 loc_0375:
     MOV     CH, CL                                           ; [0375: 8A E9]
     DEC     AH                                               ; [0377: FE CC]
@@ -1845,6 +1867,7 @@ loc_03df:
     HLT                                                      ; [03E7: F4]
     CLI                                                      ; [03E8: FA]
     JMPS    loc_03df                                         ; [03E9: EB F4]
+
 loc_03eb:
     MOV     BYTE [var_kbd_key_ready], 00 ; Keyboard event flag (FFh = key pressed) ; [03EB: C6 06 32 01 00]
     MOV     AL, [var_kbd_ascii_char]     ; Keyboard ASCII char buffer ; [03F0: A0 33 01]
@@ -1862,6 +1885,7 @@ check_hotkey_ctrl_alt_del:
     JC      loc_0407                                         ; [03FF: 72 06]
     CALL    issue_82730_channel_attention                    ; [0401: E8 E1 06]
     JMPN    start_bootloader_sequence                        ; [0404: E9 21 09]
+
 loc_0407:
     CMP     AL, 1D                                           ; [0407: 3C 1D]
     JNZ     loc_040f                                         ; [0409: 75 04]
@@ -1882,9 +1906,9 @@ loc_0427:
     RETN                                                     ; [0427: C3]
 
 ; ----------------------------------------------------------------------------
-; isr_keyboard_int1 (ROM: 3C68h, FB84:0428h)
+; isr_i186_internal (ROM: 3C68h, FB84:0428h)
 ; ----------------------------------------------------------------------------
-isr_keyboard_int1:
+isr_i186_internal:
     PUSH    AX                                               ; [0428: 50]
     PUSH    BX                                               ; [0429: 53]
     PUSH    DX                                               ; [042A: 52]
@@ -1897,6 +1921,7 @@ isr_keyboard_int1:
     NOT     AL                                               ; [0439: F6 D0]
     MOV     [var_nvram_valid_magic], AL  ; NVRAM Magic byte 0xAA validation ; [043B: A2 65 00]
     JMPS    loc_0447                                         ; [043E: EB 07]
+
 loc_0440:
     CMP     AL, E4                                           ; [0440: 3C E4]
     JC      loc_044e                                         ; [0442: 72 0A]
@@ -1904,6 +1929,7 @@ loc_0440:
 loc_0447:
     MOV     BYTE [var_kbd_key_ready], 00 ; Keyboard event flag (FFh = key pressed) ; [0447: C6 06 32 01 00]
     JMPS    loc_047c                                         ; [044C: EB 2E]
+
 loc_044e:
     MOV     BX, 2162                                         ; [044E: BB 62 21]
 loc_0451:
@@ -1915,6 +1941,7 @@ loc_0451:
     INC     BX                                               ; [045D: 43]
     INC     BX                                               ; [045E: 43]
     JMPS    loc_0451                                         ; [045F: EB F0]
+
 loc_0461:
     INC     BX                                               ; [0461: 43]
     MOV     AL, BYTE [ES:BX]                                 ; [0462: 26 8A 07]
@@ -1932,6 +1959,8 @@ loc_047c:
     POP     BX                                               ; [0480: 5B]
     POP     AX                                               ; [0481: 58]
     IRET                                                     ; [0482: CF]
+
+isr_fdc_wd2797:
     PUSH    AX                                               ; [0483: 50]
     IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [0484: E4 72]
     TEST    AL, 80                                           ; [0486: A8 80]
@@ -1943,6 +1972,7 @@ loc_0495:
     CALL    issue_82730_channel_attention                    ; [0495: E8 4D 06]
     POP     AX                                               ; [0498: 58]
     IRET                                                     ; [0499: CF]
+
 sub_049a:
     PUSH    AX                                               ; [049A: 50]
     PUSH    DX                                               ; [049B: 52]
@@ -2013,12 +2043,15 @@ loc_04e9:
     MOV     BYTE [var_selftest_error_flags], 01 ; Selftest error flags buffer ; [0507: C6 06 20 01 01]
     MOV     AX, [CS:rom_segment_base]                        ; [050C: 2E A1 00 00]
     MOV     DS, AX                                           ; [0510: 8E D8]
-    MOV     DI, 0518                                         ; [0512: BF 18 05]
+    MOV     DI, loc_0518                                     ; [0512: BF 18 05]
     JMPN    loc_013f                                         ; [0515: E9 27 FC]
+
+loc_0518:
     MOV     BX, 21D2                                         ; [0518: BB D2 21]
     MOV     CX, FFFF                                         ; [051B: B9 FF FF]
-    MOV     DI, 0677                                         ; [051E: BF 77 06]
+    MOV     DI, loc_0677                                     ; [051E: BF 77 06]
     JMPN    serial_tx_banner_loop                            ; [0521: E9 F8 FB]
+
 sub_0524:
     CLI                                                      ; [0524: FA]
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [0525: B8 00 30]
@@ -2090,6 +2123,7 @@ loc_057f:
     JNC     loc_05a1                                         ; [059B: 73 04]
     NOT     DX                                               ; [059D: F7 D2]
     JMPS    loc_057f                                         ; [059F: EB DE]
+
 loc_05a1:
     DEC     CL                                               ; [05A1: FE C9]
     CMP     CL, 00                                           ; [05A3: 80 F9 00]
@@ -2097,6 +2131,7 @@ loc_05a1:
     MOV     AX, 55AA                                         ; [05A8: B8 AA 55]
     NOT     AX                                               ; [05AB: F7 D0]
     JMPS    loc_054e                                         ; [05AD: EB 9F]
+
 loc_05af:
     JMPN    init_video_and_fonts                             ; [05AF: E9 BA 00]
 
@@ -2112,12 +2147,16 @@ error_crt_vram:
     MOV     DS, AX                                           ; [05BC: 8E D8]
     MOV     BX, 21E9                                         ; [05BE: BB E9 21]
     MOV     CX, 0011                                         ; [05C1: B9 11 00]
-    MOV     DI, 05CA                                         ; [05C4: BF CA 05]
+    MOV     DI, loc_05ca                                     ; [05C4: BF CA 05]
     JMPN    serial_tx_banner_loop                            ; [05C7: E9 52 FB]
+
+loc_05ca:
     MOV     BX, 23CD                                         ; [05CA: BB CD 23]
     MOV     CX, 0008                                         ; [05CD: B9 08 00]
-    MOV     DI, 05D6                                         ; [05D0: BF D6 05]
+    MOV     DI, loc_05d6                                     ; [05D0: BF D6 05]
     JMPN    serial_tx_banner_loop                            ; [05D3: E9 46 FB]
+
+loc_05d6:
     MOV     CX, CRT_VRAM_SEGMENT                             ; [05D6: B9 00 D0]
     MOV     AX, [CS:ram_segment_base]                        ; [05D9: 2E A1 02 00]
     MOV     DS, AX                                           ; [05DD: 8E D8]
@@ -2125,47 +2164,61 @@ error_crt_vram:
     MOV     BYTE [var_selftest_error_flags], 02 ; Selftest error flags buffer ; [05E3: C6 06 20 01 02]
     MOV     AX, [CS:rom_segment_base]                        ; [05E8: 2E A1 00 00]
     MOV     DS, AX                                           ; [05EC: 8E D8]
-    MOV     DI, 05F4                                         ; [05EE: BF F4 05]
+    MOV     DI, loc_05f4                                     ; [05EE: BF F4 05]
     JMPN    loc_013f                                         ; [05F1: E9 4B FB]
+
+loc_05f4:
     MOV     BX, 21FB                                         ; [05F4: BB FB 21]
     MOV     CX, 0001                                         ; [05F7: B9 01 00]
-    MOV     DI, 0600                                         ; [05FA: BF 00 06]
+    MOV     DI, loc_0600                                     ; [05FA: BF 00 06]
     JMPN    serial_tx_banner_loop                            ; [05FD: E9 1C FB]
+
+loc_0600:
     MOV     CX, SI                                           ; [0600: 8B CE]
     MOV     AX, [CS:ram_segment_base]                        ; [0602: 2E A1 02 00]
     MOV     DS, AX                                           ; [0606: 8E D8]
     MOV     WORD [var_selftest_error_subcode], CX            ; [0608: 89 0E 21 01]
     MOV     AX, [CS:rom_segment_base]                        ; [060C: 2E A1 00 00]
     MOV     DS, AX                                           ; [0610: 8E D8]
-    MOV     DI, 0618                                         ; [0612: BF 18 06]
+    MOV     DI, loc_0618                                     ; [0612: BF 18 06]
     JMPN    loc_013f                                         ; [0615: E9 27 FB]
+
+loc_0618:
     MOV     BX, 23D5                                         ; [0618: BB D5 23]
     MOV     CX, 0008                                         ; [061B: B9 08 00]
-    MOV     DI, 0624                                         ; [061E: BF 24 06]
+    MOV     DI, loc_0624                                     ; [061E: BF 24 06]
     JMPN    serial_tx_banner_loop                            ; [0621: E9 F8 FA]
+
+loc_0624:
     MOV     CX, SS                                           ; [0624: 8C D1]
     MOV     AX, [CS:ram_segment_base]                        ; [0626: 2E A1 02 00]
     MOV     DS, AX                                           ; [062A: 8E D8]
     MOV     WORD [var_selftest_error_count], CX              ; [062C: 89 0E 23 01]
     MOV     AX, [CS:rom_segment_base]                        ; [0630: 2E A1 00 00]
     MOV     DS, AX                                           ; [0634: 8E D8]
-    MOV     DI, 063C                                         ; [0636: BF 3C 06]
+    MOV     DI, loc_063c                                     ; [0636: BF 3C 06]
     JMPN    loc_013f                                         ; [0639: E9 03 FB]
+
+loc_063c:
     MOV     BX, 23DD                                         ; [063C: BB DD 23]
     MOV     CX, 0008                                         ; [063F: B9 08 00]
-    MOV     DI, 0648                                         ; [0642: BF 48 06]
+    MOV     DI, loc_0648                                     ; [0642: BF 48 06]
     JMPN    serial_tx_banner_loop                            ; [0645: E9 D4 FA]
+
+loc_0648:
     MOV     CX, ES                                           ; [0648: 8C C1]
     MOV     AX, [CS:ram_segment_base]                        ; [064A: 2E A1 02 00]
     MOV     DS, AX                                           ; [064E: 8E D8]
     MOV     WORD [var_selftest_failing_dev], CX              ; [0650: 89 0E 25 01]
     MOV     AX, [CS:rom_segment_base]                        ; [0654: 2E A1 00 00]
     MOV     DS, AX                                           ; [0658: 8E D8]
-    MOV     DI, 0660                                         ; [065A: BF 60 06]
+    MOV     DI, loc_0660                                     ; [065A: BF 60 06]
     JMPN    loc_013f                                         ; [065D: E9 DF FA]
+
+loc_0660:
     MOV     BX, 23BD                                         ; [0660: BB BD 23]
     MOV     CX, FFFF                                         ; [0663: B9 FF FF]
-    MOV     DI, 0677                                         ; [0666: BF 77 06]
+    MOV     DI, loc_0677                                     ; [0666: BF 77 06]
     JMPN    serial_tx_banner_loop                            ; [0669: E9 B0 FA]
 
 ; ----------------------------------------------------------------------------
@@ -2175,6 +2228,7 @@ init_video_and_fonts:
     MOV     AX, [CS:ram_segment_base]                        ; [066C: 2E A1 02 00]
     MOV     DS, AX                                           ; [0670: 8E D8]
     MOV     BYTE [var_selftest_error_flags], 00 ; Selftest error flags buffer ; [0672: C6 06 20 01 00]
+loc_0677:
     MOV     AX, CRT_VRAM_SEGMENT                             ; [0677: B8 00 D0]
     MOV     ES, AX                                           ; [067A: 8E C0]
     MOV     DI, 0000                                         ; [067C: BF 00 00]
@@ -2326,15 +2380,17 @@ setup_82730_cb_scb:
     MOV     CX, 0007                                         ; [0780: B9 07 00]
     CLD                                                      ; [0783: FC]
     JMPS    loc_0786                                         ; [0784: EB 00]
+
 loc_0786:
     REP MOVSB                                                ; [0786: F3 A4]
     MOV     AX, CRT_VRAM_SEGMENT                             ; [0788: B8 00 D0]
     MOV     ES, AX                                           ; [078B: 8E C0]
     MOV     DI, 2000                                         ; [078D: BF 00 20]
     MOV     SI, 000C                                         ; [0790: BE 0C 00]
-    MOV     CX, 0026                                         ; [0793: B9 26 00]
+    MOV     CX, loc_0026                                     ; [0793: B9 26 00]
     CLD                                                      ; [0796: FC]
     JMPS    loc_0799                                         ; [0797: EB 00]
+
 loc_0799:
     REP MOVSB                                                ; [0799: F3 A4]
     MOV     DX, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [079B: BA 72 00]
@@ -2344,12 +2400,14 @@ loc_0799:
     MOV     SI, 0032                                         ; [07A3: BE 32 00]
     MOV     CX, 0036                                         ; [07A6: B9 36 00]
     JMPN    loc_07b2                                         ; [07A9: E9 06 00]
+
 loc_07ac:
     MOV     SI, 0068                                         ; [07AC: BE 68 00]
     MOV     CX, 0036                                         ; [07AF: B9 36 00]
 loc_07b2:
     CLD                                                      ; [07B2: FC]
     JMPS    loc_07b5                                         ; [07B3: EB 00]
+
 loc_07b5:
     REP MOVSB                                                ; [07B5: F3 A4]
     MOV     CX, 0002                                         ; [07B7: B9 02 00]
@@ -2481,6 +2539,7 @@ loc_08a2:
     JZ      loc_08e5                                         ; [08A5: 74 3E]
 loc_08a7:
     JMPS    ram_write_loop                                   ; [08A7: EB ED]
+
 loc_08a9:
     MOV     CH, AL                                           ; [08A9: 8A E8]
     MOV     AX, ES                                           ; [08AB: 8C C0]
@@ -2496,6 +2555,7 @@ loc_08b5:
     MOV     AH, AL                                           ; [08C1: 8A E0]
     NOT     AH                                               ; [08C3: F6 D4]
     JMPS    loc_089d                                         ; [08C5: EB D6]
+
 loc_08c7:
     MOV     CH, AL                                           ; [08C7: 8A E8]
     MOV     AX, ES                                           ; [08C9: 8C C0]
@@ -2511,6 +2571,7 @@ loc_08d3:
     MOV     AH, AL                                           ; [08DF: 8A E0]
     NOT     AH                                               ; [08E1: F6 D4]
     JMPS    loc_08a2                                         ; [08E3: EB BD]
+
 loc_08e5:
     MOV     CH, AL                                           ; [08E5: 8A E8]
     MOV     AX, ES                                           ; [08E7: 8C C0]
@@ -2526,6 +2587,7 @@ loc_08f1:
     MOV     AH, AL                                           ; [08FD: 8A E0]
     NOT     AH                                               ; [08FF: F6 D4]
     JMPS    loc_08a7                                         ; [0901: EB A4]
+
 loc_0903:
     MOV     BX, FFFE                                         ; [0903: BB FE FF]
     MOV     DS, DX                                           ; [0906: 8E DA]
@@ -2562,6 +2624,7 @@ loc_092a:
 loc_0933:
     NOT     DX                                               ; [0933: F7 D2]
     JMPS    ram_verify_loop                                  ; [0935: EB E1]
+
 loc_0937:
     MOV     AX, DS                                           ; [0937: 8C D8]
     CMP     AX, 1000                                         ; [0939: 3D 00 10]
@@ -2573,6 +2636,7 @@ loc_0941:
     SUB     AX, 1000                                         ; [0946: 2D 00 10]
     MOV     DS, AX                                           ; [0949: 8E D8]
     JMPS    loc_0921                                         ; [094B: EB D4]
+
 loc_094d:
     MOV     AX, DS                                           ; [094D: 8C D8]
     CMP     AX, 1000                                         ; [094F: 3D 00 10]
@@ -2584,6 +2648,7 @@ loc_0957:
     SUB     AX, 1000                                         ; [095C: 2D 00 10]
     MOV     DS, AX                                           ; [095F: 8E D8]
     JMPS    loc_092a                                         ; [0961: EB C7]
+
 loc_0963:
     MOV     AX, DS                                           ; [0963: 8C D8]
     CMP     AX, 1000                                         ; [0965: 3D 00 10]
@@ -2595,6 +2660,7 @@ loc_096d:
     SUB     AX, 1000                                         ; [0972: 2D 00 10]
     MOV     DS, AX                                           ; [0975: 8E D8]
     JMPS    loc_0933                                         ; [0977: EB BA]
+
 loc_0979:
     DEC     CL                                               ; [0979: FE C9]
     CMP     CL, 00                                           ; [097B: 80 F9 00]
@@ -2617,6 +2683,7 @@ error_ram_memory:
 ram_test_passed:
     MOV     AL, 00                                           ; [098C: B0 00]
     JMPN    post_ram_test_return                             ; [098E: E9 B3 00]
+
 loc_0991:
     PUSH    AX                                               ; [0991: 50]
     PUSH    DX                                               ; [0992: 52]
@@ -2644,8 +2711,10 @@ loc_09af:
     MOV     WORD [var_selftest_loop_count], CX               ; [09BE: 89 0E 27 01]
     MOV     AX, [CS:rom_segment_base]                        ; [09C2: 2E A1 00 00]
     MOV     DS, AX                                           ; [09C6: 8E D8]
-    MOV     DI, 09CE                                         ; [09C8: BF CE 09]
+    MOV     DI, loc_09ce                                     ; [09C8: BF CE 09]
     JMPN    loc_013f                                         ; [09CB: E9 71 F7]
+
+loc_09ce:
     MOV     AL, 3A                                           ; [09CE: B0 3A]
     CALL    char_out_helper                                  ; [09D0: E8 B4 F7]
     POP     CX                                               ; [09D3: 59]
@@ -2654,8 +2723,10 @@ loc_09af:
     MOV     WORD [var_selftest_error_subcode], CX            ; [09DA: 89 0E 21 01]
     MOV     AX, [CS:rom_segment_base]                        ; [09DE: 2E A1 00 00]
     MOV     DS, AX                                           ; [09E2: 8E D8]
-    MOV     DI, 09EA                                         ; [09E4: BF EA 09]
+    MOV     DI, loc_09ea                                     ; [09E4: BF EA 09]
     JMPN    loc_013f                                         ; [09E7: E9 55 F7]
+
+loc_09ea:
     MOV     BX, 23D5                                         ; [09EA: BB D5 23]
     MOV     CX, 0008                                         ; [09ED: B9 08 00]
 loc_09f0:
@@ -2669,8 +2740,10 @@ loc_09f0:
     MOV     WORD [var_selftest_error_count], CX              ; [09FF: 89 0E 23 01]
     MOV     AX, [CS:rom_segment_base]                        ; [0A03: 2E A1 00 00]
     MOV     DS, AX                                           ; [0A07: 8E D8]
-    MOV     DI, 0A0F                                         ; [0A09: BF 0F 0A]
+    MOV     DI, loc_0a0f                                     ; [0A09: BF 0F 0A]
     JMPN    loc_013f                                         ; [0A0C: E9 30 F7]
+
+loc_0a0f:
     MOV     BX, 23DD                                         ; [0A0F: BB DD 23]
     MOV     CX, 0008                                         ; [0A12: B9 08 00]
 loc_0a15:
@@ -2684,8 +2757,10 @@ loc_0a15:
     MOV     WORD [var_selftest_failing_dev], CX              ; [0A24: 89 0E 25 01]
     MOV     AX, [CS:rom_segment_base]                        ; [0A28: 2E A1 00 00]
     MOV     DS, AX                                           ; [0A2C: 8E D8]
-    MOV     DI, 0A34                                         ; [0A2E: BF 34 0A]
+    MOV     DI, loc_0a34                                     ; [0A2E: BF 34 0A]
     JMPN    loc_013f                                         ; [0A31: E9 0B F7]
+
+loc_0a34:
     MOV     BX, 23BD                                         ; [0A34: BB BD 23]
     MOV     CX, 0002                                         ; [0A37: B9 02 00]
 loc_0a3a:
@@ -2750,6 +2825,7 @@ loc_0a74:
     INC     AX                                               ; [0A96: 40]
     MOV     [var_timer0_tick_count], AX  ; Timer 0 tick counter (incremented by timer ISR) ; [0A97: A3 35 01]
     JMPS    loc_0aa4                                         ; [0A9A: EB 08]
+
 loc_0a9c:
     MOV     [var_selftest_failing_dev], AX                   ; [0A9C: A3 25 01]
     MOV     BYTE [var_selftest_error_flags], 10 ; Selftest error flags buffer ; [0A9F: C6 06 20 01 10]
@@ -2765,12 +2841,18 @@ loc_0aa4:
     POP     BX                                               ; [0AB2: 5B]
     POP     AX                                               ; [0AB3: 58]
     IRET                                                     ; [0AB4: CF]
+
+isr_default_trap:
     MOV     BYTE [var_selftest_error_flags], 08 ; Selftest error flags buffer ; [0AB5: C6 06 20 01 08]
     IRET                                                     ; [0ABA: CF]
+
+isr_keyboard_raw:
     PUSH    AX                                               ; [0ABB: 50]
     CALL    issue_82730_channel_attention                    ; [0ABC: E8 26 00]
     POP     AX                                               ; [0ABF: 58]
     IRET                                                     ; [0AC0: CF]
+
+isr_nmi:
     PUSH    AX                                               ; [0AC1: 50]
     PUSH    CX                                               ; [0AC2: 51]
     MOV     CX, 0002                                         ; [0AC3: B9 02 00]
@@ -2783,6 +2865,8 @@ loc_0ac6:
     POP     CX                                               ; [0AD4: 59]
     POP     AX                                               ; [0AD5: 58]
     IRET                                                     ; [0AD6: CF]
+
+isr_hardware_irq_default:
     PUSH    AX                                               ; [0AD7: 50]
     CALL    issue_82730_channel_attention                    ; [0AD8: E8 0A 00]
     MOV     [var_selftest_error_subcode], AX                 ; [0ADB: A3 21 01]
@@ -2813,6 +2897,7 @@ loc_0af0:
     MOV     AL, 20                                           ; [0B02: B0 20]
     OUT     DX, AL                                           ; [0B04: EE]
     JMPS    loc_0b1f                                         ; [0B05: EB 18]
+
 loc_0b07:
     MOV     DX, FF2C                                         ; [0B07: BA 2C FF]
     IN      AX, DX                                           ; [0B0A: ED]
@@ -2854,12 +2939,14 @@ setup_interrupt_vectors:
     MOV     ES, DI                                           ; [0B3E: 8E C7]
     MOV     CX, 0050                                         ; [0B40: B9 50 00]
     JMPS    loc_0b45                                         ; [0B43: EB 00]
+
 loc_0b45:
     REP MOVSB                                                ; [0B45: F3 A4]
     MOV     SI, 2298                                         ; [0B47: BE 98 22]
     MOV     DI, 0080                                         ; [0B4A: BF 80 00]
     MOV     CX, 0020                                         ; [0B4D: B9 20 00]
     JMPS    loc_0b52                                         ; [0B50: EB 00]
+
 loc_0b52:
     REP MOVSB                                                ; [0B52: F3 A4]
     POP     ES                                               ; [0B54: 07]
@@ -2888,6 +2975,7 @@ loc_0b68:
     POP     DI                                               ; [0B6C: 5F]
     POP     ES                                               ; [0B6D: 07]
     RETN                                                     ; [0B6E: C3]
+
 sub_0b6f:
     PUSH    ES                                               ; [0B6F: 06]
     PUSH    DI                                               ; [0B70: 57]
@@ -2900,6 +2988,7 @@ sub_0b6f:
     POP     DI                                               ; [0B7E: 5F]
     POP     ES                                               ; [0B7F: 07]
     RETN                                                     ; [0B80: C3]
+
 sub_0b81:
     PUSH    DI                                               ; [0B81: 57]
     PUSH    SI                                               ; [0B82: 56]
@@ -2974,6 +3063,7 @@ init_video_buffers_and_selftest:
     MOV     CX, 2000                                         ; [0BF2: B9 00 20]
     CLD                                                      ; [0BF5: FC]
     JMPS    loc_0bf8                                         ; [0BF6: EB 00]
+
 loc_0bf8:
     REP MOVSW                                                ; [0BF8: F3 A5]
     MOV     AX, CRT_VRAM_SEGMENT                             ; [0BFA: B8 00 D0]
@@ -2997,6 +3087,7 @@ loc_0c02:
     JNZ     loc_0c2c                                         ; [0C26: 75 04]
     MOV     BL, FF                                           ; [0C28: B3 FF]
     JMPS    loc_0c31                                         ; [0C2A: EB 05]
+
 loc_0c2c:
     MOV     BL, 3F                                           ; [0C2C: B3 3F]
     MOV     CX, 0800                                         ; [0C2E: B9 00 08]
@@ -3010,7 +3101,7 @@ loc_0c31:
     IN      AL, DX                                           ; [0C3D: EC]
     AND     AL, 40                                           ; [0C3E: 24 40]
     JZ      loc_0c4b                                         ; [0C40: 74 09]
-    MOV     DI, 0BF8                                         ; [0C42: BF F8 0B]
+    MOV     DI, loc_0bf8                                     ; [0C42: BF F8 0B]
     MOV     AX, FFBF                                         ; [0C45: B8 BF FF]
     MOV     WORD [ES:DI], AX                                 ; [0C48: 26 89 05]
 loc_0c4b:
@@ -3115,6 +3206,7 @@ start_bootloader_sequence:
     CALL    clear_screen_or_cursor                           ; [0D3A: E8 82 F4]
     CALL    mute_sound_chip                                  ; [0D3D: E8 F6 06]
     JMPN    bootloader_main_entry                            ; [0D40: E9 BD 19]
+
 loc_0d43:
     MOV     [var_boot_status_flags], AX  ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [0D43: A3 2D 01]
     CALL    selftest_check_keyboard                          ; [0D46: E8 C7 03]
@@ -3166,6 +3258,7 @@ loc_0d72:
     INC     CH                                               ; [0D86: FE C5]
     CALL    conout_char                                      ; [0D88: E8 0D F5]
     JMPS    loc_0d72                                         ; [0D8B: EB E5]
+
 loc_0d8d:
     MOV     DH, BYTE [CS:BX+SI+0000]                         ; [0D8D: 2E 8A B0 00 00]
     CMP     AL, DH                                           ; [0D92: 3A C6]
@@ -3184,6 +3277,7 @@ loc_0da4:
     POP     DX                                               ; [0DAB: 5A]
     SHR     DX, CL                                           ; [0DAC: D3 EA]
     JMPS    loc_0dc0                                         ; [0DAE: EB 10]
+
 loc_0db0:
     CALL    conout_char                                      ; [0DB0: E8 E5 F4]
     MOV     AL, DL                                           ; [0DB3: 8A C2]
@@ -3193,6 +3287,7 @@ loc_0db0:
     JZ      loc_0dc0                                         ; [0DBA: 74 04]
     SHL     DX, CL                                           ; [0DBC: D3 E2]
     JMPS    loc_0d72                                         ; [0DBE: EB B2]
+
 loc_0dc0:
     MOV     AX, DX                                           ; [0DC0: 8B C2]
     POP     SI                                               ; [0DC2: 5E]
@@ -3200,6 +3295,7 @@ loc_0dc0:
     POP     CX                                               ; [0DC4: 59]
     POP     BX                                               ; [0DC5: 5B]
     RETN                                                     ; [0DC6: C3]
+
 sub_0dc7:
     PUSH    DS                                               ; [0DC7: 1E]
     PUSH    AX                                               ; [0DC8: 50]
@@ -3221,6 +3317,7 @@ loc_0ddb:
     CALL    conout_char                                      ; [0DE2: E8 B3 F4]
     INC     BX                                               ; [0DE5: 43]
     JMPS    loc_0ddb                                         ; [0DE6: EB F3]
+
 loc_0de8:
     CALL    read_key_poll                                    ; [0DE8: E8 E8 F5]
     CALL    conout_char                                      ; [0DEB: E8 AA F4]
@@ -3237,6 +3334,7 @@ loc_0dee:
     CMP     AL, 58                                           ; [0E00: 3C 58]
     JNZ     loc_0dd8                                         ; [0E02: 75 D4]
     JMPN    loc_0f71                                         ; [0E04: E9 6A 01]
+
 loc_0e07:
     CALL    wait_key_press                                   ; [0E07: E8 BF F5]
     MOV     AX, 2366                                         ; [0E0A: B8 66 23]
@@ -3259,6 +3357,7 @@ loc_0e07:
     JZ      loc_0e4c                                         ; [0E36: 74 14]
     OUT     DX, AX                                           ; [0E38: EF]
     JMPS    loc_0e3f                                         ; [0E39: EB 04]
+
 loc_0e3b:
     IN      AX, DX                                           ; [0E3B: ED]
     CALL    sub_0345                                         ; [0E3C: E8 06 F5]
@@ -3268,8 +3367,10 @@ loc_0e3f:
     CMP     AL, 2C                                           ; [0E45: 3C 2C]
     JZ      loc_0e07                                         ; [0E47: 74 BE]
     JMPN    loc_0dee                                         ; [0E49: E9 A2 FF]
+
 loc_0e4c:
     JMPN    loc_0dd8                                         ; [0E4C: E9 89 FF]
+
 loc_0e4f:
     CALL    wait_key_press                                   ; [0E4F: E8 77 F5]
     MOV     AX, 2373                                         ; [0E52: B8 73 23]
@@ -3369,8 +3470,10 @@ loc_0f18:
     DEC     DL                                               ; [0F1F: FE CA]
     JZ      loc_0f26                                         ; [0F21: 74 03]
     JMPN    loc_0e9d                                         ; [0F23: E9 77 FF]
+
 loc_0f26:
     JMPN    loc_0e81                                         ; [0F26: E9 58 FF]
+
 loc_0f29:
     MOV     AL, 20                                           ; [0F29: B0 20]
     LOOP    loc_0ef3                                         ; [0F2B: E2 C6]
@@ -3379,6 +3482,7 @@ loc_0f29:
     DEC     DL                                               ; [0F2F: FE CA]
     JZ      loc_0f36                                         ; [0F31: 74 03]
     JMPN    loc_0e9d                                         ; [0F33: E9 67 FF]
+
 loc_0f36:
     MOV     AL, 20                                           ; [0F36: B0 20]
     CALL    conout_char                                      ; [0F38: E8 5D F3]
@@ -3404,8 +3508,10 @@ loc_0f4d:
     CMP     AL, 2C                                           ; [0F67: 3C 2C]
     JNZ     loc_0f6e                                         ; [0F69: 75 03]
     JMPN    loc_0e7c                                         ; [0F6B: E9 0E FF]
+
 loc_0f6e:
     JMPN    loc_0dee                                         ; [0F6E: E9 7D FE]
+
 loc_0f71:
     CALL    wait_key_press                                   ; [0F71: E8 55 F4]
     MOV     AX, 22C4                                         ; [0F74: B8 C4 22]
@@ -3449,6 +3555,7 @@ loc_0f9c:
     MOV     CX, AX                                           ; [0FB1: 8B C8]
     MOV     BX, AX                                           ; [0FB3: 8B D8]
     JMPS    loc_0f9c                                         ; [0FB5: EB E5]
+
 loc_0fb7:
     CMP     AL, 30                                           ; [0FB7: 3C 30]
     JC      loc_0f9c                                         ; [0FB9: 72 E1]
@@ -3475,6 +3582,7 @@ loc_0fdd:
     POP     BX                                               ; [0FE2: 5B]
     POP     DX                                               ; [0FE3: 5A]
     RETN                                                     ; [0FE4: C3]
+
 sub_0fe5:
     CALL    print_string_es_ax                               ; [0FE5: E8 C4 F3]
     MOV     AX, 240D                                         ; [0FE8: B8 0D 24]
@@ -3496,6 +3604,7 @@ loc_0ffc:
     JNZ     loc_1016                                         ; [1010: 75 04]
     OR      CH, BH                                           ; [1012: 0A EF]
     JMPS    loc_101e                                         ; [1014: EB 08]
+
 loc_1016:
     CMP     AL, 4E                                           ; [1016: 3C 4E]
     JNZ     loc_1022                                         ; [1018: 75 08]
@@ -3506,6 +3615,7 @@ loc_101e:
 loc_1022:
     CALL    wait_key_press                                   ; [1022: E8 A4 F3]
     RETN                                                     ; [1025: C3]
+
 sub_1026:
     PUSH    AX                                               ; [1026: 50]
     PUSH    BX                                               ; [1027: 53]
@@ -3546,6 +3656,7 @@ loc_106e:
     MOV     AL, 07                                           ; [1086: B0 07]
     CALL    sub_109d                                         ; [1088: E8 12 00]
     JMPS    loc_106e                                         ; [108B: EB E1]
+
 loc_108d:
     MOV     BL, AL                                           ; [108D: 8A D8]
     MOV     WORD [var_boot_status_flags], BX ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [108F: 89 1E 2D 01]
@@ -3554,6 +3665,7 @@ loc_108d:
     POP     BX                                               ; [109A: 5B]
     POP     AX                                               ; [109B: 58]
     RETN                                                     ; [109C: C3]
+
 sub_109d:
     PUSH    BX                                               ; [109D: 53]
     PUSH    CX                                               ; [109E: 51]
@@ -3566,6 +3678,7 @@ loc_10a7:
     JZ      loc_10b0                                         ; [10AA: 74 04]
     ADD     BX, SI                                           ; [10AC: 03 DE]
     JMPS    loc_10a7                                         ; [10AE: EB F7]
+
 loc_10b0:
     INC     BX                                               ; [10B0: 43]
     MOV     BP, WORD [ES:BX]                                 ; [10B1: 26 8B 2F]
@@ -3586,6 +3699,7 @@ loc_10cc:
     POP     CX                                               ; [10D1: 59]
     POP     BX                                               ; [10D2: 5B]
     RETN                                                     ; [10D3: C3]
+
 sub_10d4:
     PUSH    BP                                               ; [10D4: 55]
     PUSH    BX                                               ; [10D5: 53]
@@ -3663,6 +3777,7 @@ loc_1154:
     CALL    conout_char                                      ; [115B: E8 3A F1]
     INC     BX                                               ; [115E: 43]
     JMPS    loc_1154                                         ; [115F: EB F3]
+
 loc_1161:
     MOV     BYTE [var_kbd_key_ready], 00 ; Keyboard event flag (FFh = key pressed) ; [1161: C6 06 32 01 00]
     CALL    read_key_poll                                    ; [1166: E8 6A F2]
@@ -3671,6 +3786,7 @@ loc_1161:
     CALL    wait_key_press                                   ; [116D: E8 59 F2]
     POP     AX                                               ; [1170: 58]
     JMPS    loc_112a                                         ; [1171: EB B7]
+
 loc_1173:
     MOV     BYTE [var_kbd_key_ready], 00 ; Keyboard event flag (FFh = key pressed) ; [1173: C6 06 32 01 00]
     POP     CX                                               ; [1178: 59]
@@ -3716,6 +3832,7 @@ loc_11a4:
     JNC     loc_11c0                                         ; [11B9: 73 05]
     CALL    wait_key_press                                   ; [11BB: E8 0B F2]
     JMPS    loc_11c8                                         ; [11BE: EB 08]
+
 loc_11c0:
     CALL    sub_0267                                         ; [11C0: E8 A4 F0]
     MOV     AL, 28                                           ; [11C3: B0 28]
@@ -3724,6 +3841,7 @@ loc_11c8:
     POP     CX                                               ; [11C8: 59]
     DEC     CX                                               ; [11C9: 49]
     JMPN    loc_118e                                         ; [11CA: E9 C1 FF]
+
 loc_11cd:
     MOV     AX, 21FC                                         ; [11CD: B8 FC 21]
     MOV     CX, 000C                                         ; [11D0: B9 0C 00]
@@ -3735,6 +3853,7 @@ loc_11cd:
     POP     CX                                               ; [11DA: 59]
     POP     AX                                               ; [11DB: 58]
     RETN                                                     ; [11DC: C3]
+
 sub_11dd:
     PUSH    AX                                               ; [11DD: 50]
     PUSH    BX                                               ; [11DE: 53]
@@ -3822,6 +3941,7 @@ loc_1255:
     JZ      loc_1285                                         ; [127D: 74 06]
     MOV     [var_floppy_target_drive], AL                    ; [127F: A2 63 00]
     JMPN    loc_12cc                                         ; [1282: E9 47 00]
+
 loc_1285:
     INC     BYTE [var_floppy_target_drive]                   ; [1285: FE 06 63 00]
     MOV     CX, C350                                         ; [1289: B9 50 C3]
@@ -3838,6 +3958,7 @@ loc_128c:
     MOV     DX, io_floppy_release        ; Floppy Release register ; [129F: BA 90 02]
     OUT     DX, AL                                           ; [12A2: EE]
     JMPN    loc_12cc                                         ; [12A3: E9 26 00]
+
 loc_12a6:
     MOV     DX, io_floppy_ctrl           ; Floppy Control register (Motor 0/1, Drive sel, DDEN) ; [12A6: BA 88 02]
     MOV     AL, 47                                           ; [12A9: B0 47]
@@ -3851,6 +3972,7 @@ loc_12af:
 loc_12b7:
     INC     BYTE [var_floppy_target_drive]                   ; [12B7: FE 06 63 00]
     JMPS    loc_12c4                                         ; [12BB: EB 07]
+
 loc_12bd:
     PUSH    CX                                               ; [12BD: 51]
     CALL    fdc_wait_ready_timeout                           ; [12BE: E8 3B 27]
@@ -3944,6 +4066,7 @@ cursor_blink_handler:
     MOV     CX, FFFF                                         ; [1364: B9 FF FF]
     CALL    print_string_es_ax                               ; [1367: E8 42 F0]
     JMPN    loc_13fc                                         ; [136A: E9 8F 00]
+
 loc_136d:
     CALL    sub_109d                                         ; [136D: E8 2D FD]
     CALL    sub_0267                                         ; [1370: E8 F4 EE]
@@ -4007,6 +4130,7 @@ loc_13fc:
     POP     CX                                               ; [1402: 59]
     POP     AX                                               ; [1403: 58]
     RETN                                                     ; [1404: C3]
+
 sub_1405:
     PUSH    AX                                               ; [1405: 50]
     PUSH    BX                                               ; [1406: 53]
@@ -4101,6 +4225,7 @@ loc_1495:
     INC     WORD [var_kbd_shift_state]                       ; [1495: FF 06 30 01]
     CALL    selftest_status_display                          ; [1499: E8 B3 FF]
     JMPS    loc_14a4                                         ; [149C: EB 06]
+
 loc_149e:
     TEST    CX, 4000                                         ; [149E: F7 C1 00 40]
     JNZ     loc_1495                                         ; [14A2: 75 F1]
@@ -4128,6 +4253,7 @@ loc_14cb:
     POP     BX                                               ; [14D3: 5B]
     POP     AX                                               ; [14D4: 58]
     RETN                                                     ; [14D5: C3]
+
 sub_14d6:
     LEA     AX, WORD [0400]                                  ; [14D6: 8D 06 00 04]
     MOV     CX, 1000                                         ; [14DA: B9 00 10]
@@ -4159,6 +4285,7 @@ loc_150f:
     LOOP    loc_1501                                         ; [151A: E2 E5]
 loc_151c:
     RETN                                                     ; [151C: C3]
+
 loc_151d:
     POP     CX                                               ; [151D: 59]
     MOV     WORD [var_selftest_error_subcode], SI            ; [151E: 89 36 21 01]
@@ -4167,6 +4294,7 @@ loc_151d:
     MOV     [var_selftest_failing_dev], AX                   ; [1527: A3 25 01]
     MOV     BYTE [var_selftest_error_flags], 09 ; Selftest error flags buffer ; [152A: C6 06 20 01 09]
     RETN                                                     ; [152F: C3]
+
 sub_1530:
     MOV     DX, io_i186_timer2_count     ; 80186 Timer 2 Count register (T2CNT) ; [1530: BA 60 FF]
     MOV     AX, 0000                                         ; [1533: B8 00 00]
@@ -4200,6 +4328,7 @@ loc_155e:
     MOV     [var_selftest_failing_dev], AX                   ; [1573: A3 25 01]
 loc_1576:
     JMPS    loc_15c3                                         ; [1576: EB 4B]
+
 loc_1578:
     MOV     DX, io_i186_timer1_count     ; 80186 Timer 1 Count register (T1CNT) ; [1578: BA 58 FF]
     MOV     AX, 0000                                         ; [157B: B8 00 00]
@@ -4235,6 +4364,7 @@ loc_15b4:
     DEC     BX                                               ; [15BE: 4B]
     JNZ     loc_15b4                                         ; [15BF: 75 F3]
     JMPS    loc_155e                                         ; [15C1: EB 9B]
+
 loc_15c3:
     MOV     DX, io_i186_timer2_count     ; 80186 Timer 2 Count register (T2CNT) ; [15C3: BA 60 FF]
     MOV     AX, 0000                                         ; [15C6: B8 00 00]
@@ -4259,6 +4389,7 @@ loc_15c3:
     MOV     AX, C350                                         ; [15F1: B8 50 C3]
     CALL    busy_loop_delay_ax                               ; [15F4: E8 C7 F5]
     RETN                                                     ; [15F7: C3]
+
 sub_15f8:
     PUSH    AX                                               ; [15F8: 50]
     PUSH    BX                                               ; [15F9: 53]
@@ -4333,6 +4464,7 @@ sub_15f8:
     POP     BX                                               ; [1690: 5B]
     POP     AX                                               ; [1691: 58]
     RETN                                                     ; [1692: C3]
+
 sub_1693:
     MOV     AX, 2400                                         ; [1693: B8 00 24]
     MOV     CX, 1000                                         ; [1696: B9 00 10]
@@ -4360,6 +4492,7 @@ loc_16c0:
     MOV     [var_selftest_failing_dev], AX                   ; [16D7: A3 25 01]
 loc_16da:
     RETN                                                     ; [16DA: C3]
+
 loc_16db:
     MOV     AX, 0400                                         ; [16DB: B8 00 04]
     MOV     BX, 2400                                         ; [16DE: BB 00 24]
@@ -4371,6 +4504,7 @@ loc_16eb:
     MOV     BYTE [var_selftest_error_flags], 03 ; Selftest error flags buffer ; [16EB: C6 06 20 01 03]
 loc_16f0:
     RETN                                                     ; [16F0: C3]
+
 loc_16f1:
     MOV     AX, 0400                                         ; [16F1: B8 00 04]
     MOV     BX, 4400                                         ; [16F4: BB 00 44]
@@ -4379,11 +4513,14 @@ loc_16f1:
     CMP     AL, 00                                           ; [16FD: 3C 00]
     JZ      loc_16f0                                         ; [16FF: 74 EF]
     JMPS    loc_16eb                                         ; [1701: EB E8]
+
+isr_dma0_selftest:
     PUSH    AX                                               ; [1703: 50]
     CALL    issue_82730_channel_attention                    ; [1704: E8 DE F3]
     MOV     [var_boot_countdown_sec], AX                     ; [1707: A3 39 01]
     POP     AX                                               ; [170A: 58]
     IRET                                                     ; [170B: CF]
+
 sub_170c:
     STI                                                      ; [170C: FB]
     MOV     AX, C350                                         ; [170D: B8 50 C3]
@@ -4396,6 +4533,7 @@ sub_170c:
     JNZ     loc_172a                                         ; [1722: 75 06]
     MOV     BYTE [var_selftest_error_flags], 06 ; Selftest error flags buffer ; [1724: C6 06 20 01 06]
     RETN                                                     ; [1729: C3]
+
 loc_172a:
     CMP     AX, 0024                                         ; [172A: 3D 24 00]
     JZ      loc_1737                                         ; [172D: 74 08]
@@ -4403,6 +4541,7 @@ loc_172a:
     MOV     [var_selftest_error_subcode], AX                 ; [1734: A3 21 01]
 loc_1737:
     RETN                                                     ; [1737: C3]
+
 sub_1738:
     PUSH    DX                                               ; [1738: 52]
     PUSH    AX                                               ; [1739: 50]
@@ -4418,6 +4557,7 @@ sub_1738:
     POP     AX                                               ; [174F: 58]
     POP     DX                                               ; [1750: 5A]
     RETN                                                     ; [1751: C3]
+
 sub_1752:
     PUSH    DS                                               ; [1752: 1E]
     PUSH    ES                                               ; [1753: 06]
@@ -4431,6 +4571,7 @@ sub_1752:
     MOV     CX, 0004                                         ; [176B: B9 04 00]
     CLD                                                      ; [176E: FC]
     JMPS    loc_1771                                         ; [176F: EB 00]
+
 loc_1771:
     REP MOVSB                                                ; [1771: F3 A4]
     POP     ES                                               ; [1773: 07]
@@ -4457,14 +4598,17 @@ loc_1771:
     MOV     BYTE [var_selftest_error_flags], 0C ; Selftest error flags buffer ; [17A1: C6 06 20 01 0C]
 loc_17a6:
     RETN                                                     ; [17A6: C3]
+
 loc_17a7:
     CMP     AX, 0008                                         ; [17A7: 3D 08 00]
     JZ      loc_17b5                                         ; [17AA: 74 09]
     MOV     BYTE [var_selftest_error_flags], 0D ; Selftest error flags buffer ; [17AC: C6 06 20 01 0D]
     MOV     [var_selftest_error_subcode], AX                 ; [17B1: A3 21 01]
     RETN                                                     ; [17B4: C3]
+
 loc_17b5:
     RETN                                                     ; [17B5: C3]
+
 sub_17b6:
     TEST    WORD [var_boot_status_flags], 0800 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [17B6: F7 06 2D 01 00 08]
     JNZ     loc_17dd                                         ; [17BC: 75 1F]
@@ -4475,6 +4619,7 @@ sub_17b6:
     MOV     CX, 0014                                         ; [17C8: B9 14 00]
     CALL    print_string_es_ax                               ; [17CB: E8 DE EB]
     RETN                                                     ; [17CE: C3]
+
 loc_17cf:
     CMP     AL, 00                                           ; [17CF: 3C 00]
     JZ      loc_17dd                                         ; [17D1: 74 0A]
@@ -4483,6 +4628,8 @@ loc_17cf:
     MOV     [var_selftest_failing_dev], AX                   ; [17DA: A3 25 01]
 loc_17dd:
     RETN                                                     ; [17DD: C3]
+
+isr_lan_selftest:
     PUSH    AX                                               ; [17DE: 50]
     PUSH    DS                                               ; [17DF: 1E]
     MOV     AX, [CS:ram_segment_base]                        ; [17E0: 2E A1 02 00]
@@ -4517,6 +4664,7 @@ loc_181c:
     POP     DS                                               ; [1827: 1F]
     POP     AX                                               ; [1828: 58]
     IRET                                                     ; [1829: CF]
+
 sub_182a:
     MOV     BYTE [var_fdc_busy_state], 00                    ; [182A: C6 06 78 64 00]
     MOV     DX, 0100                                         ; [182F: BA 00 01]
@@ -4531,9 +4679,11 @@ sub_1836:
     MOV     BYTE [var_selftest_error_flags], 27 ; Selftest error flags buffer ; [1841: C6 06 20 01 27]
     MOV     AL, FF                                           ; [1846: B0 FF]
     RETN                                                     ; [1848: C3]
+
 loc_1849:
     MOV     AL, 00                                           ; [1849: B0 00]
     RETN                                                     ; [184B: C3]
+
 sub_184c:
     MOV     WORD [BX], 0000                                  ; [184C: C7 07 00 00]
     MOV     WORD [BX+02], 0080                               ; [1850: C7 47 02 80 00]
@@ -4547,6 +4697,7 @@ loc_185c:
     MOV     WORD [BX+02], 0000                               ; [1865: C7 47 02 00 00]
     CALL    sub_182a                                         ; [186A: E8 BD FF]
     RETN                                                     ; [186D: C3]
+
 sub_186e:
     CMP     BYTE [var_boot_retry_counter], FF                ; [186E: 80 3E 5D 00 FF]
     JZ      loc_187f                                         ; [1873: 74 0A]
@@ -4554,6 +4705,7 @@ sub_186e:
     MOV     CX, FFFF                                         ; [1878: B9 FF FF]
     CALL    print_string_es_ax                               ; [187B: E8 2E EB]
     RETN                                                     ; [187E: C3]
+
 loc_187f:
     PUSH    DS                                               ; [187F: 1E]
     PUSH    ES                                               ; [1880: 06]
@@ -4582,6 +4734,7 @@ loc_189a:
     MOV     AX, CRT_VRAM_SEGMENT                             ; [18BF: B8 00 D0]
     MOV     DS, AX                                           ; [18C2: 8E D8]
     JMPS    loc_189a                                         ; [18C4: EB D4]
+
 loc_18c6:
     MOV     AX, [CS:ram_segment_base]                        ; [18C6: 2E A1 02 00]
     MOV     ES, AX                                           ; [18CA: 8E C0]
@@ -4595,7 +4748,7 @@ loc_18c6:
     XOR     AX, AX                                           ; [18DE: 33 C0]
     MOV     ES, AX                                           ; [18E0: 8E C0]
     MOV     DI, 0094                                         ; [18E2: BF 94 00]
-    MOV     AX, 17DE                                         ; [18E5: B8 DE 17]
+    MOV     AX, isr_lan_selftest                             ; [18E5: B8 DE 17]
     STOSW                                                    ; [18E8: AB]
     MOV     AX, CS                                           ; [18E9: 8C C8]
     STOSW                                                    ; [18EB: AB]
@@ -4617,6 +4770,7 @@ loc_18c6:
     CMP     AL, FF                                           ; [190E: 3C FF]
     JNZ     loc_1915                                         ; [1910: 75 03]
     JMPN    loc_1a17                                         ; [1912: E9 02 01]
+
 loc_1915:
     PUSH    DS                                               ; [1915: 1E]
     PUSH    ES                                               ; [1916: 06]
@@ -4637,6 +4791,7 @@ loc_1915:
     CMP     AL, FF                                           ; [1937: 3C FF]
     JNZ     loc_193e                                         ; [1939: 75 03]
     JMPN    loc_1a17                                         ; [193B: E9 D9 00]
+
 loc_193e:
     MOV     BX, 641A                                         ; [193E: BB 1A 64]
     MOV     WORD [BX], 0000                                  ; [1941: C7 07 00 00]
@@ -4649,18 +4804,21 @@ loc_193e:
     CMP     AL, FF                                           ; [195E: 3C FF]
     JNZ     loc_1965                                         ; [1960: 75 03]
     JMPN    loc_1a17                                         ; [1962: E9 B2 00]
+
 loc_1965:
     MOV     BX, 641A                                         ; [1965: BB 1A 64]
     MOV     AX, WORD [BX]                                    ; [1968: 8B 07]
     TEST    AX, 2000                                         ; [196A: A9 00 20]
     JNZ     loc_1972                                         ; [196D: 75 03]
     JMPN    loc_1a40                                         ; [196F: E9 CE 00]
+
 loc_1972:
     MOV     BX, 640A                                         ; [1972: BB 0A 64]
     CALL    sub_184c                                         ; [1975: E8 D4 FE]
     CMP     AL, FF                                           ; [1978: 3C FF]
     JNZ     loc_197f                                         ; [197A: 75 03]
     JMPN    loc_1a17                                         ; [197C: E9 98 00]
+
 loc_197f:
     PUSH    DS                                               ; [197F: 1E]
     PUSH    ES                                               ; [1980: 06]
@@ -4746,24 +4904,28 @@ loc_1a3a:
     POP     AX                                               ; [1A3D: 58]
     OUT     DX, AL                                           ; [1A3E: EE]
     RETN                                                     ; [1A3F: C3]
+
 loc_1a40:
     TEST    WORD [var_boot_status_flags], 0800 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1A40: F7 06 2D 01 00 08]
     JNZ     loc_1a17                                         ; [1A46: 75 CF]
     MOV     BYTE [var_selftest_error_flags], 24 ; Selftest error flags buffer ; [1A48: C6 06 20 01 24]
     MOV     [var_selftest_failing_dev], AX                   ; [1A4D: A3 25 01]
     JMPN    loc_1a17                                         ; [1A50: E9 C4 FF]
+
 loc_1a53:
     TEST    WORD [var_boot_status_flags], 0800 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1A53: F7 06 2D 01 00 08]
     JNZ     loc_1a17                                         ; [1A59: 75 BC]
     MOV     BYTE [var_selftest_error_flags], 25 ; Selftest error flags buffer ; [1A5B: C6 06 20 01 25]
     MOV     [var_selftest_failing_dev], AX                   ; [1A60: A3 25 01]
     JMPN    loc_1a17                                         ; [1A63: E9 B1 FF]
+
 loc_1a66:
     TEST    WORD [var_boot_status_flags], 0800 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1A66: F7 06 2D 01 00 08]
     JNZ     loc_1a17                                         ; [1A6C: 75 A9]
     MOV     BYTE [var_selftest_error_flags], 28 ; Selftest error flags buffer ; [1A6E: C6 06 20 01 28]
     MOV     [var_selftest_failing_dev], AX                   ; [1A73: A3 25 01]
     JMPN    loc_1a17                                         ; [1A76: E9 9E FF]
+
 sub_1a79:
     MOV     DX, io_ppi_portc             ; 8255 PPI Port C (Kbd enable, Gfx mode, NVRAM bank) ; [1A79: BA 74 00]
     IN      AL, DX                                           ; [1A7C: EC]
@@ -4803,6 +4965,7 @@ loc_1ab9:
     MOV     DX, io_i82730_reset          ; Intel 82730 CRT Text Coprocessor Reset (IRST) ; [1ABB: BA 30 02]
     OUT     DX, AX                                           ; [1ABE: EF]
     RETN                                                     ; [1ABF: C3]
+
 loc_1ac0:
     TEST    WORD [var_boot_status_flags], 0400 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1AC0: F7 06 2D 01 00 04]
     JNZ     loc_1ab9                                         ; [1AC6: 75 F1]
@@ -4812,6 +4975,7 @@ loc_1ac0:
     MOV     WORD [var_selftest_error_count], BX              ; [1AD1: 89 1E 23 01]
     MOV     [var_selftest_failing_dev], AX                   ; [1AD5: A3 25 01]
     JMPS    loc_1ab9                                         ; [1AD8: EB DF]
+
 sub_1ada:
     CALL    sub_3dba                                         ; [1ADA: E8 DD 22]
     CMP     BL, AA                                           ; [1ADD: 80 FB AA]
@@ -4823,6 +4987,7 @@ sub_1ada:
     MOV     WORD [var_selftest_failing_dev], BX              ; [1AF1: 89 1E 25 01]
 loc_1af5:
     RETN                                                     ; [1AF5: C3]
+
 sub_1af6:
     TEST    WORD [var_boot_status_flags], 1000 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1AF6: F7 06 2D 01 00 10]
     JNZ     loc_1b1d                                         ; [1AFC: 75 1F]
@@ -4855,6 +5020,7 @@ loc_1b22:
     JNZ     loc_1b36                                         ; [1B30: 75 04]
     MOV     BL, 01                                           ; [1B32: B3 01]
     JMPS    loc_1b22                                         ; [1B34: EB EC]
+
 loc_1b36:
     SHL     BL, 1                                            ; [1B36: D0 E3]
     JNC     loc_1b22                                         ; [1B38: 73 E8]
@@ -4870,6 +5036,7 @@ loc_1b3c:
     JNZ     loc_1b50                                         ; [1B4A: 75 04]
     MOV     BL, FE                                           ; [1B4C: B3 FE]
     JMPS    loc_1b3c                                         ; [1B4E: EB EC]
+
 loc_1b50:
     SHL     BL, 1                                            ; [1B50: D0 E3]
     JC      loc_1b3c                                         ; [1B52: 72 E8]
@@ -4878,6 +5045,7 @@ loc_1b54:
     XOR     AL, AL                                           ; [1B57: 32 C0]
     OUT     DX, AL                                           ; [1B59: EE]
     RETN                                                     ; [1B5A: C3]
+
 loc_1b5b:
     TEST    WORD [var_boot_status_flags], 0800 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1B5B: F7 06 2D 01 00 08]
     JNZ     loc_1b1d                                         ; [1B61: 75 BA]
@@ -4885,6 +5053,7 @@ loc_1b5b:
     MOV     BL, AH                                           ; [1B66: 8A DC]
     MOV     BYTE [var_selftest_error_flags], 18 ; Selftest error flags buffer ; [1B68: C6 06 20 01 18]
     JMPS    loc_1b7c                                         ; [1B6D: EB 0D]
+
 loc_1b6f:
     TEST    WORD [var_boot_status_flags], 0400 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1B6F: F7 06 2D 01 00 04]
     JNZ     loc_1b54                                         ; [1B75: 75 DD]
@@ -4895,6 +5064,7 @@ loc_1b7c:
     MOV     WORD [var_selftest_error_count], BX              ; [1B80: 89 1E 23 01]
     MOV     [var_selftest_failing_dev], AX                   ; [1B84: A3 25 01]
     JMPS    loc_1b54                                         ; [1B87: EB CB]
+
 sub_1b89:
     MOV     DX, io_ppi_ctrl              ; 8255 PPI Control word (Mode setup) ; [1B89: BA 76 00]
     MOV     AL, 03                                           ; [1B8C: B0 03]
@@ -4952,11 +5122,13 @@ loc_1bed:
     JZ      loc_1bed                                         ; [1BF0: 74 FB]
     LOOP    loc_1bc1                                         ; [1BF2: E2 CD]
     JMPN    loc_1c16                                         ; [1BF4: E9 1F 00]
+
 loc_1bf7:
     MOV     DX, io_ppi_ctrl              ; 8255 PPI Control word (Mode setup) ; [1BF7: BA 76 00]
     MOV     AL, 00                                           ; [1BFA: B0 00]
     OUT     DX, AL                                           ; [1BFC: EE]
     RETN                                                     ; [1BFD: C3]
+
 loc_1bfe:
     TEST    WORD [var_boot_status_flags], 0400 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1BFE: F7 06 2D 01 00 04]
     JNZ     loc_1bf7                                         ; [1C04: 75 F1]
@@ -4966,6 +5138,7 @@ loc_1c0b:
     MOV     WORD [var_selftest_error_count], BX              ; [1C0D: 89 1E 23 01]
     MOV     [var_selftest_failing_dev], AX                   ; [1C11: A3 25 01]
     JMPS    loc_1bf7                                         ; [1C14: EB E1]
+
 loc_1c16:
     MOV     DX, io_ppi_porta             ; 8255 PPI Port A (Memory size, Cassette, iSBX) ; [1C16: BA 70 00]
     IN      AL, DX                                           ; [1C19: EC]
@@ -4982,11 +5155,13 @@ loc_1c1e:
     CMP     AX, 0118                                         ; [1C2C: 3D 18 01]
     JNC     loc_1c34                                         ; [1C2F: 73 03]
     JMPN    loc_1bf7                                         ; [1C31: E9 C3 FF]
+
 loc_1c34:
     TEST    WORD [var_boot_status_flags], 0400 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1C34: F7 06 2D 01 00 04]
     JNZ     loc_1bf7                                         ; [1C3A: 75 BB]
     MOV     BYTE [var_selftest_error_flags], 21 ; Selftest error flags buffer ; [1C3C: C6 06 20 01 21]
     JMPN    loc_1c0b                                         ; [1C41: E9 C7 FF]
+
 sub_1c44:
     MOV     CX, 000A                                         ; [1C44: B9 0A 00]
 loc_1c47:
@@ -4998,6 +5173,7 @@ loc_1c47:
     CMP     BYTE [var_kbd_ascii_char], 31 ; Keyboard ASCII char buffer ; [1C51: 80 3E 33 01 31]
     JZ      sub_1c44                                         ; [1C56: 74 EC]
     RETN                                                     ; [1C58: C3]
+
 sub_1c59:
     MOV     AX, [var_boot_status_flags]  ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1C59: A1 2D 01]
     PUSH    AX                                               ; [1C5C: 50]
@@ -5031,6 +5207,7 @@ loc_1c95:
     CALL    conout_char                                      ; [1C9C: E8 F9 E5]
     ADD     BX, SI                                           ; [1C9F: 03 DE]
     JMPS    loc_1c95                                         ; [1CA1: EB F2]
+
 loc_1ca3:
     MOV     SI, 001D                                         ; [1CA3: BE 1D 00]
     INC     BX                                               ; [1CA6: 43]
@@ -5042,6 +5219,7 @@ loc_1ca7:
     CALL    conout_char                                      ; [1CB2: E8 E3 E5]
     ADD     BX, SI                                           ; [1CB5: 03 DE]
     JMPS    loc_1ca7                                         ; [1CB7: EB EE]
+
 loc_1cb9:
     LOOP    loc_1c81                                         ; [1CB9: E2 C6]
     CALL    sub_1c44                                         ; [1CBB: E8 86 FF]
@@ -5147,6 +5325,7 @@ loc_1d77:
     POP     AX                                               ; [1D83: 58]
     MOV     [var_boot_status_flags], AX  ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1D84: A3 2D 01]
     RETN                                                     ; [1D87: C3]
+
 sub_1d88:
     CMP     BYTE [var_boot_head_settle], FF                  ; [1D88: 80 3E 5F 00 FF]
     JZ      loc_1d99                                         ; [1D8D: 74 0A]
@@ -5154,6 +5333,7 @@ sub_1d88:
     MOV     CX, 0011                                         ; [1D92: B9 11 00]
     CALL    print_string_es_ax                               ; [1D95: E8 14 E6]
     RETN                                                     ; [1D98: C3]
+
 loc_1d99:
     MOV     DX, io_floppy_status_aux     ; Floppy Auxiliary Status register ; [1D99: BA 92 02]
     OUT     DX, AL                                           ; [1D9C: EE]
@@ -5175,6 +5355,7 @@ loc_1da0:
     MOV     DX, io_floppy_param          ; Floppy Parameter register ; [1DBD: BA 94 02]
     OUT     DX, AL                                           ; [1DC0: EE]
     RETN                                                     ; [1DC1: C3]
+
 loc_1dc2:
     TEST    WORD [var_boot_status_flags], 1000 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1DC2: F7 06 2D 01 00 10]
     JNZ     loc_1de9                                         ; [1DC8: 75 1F]
@@ -5207,6 +5388,7 @@ loc_1dee:
     JNZ     loc_1e02                                         ; [1DFC: 75 04]
     MOV     BL, 01                                           ; [1DFE: B3 01]
     JMPS    loc_1dee                                         ; [1E00: EB EC]
+
 loc_1e02:
     SHL     BL, 1                                            ; [1E02: D0 E3]
     JNC     loc_1dee                                         ; [1E04: 73 E8]
@@ -5222,6 +5404,7 @@ loc_1e08:
     JNZ     loc_1e1c                                         ; [1E16: 75 04]
     MOV     BL, FE                                           ; [1E18: B3 FE]
     JMPS    loc_1e08                                         ; [1E1A: EB EC]
+
 loc_1e1c:
     SHL     BL, 1                                            ; [1E1C: D0 E3]
     JC      loc_1e08                                         ; [1E1E: 72 E8]
@@ -5232,6 +5415,7 @@ loc_1e20:
     MOV     DX, io_floppy_param          ; Floppy Parameter register ; [1E26: BA 94 02]
     OUT     DX, AL                                           ; [1E29: EE]
     RETN                                                     ; [1E2A: C3]
+
 loc_1e2b:
     TEST    WORD [var_boot_status_flags], 0800 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1E2B: F7 06 2D 01 00 08]
     JNZ     loc_1de9                                         ; [1E31: 75 B6]
@@ -5239,6 +5423,7 @@ loc_1e2b:
     MOV     BL, AH                                           ; [1E36: 8A DC]
     MOV     BYTE [var_selftest_error_flags], 22 ; Selftest error flags buffer ; [1E38: C6 06 20 01 22]
     JMPS    loc_1e4c                                         ; [1E3D: EB 0D]
+
 loc_1e3f:
     TEST    WORD [var_boot_status_flags], 0400 ; Selftest status / warm-boot flag word (bit 9 = skip memtest) ; [1E3F: F7 06 2D 01 00 04]
     JNZ     loc_1e20                                         ; [1E45: 75 D9]
@@ -5249,6 +5434,7 @@ loc_1e4c:
     MOV     WORD [var_selftest_error_count], BX              ; [1E50: 89 1E 23 01]
     MOV     [var_selftest_failing_dev], AX                   ; [1E54: A3 25 01]
     JMPS    loc_1e20                                         ; [1E57: EB C7]
+
 sub_1e59:
     PUSH    AX                                               ; [1E59: 50]
     PUSH    BX                                               ; [1E5A: 53]
@@ -5280,6 +5466,7 @@ loc_1e7b:
     POP     BX                                               ; [1E87: 5B]
     POP     AX                                               ; [1E88: 58]
     RETN                                                     ; [1E89: C3]
+
 sub_1e8a:
     PUSH    BX                                               ; [1E8A: 53]
     PUSH    CX                                               ; [1E8B: 51]
@@ -5319,11 +5506,15 @@ loc_1ed4:
     POP     CX                                               ; [1ED6: 59]
     POP     BX                                               ; [1ED7: 5B]
     RETN                                                     ; [1ED8: C3]
+
 loc_1ed9:
     MOV     AX, 2A57                                         ; [1ED9: B8 57 2A]
     MOV     CX, 000A                                         ; [1EDC: B9 0A 00]
     JMPN    loc_1f15                                         ; [1EDF: E9 33 00]
+
+loc_1ee2:
     RETN                                                     ; [1EE2: C3]
+
 sub_1ee3:
     CMP     BYTE [var_boot_head_settle], FF                  ; [1EE3: 80 3E 5F 00 FF]
     JZ      loc_1ef4                                         ; [1EE8: 74 0A]
@@ -5331,6 +5522,7 @@ sub_1ee3:
     MOV     CX, 0011                                         ; [1EED: B9 11 00]
     CALL    print_string_es_ax                               ; [1EF0: E8 B9 E4]
     RETN                                                     ; [1EF3: C3]
+
 loc_1ef4:
     MOV     DX, io_floppy_reserve_ack    ; Floppy Reserve / Acknowledge register ; [1EF4: BA 8E 02]
     OUT     DX, AL                                           ; [1EF7: EE]
@@ -5353,6 +5545,7 @@ loc_1f15:
     MOV     DX, io_floppy_release        ; Floppy Release register ; [1F18: BA 90 02]
     OUT     DX, AL                                           ; [1F1B: EE]
     RETN                                                     ; [1F1C: C3]
+
 loc_1f1d:
     MOV     DX, io_floppy_ctrl           ; Floppy Control register (Motor 0/1, Drive sel, DDEN) ; [1F1D: BA 88 02]
     MOV     AL, 47                                           ; [1F20: B0 47]
@@ -5449,8 +5642,10 @@ loc_1fce:
 loc_1fd6:
     CALL    sub_39c6                                         ; [1FD6: E8 ED 19]
     RETN                                                     ; [1FD9: C3]
+
 loc_1fda:
     JMPN    loc_1f48                                         ; [1FDA: E9 6B FF]
+
 sub_1fdd:
     XOR     AH, AH                                           ; [1FDD: 32 E4]
     MOV     [var_selftest_failing_dev], AX                   ; [1FDF: A3 25 01]
@@ -5464,6 +5659,7 @@ sub_1fdd:
     JNZ     loc_1fff                                         ; [1FF6: 75 07]
     MOV     BYTE [var_selftest_error_flags], 1D ; Selftest error flags buffer ; [1FF8: C6 06 20 01 1D]
     JMPS    loc_1fd6                                         ; [1FFD: EB D7]
+
 loc_1fff:
     TEST    AL, 1C                                           ; [1FFF: A8 1C]
     JZ      loc_2020                                         ; [2001: 74 1D]
@@ -5479,9 +5675,11 @@ loc_2015:
     JZ      loc_1fd6                                         ; [2017: 74 BD]
     MOV     BYTE [var_selftest_error_flags], 1C ; Selftest error flags buffer ; [2019: C6 06 20 01 1C]
     JMPS    loc_1fd6                                         ; [201E: EB B6]
+
 loc_2020:
     MOV     BYTE [var_selftest_error_flags], 1E ; Selftest error flags buffer ; [2020: C6 06 20 01 1E]
     JMPS    loc_1fd6                                         ; [2025: EB AF]
+
 sub_2027:
     PUSH    DX                                               ; [2027: 52]
     MOV     BX, 647C                                         ; [2028: BB 7C 64]
@@ -5489,6 +5687,7 @@ sub_2027:
     MOV     BX, DX                                           ; [202D: 8B DA]
     POP     DX                                               ; [202F: 5A]
     RETN                                                     ; [2030: C3]
+
 sub_2031:
     PUSH    DX                                               ; [2031: 52]
     MOV     DX, BX                                           ; [2032: 8B D3]
@@ -5497,6 +5696,7 @@ sub_2031:
     MOV     BX, DX                                           ; [2039: 8B DA]
     POP     DX                                               ; [203B: 5A]
     RETN                                                     ; [203C: C3]
+
 sub_203d:
     PUSH    DX                                               ; [203D: 52]
     MOV     BX, 647E                                         ; [203E: BB 7E 64]
@@ -5504,6 +5704,7 @@ sub_203d:
     MOV     BX, DX                                           ; [2043: 8B DA]
     POP     DX                                               ; [2045: 5A]
     RETN                                                     ; [2046: C3]
+
 sub_2047:
     PUSH    DX                                               ; [2047: 52]
     MOV     DX, BX                                           ; [2048: 8B D3]
@@ -5512,6 +5713,7 @@ sub_2047:
     MOV     BX, DX                                           ; [204F: 8B DA]
     POP     DX                                               ; [2051: 5A]
     RETN                                                     ; [2052: C3]
+
 sub_2053:
     MOV     AX, 3002                                         ; [2053: B8 02 30]
     CALL    set_cursor_pos                                   ; [2056: E8 20 E2]
@@ -5529,6 +5731,7 @@ sub_2067:
     MOV     CX, 0009                                         ; [2075: B9 09 00]
     CALL    print_string_es_ax                               ; [2078: E8 31 E3]
     RETN                                                     ; [207B: C3]
+
 sub_207c:
     PUSH    AX                                               ; [207C: 50]
     CALL    sub_203d                                         ; [207D: E8 BD FF]
@@ -5547,6 +5750,7 @@ loc_2097:
     CALL    sub_2067                                         ; [209A: E8 CA FF]
     POP     AX                                               ; [209D: 58]
     RETN                                                     ; [209E: C3]
+
 sub_209f:
     PUSH    AX                                               ; [209F: 50]
     CALL    sub_203d                                         ; [20A0: E8 9A FF]
@@ -5565,6 +5769,7 @@ loc_20ba:
     CALL    sub_2067                                         ; [20BD: E8 A7 FF]
     POP     AX                                               ; [20C0: 58]
     RETN                                                     ; [20C1: C3]
+
 sub_20c2:
     CALL    sub_2027                                         ; [20C2: E8 62 FF]
     MOV     AL, BYTE [ES:BX]                                 ; [20C5: 26 8A 07]
@@ -5581,6 +5786,7 @@ sub_20c2:
     POP     BX                                               ; [20DF: 5B]
     MOV     BYTE [BX], AL                                    ; [20E0: 88 07]
     RETN                                                     ; [20E2: C3]
+
 sub_20e3:
     CALL    sub_2027                                         ; [20E3: E8 41 FF]
     MOV     AL, BYTE [ES:BX]                                 ; [20E6: 26 8A 07]
@@ -5611,10 +5817,12 @@ loc_2103:
     MOV     CX, 0009                                         ; [2122: B9 09 00]
     CALL    print_string_es_ax                               ; [2125: E8 84 E2]
     RETN                                                     ; [2128: C3]
+
 loc_2129:
     CALL    sub_2047                                         ; [2129: E8 1B FF]
     CALL    sub_2053                                         ; [212C: E8 24 FF]
     RETN                                                     ; [212F: C3]
+
 sub_2130:
     PUSH    AX                                               ; [2130: 50]
     CALL    sub_20c2                                         ; [2131: E8 8E FF]
@@ -5632,6 +5840,7 @@ loc_214c:
     CALL    sub_20e3                                         ; [214F: E8 91 FF]
     POP     AX                                               ; [2152: 58]
     RETN                                                     ; [2153: C3]
+
 sub_2154:
     PUSH    AX                                               ; [2154: 50]
     CALL    sub_20c2                                         ; [2155: E8 6A FF]
@@ -5666,6 +5875,7 @@ loc_2181:
     CALL    conout_char                                      ; [2188: E8 0D E1]
     INC     BX                                               ; [218B: 43]
     JMPS    loc_2181                                         ; [218C: EB F3]
+
 loc_218e:
     CALL    sub_3dba                                         ; [218E: E8 29 1C]
     JNC     loc_219c                                         ; [2191: 73 09]
@@ -5723,10 +5933,12 @@ loc_21fb:
     POP     BX                                               ; [2203: 5B]
     POP     AX                                               ; [2204: 58]
     RETN                                                     ; [2205: C3]
+
 sub_2206:
     CALL    sub_2355                                         ; [2206: E8 4C 01]
     JC      sub_220c                                         ; [2209: 72 01]
     RETN                                                     ; [220B: C3]
+
 sub_220c:
     CALL    wait_key_press                                   ; [220C: E8 BA E1]
     CALL    wait_key_press                                   ; [220F: E8 B7 E1]
@@ -5735,6 +5947,7 @@ sub_220c:
     CALL    print_string_es_ax                               ; [2218: E8 91 E1]
     CALL    sub_221f                                         ; [221B: E8 01 00]
     RETN                                                     ; [221E: C3]
+
 sub_221f:
     MOV     SI, 5517                                         ; [221F: BE 17 55]
 loc_2222:
@@ -5748,8 +5961,10 @@ loc_2222:
     JNC     loc_2222                                         ; [2238: 73 E8]
     CALL    sub_2240                                         ; [223A: E8 03 00]
     JMPS    loc_2222                                         ; [223D: EB E3]
+
 loc_223f:
     RETN                                                     ; [223F: C3]
+
 sub_2240:
     PUSH    SI                                               ; [2240: 56]
     MOV     SI, WORD [var_lan_rx_retries]                    ; [2241: 8B 36 A0 4B]
@@ -5768,6 +5983,7 @@ loc_2252:
     JZ      loc_226a                                         ; [225A: 74 0E]
     INC     SI                                               ; [225C: 46]
     JMPS    loc_2252                                         ; [225D: EB F3]
+
 loc_225f:
     INC     SI                                               ; [225F: 46]
 loc_2260:
@@ -5779,6 +5995,7 @@ loc_2260:
 loc_226a:
     POP     SI                                               ; [226A: 5E]
     RETN                                                     ; [226B: C3]
+
 sub_226c:
     PUSH    ES                                               ; [226C: 06]
     MOV     AX, [CS:rom_segment_base]                        ; [226D: 2E A1 00 00]
@@ -5793,6 +6010,7 @@ loc_2278:
     JZ      loc_22c0                                         ; [2283: 74 3B]
     ADD     BX, +03                                          ; [2285: 83 C3 03]
     JMPS    loc_2278                                         ; [2288: EB EE]
+
 loc_228a:
     CALL    sub_2320                                         ; [228A: E8 93 00]
     JNC     loc_22c0                                         ; [228D: 73 31]
@@ -5821,10 +6039,12 @@ loc_228a:
     STC                                                      ; [22BD: F9]
     POP     ES                                               ; [22BE: 07]
     RETN                                                     ; [22BF: C3]
+
 loc_22c0:
     CLC                                                      ; [22C0: F8]
     POP     ES                                               ; [22C1: 07]
     RETN                                                     ; [22C2: C3]
+
 sub_22c3:
     PUSH    CX                                               ; [22C3: 51]
     MOV     AL, BYTE [SI]                                    ; [22C4: 8A 04]
@@ -5843,6 +6063,7 @@ sub_22c3:
 loc_22df:
     POP     CX                                               ; [22DF: 59]
     RETN                                                     ; [22E0: C3]
+
 sub_22e1:
     PUSH    SI                                               ; [22E1: 56]
     PUSH    BX                                               ; [22E2: 53]
@@ -5863,6 +6084,7 @@ loc_22ec:
     POP     BX                                               ; [22FF: 5B]
     POP     SI                                               ; [2300: 5E]
     RETN                                                     ; [2301: C3]
+
 loc_2302:
     STC                                                      ; [2302: F9]
     MOV     AL, DL                                           ; [2303: 8A C2]
@@ -5870,6 +6092,7 @@ loc_2302:
     POP     BX                                               ; [2306: 5B]
     POP     SI                                               ; [2307: 5E]
     RETN                                                     ; [2308: C3]
+
 sub_2309:
     PUSH    AX                                               ; [2309: 50]
 loc_230a:
@@ -5886,6 +6109,7 @@ loc_231d:
     CLC                                                      ; [231D: F8]
     POP     AX                                               ; [231E: 58]
     RETN                                                     ; [231F: C3]
+
 sub_2320:
     PUSH    AX                                               ; [2320: 50]
 loc_2321:
@@ -5899,10 +6123,12 @@ loc_2321:
     CLC                                                      ; [232E: F8]
     POP     AX                                               ; [232F: 58]
     RETN                                                     ; [2330: C3]
+
 loc_2331:
     STC                                                      ; [2331: F9]
     POP     AX                                               ; [2332: 58]
     RETN                                                     ; [2333: C3]
+
 sub_2334:
     PUSH    ES                                               ; [2334: 06]
     MOV     AX, [CS:rom_segment_base]                        ; [2335: 2E A1 00 00]
@@ -5920,11 +6146,13 @@ loc_2344:
     LOOP    loc_2344                                         ; [2351: E2 F1]
     POP     ES                                               ; [2353: 07]
     RETN                                                     ; [2354: C3]
+
 sub_2355:
     CALL    sub_2334                                         ; [2355: E8 DC FF]
     CALL    fdc_recalibrate_track0                           ; [2358: E8 AB 15]
     JNC     loc_2360                                         ; [235B: 73 03]
     JMPN    loc_2434                                         ; [235D: E9 D4 00]
+
 loc_2360:
     MOV     AH, 04                                           ; [2360: B4 04]
     CALL    sub_3b95                                         ; [2362: E8 30 18]
@@ -5933,6 +6161,7 @@ loc_2360:
     CALL    sub_3a1d                                         ; [236C: E8 AE 16]
     JNC     loc_2374                                         ; [236F: 73 03]
     JMPN    loc_2434                                         ; [2371: E9 C0 00]
+
 loc_2374:
     MOV     AX, DS                                           ; [2374: 8C D8]
     MOV     BX, 5517                                         ; [2376: BB 17 55]
@@ -5944,12 +6173,14 @@ loc_237c:
     CALL    fdc_read_sector_dma                              ; [2388: E8 CA 16]
     JNC     loc_2390                                         ; [238B: 73 03]
     JMPN    loc_2434                                         ; [238D: E9 A4 00]
+
 loc_2390:
     MOV     AX, [ES:var_floppy_track_num]                    ; [2390: 26 A1 73 00]
     SUB     AX, WORD [ES:var_floppy_buffer_ptr]              ; [2394: 26 2B 06 6D 00]
     MOV     [ES:var_floppy_track_num], AX                    ; [2399: 26 A3 73 00]
     JA      loc_23a2                                         ; [239D: 77 03]
     JMPN    loc_23e7                                         ; [239F: E9 45 00]
+
 loc_23a2:
     MOV     AX, [ES:var_floppy_buffer_ptr]                   ; [23A2: 26 A1 6D 00]
     ADD     WORD [var_dma0_byte_count], AX                   ; [23A6: 01 06 04 00]
@@ -5959,21 +6190,25 @@ loc_23a2:
     CALL    fdc_read_sector_dma                              ; [23B6: E8 9C 16]
     JNC     loc_23be                                         ; [23B9: 73 03]
     JMPN    loc_2434                                         ; [23BB: E9 76 00]
+
 loc_23be:
     MOV     AX, [ES:var_floppy_track_num]                    ; [23BE: 26 A1 73 00]
     SUB     AX, WORD [ES:var_floppy_buffer_ptr]              ; [23C2: 26 2B 06 6D 00]
     MOV     [ES:var_floppy_track_num], AX                    ; [23C7: 26 A3 73 00]
     JA      loc_23d0                                         ; [23CB: 77 03]
     JMPN    loc_23e7                                         ; [23CD: E9 17 00]
+
 loc_23d0:
     INC     BYTE [rom_segment_base]                          ; [23D0: FE 06 00 00]
     CALL    sub_3a1d                                         ; [23D4: E8 46 16]
     JNC     loc_23dc                                         ; [23D7: 73 03]
     JMPN    loc_2434                                         ; [23D9: E9 58 00]
+
 loc_23dc:
     MOV     AX, [ES:var_floppy_buffer_ptr]                   ; [23DC: 26 A1 6D 00]
     ADD     WORD [var_dma0_byte_count], AX                   ; [23E0: 01 06 04 00]
     JMPN    loc_237c                                         ; [23E4: E9 95 FF]
+
 loc_23e7:
     MOV     BYTE [var_lan_block_index], FF                   ; [23E7: C6 06 B0 4B FF]
     MOV     SI, 4BB7                                         ; [23EC: BE B7 4B]
@@ -5982,6 +6217,7 @@ loc_23e7:
     CALL    sub_24a0                                         ; [23F9: E8 A4 00]
     JC      loc_2401                                         ; [23FC: 72 03]
     JMPN    loc_2440                                         ; [23FE: E9 3F 00]
+
 loc_2401:
     MOV     SI, 5517                                         ; [2401: BE 17 55]
     MOV     WORD [var_lan_transfer_len], SI                  ; [2404: 89 36 A2 4B]
@@ -6002,9 +6238,11 @@ loc_242a:
     CALL    fdc_read_sector_dma                              ; [242A: E8 28 16]
     JC      loc_2434                                         ; [242D: 72 05]
     JMPN    loc_2408                                         ; [242F: E9 D6 FF]
+
 loc_2432:
     STC                                                      ; [2432: F9]
     RETN                                                     ; [2433: C3]
+
 loc_2434:
     PUSH    DS                                               ; [2434: 1E]
     XOR     DX, DX                                           ; [2435: 33 D2]
@@ -6015,6 +6253,7 @@ loc_2434:
 loc_2440:
     CLC                                                      ; [2440: F8]
     RETN                                                     ; [2441: C3]
+
 sub_2442:
     MOV     DI, 5517                                         ; [2442: BF 17 55]
     MOV     WORD [var_lan_file_eof_flag], 0000               ; [2445: C7 06 B1 4B 00 00]
@@ -6028,10 +6267,12 @@ loc_244f:
     JZ      loc_2467                                         ; [2460: 74 05]
     ADD     DI, +20                                          ; [2462: 83 C7 20]
     JMPS    loc_244f                                         ; [2465: EB E8]
+
 loc_2467:
     CLC                                                      ; [2467: F8]
 loc_2468:
     RETN                                                     ; [2468: C3]
+
 sub_2469:
     MOV     CX, 000C                                         ; [2469: B9 0C 00]
     XOR     BX, BX                                           ; [246C: 33 DB]
@@ -6053,23 +6294,28 @@ loc_2480:
     DEC     DL                                               ; [248B: FE CA]
     INC     BYTE [BX+SI]                                     ; [248D: FE 00]
     JMPS    loc_2480                                         ; [248F: EB EF]
+
 loc_2491:
     CMP     DH, 00                                           ; [2491: 80 FE 00]
     JZ      loc_249e                                         ; [2494: 74 08]
     DEC     DH                                               ; [2496: FE CE]
     DEC     BYTE [BX+SI]                                     ; [2498: FE 08]
     JMPS    loc_2491                                         ; [249A: EB F5]
+
 loc_249c:
     STC                                                      ; [249C: F9]
     RETN                                                     ; [249D: C3]
+
 loc_249e:
     CLC                                                      ; [249E: F8]
     RETN                                                     ; [249F: C3]
+
 sub_24a0:
     MOV     SI, 4BA4                                         ; [24A0: BE A4 4B]
     CALL    sub_2442                                         ; [24A3: E8 9C FF]
     JC      loc_24a9                                         ; [24A6: 72 01]
     RETN                                                     ; [24A8: C3]
+
 loc_24a9:
     MOV     BX, 0010                                         ; [24A9: BB 10 00]
     MOV     CX, 0008                                         ; [24AC: B9 08 00]
@@ -6093,6 +6339,7 @@ loc_24cc:
     MOV     WORD [var_lan_buf_pointer], 4BB7                 ; [24CC: C7 06 B5 4B B7 4B]
     STC                                                      ; [24D2: F9]
     RETN                                                     ; [24D3: C3]
+
 sub_24d4:
     MOV     SI, WORD [var_lan_buf_pointer]                   ; [24D4: 8B 36 B5 4B]
     MOV     DI, SI                                           ; [24D8: 8B FE]
@@ -6126,6 +6373,7 @@ loc_2517:
     MOV     AH, BYTE [SI+01]                                 ; [2524: 8A 64 01]
     MOV     BYTE [DI+01], AH                                 ; [2527: 88 65 01]
     JMPS    loc_254f                                         ; [252A: EB 23]
+
 loc_252c:
     CMP     BYTE [SI+01], 00                                 ; [252C: 80 7C 01 00]
     JNZ     loc_253f                                         ; [2530: 75 0D]
@@ -6134,6 +6382,7 @@ loc_252c:
     MOV     AH, BYTE [SI]                                    ; [2539: 8A 24]
     MOV     BYTE [DI], AH                                    ; [253B: 88 25]
     JMPS    loc_254f                                         ; [253D: EB 10]
+
 loc_253f:
     MOV     AH, BYTE [SI]                                    ; [253F: 8A 24]
     INC     AH                                               ; [2541: FE C4]
@@ -6148,6 +6397,7 @@ loc_254f:
     LOOP    loc_2517                                         ; [2559: E2 BC]
     MOV     WORD [var_lan_buf_pointer], DI                   ; [255B: 89 3E B5 4B]
     RETN                                                     ; [255F: C3]
+
 sub_2560:
     MOV     CX, WORD [var_lan_data_byte_count]               ; [2560: 8B 0E B3 4B]
     MOV     BX, 0000                                         ; [2564: BB 00 00]
@@ -6155,6 +6405,7 @@ sub_2560:
     JNZ     loc_256e                                         ; [256A: 75 02]
     CLC                                                      ; [256C: F8]
     RETN                                                     ; [256D: C3]
+
 loc_256e:
     MOV     DI, WORD [var_lan_buf_pointer]                   ; [256E: 8B 3E B5 4B]
     MOV     AH, BYTE [DI]                                    ; [2572: 8A 25]
@@ -6179,10 +6430,12 @@ loc_259f:
     MOV     WORD [var_lan_data_byte_count], CX               ; [25A3: 89 0E B3 4B]
     STC                                                      ; [25A7: F9]
     RETN                                                     ; [25A8: C3]
+
 sub_25a9:
     MOV     DX, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [25A9: BA 72 00]
     IN      AL, DX                                           ; [25AC: EC]
     RETN                                                     ; [25AD: C3]
+
 sub_25ae:
     CALL    sub_26e8                                         ; [25AE: E8 37 01]
     MOV     DX, io_rtc_addr              ; MM58167 RTC Address / Control register ; [25B1: BA 5C 00]
@@ -6202,6 +6455,7 @@ sub_25ae:
     AND     AL, 1F                                           ; [25C9: 24 1F]
     OUT     DX, AL                                           ; [25CB: EE]
     RETN                                                     ; [25CC: C3]
+
 sub_25cd:
     MOV     DX, io_rtc_addr              ; MM58167 RTC Address / Control register ; [25CD: BA 5C 00]
     OR      AL, 80                                           ; [25D0: 0C 80]
@@ -6220,6 +6474,7 @@ sub_25cd:
     AND     AH, 7F                                           ; [25E2: 80 E4 7F]
     CALL    sub_26cc                                         ; [25E5: E8 E4 00]
     RETN                                                     ; [25E8: C3]
+
 sub_25e9:
     MOV     BX, 648D                                         ; [25E9: BB 8D 64]
     MOV     AH, 00                                           ; [25EC: B4 00]
@@ -6262,6 +6517,7 @@ sub_25e9:
     MOV     AL, 02                                           ; [2636: B0 02]
     CALL    sub_25ae                                         ; [2638: E8 73 FF]
     RETN                                                     ; [263B: C3]
+
 loc_263c:
     MOV     AH, BYTE [BX]                                    ; [263C: 8A 27]
     MOV     AL, 06                                           ; [263E: B0 06]
@@ -6283,6 +6539,7 @@ loc_263c:
     MOV     AL, 02                                           ; [265E: B0 02]
     CALL    sub_25ae                                         ; [2660: E8 4B FF]
     RETN                                                     ; [2663: C3]
+
 sub_2664:
     MOV     BX, 648D                                         ; [2664: BB 8D 64]
     MOV     AX, 0018                                         ; [2667: B8 18 00]
@@ -6314,6 +6571,7 @@ sub_2664:
     CALL    sub_25cd                                         ; [269E: E8 2C FF]
     MOV     BYTE [BX], AH                                    ; [26A1: 88 27]
     RETN                                                     ; [26A3: C3]
+
 loc_26a4:
     MOV     AL, 06                                           ; [26A4: B0 06]
     CALL    sub_25cd                                         ; [26A6: E8 24 FF]
@@ -6335,6 +6593,7 @@ loc_26a4:
     CALL    sub_25cd                                         ; [26C6: E8 04 FF]
     MOV     BYTE [BX], AH                                    ; [26C9: 88 27]
     RETN                                                     ; [26CB: C3]
+
 sub_26cc:
     MOV     DH, AL                                           ; [26CC: 8A F0]
     MOV     AL, AH                                           ; [26CE: 8A C4]
@@ -6351,6 +6610,7 @@ sub_26cc:
     MOV     AL, DH                                           ; [26E3: 8A C6]
     MOV     AL, DH                                           ; [26E5: 8A C6]
     RETN                                                     ; [26E7: C3]
+
 sub_26e8:
     MOV     DH, AL                                           ; [26E8: 8A F0]
     MOV     AL, AH                                           ; [26EA: 8A C4]
@@ -6405,6 +6665,7 @@ loc_271d:
     JZ      loc_2757                                         ; [2750: 74 05]
     MOV     AL, 00                                           ; [2752: B0 00]
     JMPN    loc_2759                                         ; [2754: E9 02 00]
+
 loc_2757:
     MOV     AL, 04                                           ; [2757: B0 04]
 loc_2759:
@@ -6442,10 +6703,8 @@ boot_device_vector_table:
     DW  sub_27ee                     ; [2796h] Boot Medium 'M': ROM-disk (27EEh)
     DW  sub_4191                     ; [2798h] Boot Medium 'W': Winchester (4191h)
     DW  boot_from_network            ; [279Ah] Boot Medium Default/Invalid (27CEh)
-    INTO                                                     ; [279C: CE]
-    DAA                                                      ; [279D: 27]
-    IRET                                                     ; [279E: CF]
-    INC     CX                                               ; [279F: 41]
+    DW  boot_from_network            ; [279Ch] Boot Medium Default/Invalid (27CEh)
+    DW  boot_from_winchester_alt     ; [279Eh] Boot Medium Winchester Alt (41CFh)
 loc_27a0:
     CALL    nvram_write_byte_al                              ; [27A0: E8 49 14]
     CALL    fdc_motor_off                                    ; [27A3: E8 67 15]
@@ -6468,6 +6727,7 @@ boot_from_floppy_a_or_b:
     MOV     BX, 0069                                         ; [27BF: BB 69 00]
     JNZ     loc_27c7                                         ; [27C2: 75 03]
     JMPN    loc_388e                                         ; [27C4: E9 C7 10]
+
 loc_27c7:
     MOV     BYTE [ES:BX], 01                                 ; [27C7: 26 C6 07 01]
     JMPN    fdc_boot_read_sector                             ; [27CB: E9 D5 0F]
@@ -6490,6 +6750,7 @@ boot_from_network:
     POP     DS                                               ; [27E9: 1F]
     CALL    fdc_release_bus                                  ; [27EA: E8 37 15]
     RETN                                                     ; [27ED: C3]
+
 sub_27ee:
     CALL    sub_2813                                         ; [27EE: E8 22 00]
     JC      loc_2812                                         ; [27F1: 72 1F]
@@ -6503,8 +6764,10 @@ sub_27ee:
     MOV     AX, WORD [ES:BX]                                 ; [2808: 26 8B 07]
     MOV     DS, AX                                           ; [280B: 8E D8]
     JMPF    WORD [ES:var_boot_entry_addr]                    ; [280D: 26 FF 2E 1A 00]
+
 loc_2812:
     RETN                                                     ; [2812: C3]
+
 sub_2813:
     PUSH    DS                                               ; [2813: 1E]
     PUSH    ES                                               ; [2814: 06]
@@ -6547,11 +6810,13 @@ sub_2813:
     POP     DS                                               ; [286F: 1F]
     CLC                                                      ; [2870: F8]
     RETN                                                     ; [2871: C3]
+
 loc_2872:
     POP     ES                                               ; [2872: 07]
     POP     DS                                               ; [2873: 1F]
     STC                                                      ; [2874: F9]
     RETN                                                     ; [2875: C3]
+
 sub_2876:
     PUSH    DS                                               ; [2876: 1E]
     PUSH    ES                                               ; [2877: 06]
@@ -6589,6 +6854,7 @@ loc_28a9:
     POP     ES                                               ; [28BA: 07]
     POP     DS                                               ; [28BB: 1F]
     RETN                                                     ; [28BC: C3]
+
 sub_28bd:
     MOV     AX, [CS:ram_segment_base]                        ; [28BD: 2E A1 02 00]
     MOV     ES, AX                                           ; [28C1: 8E C0]
@@ -6600,9 +6866,11 @@ sub_28bd:
     MOV     CX, 0013                                         ; [28D4: B9 13 00]
     CALL    print_string_es_ax                               ; [28D7: E8 D2 DA]
     RETN                                                     ; [28DA: C3]
+
 loc_28db:
     MOV     BYTE [var_lan_rx_ready_flag], 01                 ; [28DB: C6 06 9F 4B 01]
     JMPN    loc_3584                                         ; [28E0: E9 A1 0C]
+
 sub_28e3:
     PUSHA                                                    ; [28E3: 60]
     MOV     AX, LAN_BUFFER_SEGMENT                           ; [28E4: B8 00 36]
@@ -6612,6 +6880,7 @@ sub_28e3:
     REP MOVSW                                                ; [28EF: F3 A5]
     POPA                                                     ; [28F1: 61]
     RETN                                                     ; [28F2: C3]
+
 sub_28f3:
     CMP     WORD [var_screen_cursor_row], +00                ; [28F3: 83 3E E2 00 00]
     JNZ     sub_28f3                                         ; [28F8: 75 F9]
@@ -6619,6 +6888,7 @@ sub_28f3:
     MOV     DX, 0100                                         ; [28FD: BA 00 01]
     IN      AL, DX                                           ; [2900: EC]
     RETN                                                     ; [2901: C3]
+
 sub_2902:
     XCHG    CH, CL                                           ; [2902: 86 CD]
     MOV     WORD [var_82730_row_table_ptr], CX               ; [2904: 89 0E FE 00]
@@ -6637,6 +6907,7 @@ loc_2912:
     JNZ     loc_2934                                         ; [292B: 75 07]
     MOV     WORD [var_screen_scroll_count], 0000             ; [292D: C7 06 F0 00 00 00]
     RETN                                                     ; [2933: C3]
+
 loc_2934:
     RETN                                                     ; [2934: C3]
 
@@ -6669,6 +6940,7 @@ loc_2952:
     JC      loc_2944                                         ; [2962: 72 E0]
     MOV     AL, 01                                           ; [2964: B0 01]
     RETN                                                     ; [2966: C3]
+
 loc_2967:
     PUSH    CX                                               ; [2967: 51]
     PUSH    BX                                               ; [2968: 53]
@@ -6678,6 +6950,7 @@ loc_2967:
     TEST    WORD [SI], 8000                                  ; [2972: F7 04 00 80]
     JNZ     loc_297a                                         ; [2976: 75 02]
     JMPS    loc_29af                                         ; [2978: EB 35]
+
 loc_297a:
     MOV     DI, WORD [SI+04]                                 ; [297A: 8B 7C 04]
     MOV     AX, WORD [SI+06]                                 ; [297D: 8B 44 06]
@@ -6697,6 +6970,7 @@ loc_2996:
     CALL    WORD [CS:BX+diag_test_handler_vector_table]      ; [299D: 2E FF 97 35 29]
     POP     BX                                               ; [29A2: 5B]
     JMPN    loc_29af                                         ; [29A3: E9 09 00]
+
 loc_29a6:
     CMP     BYTE [ES:DI+03], 03                              ; [29A6: 26 80 7D 03 03]
     MOV     AL, 03                                           ; [29AB: B0 03]
@@ -6711,6 +6985,7 @@ loc_29af:
     JZ      loc_2944                                         ; [29BF: 74 83]
     XOR     AL, AL                                           ; [29C1: 32 C0]
     RETN                                                     ; [29C3: C3]
+
 sub_29c4:
     PUSH    ES                                               ; [29C4: 06]
     PUSHA                                                    ; [29C5: 60]
@@ -6724,6 +6999,7 @@ sub_29c4:
     POPA                                                     ; [29D8: 61]
     POP     ES                                               ; [29D9: 07]
     RETN                                                     ; [29DA: C3]
+
 sub_29db:
     PUSH    DI                                               ; [29DB: 57]
     PUSH    SI                                               ; [29DC: 56]
@@ -6742,13 +7018,16 @@ loc_29e8:
     POP     SI                                               ; [29F4: 5E]
     POP     DI                                               ; [29F5: 5F]
     RETN                                                     ; [29F6: C3]
+
 loc_29f7:
     MOV     AL, 01                                           ; [29F7: B0 01]
     POP     SI                                               ; [29F9: 5E]
     POP     DI                                               ; [29FA: 5F]
     RETN                                                     ; [29FB: C3]
+
 sub_29fc:
     RETN                                                     ; [29FC: C3]
+
 sub_29fd:
     MOV     AL, [var_lan_buffer_offset]                      ; [29FD: A0 36 4B]
     CMP     BYTE [ES:DI+08], AL                              ; [2A00: 26 38 45 08]
@@ -6783,12 +7062,14 @@ sub_29fd:
     XOR     AL, AL                                           ; [2A4D: 32 C0]
     MOV     BYTE [var_lan_rx_status], 00                     ; [2A4F: C6 06 2D 4B 00]
     RETN                                                     ; [2A54: C3]
+
 loc_2a55:
     MOV     AL, [var_lan_command_code]                       ; [2A55: A0 37 4B]
     CMP     BYTE [ES:DI+08], AL                              ; [2A58: 26 38 45 08]
     JZ      loc_2a61                                         ; [2A5C: 74 03]
     MOV     AL, 01                                           ; [2A5E: B0 01]
     RETN                                                     ; [2A60: C3]
+
 loc_2a61:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [2A61: B8 00 30]
     CALL    set_cursor_pos                                   ; [2A64: E8 12 D8]
@@ -6797,6 +7078,7 @@ loc_2a61:
     CALL    print_string_es_ax                               ; [2A6D: E8 3C D9]
     MOV     AL, 02                                           ; [2A70: B0 02]
     RETN                                                     ; [2A72: C3]
+
 sub_2a73:
     MOV     BP, SP                                           ; [2A73: 8B EC]
     MOV     BX, WORD [BP+02]                                 ; [2A75: 8B 5E 02]
@@ -6808,12 +7090,15 @@ sub_2a73:
     JNZ     loc_2a8d                                         ; [2A86: 75 05]
     XOR     AL, AL                                           ; [2A88: 32 C0]
     JMPN    loc_2a90                                         ; [2A8A: E9 03 00]
+
 loc_2a8d:
     MOV     AL, 01                                           ; [2A8D: B0 01]
     RETN                                                     ; [2A8F: C3]
+
 loc_2a90:
     MOV     BYTE [var_lan_rx_status], 00                     ; [2A90: C6 06 2D 4B 00]
     RETN                                                     ; [2A95: C3]
+
 sub_2a96:
     MOV     BP, SP                                           ; [2A96: 8B EC]
     MOV     BX, WORD [BP+02]                                 ; [2A98: 8B 5E 02]
@@ -6848,6 +7133,7 @@ loc_2ace:
     POP     ES                                               ; [2AF1: 07]
     XOR     AL, AL                                           ; [2AF2: 32 C0]
     RETN                                                     ; [2AF4: C3]
+
 loc_2af5:
     PUSH    ES                                               ; [2AF5: 06]
     PUSH    DI                                               ; [2AF6: 57]
@@ -6857,6 +7143,7 @@ loc_2af5:
 loc_2afc:
     MOV     AL, 01                                           ; [2AFC: B0 01]
     RETN                                                     ; [2AFE: C3]
+
 sub_2aff:
     MOV     WORD [var_screen_scroll_count], 0000             ; [2AFF: C7 06 F0 00 00 00]
     MOV     WORD [var_screen_scroll_direction], 0000         ; [2B05: C7 06 F2 00 00 00]
@@ -6934,6 +7221,7 @@ loc_2c09:
     ADD     AX, 8000                                         ; [2C28: 05 00 80]
     MOV     WORD [DI+08], AX                                 ; [2C2B: 89 45 08]
     RETN                                                     ; [2C2E: C3]
+
 sub_2c2f:
     CMP     BYTE [var_lan_server_id], 00                     ; [2C2F: 80 3E 20 4B 00]
     JZ      loc_2c82                                         ; [2C34: 74 4C]
@@ -6965,6 +7253,7 @@ loc_2c57:
 loc_2c82:
     CALL    sub_2efd                                         ; [2C82: E8 78 02]
     RETN                                                     ; [2C85: C3]
+
 sub_2c86:
     PUSHF                                                    ; [2C86: 9C]
     CLI                                                      ; [2C87: FA]
@@ -6982,10 +7271,12 @@ loc_2c90:
     MOV     SI, WORD [SI+04]                                 ; [2CA7: 8B 74 04]
     JNZ     loc_2cae                                         ; [2CAA: 75 02]
     JMPS    loc_2c90                                         ; [2CAC: EB E2]
+
 loc_2cae:
     MOV     WORD [var_lan_station_id], SI                    ; [2CAE: 89 36 1E 4B]
     POPF                                                     ; [2CB2: 9D]
     RETN                                                     ; [2CB3: C3]
+
 sub_2cb4:
     MOV     BX, 0108                                         ; [2CB4: BB 08 01]
     MOV     DI, 0100                                         ; [2CB7: BF 00 01]
@@ -7057,7 +7348,7 @@ loc_2cc6:
     CLI                                                      ; [2D67: FA]
     XOR     AX, AX                                           ; [2D68: 33 C0]
     MOV     ES, AX                                           ; [2D6A: 8E C0]
-    MOV     AX, 2E30                                         ; [2D6C: B8 30 2E]
+    MOV     AX, isr_lan_rx_frame                             ; [2D6C: B8 30 2E]
     MOV     DI, 0094                                         ; [2D6F: BF 94 00]
     STOSW                                                    ; [2D72: AB]
     MOV     AX, CS                                           ; [2D73: 8C C8]
@@ -7083,16 +7374,18 @@ loc_2cc6:
     CMP     WORD [SI], A000                                  ; [2DA4: 81 3C 00 A0]
     JZ      loc_2dad                                         ; [2DA8: 74 03]
     JMPN    loc_2dd6                                         ; [2DAA: E9 29 00]
+
 loc_2dad:
     MOV     SI, 4B00                                         ; [2DAD: BE 00 4B]
     CMP     WORD [SI], A000                                  ; [2DB0: 81 3C 00 A0]
     JZ      loc_2db9                                         ; [2DB4: 74 03]
     JMPN    loc_2dd6                                         ; [2DB6: E9 1D 00]
+
 loc_2db9:
     CLI                                                      ; [2DB9: FA]
     XOR     AX, AX                                           ; [2DBA: 33 C0]
     MOV     ES, AX                                           ; [2DBC: 8E C0]
-    MOV     AX, 2E68                                         ; [2DBE: B8 68 2E]
+    MOV     AX, isr_lan_tx_done                              ; [2DBE: B8 68 2E]
     MOV     DI, 0094                                         ; [2DC1: BF 94 00]
     STOSW                                                    ; [2DC4: AB]
     MOV     AX, CS                                           ; [2DC5: 8C C8]
@@ -7103,6 +7396,7 @@ loc_2db9:
     MOV     WORD [var_screen_buffer_base], 00F0              ; [2DCD: C7 06 E4 00 F0 00]
     XOR     AL, AL                                           ; [2DD3: 32 C0]
     RETN                                                     ; [2DD5: C3]
+
 loc_2dd6:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [2DD6: B8 00 30]
     CALL    set_cursor_pos                                   ; [2DD9: E8 9D D4]
@@ -7111,6 +7405,7 @@ loc_2dd6:
     CALL    print_string_es_ax                               ; [2DE2: E8 C7 D5]
     MOV     AL, 01                                           ; [2DE5: B0 01]
     RETN                                                     ; [2DE7: C3]
+
 sub_2de8:
     MOV     AX, DS                                           ; [2DE8: 8C D8]
     MOV     CL, 04                                           ; [2DEA: B1 04]
@@ -7125,6 +7420,7 @@ sub_2de8:
     MOV     WORD [DI+04], AX                                 ; [2DFE: 89 45 04]
     MOV     WORD [DI+06], CX                                 ; [2E01: 89 4D 06]
     RETN                                                     ; [2E04: C3]
+
 sub_2e05:
     MOV     SI, 4B2E                                         ; [2E05: BE 2E 4B]
     MOV     AX, WORD [SI+04]                                 ; [2E08: 8B 44 04]
@@ -7146,6 +7442,8 @@ loc_2e15:
     MOV     AX, DS                                           ; [2E2B: 8C D8]
     MOV     ES, AX                                           ; [2E2D: 8E C0]
     RETN                                                     ; [2E2F: C3]
+
+isr_lan_rx_frame:
     CLI                                                      ; [2E30: FA]
     PUSHA                                                    ; [2E31: 60]
     PUSH    DS                                               ; [2E32: 1E]
@@ -7172,6 +7470,8 @@ loc_2e48:
     POP     DS                                               ; [2E65: 1F]
     POPA                                                     ; [2E66: 61]
     IRET                                                     ; [2E67: CF]
+
+isr_lan_tx_done:
     CLI                                                      ; [2E68: FA]
     PUSHA                                                    ; [2E69: 60]
     PUSH    DS                                               ; [2E6A: 1E]
@@ -7192,6 +7492,7 @@ loc_2e90:
     JNZ     loc_2ea1                                         ; [2E96: 75 09]
     OR      WORD [var_screen_cursor_row], 0000               ; [2E98: 81 0E E2 00 00 00]
     JMPN    loc_2ec8                                         ; [2E9E: E9 27 00]
+
 loc_2ea1:
     INC     BYTE [var_lan_activity_flag]                     ; [2EA1: FE 06 92 4B]
     MOV     BYTE [var_lan_collision_count], FF               ; [2EA5: C6 06 49 4B FF]
@@ -7199,10 +7500,12 @@ loc_2ea1:
     JNZ     loc_2ebb                                         ; [2EB0: 75 09]
     OR      WORD [var_screen_cursor_row], 0000               ; [2EB2: 81 0E E2 00 00 00]
     JMPN    loc_2ec8                                         ; [2EB8: E9 0D 00]
+
 loc_2ebb:
     OR      WORD [var_screen_cursor_row], 0000               ; [2EBB: 81 0E E2 00 00 00]
     MOV     BYTE [var_lan_server_id], FF                     ; [2EC1: C6 06 20 4B FF]
     JMPS    loc_2ec8                                         ; [2EC6: EB 00]
+
 loc_2ec8:
     MOV     DX, 0100                                         ; [2EC8: BA 00 01]
     IN      AL, DX                                           ; [2ECB: EC]
@@ -7214,6 +7517,7 @@ loc_2ec8:
     POP     DS                                               ; [2ED7: 1F]
     POPA                                                     ; [2ED8: 61]
     IRET                                                     ; [2ED9: CF]
+
 sub_2eda:
     MOV     WORD [var_lan_retry_limit], 0FFF                 ; [2EDA: C7 06 29 4B FF 0F]
 loc_2ee0:
@@ -7224,14 +7528,17 @@ loc_2ee0:
     DEC     WORD [var_lan_retry_limit]                       ; [2EE9: FF 0E 29 4B]
     JZ      loc_2efa                                         ; [2EED: 74 0B]
     JMPS    loc_2ee0                                         ; [2EEF: EB EF]
+
 loc_2ef1:
     XOR     AL, AL                                           ; [2EF1: 32 C0]
     MOV     BYTE [var_lan_frame_error_count], 00             ; [2EF3: C6 06 91 4B 00]
     STI                                                      ; [2EF8: FB]
     RETN                                                     ; [2EF9: C3]
+
 loc_2efa:
     MOV     AL, 01                                           ; [2EFA: B0 01]
     RETN                                                     ; [2EFC: C3]
+
 sub_2efd:
     MOV     WORD [var_lan_retry_limit], 0FFF                 ; [2EFD: C7 06 29 4B FF 0F]
 loc_2f03:
@@ -7242,13 +7549,16 @@ loc_2f03:
     DEC     WORD [var_lan_retry_limit]                       ; [2F0C: FF 0E 29 4B]
     JZ      loc_2f18                                         ; [2F10: 74 06]
     JMPS    loc_2f03                                         ; [2F12: EB EF]
+
 loc_2f14:
     XOR     AL, AL                                           ; [2F14: 32 C0]
     STI                                                      ; [2F16: FB]
     RETN                                                     ; [2F17: C3]
+
 loc_2f18:
     MOV     AL, 01                                           ; [2F18: B0 01]
     RETN                                                     ; [2F1A: C3]
+
 sub_2f1b:
     XOR     AH, AH                                           ; [2F1B: 32 E4]
     MOV     AL, 1D                                           ; [2F1D: B0 1D]
@@ -7312,6 +7622,7 @@ loc_2f80:
     LOOP    loc_2f80                                         ; [2F8E: E2 F0]
 loc_2f90:
     RETN                                                     ; [2F90: C3]
+
 sub_2f91:
     MOV     SI, 053C                                         ; [2F91: BE 3C 05]
     MOV     AL, [var_lan_rx_packets]                         ; [2F94: A0 46 4B]
@@ -7337,6 +7648,7 @@ loc_2f9f:
     JZ      loc_2fd9                                         ; [2FD2: 74 05]
     MOV     SI, 4B83                                         ; [2FD4: BE 83 4B]
     JMPS    loc_2fdc                                         ; [2FD7: EB 03]
+
 loc_2fd9:
     MOV     SI, 4B4A                                         ; [2FD9: BE 4A 4B]
 loc_2fdc:
@@ -7349,6 +7661,7 @@ loc_2fdc:
     MOV     CX, 002E                                         ; [2FEC: B9 2E 00]
     CALL    sub_2902                                         ; [2FEF: E8 10 F9]
     RETN                                                     ; [2FF2: C3]
+
 sub_2ff3:
     MOV     SI, 0108                                         ; [2FF3: BE 08 01]
     MOV     BYTE [SI], 08                                    ; [2FF6: C6 04 08]
@@ -7368,6 +7681,7 @@ sub_2ff3:
     MOV     CX, 0006                                         ; [3022: B9 06 00]
     CALL    sub_2902                                         ; [3025: E8 DA F8]
     RETN                                                     ; [3028: C3]
+
 sub_3029:
     MOV     SI, 0108                                         ; [3029: BE 08 01]
     MOV     BYTE [SI], 08                                    ; [302C: C6 04 08]
@@ -7389,6 +7703,7 @@ sub_3029:
     MOV     CX, 0006                                         ; [305A: B9 06 00]
     CALL    sub_2902                                         ; [305D: E8 A2 F8]
     RETN                                                     ; [3060: C3]
+
 sub_3061:
     PUSH    CX                                               ; [3061: 51]
     MOV     BX, 0108                                         ; [3062: BB 08 01]
@@ -7410,6 +7725,7 @@ sub_3061:
     POP     CX                                               ; [3091: 59]
     CALL    sub_2902                                         ; [3092: E8 6D F8]
     RETN                                                     ; [3095: C3]
+
 sub_3096:
     PUSH    CX                                               ; [3096: 51]
     PUSHF                                                    ; [3097: 9C]
@@ -7443,6 +7759,7 @@ loc_30ec:
     CMP     BYTE [var_lan_scb_command], 00                   ; [30EC: 80 3E 77 4B 00]
     JNZ     loc_30f6                                         ; [30F1: 75 03]
     JMPN    loc_317a                                         ; [30F3: E9 84 00]
+
 loc_30f6:
     DEC     BYTE [var_lan_scb_command]                       ; [30F6: FE 0E 77 4B]
     PUSH    CX                                               ; [30FA: 51]
@@ -7485,6 +7802,7 @@ loc_315a:
     MOV     DI, WORD [var_lan_gateway_id]                    ; [3161: 8B 3E 27 4B]
     XOR     AL, AL                                           ; [3165: 32 C0]
     RETN                                                     ; [3167: C3]
+
 loc_3168:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [3168: B8 00 30]
     CALL    set_cursor_pos                                   ; [316B: E8 0B D1]
@@ -7493,6 +7811,7 @@ loc_3168:
     CALL    print_string_es_ax                               ; [3174: E8 35 D2]
     MOV     AL, 01                                           ; [3177: B0 01]
     RETN                                                     ; [3179: C3]
+
 loc_317a:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [317A: B8 00 30]
     CALL    set_cursor_pos                                   ; [317D: E8 F9 D0]
@@ -7501,6 +7820,7 @@ loc_317a:
     CALL    print_string_es_ax                               ; [3186: E8 23 D2]
     MOV     AL, 01                                           ; [3189: B0 01]
     RETN                                                     ; [318B: C3]
+
 sub_318c:
     PUSH    ES                                               ; [318C: 06]
     MOV     AX, [CS:ram_segment_base]                        ; [318D: 2E A1 02 00]
@@ -7509,6 +7829,7 @@ sub_318c:
     POP     ES                                               ; [319A: 07]
     JGE     loc_319e                                         ; [319B: 7D 01]
     RETN                                                     ; [319D: C3]
+
 loc_319e:
     PUSHA                                                    ; [319E: 60]
     CALL    sub_2f91                                         ; [319F: E8 EF FD]
@@ -7535,6 +7856,7 @@ loc_31d3:
     POP     ES                                               ; [31E1: 07]
     POPA                                                     ; [31E2: 61]
     RETN                                                     ; [31E3: C3]
+
 sub_31e4:
     PUSH    SI                                               ; [31E4: 56]
     PUSH    BX                                               ; [31E5: 53]
@@ -7558,11 +7880,13 @@ sub_31e4:
     POP     BX                                               ; [321C: 5B]
     POP     SI                                               ; [321D: 5E]
     RETN                                                     ; [321E: C3]
+
 loc_321f:
     STC                                                      ; [321F: F9]
     POP     BX                                               ; [3220: 5B]
     POP     SI                                               ; [3221: 5E]
     RETN                                                     ; [3222: C3]
+
 sub_3223:
     MOV     BX, 0108                                         ; [3223: BB 08 01]
     MOV     BYTE [BX+06], 06                                 ; [3226: C6 47 06 06]
@@ -7577,6 +7901,7 @@ sub_3223:
     MOV     BYTE [BX+0E], 00                                 ; [3243: C6 47 0E 00]
     MOV     CX, 0010                                         ; [3247: B9 10 00]
     RETN                                                     ; [324A: C3]
+
 sub_324b:
     MOV     BYTE [var_lan_last_error], 40                    ; [324B: C6 06 94 4B 40]
     MOV     BX, 0108                                         ; [3250: BB 08 01]
@@ -7613,6 +7938,7 @@ sub_324b:
     MOV     BYTE [DI], AL                                    ; [329E: 88 05]
     MOV     CX, 0023                                         ; [32A0: B9 23 00]
     RETN                                                     ; [32A3: C3]
+
 sub_32a4:
     MOV     BYTE [var_lan_last_error], 41                    ; [32A4: C6 06 94 4B 41]
     MOV     BX, 0108                                         ; [32A9: BB 08 01]
@@ -7637,6 +7963,7 @@ sub_32a4:
     MOV     WORD [DI], 0000                                  ; [32DE: C7 05 00 00]
     MOV     CX, 0018                                         ; [32E2: B9 18 00]
     RETN                                                     ; [32E5: C3]
+
 sub_32e6:
     MOV     BYTE [var_lan_last_error], 2C                    ; [32E6: C6 06 94 4B 2C]
     MOV     DI, 0108                                         ; [32EB: BF 08 01]
@@ -7654,6 +7981,7 @@ sub_32e6:
     MOV     BYTE [DI+0E], 08                                 ; [3312: C6 45 0E 08]
     MOV     CX, 0010                                         ; [3316: B9 10 00]
     RETN                                                     ; [3319: C3]
+
 sub_331a:
     MOV     BYTE [var_lan_last_error], 4B                    ; [331A: C6 06 94 4B 4B]
     MOV     DI, 0108                                         ; [331F: BF 08 01]
@@ -7669,6 +7997,7 @@ sub_331a:
     MOV     WORD [DI+0E], 042E                               ; [3341: C7 45 0E 2E 04]
     MOV     CX, 0010                                         ; [3346: B9 10 00]
     RETN                                                     ; [3349: C3]
+
 sub_334a:
     MOV     BYTE [var_lan_last_error], 0F                    ; [334A: C6 06 94 4B 0F]
     MOV     DI, 0108                                         ; [334F: BF 08 01]
@@ -7701,6 +8030,7 @@ loc_338c:
     REP MOVSB                                                ; [339D: F3 A4]
     MOV     CX, 003B                                         ; [339F: B9 3B 00]
     RETN                                                     ; [33A2: C3]
+
 sub_33a3:
     MOV     BYTE [var_lan_last_error], 14                    ; [33A3: C6 06 94 4B 14]
     MOV     DI, 0108                                         ; [33A8: BF 08 01]
@@ -7722,6 +8052,7 @@ sub_33a3:
     REP MOVSB                                                ; [33D9: F3 A4]
     MOV     CX, 0033                                         ; [33DB: B9 33 00]
     RETN                                                     ; [33DE: C3]
+
 sub_33df:
     MOV     BYTE [var_lan_last_error], 10                    ; [33DF: C6 06 94 4B 10]
     MOV     DI, 0108                                         ; [33E4: BF 08 01]
@@ -7742,11 +8073,13 @@ sub_33df:
     REP MOVSB                                                ; [3411: F3 A4]
     MOV     CX, 003B                                         ; [3413: B9 3B 00]
     RETN                                                     ; [3416: C3]
+
 sub_3417:
     CMP     BYTE [ES:DI+0E], 00                              ; [3417: 26 80 7D 0E 00]
     JNZ     loc_3421                                         ; [341C: 75 03]
     XOR     AL, AL                                           ; [341E: 32 C0]
     RETN                                                     ; [3420: C3]
+
 loc_3421:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [3421: B8 00 30]
     CALL    set_cursor_pos                                   ; [3424: E8 52 CE]
@@ -7755,13 +8088,16 @@ loc_3421:
     CALL    print_string_es_ax                               ; [342D: E8 7C CF]
     MOV     AL, 01                                           ; [3430: B0 01]
     RETN                                                     ; [3432: C3]
+
 sub_3433:
     RETN                                                     ; [3433: C3]
+
 sub_3434:
     CMP     BYTE [ES:DI+0E], 00                              ; [3434: 26 80 7D 0E 00]
     JNZ     loc_343e                                         ; [3439: 75 03]
     XOR     AL, AL                                           ; [343B: 32 C0]
     RETN                                                     ; [343D: C3]
+
 loc_343e:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [343E: B8 00 30]
     CALL    set_cursor_pos                                   ; [3441: E8 35 CE]
@@ -7770,11 +8106,13 @@ loc_343e:
     CALL    print_string_es_ax                               ; [344A: E8 5F CF]
     MOV     AL, 01                                           ; [344D: B0 01]
     RETN                                                     ; [344F: C3]
+
 sub_3450:
     CMP     BYTE [ES:DI+0E], 00                              ; [3450: 26 80 7D 0E 00]
     JNZ     loc_345a                                         ; [3455: 75 03]
     XOR     AL, AL                                           ; [3457: 32 C0]
     RETN                                                     ; [3459: C3]
+
 loc_345a:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [345A: B8 00 30]
     CALL    set_cursor_pos                                   ; [345D: E8 19 CE]
@@ -7783,6 +8121,7 @@ loc_345a:
     CALL    print_string_es_ax                               ; [3466: E8 43 CF]
     MOV     AL, 01                                           ; [3469: B0 01]
     RETN                                                     ; [346B: C3]
+
 sub_346c:
     CMP     BYTE [ES:DI+0E], 00                              ; [346C: 26 80 7D 0E 00]
     JNZ     loc_348b                                         ; [3471: 75 18]
@@ -7801,6 +8140,7 @@ sub_346c:
     POP     DS                                               ; [3487: 1F]
     XOR     AL, AL                                           ; [3488: 32 C0]
     RETN                                                     ; [348A: C3]
+
 loc_348b:
     CMP     BYTE [var_lan_timeout_counter], 00               ; [348B: 80 3E 78 4B 00]
     JNZ     loc_34a8                                         ; [3490: 75 16]
@@ -7814,6 +8154,7 @@ loc_348b:
 loc_34a8:
     MOV     AL, 01                                           ; [34A8: B0 01]
     RETN                                                     ; [34AA: C3]
+
 sub_34ab:
     CMP     BYTE [ES:DI+0E], 02                              ; [34AB: 26 80 7D 0E 02]
     JGE     loc_352c                                         ; [34B0: 7D 7A]
@@ -7833,6 +8174,7 @@ loc_34be:
     MOV     BYTE [var_lan_link_status], 00                   ; [34D6: C6 06 93 4B 00]
     JNC     loc_34e0                                         ; [34DB: 73 03]
     JMPN    loc_3529                                         ; [34DD: E9 49 00]
+
 loc_34e0:
     PUSH    ES                                               ; [34E0: 06]
     POP     DS                                               ; [34E1: 1F]
@@ -7854,6 +8196,7 @@ loc_34e0:
     JZ      loc_3519                                         ; [350F: 74 08]
     ADD     WORD [var_lan_rx_buffer_ptr], 0400               ; [3511: 81 06 81 4B 00 04]
     JMPS    loc_3525                                         ; [3517: EB 0C]
+
 loc_3519:
     ADD     WORD [var_lan_tx_buffer_ptr], 1000               ; [3519: 81 06 7F 4B 00 10]
     MOV     WORD [var_lan_rx_buffer_ptr], 0000               ; [351F: C7 06 81 4B 00 00]
@@ -7861,9 +8204,11 @@ loc_3525:
     POPA                                                     ; [3525: 61]
     XOR     AL, AL                                           ; [3526: 32 C0]
     RETN                                                     ; [3528: C3]
+
 loc_3529:
     MOV     AL, 01                                           ; [3529: B0 01]
     RETN                                                     ; [352B: C3]
+
 loc_352c:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [352C: B8 00 30]
     CALL    set_cursor_pos                                   ; [352F: E8 47 CD]
@@ -7872,11 +8217,13 @@ loc_352c:
     CALL    print_string_es_ax                               ; [3538: E8 71 CE]
     MOV     AL, 01                                           ; [353B: B0 01]
     RETN                                                     ; [353D: C3]
+
 sub_353e:
     CMP     BYTE [ES:DI+0E], 00                              ; [353E: 26 80 7D 0E 00]
     JNZ     loc_3548                                         ; [3543: 75 03]
     XOR     AL, AL                                           ; [3545: 32 C0]
     RETN                                                     ; [3547: C3]
+
 loc_3548:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [3548: B8 00 30]
     CALL    set_cursor_pos                                   ; [354B: E8 2B CD]
@@ -7885,6 +8232,8 @@ loc_3548:
     CALL    print_string_es_ax                               ; [3554: E8 55 CE]
     MOV     AL, 01                                           ; [3557: B0 01]
     RETN                                                     ; [3559: C3]
+
+isr_net_packet_received:
     PUSHA                                                    ; [355A: 60]
     PUSH    DS                                               ; [355B: 1E]
     PUSH    ES                                               ; [355C: 06]
@@ -7909,6 +8258,7 @@ loc_356d:
     POP     DS                                               ; [3581: 1F]
     POPA                                                     ; [3582: 61]
     RETF                                                     ; [3583: CB]
+
 loc_3584:
     CLD                                                      ; [3584: FC]
     MOV     AX, [CS:rom_segment_base]                        ; [3585: 2E A1 00 00]
@@ -7936,6 +8286,7 @@ loc_3584:
     MOV     CX, FFFF                                         ; [35C1: B9 FF FF]
     CALL    print_string_es_ax                               ; [35C4: E8 E5 CD]
     JMPN    loc_374e                                         ; [35C7: E9 84 01]
+
 loc_35ca:
     MOV     AX, 056A                                         ; [35CA: B8 6A 05]
     MOV     [var_lan_station_id], AX                         ; [35CD: A3 1E 4B]
@@ -7948,6 +8299,7 @@ loc_35ca:
     OR      AL, AL                                           ; [35E4: 0A C0]
     JZ      loc_35eb                                         ; [35E6: 74 03]
     JMPN    loc_374e                                         ; [35E8: E9 63 01]
+
 loc_35eb:
     MOV     AX, 0010                                         ; [35EB: B8 10 00]
     CALL    sub_28f3                                         ; [35EE: E8 02 F3]
@@ -7974,6 +8326,7 @@ loc_3605:
     OR      AL, AL                                           ; [362C: 0A C0]
     JNZ     loc_3605                                         ; [362E: 75 D5]
     JMPN    loc_3645                                         ; [3630: E9 12 00]
+
 loc_3633:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [3633: B8 00 30]
     CALL    set_cursor_pos                                   ; [3636: E8 40 CC]
@@ -7981,6 +8334,7 @@ loc_3633:
     MOV     CX, FFFF                                         ; [363C: B9 FF FF]
     CALL    print_string_es_ax                               ; [363F: E8 6A CD]
     JMPN    loc_374e                                         ; [3642: E9 09 01]
+
 loc_3645:
     MOV     BYTE [var_lan_local_port], FF                    ; [3645: C6 06 9D 4B FF]
     CALL    sub_324b                                         ; [364A: E8 FE FB]
@@ -7988,17 +8342,20 @@ loc_3645:
     OR      AL, AL                                           ; [3650: 0A C0]
     JZ      loc_3657                                         ; [3652: 74 03]
     JMPN    loc_374e                                         ; [3654: E9 F7 00]
+
 loc_3657:
     CALL    sub_3417                                         ; [3657: E8 BD FD]
     OR      AL, AL                                           ; [365A: 0A C0]
     JZ      loc_3661                                         ; [365C: 74 03]
     JMPN    loc_374e                                         ; [365E: E9 ED 00]
+
 loc_3661:
     CALL    sub_334a                                         ; [3661: E8 E6 FC]
     CALL    sub_3096                                         ; [3664: E8 2F FA]
     OR      AL, AL                                           ; [3667: 0A C0]
     JZ      loc_366e                                         ; [3669: 74 03]
     JMPN    loc_374e                                         ; [366B: E9 E0 00]
+
 loc_366e:
     CALL    sub_346c                                         ; [366E: E8 FB FD]
     OR      AL, AL                                           ; [3671: 0A C0]
@@ -8007,28 +8364,33 @@ loc_366e:
     MOV     BYTE [var_lan_timeout_counter], 00               ; [367A: C6 06 78 4B 00]
     JNZ     loc_3661                                         ; [367F: 75 E0]
     JMPN    loc_374e                                         ; [3681: E9 CA 00]
+
 loc_3684:
     CALL    sub_331a                                         ; [3684: E8 93 FC]
     CALL    sub_3096                                         ; [3687: E8 0C FA]
     OR      AL, AL                                           ; [368A: 0A C0]
     JZ      loc_3691                                         ; [368C: 74 03]
     JMPN    loc_374e                                         ; [368E: E9 BD 00]
+
 loc_3691:
     CALL    sub_3450                                         ; [3691: E8 BC FD]
     OR      AL, AL                                           ; [3694: 0A C0]
     JZ      loc_369b                                         ; [3696: 74 03]
     JMPN    loc_374e                                         ; [3698: E9 B3 00]
+
 loc_369b:
     CALL    sub_32e6                                         ; [369B: E8 48 FC]
     CALL    sub_3096                                         ; [369E: E8 F5 F9]
     OR      AL, AL                                           ; [36A1: 0A C0]
     JZ      loc_36a8                                         ; [36A3: 74 03]
     JMPN    loc_374e                                         ; [36A5: E9 A6 00]
+
 loc_36a8:
     CALL    sub_3434                                         ; [36A8: E8 89 FD]
     OR      AL, AL                                           ; [36AB: 0A C0]
     JZ      loc_36b2                                         ; [36AD: 74 03]
     JMPN    loc_374e                                         ; [36AF: E9 9C 00]
+
 loc_36b2:
     MOV     BYTE [var_lan_multicast_flag], 00                ; [36B2: C6 06 50 4B 00]
     MOV     AX, 0300                                         ; [36B7: B8 00 03]
@@ -8043,28 +8405,33 @@ loc_36bd:
     OR      AL, AL                                           ; [36CF: 0A C0]
     JZ      loc_36d6                                         ; [36D1: 74 03]
     JMPN    loc_374e                                         ; [36D3: E9 78 00]
+
 loc_36d6:
     CALL    sub_34ab                                         ; [36D6: E8 D2 FD]
     OR      AL, AL                                           ; [36D9: 0A C0]
     JZ      loc_36bd                                         ; [36DB: 74 E0]
     JMPN    loc_374e                                         ; [36DD: E9 6E 00]
+
 loc_36e0:
     CALL    sub_33df                                         ; [36E0: E8 FC FC]
     CALL    sub_3096                                         ; [36E3: E8 B0 F9]
     OR      AL, AL                                           ; [36E6: 0A C0]
     JZ      loc_36ed                                         ; [36E8: 74 03]
     JMPN    loc_374e                                         ; [36EA: E9 61 00]
+
 loc_36ed:
     CALL    sub_353e                                         ; [36ED: E8 4E FE]
     OR      AL, AL                                           ; [36F0: 0A C0]
     JZ      loc_36f7                                         ; [36F2: 74 03]
     JMPN    loc_374e                                         ; [36F4: E9 57 00]
+
 loc_36f7:
     CALL    sub_32a4                                         ; [36F7: E8 AA FB]
     CALL    sub_3096                                         ; [36FA: E8 99 F9]
     OR      AL, AL                                           ; [36FD: 0A C0]
     JZ      loc_3704                                         ; [36FF: 74 03]
     JMPN    loc_374e                                         ; [3701: E9 4A 00]
+
 loc_3704:
     CALL    sub_3433                                         ; [3704: E8 2C FD]
     MOV     BX, 00E0                                         ; [3707: BB E0 00]
@@ -8090,6 +8457,7 @@ loc_371a:
     POP     DS                                               ; [373C: 1F]
     POP     ES                                               ; [373D: 07]
     JMPN    loc_3584                                         ; [373E: E9 43 FE]
+
 loc_3741:
     POP     DS                                               ; [3741: 1F]
     POP     ES                                               ; [3742: 07]
@@ -8097,6 +8465,7 @@ loc_3741:
     POP     ES                                               ; [3744: 07]
     MOV     DS, WORD [var_lan_irq_vector]                    ; [3745: 8E 1E 7D 4B]
     JMPF    WORD [ES:var_lan_boot_entry]                     ; [3749: 26 FF 2E 79 4B]
+
 loc_374e:
     MOV     BX, 00E0                                         ; [374E: BB E0 00]
     MOV     WORD [BX], 0000                                  ; [3751: C7 07 00 00]
@@ -8112,9 +8481,11 @@ loc_3761:
     MOV     BYTE [var_lan_rx_ready_flag], 00                 ; [376F: C6 06 9F 4B 00]
     CALL    fdc_motor_off                                    ; [3774: E8 96 05]
     JMPN    loc_3584                                         ; [3777: E9 0A FE]
+
 loc_377a:
     CALL    fdc_release_bus                                  ; [377A: E8 A7 05]
     RETN                                                     ; [377D: C3]
+
 sub_377e:
     CMP     BYTE [var_lan_rx_ready_flag], 01                 ; [377E: 80 3E 9F 4B 01]
     JNZ     loc_37a2                                         ; [3783: 75 1D]
@@ -8138,7 +8509,7 @@ loc_37a2:
 ; fdc_boot_read_sector (ROM: 6FE3h, FB84:37A3h)
 ; ----------------------------------------------------------------------------
 fdc_boot_read_sector:
-    MOV     BX, 005F                                         ; [37A3: BB 5F 00]
+    MOV     BX, loc_005f                                     ; [37A3: BB 5F 00]
     CMP     BYTE [ES:BX], FF                                 ; [37A6: 26 80 3F FF]
     JZ      loc_37bc                                         ; [37AA: 74 10]
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [37AC: B8 00 30]
@@ -8147,6 +8518,7 @@ fdc_boot_read_sector:
     MOV     CX, 0011                                         ; [37B5: B9 11 00]
     CALL    print_string_es_ax                               ; [37B8: E8 F1 CB]
     RETN                                                     ; [37BB: C3]
+
 loc_37bc:
     MOV     DX, io_floppy_reserve_ack    ; Floppy Reserve / Acknowledge register ; [37BC: BA 8E 02]
     OUT     DX, AL                                           ; [37BF: EE]
@@ -8173,6 +8545,7 @@ loc_37c0:
     JNZ     loc_37f2                                         ; [37E9: 75 07]
     INC     BYTE [ES:var_floppy_target_drive]                ; [37EB: 26 FE 06 63 00]
     JMPS    loc_37fc                                         ; [37F0: EB 0A]
+
 loc_37f2:
     CALL    fdc_wait_ready_timeout                           ; [37F2: E8 07 02]
     JC      loc_37fc                                         ; [37F5: 72 05]
@@ -8184,6 +8557,7 @@ loc_37fc:
     CALL    fdc_check_status                                 ; [3804: E8 DA 04]
     JNC     loc_380c                                         ; [3807: 73 03]
     JMPN    loc_3862                                         ; [3809: E9 56 00]
+
 loc_380c:
     MOV     AX, [var_screen_field_attr]                      ; [380C: A1 D9 00]
     MOV     BX, WORD [var_screen_font_select]                ; [380F: 8B 1E DB 00]
@@ -8208,6 +8582,7 @@ loc_380c:
     MOV     WORD [BX+02], AX                                 ; [3849: 89 47 02]
     MOV     BYTE [var_boot_status], FF                       ; [384C: C6 06 14 00 FF]
     RETN                                                     ; [3851: C3]
+
 loc_3852:
     PUSH    DS                                               ; [3852: 1E]
     XOR     DX, DX                                           ; [3853: 33 D2]
@@ -8217,6 +8592,7 @@ loc_3852:
     CALL    sub_3875                                         ; [385B: E8 17 00]
     CALL    sub_39c6                                         ; [385E: E8 65 01]
     RETN                                                     ; [3861: C3]
+
 loc_3862:
     MOV     AX, 3001                                         ; [3862: B8 01 30]
     CALL    set_cursor_pos                                   ; [3865: E8 11 CA]
@@ -8225,6 +8601,7 @@ loc_3862:
     CALL    print_string_es_ax                               ; [386E: E8 3B CB]
     CALL    sub_39c6                                         ; [3871: E8 52 01]
     RETN                                                     ; [3874: C3]
+
 sub_3875:
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [3875: B8 00 30]
     CALL    set_cursor_pos                                   ; [3878: E8 FE C9]
@@ -8235,6 +8612,7 @@ sub_3875:
     XOR     AH, AH                                           ; [3888: 32 E4]
     CALL    sub_038b                                         ; [388A: E8 FE CA]
     RETN                                                     ; [388D: C3]
+
 loc_388e:
     MOV     AX, 3001                                         ; [388E: B8 01 30]
     CALL    set_cursor_pos                                   ; [3891: E8 E5 C9]
@@ -8255,42 +8633,49 @@ validate_boot_device_char:
     SUB     AL, 41                                           ; [38A8: 2C 41]
     CLC                                                      ; [38AA: F8]
     RETN                                                     ; [38AB: C3]
+
 loc_38ac:
     CMP     AL, 4D                                           ; [38AC: 3C 4D]
     JNZ     loc_38b4                                         ; [38AE: 75 04]
     CLC                                                      ; [38B0: F8]
     MOV     AL, 05                                           ; [38B1: B0 05]
     RETN                                                     ; [38B3: C3]
+
 loc_38b4:
     CMP     AL, 4E                                           ; [38B4: 3C 4E]
     JNZ     loc_38bc                                         ; [38B6: 75 04]
     CLC                                                      ; [38B8: F8]
     MOV     AL, 04                                           ; [38B9: B0 04]
     RETN                                                     ; [38BB: C3]
+
 loc_38bc:
     CMP     AL, 4B                                           ; [38BC: 3C 4B]
     JNZ     loc_38c4                                         ; [38BE: 75 04]
     CLC                                                      ; [38C0: F8]
     MOV     AL, 06                                           ; [38C1: B0 06]
     RETN                                                     ; [38C3: C3]
+
 loc_38c4:
     CMP     AL, 51                                           ; [38C4: 3C 51]
     JNZ     loc_38cc                                         ; [38C6: 75 04]
     CLC                                                      ; [38C8: F8]
     MOV     AL, 07                                           ; [38C9: B0 07]
     RETN                                                     ; [38CB: C3]
+
 loc_38cc:
     CMP     AL, 4C                                           ; [38CC: 3C 4C]
     JNZ     loc_38d4                                         ; [38CE: 75 04]
     CLC                                                      ; [38D0: F8]
     MOV     AL, 08                                           ; [38D1: B0 08]
     RETN                                                     ; [38D3: C3]
+
 loc_38d4:
     CMP     AL, 57                                           ; [38D4: 3C 57]
     JNZ     loc_38dc                                         ; [38D6: 75 04]
     CLC                                                      ; [38D8: F8]
     MOV     AL, 09                                           ; [38D9: B0 09]
     RETN                                                     ; [38DB: C3]
+
 loc_38dc:
     STC                                                      ; [38DC: F9]
     RETN                                                     ; [38DD: C3]
@@ -8397,6 +8782,7 @@ loc_397b:
 loc_39c0:
     MOV     BYTE [ram_segment_base], 02                      ; [39C0: C6 06 02 00 02]
     RETN                                                     ; [39C5: C3]
+
 sub_39c6:
     MOV     DX, io_floppy_ctrl           ; Floppy Control register (Motor 0/1, Drive sel, DDEN) ; [39C6: BA 88 02]
     MOV     AL, 40                                           ; [39C9: B0 40]
@@ -8446,6 +8832,7 @@ loc_39ff:
     JZ      loc_3a12                                         ; [3A0E: 74 02]
     CLC                                                      ; [3A10: F8]
     RETN                                                     ; [3A11: C3]
+
 loc_3a12:
     PUSH    CX                                               ; [3A12: 51]
     MOV     CX, 0009                                         ; [3A13: B9 09 00]
@@ -8455,6 +8842,7 @@ loc_3a16:
     LOOP    loc_39ff                                         ; [3A19: E2 E4]
     STC                                                      ; [3A1B: F9]
     RETN                                                     ; [3A1C: C3]
+
 sub_3a1d:
     MOV     CX, 0005                                         ; [3A1D: B9 05 00]
     PUSH    DX                                               ; [3A20: 52]
@@ -8465,6 +8853,7 @@ sub_3a1d:
     JNZ     loc_3a2e                                         ; [3A2A: 75 02]
     CLC                                                      ; [3A2C: F8]
     RETN                                                     ; [3A2D: C3]
+
 loc_3a2e:
     PUSH    DX                                               ; [3A2E: 52]
     PUSH    CX                                               ; [3A2F: 51]
@@ -8489,6 +8878,7 @@ loc_3a2e:
 loc_3a51:
     STC                                                      ; [3A51: F9]
     RETN                                                     ; [3A52: C3]
+
 loc_3a53:
     CLC                                                      ; [3A53: F8]
     RETN                                                     ; [3A54: C3]
@@ -8529,9 +8919,11 @@ loc_3a8b:
     LOOP    loc_3a5b                                         ; [3A8B: E2 CE]
     STC                                                      ; [3A8D: F9]
     RETN                                                     ; [3A8E: C3]
+
 loc_3a8f:
     CLC                                                      ; [3A8F: F8]
     RETN                                                     ; [3A90: C3]
+
 sub_3a91:
     PUSH    CX                                               ; [3A91: 51]
     PUSH    DX                                               ; [3A92: 52]
@@ -8566,6 +8958,7 @@ loc_3ac0:
     POP     DX                                               ; [3AC0: 5A]
     POP     CX                                               ; [3AC1: 59]
     RETN                                                     ; [3AC2: C3]
+
 sub_3ac3:
     PUSH    CX                                               ; [3AC3: 51]
     PUSH    DX                                               ; [3AC4: 52]
@@ -8597,6 +8990,7 @@ loc_3af1:
     POP     DX                                               ; [3AF1: 5A]
     POP     CX                                               ; [3AF2: 59]
     RETN                                                     ; [3AF3: C3]
+
 sub_3af4:
     MOV     AX, 0001                                         ; [3AF4: B8 01 00]
     MOV     CL, BYTE [var_screen_line_wrap]                  ; [3AF7: 8A 0E D6 00]
@@ -8635,6 +9029,7 @@ loc_3b48:
     DIV     WORD [ES:var_floppy_sector_num]                  ; [3B59: 26 F7 36 6B 00]
     MOV     [ES:var_floppy_data_length], AX                  ; [3B5E: 26 A3 7E 00]
     RETN                                                     ; [3B62: C3]
+
 sub_3b63:
     PUSH    DX                                               ; [3B63: 52]
     PUSH    CX                                               ; [3B64: 51]
@@ -8660,6 +9055,7 @@ sub_3b63:
     OUT     DX, AX                                           ; [3B92: EF]
     POP     DX                                               ; [3B93: 5A]
     RETN                                                     ; [3B94: C3]
+
 sub_3b95:
     PUSH    CX                                               ; [3B95: 51]
     MOV     CH, F3                                           ; [3B96: B5 F3]
@@ -8710,6 +9106,7 @@ nvram_read_byte_al:
     POP     CX                                               ; [3BDB: 59]
     POP     DX                                               ; [3BDC: 5A]
     RETN                                                     ; [3BDD: C3]
+
 sub_3bde:
     MOV     DX, io_ppi_portc             ; 8255 PPI Port C (Kbd enable, Gfx mode, NVRAM bank) ; [3BDE: BA 74 00]
     IN      AL, DX                                           ; [3BE1: EC]
@@ -8811,6 +9208,7 @@ loc_3c72:
     POP     AX                                               ; [3CA2: 58]
     MOV     [ES:var_boot_drive_preselect], AL ; Boot drive preselection buffer ('A', 'B', etc.) ; [3CA3: 26 A2 67 00]
     RETN                                                     ; [3CA7: C3]
+
 loc_3ca8:
     CMP     BYTE [ES:var_boot_retry_counter], FF             ; [3CA8: 26 80 3E 5D 00 FF]
     JNZ     loc_3c72                                         ; [3CAE: 75 C2]
@@ -8819,11 +9217,13 @@ loc_3cb0:
     POP     AX                                               ; [3CB3: 58]
     MOV     [ES:var_boot_drive_preselect], AL ; Boot drive preselection buffer ('A', 'B', etc.) ; [3CB4: 26 A2 67 00]
     RETN                                                     ; [3CB8: C3]
+
 sub_3cb9:
     MOV     AX, 31F5                                         ; [3CB9: B8 F5 31]
     MOV     CX, FFFF                                         ; [3CBC: B9 FF FF]
     CALL    print_string_es_ax                               ; [3CBF: E8 EA C6]
     RETN                                                     ; [3CC2: C3]
+
 sub_3cc3:
     PUSH    DS                                               ; [3CC3: 1E]
     PUSH    BX                                               ; [3CC4: 53]
@@ -8873,6 +9273,7 @@ fdc_check_status:
     POP     AX                                               ; [3D06: 58]
     CLC                                                      ; [3D07: F8]
     RETN                                                     ; [3D08: C3]
+
 loc_3d09:
     POP     SI                                               ; [3D09: 5E]
     POP     AX                                               ; [3D0A: 58]
@@ -8925,6 +9326,7 @@ fdc_reserve_bus:
     CMP     AL, 08                                           ; [3D42: 3C 08]
     JNZ     loc_3d47                                         ; [3D44: 75 01]
     RETN                                                     ; [3D46: C3]
+
 loc_3d47:
     PUSH    DS                                               ; [3D47: 1E]
     PUSH    BX                                               ; [3D48: 53]
@@ -8955,6 +9357,7 @@ loc_3d77:
     POP     BX                                               ; [3D7A: 5B]
     POP     DS                                               ; [3D7B: 1F]
     RETN                                                     ; [3D7C: C3]
+
 sub_3d7d:
     MOV     CX, 0040                                         ; [3D7D: B9 40 00]
     MOV     BX, 648D                                         ; [3D80: BB 8D 64]
@@ -8973,6 +9376,7 @@ loc_3d8e:
     INC     AX                                               ; [3D96: 40]
     LOOP    loc_3d85                                         ; [3D97: E2 EC]
     RETN                                                     ; [3D99: C3]
+
 sub_3d9a:
     MOV     CX, 003F                                         ; [3D9A: B9 3F 00]
     MOV     BX, 648E                                         ; [3D9D: BB 8E 64]
@@ -8992,6 +9396,7 @@ loc_3dad:
     INC     AL                                               ; [3DB5: FE C0]
     LOOP    loc_3da4                                         ; [3DB7: E2 EB]
     RETN                                                     ; [3DB9: C3]
+
 sub_3dba:
     PUSH    AX                                               ; [3DBA: 50]
     MOV     AX, 0000                                         ; [3DBB: B8 00 00]
@@ -9015,10 +9420,12 @@ loc_3dc5:
     STC                                                      ; [3DE0: F9]
     POP     AX                                               ; [3DE1: 58]
     RETN                                                     ; [3DE2: C3]
+
 loc_3de3:
     CLC                                                      ; [3DE3: F8]
     POP     AX                                               ; [3DE4: 58]
     RETN                                                     ; [3DE5: C3]
+
 sub_3de6:
     MOV     CX, 003F                                         ; [3DE6: B9 3F 00]
     MOV     DX, 648E                                         ; [3DE9: BA 8E 64]
@@ -9033,6 +9440,7 @@ loc_3def:
     INC     BX                                               ; [3DF9: 43]
     LOOP    loc_3def                                         ; [3DFA: E2 F3]
     RETN                                                     ; [3DFC: C3]
+
 sub_3dfd:
     XOR     AH, AH                                           ; [3DFD: 32 E4]
     CALL    sub_3bde                                         ; [3DFF: E8 DC FD]
@@ -9055,6 +9463,7 @@ sub_3dfd:
     INC     DX                                               ; [3E29: 42]
     OUT     DX, AL                                           ; [3E2A: EE]
     RETN                                                     ; [3E2B: C3]
+
 sub_3e2c:
     MOV     DX, io_nvram_base            ; NVRAM start (128 bytes bank-switched, 80h-FFh) ; [3E2C: BA 80 00]
     XOR     AL, AL                                           ; [3E2F: 32 C0]
@@ -9115,6 +9524,7 @@ boot_setup_memory_params:
     POP     BX                                               ; [3E8B: 5B]
     POP     DX                                               ; [3E8C: 5A]
     RETN                                                     ; [3E8D: C3]
+
 sub_3e8e:
     CALL    fdc_release_bus                                  ; [3E8E: E8 93 FE]
     MOV     AX, 0000                                         ; [3E91: B8 00 00]
@@ -9160,8 +9570,10 @@ loc_3eff:
     ADD     DI, +3C                                          ; [3EFF: 83 C7 3C]
     ADD     WORD [var_fdc_transfer_len], 0100                ; [3F02: 81 06 88 64 00 01]
     JMPS    loc_3ec5                                         ; [3F08: EB BB]
+
 loc_3f0a:
     RETN                                                     ; [3F0A: C3]
+
 sub_3f0b:
     MOV     AX, 03E8                                         ; [3F0B: B8 E8 03]
     CALL    sub_049a                                         ; [3F0E: E8 89 C5]
@@ -9182,6 +9594,7 @@ loc_3f30:
     CMP     BYTE [ES:DI], FF                                 ; [3F39: 26 80 3D FF]
     JNZ     loc_3f30                                         ; [3F3D: 75 F1]
     JMPS    sub_3f0b                                         ; [3F3F: EB CA]
+
 loc_3f41:
     PUSH    DI                                               ; [3F41: 57]
     CALL    fdc_release_bus                                  ; [3F42: E8 DF FD]
@@ -9192,6 +9605,7 @@ loc_3f41:
     CALL    print_string_es_ax                               ; [3F51: E8 58 C4]
     POP     DI                                               ; [3F54: 5F]
     RETN                                                     ; [3F55: C3]
+
 sub_3f56:
     PUSH    DI                                               ; [3F56: 57]
     CMP     BYTE [ES:DI+3A], 05                              ; [3F57: 26 80 7D 3A 05]
@@ -9250,6 +9664,7 @@ sub_3fa5:
     CALL    sub_038b                                         ; [3FBF: E8 C9 C3]
     POP     DI                                               ; [3FC2: 5F]
     RETN                                                     ; [3FC3: C3]
+
 loc_3fc4:
     PUSH    BX                                               ; [3FC4: 53]
     PUSH    SI                                               ; [3FC5: 56]
@@ -9266,6 +9681,7 @@ loc_3fdb:
     POP     BX                                               ; [3FDE: 5B]
     POP     DI                                               ; [3FDF: 5F]
     RETN                                                     ; [3FE0: C3]
+
 loc_3fe1:
     MOV     AX, 0433                                         ; [3FE1: B8 33 04]
     CALL    set_cursor_pos                                   ; [3FE4: E8 92 C2]
@@ -9281,6 +9697,7 @@ loc_3fea:
     POP     DI                                               ; [3FF9: 5F]
     MOV     AL, 01                                           ; [3FFA: B0 01]
     JMPS    sub_3fa5                                         ; [3FFC: EB A7]
+
 loc_3ffe:
     PUSH    BX                                               ; [3FFE: 53]
     MOV     BX, 316E                                         ; [3FFF: BB 6E 31]
@@ -9307,6 +9724,7 @@ loc_3ffe:
     POP     BX                                               ; [4029: 5B]
     JGE     loc_3fe1                                         ; [402A: 7D B5]
     JMPN    loc_3fdb                                         ; [402C: E9 AC FF]
+
 sub_402f:
     PUSH    DI                                               ; [402F: 57]
     PUSH    AX                                               ; [4030: 50]
@@ -9322,6 +9740,7 @@ sub_402f:
     CALL    sub_038b                                         ; [4044: E8 44 C3]
     POP     DI                                               ; [4047: 5F]
     RETN                                                     ; [4048: C3]
+
 loc_4049:
     PUSH    SI                                               ; [4049: 56]
     MOV     CX, 0001                                         ; [404A: B9 01 00]
@@ -9331,6 +9750,7 @@ loc_4049:
     MOV     WORD [SI], AX                                    ; [4054: 89 04]
     POP     DI                                               ; [4056: 5F]
     RETN                                                     ; [4057: C3]
+
 sub_4058:
     PUSH    DI                                               ; [4058: 57]
     PUSH    AX                                               ; [4059: 50]
@@ -9347,6 +9767,7 @@ sub_4058:
     CALL    sub_038b                                         ; [4071: E8 17 C3]
     POP     DI                                               ; [4074: 5F]
     RETN                                                     ; [4075: C3]
+
 loc_4076:
     PUSH    SI                                               ; [4076: 56]
     MOV     CX, 0001                                         ; [4077: B9 01 00]
@@ -9357,6 +9778,7 @@ loc_4076:
     MOV     WORD [SI], AX                                    ; [4084: 89 04]
     POP     DI                                               ; [4086: 5F]
     RETN                                                     ; [4087: C3]
+
 sub_4088:
     PUSH    DI                                               ; [4088: 57]
     PUSH    AX                                               ; [4089: 50]
@@ -9379,6 +9801,7 @@ loc_40a3:
     JNZ     loc_40b1                                         ; [40AD: 75 02]
     POP     DI                                               ; [40AF: 5F]
     RETN                                                     ; [40B0: C3]
+
 loc_40b1:
     PUSH    SI                                               ; [40B1: 56]
     MOV     AL, 2F                                           ; [40B2: B0 2F]
@@ -9397,6 +9820,7 @@ loc_40b1:
     POP     SI                                               ; [40CE: 5E]
     POP     DI                                               ; [40CF: 5F]
     JMPS    sub_4088                                         ; [40D0: EB B6]
+
 loc_40d2:
     POP     SI                                               ; [40D2: 5E]
     POP     DI                                               ; [40D3: 5F]
@@ -9404,16 +9828,19 @@ loc_40d2:
     XOR     AH, FF                                           ; [40D8: 80 F4 FF]
     AND     BYTE [SI], AH                                    ; [40DB: 20 24]
     RETN                                                     ; [40DD: C3]
+
 loc_40de:
     POP     SI                                               ; [40DE: 5E]
     POP     DI                                               ; [40DF: 5F]
     MOV     AH, BYTE [ES:DI+01]                              ; [40E0: 26 8A 65 01]
     OR      BYTE [SI], AH                                    ; [40E4: 08 24]
     RETN                                                     ; [40E6: C3]
+
 loc_40e7:
     POP     SI                                               ; [40E7: 5E]
     POP     DI                                               ; [40E8: 5F]
     RETN                                                     ; [40E9: C3]
+
 sub_40ea:
     PUSH    DI                                               ; [40EA: 57]
     PUSH    AX                                               ; [40EB: 50]
@@ -9432,6 +9859,7 @@ sub_40ea:
     JNZ     loc_412a                                         ; [410A: 75 1E]
     POP     DI                                               ; [410C: 5F]
     RETN                                                     ; [410D: C3]
+
 loc_410e:
     PUSH    SI                                               ; [410E: 56]
     MOV     CX, 0008                                         ; [410F: B9 08 00]
@@ -9452,6 +9880,7 @@ loc_4122:
     JNZ     loc_412a                                         ; [4126: 75 02]
     POP     DI                                               ; [4128: 5F]
     RETN                                                     ; [4129: C3]
+
 loc_412a:
     PUSH    SI                                               ; [412A: 56]
     MOV     AL, 2F                                           ; [412B: B0 2F]
@@ -9477,17 +9906,20 @@ loc_4145:
     POP     ES                                               ; [4151: 07]
     POP     DI                                               ; [4152: 5F]
     RETN                                                     ; [4153: C3]
+
 loc_4154:
     CMP     CX, +08                                          ; [4154: 83 F9 08]
     JNZ     loc_415c                                         ; [4157: 75 03]
     POP     SI                                               ; [4159: 5E]
     POP     DI                                               ; [415A: 5F]
     RETN                                                     ; [415B: C3]
+
 loc_415c:
     MOV     BYTE [SI], 20                                    ; [415C: C6 04 20]
     INC     SI                                               ; [415F: 46]
     LOOP    loc_415c                                         ; [4160: E2 FA]
     JMPS    loc_4145                                         ; [4162: EB E1]
+
 sub_4164:
     CMP     BYTE [ES:DI+3B], 4E                              ; [4164: 26 80 7D 3B 4E]
     JZ      loc_4175                                         ; [4169: 74 0A]
@@ -9504,9 +9936,11 @@ loc_4185:
     CALL    conout_char                                      ; [4185: E8 10 C1]
     LOOP    loc_4185                                         ; [4188: E2 FB]
     RETN                                                     ; [418A: C3]
+
 loc_418b:
     CALL    sub_25e9                                         ; [418B: E8 5B E4]
     JMPN    loc_4175                                         ; [418E: E9 E4 FF]
+
 sub_4191:
     PUSH    DS                                               ; [4191: 1E]
     PUSH    ES                                               ; [4192: 06]
@@ -9534,6 +9968,8 @@ loc_41bb:
     POP     ES                                               ; [41CC: 07]
     POP     DS                                               ; [41CD: 1F]
     RETN                                                     ; [41CE: C3]
+
+boot_from_winchester_alt:
     PUSH    DS                                               ; [41CF: 1E]
     PUSH    ES                                               ; [41D0: 06]
     MOV     AX, [CS:rom_segment_base]                        ; [41D1: 2E A1 00 00]

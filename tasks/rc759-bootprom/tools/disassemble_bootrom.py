@@ -539,6 +539,58 @@ def replace_table_symbols(args):
         args = args.replace(hex_addr, sym)
     return args
 
+IVT_ISR_LABELS = {
+    0x0483: "isr_fdc_wd2797",
+    0x0AB5: "isr_default_trap",
+    0x0ABB: "isr_keyboard_raw",
+    0x0AC1: "isr_nmi",
+    0x0AD7: "isr_hardware_irq_default",
+    0x0428: "isr_i186_internal",
+    0x0A60: "isr_82730_command_done",
+    0x1703: "isr_dma0_selftest",
+    0x17DE: "isr_lan_selftest",
+    0x2E30: "isr_lan_rx_frame",
+    0x2E68: "isr_lan_tx_done",
+    0x355A: "isr_net_packet_received",
+    0x41CF: "boot_from_winchester_alt",
+}
+
+CODE_POINTER_SYMBOLS = {
+    "0026": "loc_0026",
+    "002D": "loc_002d",
+    "0034": "loc_0034",
+    "005F": "loc_005f",
+    "04D1": "test_prom_checksum",
+    "0518": "loc_0518",
+    "05CA": "loc_05ca",
+    "05D6": "loc_05d6",
+    "05F4": "loc_05f4",
+    "0600": "loc_0600",
+    "0618": "loc_0618",
+    "0624": "loc_0624",
+    "063C": "loc_063c",
+    "0648": "loc_0648",
+    "0660": "loc_0660",
+    "0677": "loc_0677",
+    "09CE": "loc_09ce",
+    "09EA": "loc_09ea",
+    "0A0F": "loc_0a0f",
+    "0A34": "loc_0a34",
+    "0BF8": "loc_0bf8",
+    "1703": "isr_dma0_selftest",
+    "17DE": "isr_lan_selftest",
+    "2E30": "isr_lan_rx_frame",
+    "2E68": "isr_lan_tx_done",
+    "355A": "isr_net_packet_received",
+}
+
+def replace_code_pointer_symbols(mnemonic, args):
+    """Replace immediate code/continuation addresses loaded into registers with symbolic labels."""
+    if mnemonic == "MOV":
+        for hex_addr, sym in CODE_POINTER_SYMBOLS.items():
+            args = re.sub(rf"\b{hex_addr}\b", sym, args)
+    return args
+
 def main():
     if not os.path.exists(LIB_PATH):
         print(f"Error: {LIB_PATH} not found", file=sys.stderr)
@@ -591,7 +643,7 @@ def main():
             "name": "boot_device_vector_table",
             "desc": "Boot device funktionstabeller for CALL [CS:DI] (FB84:277C)",
             "type": "words",
-            "len": 16,
+            "len": 20,
             "comments": [
                 "Boot Medium 'A': Floppy A (27ACh)",
                 "Boot Medium 'B': Floppy B (27ACh)",
@@ -600,7 +652,9 @@ def main():
                 "Boot Medium 'N': Net (28BDh)",
                 "Boot Medium 'M': ROM-disk (27EEh)",
                 "Boot Medium 'W': Winchester (4191h)",
-                "Boot Medium Default/Invalid (27CEh)"
+                "Boot Medium Default/Invalid (27CEh)",
+                "Boot Medium Default/Invalid (27CEh)",
+                "Boot Medium Winchester Alt (41CFh)"
             ]
         },
         0x2935: {
@@ -622,6 +676,7 @@ def main():
     BRANCH_OPS = {'CALL', 'JMP', 'JMPS', 'JMPN', 'JZ', 'JNZ', 'JC', 'JNC', 'JA', 'JAE', 'JB', 'JBE', 
                   'JG', 'JGE', 'JL', 'JLE', 'JS', 'JNS', 'JO', 'JNO', 'JP', 'JNP', 
                   'LOOP', 'LOOPE', 'LOOPNE', 'JCXZ'}
+    UNCOND_OPS = {'JMP', 'JMPS', 'JMPN', 'JMPF', 'RET', 'RETN', 'RETF', 'IRET'}
 
     call_targets = set()
     jump_targets = set()
@@ -640,13 +695,20 @@ def main():
 
     op_scan = DisOp()
     scan_pos = 0x3844
+    prev_was_uncond = False
+
     while scan_pos < 0x7F88:
         scan_ip = scan_pos - 0x3840
         if scan_pos == 0x7A2E:
             break
         if scan_ip in CODE_EMBEDDED_DATA:
             scan_pos += CODE_EMBEDDED_DATA[scan_ip]["len"]
+            prev_was_uncond = False
             continue
+
+        if prev_was_uncond:
+            jump_targets.add(scan_ip)
+
         raw_slice = rom[scan_pos:min(scan_pos+16, len(rom))]
         buf = raw_slice + b"\x90" * (16 - len(raw_slice))
         lib.e86_disasm(ctypes.byref(op_scan), buf, scan_ip)
@@ -663,9 +725,15 @@ def main():
                 jump_targets.add(int(a1, 16))
             except ValueError:
                 pass
+
+        prev_was_uncond = (mnem in UNCOND_OPS)
         scan_pos += n
 
     all_labels = dict(KNOWN_CODE_LABELS)
+    all_labels.update(IVT_ISR_LABELS)
+    for hex_addr, sym in CODE_POINTER_SYMBOLS.items():
+        all_labels[int(hex_addr, 16)] = sym
+
     for t in sorted(table_targets | call_targets):
         if t not in all_labels:
             all_labels[t] = f"sub_{t:04x}"
@@ -968,7 +1036,6 @@ def main():
     lines.append('%include "font_60hz_dk914.inc"')
     lines.append("")
 
-    lines.append("")
     lines.append("; ============================================================================")
     lines.append("; SECTION 2: LOOKUP TABLES, SYSTEM STRINGS & IVT PROTOTYPE (2162h - 383Fh)")
     lines.append("; ============================================================================")
@@ -1057,7 +1124,8 @@ def main():
                 vec = (i - start_off) // 4
                 desc_c = IVT_COMMENTS[vec]
                 cs_str = "CODE_SEGMENT_BASE" if cs == 0xFB84 else f"0{cs:04X}h"
-                lines.append(f"    DW  0{ip:04X}h, {cs_str:<18} ; {desc_c} ({cs:04X}:{ip:04X}h)")
+                ip_str = all_labels[ip] if ip in all_labels else f"0{ip:04X}h"
+                lines.append(f"    DW  {ip_str:<24}, {cs_str:<18} ; {desc_c} ({cs:04X}:{ip:04X}h)")
         elif lbl == "diag_test_jump_table":
             for idx, i in enumerate(range(start_off, end_off, 2)):
                 w = rom[i] | (rom[i+1] << 8)
@@ -1166,7 +1234,8 @@ def main():
         # Check for ROM padding between code end (7A2Eh) and 7F80h
         if pos == 0x7A2E:
             pad_len = 0x7F80 - 0x7A2E
-            lines.append("")
+            if lines and lines[-1] != "":
+                lines.append("")
             lines.append(f"; ----------------------------------------------------------------------------")
             lines.append(f"; ROM Padding / Ubrugt ROM-plads (ROM 7A2Eh - 7F7Fh, {pad_len} bytes)")
             lines.append(f"; ----------------------------------------------------------------------------")
@@ -1183,7 +1252,8 @@ def main():
         # Check for embedded data table in code segment
         if code_ip in CODE_EMBEDDED_DATA:
             tbl = CODE_EMBEDDED_DATA[code_ip]
-            lines.append("")
+            if lines and lines[-1] != "":
+                lines.append("")
             lines.append(f"; ----------------------------------------------------------------------------")
             lines.append(f"; {tbl['name']} (ROM: {pos:04X}h, FB84:{code_ip:04X}h)")
             lines.append(f"; {tbl['desc']}")
@@ -1214,7 +1284,8 @@ def main():
         if code_ip in all_labels:
             lbl = all_labels[code_ip]
             if code_ip in KNOWN_CODE_LABELS:
-                lines.append("")
+                if lines and lines[-1] != "":
+                    lines.append("")
                 lines.append(f"; ----------------------------------------------------------------------------")
                 lines.append(f"; {lbl} (ROM: {pos:04X}h, FB84:{code_ip:04X}h)")
                 lines.append(f"; ----------------------------------------------------------------------------")
@@ -1256,13 +1327,19 @@ def main():
         args = replace_io_symbols(mnemonic, args)
         args = replace_segment_equates(mnemonic, args)
         args = replace_table_symbols(args)
+        args = replace_code_pointer_symbols(mnemonic, args)
         asm_line = f"    {mnemonic:<7} {args:<28}{comment_str}"
         lines.append(f"{asm_line:<60} ; [{code_ip:04X}: {hex_bytes}]")
+
+        if mnemonic in UNCOND_OPS and (pos + n) < code_end:
+            if lines and lines[-1] != "":
+                lines.append("")
 
         pos += n
 
     # Section 4: 80186 Reset Entry Stub (7F88h - 7FDFh) -> FFF8:0008 - 005Fh
-    lines.append("")
+    if lines and lines[-1] != "":
+        lines.append("")
     lines.append("; ============================================================================")
     lines.append("; SECTION 4: 80186 RESET ENTRY STUB (ROM offset 7F88h - 7FDFh)")
     lines.append("; Target for initial far jump from reset vector (FFFF:0000h)")
@@ -1278,7 +1355,8 @@ def main():
     while pos < reset_stub_end:
         if pos == 0x7FDD:
             pad_len = 0x7FF0 - 0x7FDD
-            lines.append("")
+            if lines and lines[-1] != "":
+                lines.append("")
             lines.append(f"; ----------------------------------------------------------------------------")
             lines.append(f"; Reset Stub Padding (ROM 7FDDh - 7FEFh, {pad_len} bytes)")
             lines.append(f"; ----------------------------------------------------------------------------")
@@ -1324,13 +1402,19 @@ def main():
         args = replace_io_symbols(mnemonic, args)
         args = replace_segment_equates(mnemonic, args)
         args = replace_table_symbols(args)
+        args = replace_code_pointer_symbols(mnemonic, args)
         asm_line = f"    {mnemonic:<7} {args:<28}{comment_str}"
         lines.append(f"{asm_line:<60} ; [{code_ip:04X}: {hex_bytes}]")
+
+        if mnemonic in UNCOND_OPS and (pos + n) < reset_stub_end:
+            if lines and lines[-1] != "":
+                lines.append("")
 
         pos += n
 
     # Section 5: Reset Vector and Intel 82730 SCP (7FF0h - 7FFFh) -> FFFF:0000h
-    lines.append("")
+    if lines and lines[-1] != "":
+        lines.append("")
     lines.append("; ============================================================================")
     lines.append("; SECTION 5: 80186 RESET VECTOR & INTEL 82730 SCP (ROM offset 7FF0h - 7FFFh)")
     lines.append("; Fysisk adresse 0xFFFF0 (CPU opstartsadresse efter hardware RESET)")

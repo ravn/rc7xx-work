@@ -5,7 +5,7 @@ Denne reference dokumenterer den komplette arkitektur, hukommelsesmodel, hardwar
 * **ROM-fil:** `mame/roms/rc759/rc759-1-2.1.rom` (32.768 bytes)
 * **Datamuseum BitStore:** `ROA955.bin` (Even/Low Byte) + `ROA956.bin` (Odd/High Byte), 2x 27128 EPROMs
 * **Hashes:** CRC32: `3a777d56`, SHA1: `a8592d61d5e1f92651a6f5e41c4ba14c9b6cc39b`
-* **Disassembly:** [`rc759_bootloader_v2.1.asm`](file:///Users/ravn/z80/tasks/rc759-bootprom/rc759_bootloader_v2.1.asm) (9.631 linjer, 100% symbolsk og variabel-beregnet)
+* **Disassembly:** [`rc759_bootloader_v2.1.asm`](file:///Users/ravn/z80/tasks/rc759-bootprom/rc759_bootloader_v2.1.asm) (10.067 linjer, 100% symbolsk og variabel-beregnet)
 * **Generator-værktøj:** [`disassemble_bootrom.py`](file:///Users/ravn/z80/tasks/rc759-bootprom/tools/disassemble_bootrom.py)
 
 ---
@@ -61,11 +61,14 @@ I kildeteksten findes der **0** uoversatte rå hex-hop eller funktionskald:
 1. **1.396 interne hop og funktionskald** er opløst til symbolske labels (alle 622 `CALL` og 774 `JMP / Jcc / LOOP`).
 2. **Alle 4 hop-tabeller** (`diag_test_jump_table`, `boot_device_vector_table`, `diag_test_handler_vector_table` og `menu_format_vector_table`) indeholder symbolske funktionspointere.
 3. **Indirekte dispatch-kald** (`CALL WORD [ES:DI+diag_test_jump_table]`, `CALL WORD [CS:BX+diag_test_handler_vector_table]`, `CALL WORD [CS:BX+menu_format_vector_table]`) refererer tabellerne ved navn.
-4. **Segment 0000h Scratchpad**: Ombygget fra flade `EQU`s til strukturerede `DB`/`DW`/`TIMES <n> DB 0` datablokke under `SEGMENT RAM_0000 AT 0000h` med alle registrerede controllere og buffere (LAN 82586, FDC WD2797, tastatur, konsol og warm-boot flag).
+4. **Coroutine og returadresse-mønster (DI som retur-register):** Under tidlig koldstart (inden `SS:SP` er konfigureret) kaldes hjælperutiner (f.eks. SN76494 lyd-dæmpning ved `loc_003b`) via `MOV DI, loc_xxxx; JMPS loc_003b`, hvorefter hjælperen afslutter med `JMP DI`. Alle sådanne returadresser (`loc_0026`, `loc_002d`, `loc_0034`, `loc_005f` osv.) er opløst til symbolske labels.
+5. **Prototype Interrupt Vector Table (`prototype_ivt_table`):** Alle 28 interrupt-vektorer peger direkte på symbolske ISR-labels (`isr_default_trap`, `isr_nmi`, `isr_keyboard_raw`, `isr_fdc_wd2797`, `isr_82730_command_done`, etc.).
+6. **Formatering af programflow:** Hvert eneste ubetingede hop og returnering (`JMP`, `JMPS`, `JMPN`, `JMPF`, `RET`, `RETN`, `RETF`, `IRET`) efterfølges af en tom linje, og efterfølgende kode har altid en veldefineret label, så basisblokke og kontrolflow fremstår helt adskilt.
+7. **Segment 0000h Scratchpad**: Ombygget fra flade `EQU`s til strukturerede `DB`/`DW`/`TIMES <n> DB 0` datablokke under `SEGMENT RAM_0000 AT 0000h` med alle registrerede controllere og buffere (LAN 82586, FDC WD2797, tastatur, konsol og warm-boot flag).
 
 ---
 
-## 2. ROM Layout
+## 3. ROM Layout
 
 ```
 0000h - 009Dh    (158 B) : Intel 82730 Display Coprocessor initialiseringsblokke
@@ -97,7 +100,7 @@ I kildeteksten findes der **0** uoversatte rå hex-hop eller funktionskald:
 
 ---
 
-## 3. Eksekveringssekvens (Cold Boot til CCP/M)
+## 4. Eksekveringssekvens (Cold Boot til CCP/M)
 
 ```mermaid
 sequenceDiagram
@@ -131,7 +134,7 @@ sequenceDiagram
 
 ---
 
-## 4. Hardware I/O Port Map
+## 5. Hardware I/O Port Map
 
 | I/O Port | Enhed | Funktion i Boot-PROM |
 |---|---|---|
@@ -162,7 +165,7 @@ sequenceDiagram
 
 ---
 
-## 5. Systemvariabler i RAM (Scratchpad `0000:0000`–`0000:0200`)
+## 6. Systemvariabler i RAM (Scratchpad `0000:0000`–`0000:0200`)
 
 | Adresse | Type | Betydning i Boot-PROM |
 |---|---|---|
@@ -184,7 +187,7 @@ sequenceDiagram
 
 ---
 
-## 6. Særlige Tastatur-Genveje og Hotkeys
+## 7. Særlige Tastatur-Genveje og Hotkeys
 
 1. **Afbryd Selftest og Boot Straks (Ctrl + Alt + Backspace):**
    * Implementeret i `FB84:03F6`: Hvis `[012Fh] >= 2` (både Ctrl og Alt er trykket) og scancode `0x0E` (Backspace/Del) modtages, kaldes `FB84:0D28h` $\rightarrow$ `JMPN 2700h`, hvilket øjeblikkeligt afbryder selftest og hopper direkte til bootloaderen.
@@ -195,7 +198,7 @@ sequenceDiagram
 
 ---
 
-## 7. Fast-Boot Patch (9 bytes til < 0,5 sek. opstart)
+## 8. Fast-Boot Patch (9 bytes til < 0,5 sek. opstart)
 
 For at få Piccolinen i MAME eller på en EPROM til altid at starte lynhurtigt som ved varmstart, patches 4 steder i `rc759-1-2.1.rom`:
 
