@@ -483,10 +483,142 @@ def replace_ram_symbols(args_str):
     return re.sub(r"\[(BYTE |WORD |DWORD |CS:|DS:|ES:)?0*([0-9A-Fa-f]{1,4})[Hh]?\]", repl, args_str)
 
 INSTRUCTION_ANNOTATIONS = {
+    # -------------------------------------------------------------------------
+    # Koldstart hardware-initialisering (FB84:0004 - 0039)
+    # -------------------------------------------------------------------------
+    0x0007: "8255 PPI Kontrolord: Mode 0, Port A/B input, Port C output (1001 0010b)",
+    0x000D: "8255 Port C: Sæt bit 3 (08h = NVRAM skrivebeskyttelse off)",
+    0x0013: "8255 BSR: Sæt Port C bit 1 (03h = Båndoptager motor off)",
+    0x0016: "8255 BSR: Nulstil Port C bit 0 (00h = Båndoptager interface disable)",
+    0x0019: "8255 BSR: Sæt Port C bit 6 (0Dh = Skærm 15/22 kHz format kontrol)",
+    0x001C: "8255 BSR: Sæt Port C bit 7 (0Fh = Tastatur interface enable)",
     0x001F: "SN76494 Kanal 0 dæmpning (1001 1111b = kanal 0, max attenuation / mute)",
     0x0026: "SN76494 Kanal 1 dæmpning (1011 1111b = kanal 1, max attenuation / mute)",
     0x002D: "SN76494 Kanal 2 dæmpning (1101 1111b = kanal 2, max attenuation / mute)",
     0x0034: "SN76494 Kanal 3 dæmpning (1111 1111b = støjkanal, max attenuation / mute)",
+
+    # -------------------------------------------------------------------------
+    # RTC og afbrydelsescontrollere (FB84:0044 - 009C)
+    # -------------------------------------------------------------------------
+    0x0044: "MM58167 RTC register-pointer 00h (Millisekunder / status)",
+    0x0062: "80186 INTC INT1 kontrol: Level-triggered, maskeret, prioritet 7",
+    0x0069: "80186 INTC INT2 kontrol: Maskeret, prioritet 7",
+    0x0074: "80186 INTC Maskeregister: Maskér Timer, DMA 0/1, INT 2/3 (00CDh)",
+    0x0078: "8259A ICW1: Edge-triggered, interval 8, cascade mode, ICW4 kræves (19h)",
+    0x007E: "8259A ICW2: Base afbrydelsesvektor 20h for IR0-IR7",
+    0x0084: "8259A ICW3: Master uden slave-PICs på IR-indgange (00h)",
+    0x0087: "8259A ICW4: 8086 mode, Special Fully Nested, Buffered Master (1Dh)",
+    0x008A: "8259A OCW1: Maskér alle IRQs undtagen IR1 tastatur og IR4 CRT (EDh)",
+    0x0093: "iSBX Slot 1 8253: Counter 2, Mode 3 firkantbølge, LSB/MSB (B6h)",
+    0x009C: "iSBX Slot 1 8253: Baud-rate divisor = 32 decimal (0020h)",
+
+    # -------------------------------------------------------------------------
+    # Timere og Palet (FB84:00A6 - 01E5)
+    # -------------------------------------------------------------------------
+    0x00A6: "80186 Timer 1 start-tæller T1CNT (0000h)",
+    0x00AD: "80186 Timer 1 komparator T1CMPA (1000 decimal ticks / 1 ms)",
+    0x00B8: "80186 Timer 1 kontrol T1CON: Enable, continuous run, intern prescaler (C002h)",
+    0x00DF: "Palette RAM init-mønster (F0h / 0Fh invertering)",
+    0x01E5: "80186 Timer kontrol nulstilling (C0h)",
+
+    # -------------------------------------------------------------------------
+    # Timer & EOI Rutiner (FB84:04A0 - 0B22)
+    # -------------------------------------------------------------------------
+    0x04A0: "80186 Timer 2 start-tæller T2CNT (0000h)",
+    0x04B0: "80186 Timer 2 kontrol T2CON: Enable, prescaled clock (C003h)",
+    0x04BA: "80186 Timer 2 kontrol T2CON: Enable, continuous run (C002h)",
+    0x0AEA: "8259A OCW3: Læs In-Service Register ISR (0Bh)",
+    0x0B02: "8259A OCW2: Non-Specific End-Of-Interrupt / EOI (20h)",
+    0x0B22: "80186 EOI register: Non-Specific End-Of-Interrupt (8000h)",
+
+    # -------------------------------------------------------------------------
+    # Selftest og Diagnostik (FB84:128F - 1F20)
+    # -------------------------------------------------------------------------
+    0x128F: "Floppy Reserve: Reserver diskettebus til selftest (FFh)",
+    0x12A9: "Floppy Control: Motor 0 ON, Drev B, DDEN, 2MHz ur (47h)",
+    0x12C7: "Floppy Control: Motor 0 ON, Drev A, DDEN, 2MHz ur (46h)",
+    0x1533: "80186 Timer 2 test: Nulstil tæller T2CNT (0000h)",
+    0x153A: "80186 Timer 2 test: T2CMPA = 10.000 decimal ticks (2710h)",
+    0x1544: "80186 Timer 2 test: T2CON enable continuous (C000h)",
+    0x157B: "80186 Timer 1 test: Nulstil tæller T1CNT (0000h)",
+    0x1582: "80186 Timer 1 test: T1CMPA = 5 ticks (0005h)",
+    0x158C: "80186 Timer 1 test: T1CON enable med prescaler (C008h)",
+    0x1593: "80186 Timer 2 test: Nulstil tæller T2CNT (0000h)",
+    0x159A: "80186 Timer 2 test: T2CMPA = 10.000 decimal ticks (2710h)",
+    0x15A1: "80186 Timer 2 test: T2CON enable continuous (C000h)",
+    0x15C6: "80186 Timer 2 test: Nulstil tæller T2CNT (0000h)",
+    0x15CD: "80186 Timer 2 test: T2CMPA = 10.000 decimal ticks (2710h)",
+    0x15D4: "80186 Timer 2 test: T2CON enable continuous (C000h)",
+    0x15DB: "80186 Timer 1 test: Nulstil tæller T1CNT (0000h)",
+    0x15E2: "80186 Timer 1 test: T1CMPA = 1000 decimal ticks (03E8h)",
+    0x15ED: "80186 Timer 1 test: T1CON enable continuous (C002h)",
+    0x1609: "80186 DMA 0 test: Kildeadresse lav word (0400h)",
+    0x161C: "80186 DMA 0 test: Destinationsadresse lav word (2400h)",
+    0x1632: "80186 DMA 0 test: Transfer count = 1000h ord (4 KB)",
+    0x163B: "80186 DMA 0 test: Kontrolord (Mem-to-Mem, word, start = B606h)",
+    0x164F: "80186 DMA 1 test: Kildeadresse lav word (0400h)",
+    0x1665: "80186 DMA 1 test: Destinationsadresse lav word (4400h)",
+    0x167E: "80186 DMA 1 test: Transfer count = 1000h ord (4 KB)",
+    0x1687: "80186 DMA 1 test: Kontrolord (Mem-to-Mem, word, start = DA06h)",
+    0x173D: "80186 Timer 2 test: Nulstil tæller T2CNT (0000h)",
+    0x1744: "80186 Timer 2 test: T2CMPA = 1 tick (0001h)",
+    0x174B: "80186 Timer 2 test: T2CON enable med interrupt (E000h)",
+    0x177A: "80186 INTC test: Maskér alle undtagen Timer 0/1 (00FCh)",
+    0x18F3: "8259A OCW1: Unmask IR5 (WD2797 FDC) til LAN/FDC selftest (DFh)",
+    0x1B8C: "8255 BSR: Sæt Port C bit 1 (Båndoptager motor off)",
+    0x1B8F: "8255 BSR: Nulstil Port C bit 0 (Båndoptager interface disable)",
+    0x1B95: "80186 Timer 0 test: T0CMPA = 750 decimal ticks (02EEh)",
+    0x1B9C: "80186 Timer 0 test: T0CMPB = 750 decimal ticks (02EEh)",
+    0x1BA3: "80186 Timer 0 test: T0CON enable continuous mode (C013h)",
+    0x1BAA: "8255 BSR: Sæt Port C bit 0 (Båndoptager interface enable)",
+    0x1BB8: "80186 Timer 0 kontrol: Genstart tæller (C013h)",
+    0x1BE9: "80186 Timer 0 kontrol: Genstart tæller (C013h)",
+    0x1BFA: "8255 BSR: Nulstil Port C bit 0 (Båndoptager interface disable)",
+    0x1CD1: "Intel 82730 Display test: Palet-testmønster (F0h)",
+    0x1D53: "8255 BSR: Nulstil Port C bit 6 (Skærm timing test)",
+    0x1D69: "8255 BSR: Sæt Port C bit 6 (Skærm timing test)",
+    0x1D75: "Palette RAM testmønster (F0h)",
+    0x1DA3: "Centronics printer test: Send FFh til databus",
+    0x1E67: "Floppy Control: Motor 0 ON, Drev A, DDEN, 2MHz ur (46h)",
+    0x1E7E: "Floppy Control: Motor 0 ON, Drev B, DDEN, 2MHz ur (47h)",
+    0x1E9E: "Floppy Control: Motor 0 ON, Drev B, DDEN, 2MHz ur (47h)",
+    0x1EFE: "Floppy Reserve: Reserver FDC-bus (FFh)",
+    0x1F20: "Floppy Control: Motor 0 ON, Drev B, DDEN, 2MHz ur (47h)",
+
+    # -------------------------------------------------------------------------
+    # Bootloader og Diskettedrev (FB84:2720 - 3E25)
+    # -------------------------------------------------------------------------
+    0x2720: "80186 DMA 0 kontrol: Stop DMA transfer (0004h)",
+    0x272B: "8259A OCW1: Maskér alle undtagen IR1 tastatur (FDh)",
+    0x2731: "80186 EOI: Non-specific End-Of-Interrupt (8000h)",
+    0x2D79: "8259A OCW1: Unmask IR4 CRT og IR5 Floppy (CFh)",
+    0x2E5A: "8259A OCW2: Non-specific EOI til 8259A (20h)",
+    0x2E61: "80186 EOI: Non-specific EOI til 80186 (8000h)",
+    0x2ECC: "8259A OCW2: Non-specific EOI til 8259A (20h)",
+    0x2ED3: "80186 EOI: Non-specific EOI til 80186 (8000h)",
+    0x37C3: "Floppy Reserve: Reserver diskettedrev-controller bus (FFh)",
+    0x37E0: "Floppy Control: Motor 0 ON, Drev B, DDEN, 2MHz ur (47h)",
+    0x3941: "Floppy Control: Motor 0 ON, Drev A, Single Density FM (42h)",
+    0x394A: "Floppy Control: Motor 0 ON, Drev A, Double Density MFM (45h)",
+    0x39C9: "Floppy Control: Sluk diskettemotorer (40h)",
+    0x3A01: "WD2797 Kommando 00h: Restore (seek til spor 0, recalibrate)",
+    0x3A37: "WD2797 Kommando 1Ch: Seek med verify og 30ms step rate",
+    0x3AA8: "WD2797 Kommando D8h: Force Interrupt på Index puls",
+    0x3AB7: "WD2797 Kommando D0h: Force Interrupt (afbryd igangværende kommando)",
+    0x3ADF: "WD2797 Kommando D8h: Force Interrupt på Index puls",
+    0x3AE7: "WD2797 Kommando D0h: Force Interrupt (afbryd igangværende kommando)",
+    0x3B8F: "80186 DMA 0 kontrol: I/O-to-Memory, byte transfer, TC interrupt (AE66h)",
+    0x3BF0: "8259A OCW1: Maskér alle undtagen IR1 tastatur (FDh)",
+    0x3BF6: "80186 EOI: Non-specific End-Of-Interrupt (8000h)",
+    0x3E25: "NVRAM register 0Ah (Lager-enhed / boot parameter)",
+}
+
+RESET_STUB_ANNOTATIONS = {
+    0x0038: "80186 UMCS: 32 KB Boot ROM (Base F8000h, 3 wait states = F838h)",
+    0x003C: "80186 LMCS: 256 KB Base RAM (Base 00000h, 2 wait states = 003Ah)",
+    0x0043: "80186 MMCS: 32 KB CRT-VRAM (Base D0000h, 2 wait states = 90BAh)",
+    0x004D: "80186 MPCS: Peripheral chip selects I/O mode, 7 blokke à 128B (01F8h)",
+    0x0054: "80186 PACS: Peripheral chip selects base 0000h, 3 wait states (3FF8h)",
 }
 
 CODE_BLOCK_COMMENTS = {
@@ -517,14 +649,16 @@ CODE_BLOCK_COMMENTS = {
     ],
 }
 
-def annotate_instruction(op_str, args_str, code_ip=None):
+def annotate_instruction(op_str, args_str, code_ip=None, section=3):
     """Add explanatory hardware comments to instruction."""
     comments = []
     op_upper = op_str.strip().upper()
     args_upper = args_str.upper()
 
-    if code_ip is not None and code_ip in INSTRUCTION_ANNOTATIONS:
+    if section == 3 and code_ip is not None and code_ip in INSTRUCTION_ANNOTATIONS:
         comments.append(INSTRUCTION_ANNOTATIONS[code_ip])
+    elif section == 4 and code_ip is not None and code_ip in RESET_STUB_ANNOTATIONS:
+        comments.append(RESET_STUB_ANNOTATIONS[code_ip])
     
     # Check for I/O ports when instruction is IN/OUT or loading DX with an immediate port number
     if op_upper in ("IN", "OUT") or (op_upper == "MOV" and re.match(r"^DX\s*,\s*0*[0-9A-F]+H?$", args_upper)):
@@ -1404,7 +1538,7 @@ def main():
         elif op.arg_n >= 2:
             args = f"{arg1}, {arg2}"
 
-        comment = annotate_instruction(mnemonic, args, code_ip)
+        comment = annotate_instruction(mnemonic, args, code_ip, section=3)
         comment_str = f" ; {comment}" if comment else ""
 
         args = replace_ram_symbols(args)
@@ -1479,7 +1613,7 @@ def main():
         elif op.arg_n >= 2:
             args = f"{arg1}, {arg2}"
 
-        comment = annotate_instruction(mnemonic, args, code_ip)
+        comment = annotate_instruction(mnemonic, args, code_ip, section=4)
         comment_str = f" ; {comment}" if comment else ""
 
         args = replace_ram_symbols(args)
