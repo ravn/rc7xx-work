@@ -5,7 +5,8 @@
 # Counterpart to rc702_boot_cpm.sh (which boots the 8" RC702 CP/M 2.2 system).
 #
 # ROMs: MAME's rc759 driver ships four verified BIOS sets in mame/roms/rc759/
-# (rc759-1-2.1 .. rc759-2-5.1).  The default BIOS (-bios 0) boots the disk.
+# (rc759-1-2.1 .. rc759-2-5.1).  The default BIOS (-bios 0) boots the disk
+# with fast boot patched in memory on start (skip slow PROM/RAM selftest).
 #
 # A: boot disk.  The RC759 uses 5.25" DS-HD floppies in the "rc759" format
 # (FLOPPY_RC759_FORMAT: FF_525 / DSHD / MFM, 8 sectors x 1024 B, 77 cyl, 2
