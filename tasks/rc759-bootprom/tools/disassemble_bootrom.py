@@ -32,10 +32,13 @@ TASK_DIR = os.path.dirname(OUT_ASM)
 # Known labels (code offset in segment FB84 -> name)
 KNOWN_CODE_LABELS = {
     0x0004: "cold_boot_entry",
+    0x003B: "mute_sn76494_channel",
+    0x005F: "init_interrupt_controllers",
     0x0084: "init_pic_8259",
     0x00A3: "init_i186_timer0",
     0x00D9: "init_palette",
     0x011C: "serial_tx_banner_loop",
+    0x013F: "serial_tx_hex_word",
     0x0187: "char_out_helper",
     0x01BF: "clear_screen_or_cursor",
     0x0279: "set_cursor_pos",
@@ -50,6 +53,7 @@ KNOWN_CODE_LABELS = {
     0x056E: "test_crt_vram_verify",
     0x05B2: "error_crt_vram",
     0x066C: "init_video_and_fonts",
+    0x0677: "init_vram_clear_and_fonts",
     0x06A9: "load_fonts_50hz",
     0x06DB: "load_fonts_60hz",
     0x0736: "init_82730_buffers",
@@ -540,13 +544,13 @@ def replace_table_symbols(args):
     return args
 
 IVT_ISR_LABELS = {
+    0x0428: "isr_keyboard_scancode",
     0x0483: "isr_fdc_wd2797",
+    0x0A60: "isr_82730_command_done",
     0x0AB5: "isr_default_trap",
-    0x0ABB: "isr_keyboard_raw",
+    0x0ABB: "isr_82730_attention_done",
     0x0AC1: "isr_nmi",
     0x0AD7: "isr_hardware_irq_default",
-    0x0428: "isr_i186_internal",
-    0x0A60: "isr_82730_command_done",
     0x1703: "isr_dma0_selftest",
     0x17DE: "isr_lan_selftest",
     0x2E30: "isr_lan_rx_frame",
@@ -555,40 +559,74 @@ IVT_ISR_LABELS = {
     0x41CF: "boot_from_winchester_alt",
 }
 
-CODE_POINTER_SYMBOLS = {
-    "0026": "loc_0026",
-    "002D": "loc_002d",
-    "0034": "loc_0034",
-    "005F": "loc_005f",
+NAMED_CODE_LABELS = {
+    # Early boot sound mute coroutine continuations
+    0x0026: "mute_sound_channel_1",
+    0x002D: "mute_sound_channel_2",
+    0x0034: "mute_sound_channel_3",
+    # Early hardware init loops
+    0x00CE: "isbx_init_stream_loop",
+    0x00E1: "init_palette_loop",
+    0x00F8: "clear_bank_headers_loop",
+    0x00FD: "clear_bank_header_word",
+    0x010A: "post_send_selftest_banner",
+    0x0125: "isbx_tx_poll_loop",
+    0x013D: "serial_tx_banner_done",
+    0x0185: "serial_tx_hex_done",
+    # CRT VRAM selftest error reporting sequence (serial debug)
+    0x0518: "post_report_crt_vram_error",
+    0x05CA: "post_report_vram_err_segment",
+    0x05D6: "post_report_vram_err_print_seg",
+    0x05F4: "post_report_vram_err_subcode",
+    0x0600: "post_report_vram_err_print_subcode",
+    0x0618: "post_report_vram_err_count",
+    0x0624: "post_report_vram_err_print_count",
+    0x063C: "post_report_vram_err_device",
+    0x0648: "post_report_vram_err_print_dev",
+    0x0660: "post_report_vram_err_crlf",
+    # On-screen POST error dump sequence
+    0x09CE: "post_screen_dump_subcode",
+    0x09EA: "post_screen_dump_count",
+    0x0A0F: "post_screen_dump_device",
+    0x0A34: "post_screen_dump_crlf",
+}
+
+LINK_REGISTER_DI_SYMBOLS = {
+    "0026": "mute_sound_channel_1",
+    "002D": "mute_sound_channel_2",
+    "0034": "mute_sound_channel_3",
+    "005F": "init_interrupt_controllers",
     "04D1": "test_prom_checksum",
-    "0518": "loc_0518",
-    "05CA": "loc_05ca",
-    "05D6": "loc_05d6",
-    "05F4": "loc_05f4",
-    "0600": "loc_0600",
-    "0618": "loc_0618",
-    "0624": "loc_0624",
-    "063C": "loc_063c",
-    "0648": "loc_0648",
-    "0660": "loc_0660",
-    "0677": "loc_0677",
-    "09CE": "loc_09ce",
-    "09EA": "loc_09ea",
-    "0A0F": "loc_0a0f",
-    "0A34": "loc_0a34",
-    "0BF8": "loc_0bf8",
-    "1703": "isr_dma0_selftest",
+    "0518": "post_report_crt_vram_error",
+    "05CA": "post_report_vram_err_segment",
+    "05D6": "post_report_vram_err_print_seg",
+    "05F4": "post_report_vram_err_subcode",
+    "0600": "post_report_vram_err_print_subcode",
+    "0618": "post_report_vram_err_count",
+    "0624": "post_report_vram_err_print_count",
+    "063C": "post_report_vram_err_device",
+    "0648": "post_report_vram_err_print_dev",
+    "0660": "post_report_vram_err_crlf",
+    "0677": "init_vram_clear_and_fonts",
+    "09CE": "post_screen_dump_subcode",
+    "09EA": "post_screen_dump_count",
+    "0A0F": "post_screen_dump_device",
+    "0A34": "post_screen_dump_crlf",
+}
+
+ISR_REGISTER_AX_SYMBOLS = {
     "17DE": "isr_lan_selftest",
     "2E30": "isr_lan_rx_frame",
     "2E68": "isr_lan_tx_done",
-    "355A": "isr_net_packet_received",
 }
 
 def replace_code_pointer_symbols(mnemonic, args):
     """Replace immediate code/continuation addresses loaded into registers with symbolic labels."""
     if mnemonic == "MOV":
-        for hex_addr, sym in CODE_POINTER_SYMBOLS.items():
-            args = re.sub(rf"\b{hex_addr}\b", sym, args)
+        for hex_addr, sym in LINK_REGISTER_DI_SYMBOLS.items():
+            args = re.sub(rf"\bDI,\s*{hex_addr}\b", f"DI, {sym}", args, flags=re.IGNORECASE)
+        for hex_addr, sym in ISR_REGISTER_AX_SYMBOLS.items():
+            args = re.sub(rf"\bAX,\s*{hex_addr}\b", f"AX, {sym}", args, flags=re.IGNORECASE)
     return args
 
 def main():
@@ -731,8 +769,7 @@ def main():
 
     all_labels = dict(KNOWN_CODE_LABELS)
     all_labels.update(IVT_ISR_LABELS)
-    for hex_addr, sym in CODE_POINTER_SYMBOLS.items():
-        all_labels[int(hex_addr, 16)] = sym
+    all_labels.update(NAMED_CODE_LABELS)
 
     for t in sorted(table_targets | call_targets):
         if t not in all_labels:

@@ -488,19 +488,19 @@ prototype_ivt_table:
     DW  isr_default_trap        , CODE_SEGMENT_BASE  ; Int 06h (0000:0018h): Invalid Opcode ISR (FB84:0AB5h)
     DW  isr_default_trap        , CODE_SEGMENT_BASE  ; Int 07h (0000:001Ch): Coprocessor Not Available ISR (FB84:0AB5h)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 08h (0000:0020h): IRQ 0 System Timer ISR (FB84:0AD7h)
-    DW  isr_keyboard_raw        , CODE_SEGMENT_BASE  ; Int 09h (0000:0024h): IRQ 1 Keyboard ISR (FB84:0ABBh)
+    DW  isr_82730_attention_done, CODE_SEGMENT_BASE  ; Int 09h (0000:0024h): IRQ 1 Keyboard ISR (FB84:0ABBh)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Ah (0000:0028h): IRQ 2 Slave PIC / Reserved ISR (FB84:0AD7h)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Bh (0000:002Ch): IRQ 3 Serial COM2 ISR (FB84:0AD7h)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Ch (0000:0030h): IRQ 4 Serial COM1 ISR (FB84:0AD7h)
     DW  isr_fdc_wd2797          , CODE_SEGMENT_BASE  ; Int 0Dh (0000:0034h): IRQ 5 Floppy Disk Controller (WD2797) ISR (FB84:0483h)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Eh (0000:0038h): IRQ 6 Centronics Printer ISR (FB84:0AD7h)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 0Fh (0000:003Ch): IRQ 7 Real Time Clock (MM58167) ISR (FB84:0AD7h)
-    DW  isr_keyboard_raw        , CODE_SEGMENT_BASE  ; Int 10h (0000:0040h): 80186 Internal Timer 0 ISR (FB84:0ABBh)
-    DW  isr_keyboard_raw        , CODE_SEGMENT_BASE  ; Int 11h (0000:0044h): 80186 Internal Timer 1 ISR (FB84:0ABBh)
+    DW  isr_82730_attention_done, CODE_SEGMENT_BASE  ; Int 10h (0000:0040h): 80186 Internal Timer 0 ISR (FB84:0ABBh)
+    DW  isr_82730_attention_done, CODE_SEGMENT_BASE  ; Int 11h (0000:0044h): 80186 Internal Timer 1 ISR (FB84:0ABBh)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 12h (0000:0048h): 80186 Internal Timer 2 ISR (FB84:0AD7h)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 13h (0000:004Ch): 80186 DMA Channel 0 ISR (FB84:0AD7h)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 14h (0000:0050h): 80186 DMA Channel 1 ISR (FB84:0AD7h)
-    DW  isr_i186_internal       , CODE_SEGMENT_BASE  ; Int 15h (0000:0054h): 80186 Internal Interrupt ISR (FB84:0428h)
+    DW  isr_keyboard_scancode   , CODE_SEGMENT_BASE  ; Int 15h (0000:0054h): 80186 Internal Interrupt ISR (FB84:0428h)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 16h (0000:0058h): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
     DW  isr_hardware_irq_default, CODE_SEGMENT_BASE  ; Int 17h (0000:005Ch): Reserveret hardware afbrydelse ISR (FB84:0AD7h)
     DW  isr_82730_command_done  , CODE_SEGMENT_BASE  ; Int 18h (0000:0060h): DMA Channel 0 Handler ISR (FB84:0A60h)
@@ -1271,25 +1271,28 @@ cold_boot_entry:
     MOV     AL, 0F                                           ; [001C: B0 0F]
     OUT     DX, AL                                           ; [001E: EE]
     MOV     AL, 9F                                           ; [001F: B0 9F]
-    MOV     DI, loc_0026                                     ; [0021: BF 26 00]
-    JMPS    loc_003b                                         ; [0024: EB 15]
+    MOV     DI, mute_sound_channel_1                         ; [0021: BF 26 00]
+    JMPS    mute_sn76494_channel                             ; [0024: EB 15]
 
-loc_0026:
+mute_sound_channel_1:
     MOV     AL, BF                                           ; [0026: B0 BF]
-    MOV     DI, loc_002d                                     ; [0028: BF 2D 00]
-    JMPS    loc_003b                                         ; [002B: EB 0E]
+    MOV     DI, mute_sound_channel_2                         ; [0028: BF 2D 00]
+    JMPS    mute_sn76494_channel                             ; [002B: EB 0E]
 
-loc_002d:
+mute_sound_channel_2:
     MOV     AL, DF                                           ; [002D: B0 DF]
-    MOV     DI, loc_0034                                     ; [002F: BF 34 00]
-    JMPS    loc_003b                                         ; [0032: EB 07]
+    MOV     DI, mute_sound_channel_3                         ; [002F: BF 34 00]
+    JMPS    mute_sn76494_channel                             ; [0032: EB 07]
 
-loc_0034:
+mute_sound_channel_3:
     MOV     AL, FF                                           ; [0034: B0 FF]
-    MOV     DI, loc_005f                                     ; [0036: BF 5F 00]
-    JMPS    loc_003b                                         ; [0039: EB 00]
+    MOV     DI, init_interrupt_controllers                   ; [0036: BF 5F 00]
+    JMPS    mute_sn76494_channel                             ; [0039: EB 00]
 
-loc_003b:
+; ----------------------------------------------------------------------------
+; mute_sn76494_channel (ROM: 387Bh, FB84:003Bh)
+; ----------------------------------------------------------------------------
+mute_sn76494_channel:
     XCHG    AL, AH                                           ; [003B: 86 E0]
     IN      AL, io_sn76494_sound         ; SN76494 Sound Generator (Volume / Frequency) ; [003D: E4 56]
     MOV     CX, 001E                                         ; [003F: B9 1E 00]
@@ -1311,7 +1314,10 @@ loc_005b:
     LOOP    loc_005b                                         ; [005B: E2 FE]
     JMP     DI                                               ; [005D: FF E7]
 
-loc_005f:
+; ----------------------------------------------------------------------------
+; init_interrupt_controllers (ROM: 389Fh, FB84:005Fh)
+; ----------------------------------------------------------------------------
+init_interrupt_controllers:
     MOV     DX, io_i186_int1_ctrl        ; 80186 INTC INT 1 Control register ; [005F: BA 38 FF]
     MOV     AX, 003F                                         ; [0062: B8 3F 00]
     OUT     DX, AX                                           ; [0065: EF]
@@ -1374,13 +1380,13 @@ init_i186_timer0:
     MOV     ES, AX                                           ; [00C6: 8E C0]
     MOV     DI, 0002                                         ; [00C8: BF 02 00]
     MOV     DX, io_isbx0_ctrl            ; iSBX Multimodule Slot 0 Control / Status ; [00CB: BA 02 03]
-loc_00ce:
+isbx_init_stream_loop:
     MOV     AL, BYTE [ES:DI]                                 ; [00CE: 26 8A 05]
     CMP     AL, FF                                           ; [00D1: 3C FF]
     JZ      init_palette                                     ; [00D3: 74 04]
     OUT     DX, AL                                           ; [00D5: EE]
     INC     DI                                               ; [00D6: 47]
-    JMPS    loc_00ce                                         ; [00D7: EB F5]
+    JMPS    isbx_init_stream_loop                            ; [00D7: EB F5]
 
 ; ----------------------------------------------------------------------------
 ; init_palette (ROM: 3919h, FB84:00D9h)
@@ -1389,28 +1395,28 @@ init_palette:
     MOV     BX, 0000                                         ; [00D9: BB 00 00]
     MOV     CX, 0010                                         ; [00DC: B9 10 00]
     MOV     AL, F0                                           ; [00DF: B0 F0]
-loc_00e1:
+init_palette_loop:
     MOV     DX, io_palette_base          ; Palette RAM base (180h - 19Fh) ; [00E1: BA 80 01]
     ADD     DX, BX                                           ; [00E4: 03 D3]
     OUT     DX, AL                                           ; [00E6: EE]
     NOT     AL                                               ; [00E7: F6 D0]
     INC     BX                                               ; [00E9: 43]
     INC     BX                                               ; [00EA: 43]
-    LOOP    loc_00e1                                         ; [00EB: E2 F4]
+    LOOP    init_palette_loop                                ; [00EB: E2 F4]
     TEST    BP, 0200                                         ; [00ED: F7 C5 00 02]
-    JNZ     loc_010a                                         ; [00F1: 75 17]
+    JNZ     post_send_selftest_banner                        ; [00F1: 75 17]
     MOV     AX, 0000                                         ; [00F3: B8 00 00]
     MOV     BX, AX                                           ; [00F6: 8B D8]
-loc_00f8:
+clear_bank_headers_loop:
     MOV     CX, 0008                                         ; [00F8: B9 08 00]
     MOV     ES, AX                                           ; [00FB: 8E C0]
-loc_00fd:
+clear_bank_header_word:
     MOV     WORD [ES:BX], AX                                 ; [00FD: 26 89 07]
-    LOOP    loc_00fd                                         ; [0100: E2 FB]
+    LOOP    clear_bank_header_word                           ; [0100: E2 FB]
     ADD     AX, 1000                                         ; [0102: 05 00 10]
     CMP     AX, 0000                                         ; [0105: 3D 00 00]
-    JC      loc_00f8                                         ; [0108: 72 EE]
-loc_010a:
+    JC      clear_bank_headers_loop                          ; [0108: 72 EE]
+post_send_selftest_banner:
     MOV     AX, [CS:rom_segment_base]                        ; [010A: 2E A1 00 00]
     MOV     DS, AX                                           ; [010E: 8E D8]
     MOV     BX, 2396                                         ; [0110: BB 96 23]
@@ -1424,29 +1430,32 @@ loc_010a:
 serial_tx_banner_loop:
     IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [011C: E4 72]
     TEST    AL, 80                                           ; [011E: A8 80]
-    JNZ     loc_013d                                         ; [0120: 75 1B]
+    JNZ     serial_tx_banner_done                            ; [0120: 75 1B]
     MOV     DX, io_isbx0_ctrl            ; iSBX Multimodule Slot 0 Control / Status ; [0122: BA 02 03]
-loc_0125:
+isbx_tx_poll_loop:
     IN      AL, DX                                           ; [0125: EC]
     TEST    AL, 80                                           ; [0126: A8 80]
-    JZ      loc_013d                                         ; [0128: 74 13]
+    JZ      serial_tx_banner_done                            ; [0128: 74 13]
     AND     AL, 01                                           ; [012A: 24 01]
     CMP     AL, 01                                           ; [012C: 3C 01]
-    JNZ     loc_0125                                         ; [012E: 75 F5]
+    JNZ     isbx_tx_poll_loop                                ; [012E: 75 F5]
     MOV     DX, io_isbx0_data            ; iSBX Multimodule Slot 0 Data (8274 / 8251 serial) ; [0130: BA 00 03]
     MOV     AL, BYTE [BX]                                    ; [0133: 8A 07]
     OUT     DX, AL                                           ; [0135: EE]
     CMP     AL, 0A                                           ; [0136: 3C 0A]
-    JZ      loc_013d                                         ; [0138: 74 03]
+    JZ      serial_tx_banner_done                            ; [0138: 74 03]
     INC     BX                                               ; [013A: 43]
     LOOP    serial_tx_banner_loop                            ; [013B: E2 DF]
-loc_013d:
+serial_tx_banner_done:
     JMP     DI                                               ; [013D: FF E7]
 
-loc_013f:
+; ----------------------------------------------------------------------------
+; serial_tx_hex_word (ROM: 397Fh, FB84:013Fh)
+; ----------------------------------------------------------------------------
+serial_tx_hex_word:
     IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [013F: E4 72]
     TEST    AL, 80                                           ; [0141: A8 80]
-    JNZ     loc_0185                                         ; [0143: 75 40]
+    JNZ     serial_tx_hex_done                               ; [0143: 75 40]
     MOV     AH, 02                                           ; [0145: B4 02]
 loc_0147:
     MOV     BH, 03                                           ; [0147: B7 03]
@@ -1470,7 +1479,7 @@ loc_0167:
     MOV     DX, io_isbx0_ctrl            ; iSBX Multimodule Slot 0 Control / Status ; [0167: BA 02 03]
     IN      AL, DX                                           ; [016A: EC]
     TEST    AL, 80                                           ; [016B: A8 80]
-    JZ      loc_0185                                         ; [016D: 74 16]
+    JZ      serial_tx_hex_done                               ; [016D: 74 16]
     AND     AL, 01                                           ; [016F: 24 01]
     CMP     AL, 01                                           ; [0171: 3C 01]
     JNZ     loc_0167                                         ; [0173: 75 F2]
@@ -1484,7 +1493,7 @@ loc_017f:
     MOV     CH, CL                                           ; [017F: 8A E9]
     DEC     AH                                               ; [0181: FE CC]
     JNZ     loc_0147                                         ; [0183: 75 C2]
-loc_0185:
+serial_tx_hex_done:
     JMP     DI                                               ; [0185: FF E7]
 
 ; ----------------------------------------------------------------------------
@@ -1906,9 +1915,9 @@ loc_0427:
     RETN                                                     ; [0427: C3]
 
 ; ----------------------------------------------------------------------------
-; isr_i186_internal (ROM: 3C68h, FB84:0428h)
+; isr_keyboard_scancode (ROM: 3C68h, FB84:0428h)
 ; ----------------------------------------------------------------------------
-isr_i186_internal:
+isr_keyboard_scancode:
     PUSH    AX                                               ; [0428: 50]
     PUSH    BX                                               ; [0429: 53]
     PUSH    DX                                               ; [042A: 52]
@@ -2043,13 +2052,13 @@ loc_04e9:
     MOV     BYTE [var_selftest_error_flags], 01 ; Selftest error flags buffer ; [0507: C6 06 20 01 01]
     MOV     AX, [CS:rom_segment_base]                        ; [050C: 2E A1 00 00]
     MOV     DS, AX                                           ; [0510: 8E D8]
-    MOV     DI, loc_0518                                     ; [0512: BF 18 05]
-    JMPN    loc_013f                                         ; [0515: E9 27 FC]
+    MOV     DI, post_report_crt_vram_error                   ; [0512: BF 18 05]
+    JMPN    serial_tx_hex_word                               ; [0515: E9 27 FC]
 
-loc_0518:
+post_report_crt_vram_error:
     MOV     BX, 21D2                                         ; [0518: BB D2 21]
     MOV     CX, FFFF                                         ; [051B: B9 FF FF]
-    MOV     DI, loc_0677                                     ; [051E: BF 77 06]
+    MOV     DI, init_vram_clear_and_fonts                    ; [051E: BF 77 06]
     JMPN    serial_tx_banner_loop                            ; [0521: E9 F8 FB]
 
 sub_0524:
@@ -2147,16 +2156,16 @@ error_crt_vram:
     MOV     DS, AX                                           ; [05BC: 8E D8]
     MOV     BX, 21E9                                         ; [05BE: BB E9 21]
     MOV     CX, 0011                                         ; [05C1: B9 11 00]
-    MOV     DI, loc_05ca                                     ; [05C4: BF CA 05]
+    MOV     DI, post_report_vram_err_segment                 ; [05C4: BF CA 05]
     JMPN    serial_tx_banner_loop                            ; [05C7: E9 52 FB]
 
-loc_05ca:
+post_report_vram_err_segment:
     MOV     BX, 23CD                                         ; [05CA: BB CD 23]
     MOV     CX, 0008                                         ; [05CD: B9 08 00]
-    MOV     DI, loc_05d6                                     ; [05D0: BF D6 05]
+    MOV     DI, post_report_vram_err_print_seg               ; [05D0: BF D6 05]
     JMPN    serial_tx_banner_loop                            ; [05D3: E9 46 FB]
 
-loc_05d6:
+post_report_vram_err_print_seg:
     MOV     CX, CRT_VRAM_SEGMENT                             ; [05D6: B9 00 D0]
     MOV     AX, [CS:ram_segment_base]                        ; [05D9: 2E A1 02 00]
     MOV     DS, AX                                           ; [05DD: 8E D8]
@@ -2164,61 +2173,61 @@ loc_05d6:
     MOV     BYTE [var_selftest_error_flags], 02 ; Selftest error flags buffer ; [05E3: C6 06 20 01 02]
     MOV     AX, [CS:rom_segment_base]                        ; [05E8: 2E A1 00 00]
     MOV     DS, AX                                           ; [05EC: 8E D8]
-    MOV     DI, loc_05f4                                     ; [05EE: BF F4 05]
-    JMPN    loc_013f                                         ; [05F1: E9 4B FB]
+    MOV     DI, post_report_vram_err_subcode                 ; [05EE: BF F4 05]
+    JMPN    serial_tx_hex_word                               ; [05F1: E9 4B FB]
 
-loc_05f4:
+post_report_vram_err_subcode:
     MOV     BX, 21FB                                         ; [05F4: BB FB 21]
     MOV     CX, 0001                                         ; [05F7: B9 01 00]
-    MOV     DI, loc_0600                                     ; [05FA: BF 00 06]
+    MOV     DI, post_report_vram_err_print_subcode           ; [05FA: BF 00 06]
     JMPN    serial_tx_banner_loop                            ; [05FD: E9 1C FB]
 
-loc_0600:
+post_report_vram_err_print_subcode:
     MOV     CX, SI                                           ; [0600: 8B CE]
     MOV     AX, [CS:ram_segment_base]                        ; [0602: 2E A1 02 00]
     MOV     DS, AX                                           ; [0606: 8E D8]
     MOV     WORD [var_selftest_error_subcode], CX            ; [0608: 89 0E 21 01]
     MOV     AX, [CS:rom_segment_base]                        ; [060C: 2E A1 00 00]
     MOV     DS, AX                                           ; [0610: 8E D8]
-    MOV     DI, loc_0618                                     ; [0612: BF 18 06]
-    JMPN    loc_013f                                         ; [0615: E9 27 FB]
+    MOV     DI, post_report_vram_err_count                   ; [0612: BF 18 06]
+    JMPN    serial_tx_hex_word                               ; [0615: E9 27 FB]
 
-loc_0618:
+post_report_vram_err_count:
     MOV     BX, 23D5                                         ; [0618: BB D5 23]
     MOV     CX, 0008                                         ; [061B: B9 08 00]
-    MOV     DI, loc_0624                                     ; [061E: BF 24 06]
+    MOV     DI, post_report_vram_err_print_count             ; [061E: BF 24 06]
     JMPN    serial_tx_banner_loop                            ; [0621: E9 F8 FA]
 
-loc_0624:
+post_report_vram_err_print_count:
     MOV     CX, SS                                           ; [0624: 8C D1]
     MOV     AX, [CS:ram_segment_base]                        ; [0626: 2E A1 02 00]
     MOV     DS, AX                                           ; [062A: 8E D8]
     MOV     WORD [var_selftest_error_count], CX              ; [062C: 89 0E 23 01]
     MOV     AX, [CS:rom_segment_base]                        ; [0630: 2E A1 00 00]
     MOV     DS, AX                                           ; [0634: 8E D8]
-    MOV     DI, loc_063c                                     ; [0636: BF 3C 06]
-    JMPN    loc_013f                                         ; [0639: E9 03 FB]
+    MOV     DI, post_report_vram_err_device                  ; [0636: BF 3C 06]
+    JMPN    serial_tx_hex_word                               ; [0639: E9 03 FB]
 
-loc_063c:
+post_report_vram_err_device:
     MOV     BX, 23DD                                         ; [063C: BB DD 23]
     MOV     CX, 0008                                         ; [063F: B9 08 00]
-    MOV     DI, loc_0648                                     ; [0642: BF 48 06]
+    MOV     DI, post_report_vram_err_print_dev               ; [0642: BF 48 06]
     JMPN    serial_tx_banner_loop                            ; [0645: E9 D4 FA]
 
-loc_0648:
+post_report_vram_err_print_dev:
     MOV     CX, ES                                           ; [0648: 8C C1]
     MOV     AX, [CS:ram_segment_base]                        ; [064A: 2E A1 02 00]
     MOV     DS, AX                                           ; [064E: 8E D8]
     MOV     WORD [var_selftest_failing_dev], CX              ; [0650: 89 0E 25 01]
     MOV     AX, [CS:rom_segment_base]                        ; [0654: 2E A1 00 00]
     MOV     DS, AX                                           ; [0658: 8E D8]
-    MOV     DI, loc_0660                                     ; [065A: BF 60 06]
-    JMPN    loc_013f                                         ; [065D: E9 DF FA]
+    MOV     DI, post_report_vram_err_crlf                    ; [065A: BF 60 06]
+    JMPN    serial_tx_hex_word                               ; [065D: E9 DF FA]
 
-loc_0660:
+post_report_vram_err_crlf:
     MOV     BX, 23BD                                         ; [0660: BB BD 23]
     MOV     CX, FFFF                                         ; [0663: B9 FF FF]
-    MOV     DI, loc_0677                                     ; [0666: BF 77 06]
+    MOV     DI, init_vram_clear_and_fonts                    ; [0666: BF 77 06]
     JMPN    serial_tx_banner_loop                            ; [0669: E9 B0 FA]
 
 ; ----------------------------------------------------------------------------
@@ -2228,7 +2237,11 @@ init_video_and_fonts:
     MOV     AX, [CS:ram_segment_base]                        ; [066C: 2E A1 02 00]
     MOV     DS, AX                                           ; [0670: 8E D8]
     MOV     BYTE [var_selftest_error_flags], 00 ; Selftest error flags buffer ; [0672: C6 06 20 01 00]
-loc_0677:
+
+; ----------------------------------------------------------------------------
+; init_vram_clear_and_fonts (ROM: 3EB7h, FB84:0677h)
+; ----------------------------------------------------------------------------
+init_vram_clear_and_fonts:
     MOV     AX, CRT_VRAM_SEGMENT                             ; [0677: B8 00 D0]
     MOV     ES, AX                                           ; [067A: 8E C0]
     MOV     DI, 0000                                         ; [067C: BF 00 00]
@@ -2387,7 +2400,7 @@ loc_0786:
     MOV     ES, AX                                           ; [078B: 8E C0]
     MOV     DI, 2000                                         ; [078D: BF 00 20]
     MOV     SI, 000C                                         ; [0790: BE 0C 00]
-    MOV     CX, loc_0026                                     ; [0793: B9 26 00]
+    MOV     CX, 0026                                         ; [0793: B9 26 00]
     CLD                                                      ; [0796: FC]
     JMPS    loc_0799                                         ; [0797: EB 00]
 
@@ -2711,10 +2724,10 @@ loc_09af:
     MOV     WORD [var_selftest_loop_count], CX               ; [09BE: 89 0E 27 01]
     MOV     AX, [CS:rom_segment_base]                        ; [09C2: 2E A1 00 00]
     MOV     DS, AX                                           ; [09C6: 8E D8]
-    MOV     DI, loc_09ce                                     ; [09C8: BF CE 09]
-    JMPN    loc_013f                                         ; [09CB: E9 71 F7]
+    MOV     DI, post_screen_dump_subcode                     ; [09C8: BF CE 09]
+    JMPN    serial_tx_hex_word                               ; [09CB: E9 71 F7]
 
-loc_09ce:
+post_screen_dump_subcode:
     MOV     AL, 3A                                           ; [09CE: B0 3A]
     CALL    char_out_helper                                  ; [09D0: E8 B4 F7]
     POP     CX                                               ; [09D3: 59]
@@ -2723,10 +2736,10 @@ loc_09ce:
     MOV     WORD [var_selftest_error_subcode], CX            ; [09DA: 89 0E 21 01]
     MOV     AX, [CS:rom_segment_base]                        ; [09DE: 2E A1 00 00]
     MOV     DS, AX                                           ; [09E2: 8E D8]
-    MOV     DI, loc_09ea                                     ; [09E4: BF EA 09]
-    JMPN    loc_013f                                         ; [09E7: E9 55 F7]
+    MOV     DI, post_screen_dump_count                       ; [09E4: BF EA 09]
+    JMPN    serial_tx_hex_word                               ; [09E7: E9 55 F7]
 
-loc_09ea:
+post_screen_dump_count:
     MOV     BX, 23D5                                         ; [09EA: BB D5 23]
     MOV     CX, 0008                                         ; [09ED: B9 08 00]
 loc_09f0:
@@ -2740,10 +2753,10 @@ loc_09f0:
     MOV     WORD [var_selftest_error_count], CX              ; [09FF: 89 0E 23 01]
     MOV     AX, [CS:rom_segment_base]                        ; [0A03: 2E A1 00 00]
     MOV     DS, AX                                           ; [0A07: 8E D8]
-    MOV     DI, loc_0a0f                                     ; [0A09: BF 0F 0A]
-    JMPN    loc_013f                                         ; [0A0C: E9 30 F7]
+    MOV     DI, post_screen_dump_device                      ; [0A09: BF 0F 0A]
+    JMPN    serial_tx_hex_word                               ; [0A0C: E9 30 F7]
 
-loc_0a0f:
+post_screen_dump_device:
     MOV     BX, 23DD                                         ; [0A0F: BB DD 23]
     MOV     CX, 0008                                         ; [0A12: B9 08 00]
 loc_0a15:
@@ -2757,10 +2770,10 @@ loc_0a15:
     MOV     WORD [var_selftest_failing_dev], CX              ; [0A24: 89 0E 25 01]
     MOV     AX, [CS:rom_segment_base]                        ; [0A28: 2E A1 00 00]
     MOV     DS, AX                                           ; [0A2C: 8E D8]
-    MOV     DI, loc_0a34                                     ; [0A2E: BF 34 0A]
-    JMPN    loc_013f                                         ; [0A31: E9 0B F7]
+    MOV     DI, post_screen_dump_crlf                        ; [0A2E: BF 34 0A]
+    JMPN    serial_tx_hex_word                               ; [0A31: E9 0B F7]
 
-loc_0a34:
+post_screen_dump_crlf:
     MOV     BX, 23BD                                         ; [0A34: BB BD 23]
     MOV     CX, 0002                                         ; [0A37: B9 02 00]
 loc_0a3a:
@@ -2846,7 +2859,7 @@ isr_default_trap:
     MOV     BYTE [var_selftest_error_flags], 08 ; Selftest error flags buffer ; [0AB5: C6 06 20 01 08]
     IRET                                                     ; [0ABA: CF]
 
-isr_keyboard_raw:
+isr_82730_attention_done:
     PUSH    AX                                               ; [0ABB: 50]
     CALL    issue_82730_channel_attention                    ; [0ABC: E8 26 00]
     POP     AX                                               ; [0ABF: 58]
@@ -3101,7 +3114,7 @@ loc_0c31:
     IN      AL, DX                                           ; [0C3D: EC]
     AND     AL, 40                                           ; [0C3E: 24 40]
     JZ      loc_0c4b                                         ; [0C40: 74 09]
-    MOV     DI, loc_0bf8                                     ; [0C42: BF F8 0B]
+    MOV     DI, 0BF8                                         ; [0C42: BF F8 0B]
     MOV     AX, FFBF                                         ; [0C45: B8 BF FF]
     MOV     WORD [ES:DI], AX                                 ; [0C48: 26 89 05]
 loc_0c4b:
@@ -8509,7 +8522,7 @@ loc_37a2:
 ; fdc_boot_read_sector (ROM: 6FE3h, FB84:37A3h)
 ; ----------------------------------------------------------------------------
 fdc_boot_read_sector:
-    MOV     BX, loc_005f                                     ; [37A3: BB 5F 00]
+    MOV     BX, 005F                                         ; [37A3: BB 5F 00]
     CMP     BYTE [ES:BX], FF                                 ; [37A6: 26 80 3F FF]
     JZ      loc_37bc                                         ; [37AA: 74 10]
     MOV     AX, LAN_BUFFER_ALT_SEGMENT                       ; [37AC: B8 00 30]
