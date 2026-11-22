@@ -60,8 +60,8 @@ if ((RECONF)) || [[ ! -f "$BUILD/build.ninja" ]]; then
 	# benchmarks/examples/docs/plugins that the Z80 work never uses.
 	cmake -C "$CACHE" -G Ninja \
 		-DCMAKE_MAKE_PROGRAM="$(command -v ninja)" \
-		-DCMAKE_C_COMPILER_LAUNCHER=ccache \
-		-DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+		-DCMAKE_C_COMPILER_LAUNCHER="$ROOT/scripts/ccache-wrapper" \
+		-DCMAKE_CXX_COMPILER_LAUNCHER="$ROOT/scripts/ccache-wrapper" \
 		-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
 		$([[ "$(uname -s)" != Darwin ]] && echo "-DLLVM_USE_LINKER=lld") \
 		-DLLVM_PARALLEL_LINK_JOBS=4 \

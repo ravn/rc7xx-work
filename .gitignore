@@ -59,3 +59,12 @@ scratch/*.log
 /scratch/*
 !/scratch/pre-pr40-firmware-archive/
 llvm-z80-worktrees/
+
+# --- Cleanup 2026-11-19: ad-hoc staging trees + MAME log noise ---
+# Open Watcom compiler clone (klonet ad-hoc, ikke del af træet).
+open-watcom-v2/
+# z88dk staging-trees brugt til opdateringer og PR-arbejde.
+z88dk-update-*/
+z88dk-vsnprintf-*/
+# MAME stderr-log (floppy-lydsamples, regenereres hver kørsel).
+/error.log

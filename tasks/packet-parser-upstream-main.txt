@@ -1,0 +1,184 @@
+	.file	"packet-parser.c"
+	.text
+	.globl	_parse_packet                   ; -- Begin function parse_packet
+	.type	_parse_packet,@function
+_parse_packet:                          ; @parse_packet
+; %bb.0:                                ; %entry
+	ld	a,(_rx_status)
+	and	1
+	jr	nz,.LBB0_7
+; %bb.1:                                ; %if.end
+	push	hl
+	ld	hl,4
+	add	hl,sp
+	ld	c,(hl)
+	pop	hl
+	ld	a,c
+	or	a
+	jr	z,.LBB0_8
+; %bb.2:                                ; %for.body.lr.ph
+	ld	(L_parse_packet.frame),de       ; 2-byte Folded Spill
+	push	hl
+	ld	hl,5
+	add	hl,sp
+	ex	de,hl
+	ld	(L_parse_packet.frame+2),de     ; 2-byte Folded Spill
+	ld	hl,6
+	add	hl,sp
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	pop	hl
+	ld	a,(de)
+	ld	b,a
+	ld	de,(L_parse_packet.frame)       ; 2-byte Folded Reload
+	add	hl,de
+	ld	e,l
+	ld	d,h
+	ld	h,0
+	ld	a,h
+	ld	(L_parse_packet.frame),a        ; 1-byte Folded Spill
+.LBB0_3:                                ; %for.body
+                                        ; =>This Inner Loop Header: Depth=1
+	ld	a,(de)
+	ld	hl,(L_parse_packet.frame+2)     ; 2-byte Folded Reload
+	cp	(hl)
+	jr	nz,.LBB0_5
+; %bb.4:                                ; %if.then7
+                                        ;   in Loop: Header=BB0_3 Depth=1
+	ld	a,(L_parse_packet.frame)        ; 1-byte Folded Reload
+	ld	h,a
+	inc	h
+	ld	a,h
+	ld	(L_parse_packet.frame),a        ; 1-byte Folded Spill
+	set	7,b
+	jr	.LBB0_6
+.LBB0_5:                                ; %if.else
+                                        ;   in Loop: Header=BB0_3 Depth=1
+	inc	b
+.LBB0_6:                                ; %if.end12
+                                        ;   in Loop: Header=BB0_3 Depth=1
+	ld	a,b
+	push	bc
+	ld	hl,6
+	add	hl,sp
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	ld	l,c
+	ld	h,b
+	pop	bc
+	ld	(hl),a
+	dec	c
+	inc	de
+	jr	nz,.LBB0_3
+	jr	.LBB0_9
+.LBB0_7:                                ; %if.then
+	ld	a,(_packet_errors)
+	inc	a
+	ld	(_packet_errors),a
+.LBB0_8:
+	ld	b,0
+	ld	a,b
+	ld	(L_parse_packet.frame),a        ; 1-byte Folded Spill
+.LBB0_9:                                ; %return
+	ld	a,(L_parse_packet.frame)        ; 1-byte Folded Reload
+	pop	bc
+	inc	sp
+	inc	sp
+	inc	sp
+	inc	sp
+	push	bc
+	ret
+.Lfunc_end0:
+	.size	_parse_packet, .Lfunc_end0-_parse_packet
+                                        ; -- End function
+	.globl	_main                           ; -- Begin function main
+	.type	_main,@function
+_main:                                  ; @main
+; %bb.0:                                ; %entry
+	ld	hl,L_main.frame
+	push	hl
+	ld	hl,L_main.frame
+	ld	(hl),0
+	ld	a,88
+	push	af
+	inc	sp
+	ld	a,7
+	push	af
+	inc	sp
+	ld	hl,L___const.main.buffer
+	ld	de,4
+	call	_parse_packet
+	ld	de,1
+	cp	3
+	ret	nz
+.LBB1_1:                                ; %if.end
+	ld	a,(L_main.frame)
+	ld	de,2
+	cp	132
+	ret	nz
+.LBB1_2:                                ; %if.end6
+	ld	a,1
+	ld	(_rx_status),a
+	ld	hl,L_main.frame
+	push	hl
+	ld	a,88
+	push	af
+	inc	sp
+	ld	a,7
+	push	af
+	inc	sp
+	ld	hl,L___const.main.buffer
+	ld	de,4
+	call	_parse_packet
+	ld	de,3
+	or	a
+	ret	nz
+.LBB1_4:                                ; %if.end13
+	ld	a,(_packet_errors)
+	ld	de,42
+	cp	1
+	ret	z
+.LBB1_5:                                ; %select.false
+	ld	de,4
+	ret
+.Lfunc_end1:
+	.size	_main, .Lfunc_end1-_main
+                                        ; -- End function
+	.type	_rx_status,@object              ; @rx_status
+	.bss
+	.globl	_rx_status
+_rx_status:
+	.byte	0                               ; 0x0
+	.size	_rx_status, 1
+
+	.type	_packet_errors,@object          ; @packet_errors
+	.globl	_packet_errors
+_packet_errors:
+	.byte	0                               ; 0x0
+	.size	_packet_errors, 1
+
+	.type	L___const.main.buffer,@object   ; @__const.main.buffer
+	.section	.rodata.cst16,"aM",@progbits,16
+L___const.main.buffer:
+	.ascii	"\020 0@ABXCXDXUfw\210\231"
+	.size	L___const.main.buffer, 16
+
+	.type	L___static_frames,@object       ; @__static_frames
+	.bss
+L___static_frames:
+	.zero	5
+	.size	L___static_frames, 5
+
+L_parse_packet.frame = L___static_frames+1
+	.size	L_parse_packet.frame, 4
+L_main.frame = L___static_frames
+	.size	L_main.frame, 1
+	.ident	"clang version 24.0.0git (https://github.com/llvm-z80/llvm-z80.git 69254b033824b812ee8d6b0be580bad942641d1d)"
+	.section	".note.GNU-stack","",@progbits
+	.addrsig
+	.addrsig_sym _rx_status
+	.addrsig_sym L___static_frames
+	;Declaring this symbol tells the CRT that there is something in .bss, so it may need to be zeroed.
+	.globl	__do_zero_bss
