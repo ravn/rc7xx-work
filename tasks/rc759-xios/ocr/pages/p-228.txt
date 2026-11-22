@@ -1,0 +1,37 @@
+F. Console Escape Sequences PICCOLINE
+
+Sequence
+
+Function
+
+Status Line Off (25 Line Mode)
+Status Line On (24 Line Mode)
+Save Current Attributes
+Restore Attributes
+
+Function Key Expansion Off
+Function Key Expansion On
+Program Function Keys
+
+Scroll Window Up
+
+Scroll Window Down
+
+Set Blinking Cursor
+
+Set Non-Blinking Cursor
+
+Set Cursor Representation
+Set Soft Scroll
+
+Set Line Scroll
+
+Disable Underline Attribute
+Enable Underline Attibute
+Save Function Keys
+
+Restore Function Keys
+
+-218-
+
+RC Computer

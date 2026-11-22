@@ -1,0 +1,87 @@
+Catchword Index PICCOLINE
+
+c
+
+cassette control ..
+cassette driver ...
+cassette input ....
+cassette motor cece eee ere eevece
+Cassette output "rer. 18
+
+cassette record were ccccressece
+
+Cassette recorder seere 00. 717
+
+Cassette tape "0000000 77
+
+cassette tape read ...........+2-02+-.- See function 26
+cassette tape read next ............... see function 28
+cassette tape write .......... function 27
+cassette tape write next .............. see function 29
+cassette tape, end of file ............ see function 40
+Ch. attent 00000 eee eee 00 203
+
+character definition 20000000 0002 36,55,190
+character format 000000 eeeeee see 26
+
+character height scores 0000 26,36
+
+character mode scores ereee 002 26,27,29,56
+character mode, set .......ceeeseeee22- See function 1
+character set sees eeeeeseeee00 00 207
+
+Character sets .cccccccccccccccccccseser 35
+
+character value 00000 cece cess cvee 32
+
+character width 00000000. 26,36
+
+checksum seere see eee 00, 17,20
+
+CHSET seere eee sees eee OF
+
+clear screen sr eee eee SEG ESC E
+client vo0000eeeseeeeesee eee see 112
+
+client confirm queue 00000000. 118
+
+client information .......ccecevecceeee 117
+
+client information buffer ............. 118
+
+Client network wucccccccrecccccceceseee 133
+
+.
+
+seere e+ 17,78
+essere 77,78
+
+…ssrss se + 78
+
+.
+
+n
+®
+1)
+
+client network service sees 124
+client network service procedures ..... 133
+clock rate seere eee 72,75
+colour seere seere 26
+colour monitor .orercccccccroececcvecee 43
+command block seeeeeeeeeeereeeeeeeseee… 25
+
+communication channel 00000002. 18
+configuration 00000000 00402. 15
+configuration description address ..... see function 4
+confirm seere 114
+confirm queue 00000000. 117
+confirm queue buffer format .....+..... 114
+confirm user buffer seere 114
+confirm user buffer values ......:.2-... 115
+CONIN seere eee eee 0 29
+connect.indication sees 0022. 118,125
+connect.indication datastructure ...... 125
+connection sees eee 00000. 112
+
+-222- RC Computer

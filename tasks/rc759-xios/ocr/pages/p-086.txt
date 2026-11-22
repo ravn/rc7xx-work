@@ -1,0 +1,40 @@
+6. Sound PICCOLINE
+
+explosion:
+call silence
+
+mov dl1,0E4H set high pitched
+
+Neo Se te se
+
+call wsg white noise
+mov va,0EFH
+eloopl:
+inc va ; step attenuation
+jz eloop exit ;
+mov dl,va ;
+call wsg ;
+mov cx,0FFFFH ; step delay
+eloop2:
+loop eloop2 ;
+jmp eloopl ;
+eloop exit:
+ret ;
+silence: + shut off:
+mov 4d1,9FH ; tone generator 1
+call wsg ;
+mov dl,O0BFH ; tone generator 2
+call wsg ;
+mov dl,0DFH ; tone generator 3
+call wsg ;
+
+mov dl,0FFH noise generator
+
+wsg: ; write to sound
+mov ax,12 ; device
+int 28H ;
+ret ;
+
+va db 0
+
+-76- RC Computer

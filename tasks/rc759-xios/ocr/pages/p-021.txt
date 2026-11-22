@@ -1,0 +1,48 @@
+2. CPU
+
+The PICCOLINE system is based on an Intel 80186 single chip
+CPU with the following integrated peripherals:
+
+- Programmable interrupt controller
+
+- 2 Independent DMA channels
+
+- 3 Programmable 16-bit timers
+
+All the integrated peripherals are controlled via 16-bit
+registers contained within an internal 256-byte control
+block. The base address of this control block is OFFOOH.
+The following three chapters give a description of how the-
+se peripherals are used in the PICCOLINE.
+
+2.1 Interrupt System
+
+The peripherals which are able to interrupt the CPU are
+connected to the internal interrupt controller via an
+Intel 8259A Programmable Interrupt Controller which uses
+
+the following I/O addresses:
+
+Initialization command word: 0H
+Operation command word: 2H
+
+The IR inputs to the Intel 8259A are connected as follows:
+
+IRO: Floppy controller (from DPC unit)
+
+IR1: Keyboard interface
+
+IR2: Parallel (printer) interface (from DPC unit)
+IR3: - Real Time Clock
+
+IR4: CRT controller
+
+IRS: =“ NET controller
+
+IR6: Parallel (printer) interface (from CPU unit)
+IR7: not used
+
+The Intel 8259A is connected to the INTO and INTAO termi-
+nals of the CPU.
+
+RC Computer -11-

@@ -1,0 +1,58 @@
+9. Parallel Interface PICCOLINE
+
+list status:
+
+; Exit: AX = 0 if not ready
+; Offffh if ready
+
+; test if printer is present and selected
+
+mov dx,260h
+in al,dx
+test al,16
+jnz not ready
+test al,8
+jz not_ready
+mov ax,0ffffh
+ret
+
+not_ready:
+xor ax,ax
+ret
+
+parallel_interrupt:
+
++ save context
+push ds
+
+push es
+
+pusha
+
+; set ds to sysdat segment
+mov ds,sysdat
+
+; disable interrupt
+mov al,10000000b
+mov dx,260h
+
+out dx,al
+
+; non specific end of interrupt to external and
+; internal interrupt controller
+
+mov al,20h
+
+out 0,al
+
+mov dx,0ff22h
+
+mov ax,8000h
+
+out dx,ax
+
+; signal interrupt
+mov dx,list flag
+call flagset
+
+-96- RC Computer

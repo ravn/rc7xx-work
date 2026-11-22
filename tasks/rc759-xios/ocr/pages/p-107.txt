@@ -1,0 +1,61 @@
+PICCOLINE 9. Parallel Interface
+
+; reestablish old context
+
+popa
+pop es
+pop ds
+
+jmpf cs:dword ptr dispatcher
+
+dev flagset equ 133
+dev flagwait equ 132
+flagset:
+
+push dx
+
+mov cl,dev_flagset
+call supif 1
+
+pop dx
+
+test ax,ax
+
+jz flagset_ret
+
+; if error = ‘ignored' then try again
+
+emp cl,2ah
+
+jz flagset
+flagset_ret:
+
+ret
+
+flagwait:
+mov cl,dev_flagwait
+
+supif:
++ get running process
+mov bx,rlir
+
++ get process's UDA
+mov es,cs: 10HÆbxA
+
+supif_1:
+xor ch,ch
+mov ds,sysdat ;
+callf supervisor
+ret
+
+9.3 The DPC Interface
+
+Because the DPC interface can be shared by up to 4
+PICCOLINEs it has to be reserved before use. After the
+reservation is acknowledged the interface is owned by the
+current PICCOLINE until released again.
+
+This section describes two [Int-28h functions avaible for
+reserving and releasing the DPC interface.
+
+RC Computer -97-

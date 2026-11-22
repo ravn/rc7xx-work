@@ -1,0 +1,41 @@
+PICCOLINE A. Int-28h Function Interface
+
+Function 41
+
+Subfunction 1:
+Reserve DPC parallel interface.
+Registers on entry:
+
+AL 41
+AH 1
+
+Registers on return:
+Undefined
+See 9.3.1
+Subfunction 2:
+Release DPC parallel interface.
+Registers on entry:
+
+AL 41
+AH 2
+
+Registers on return:
+Undefined
+
+See 9.3.2
+
+Function 42
+
+Subfunction 1:
+Reserve shared disk.
+Registers on entry:
+
+AL 42
+AH 1
+
+Registers on return:
+Undefined
+
+See 8.4.1
+
+RC Computer -199-

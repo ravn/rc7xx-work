@@ -1,0 +1,40 @@
+PICCOLINE 7. Cassette Tape
+
+7.2.1 Data Record Architecture
+
+All data written on the cassette tape are written as
+cassette records. A cassette record consist of following
+entries:
+
+Record
+~.
+ig I
+Header | Data |S | Data |£ Data |
+Yy block |B] block | block |
+
+lem Motor off|
+
+where each data block contains 128 bytes of data, and the
+CRC field is a two byte CRC check. The last data block is
+extended to 128 bytes.
+
+The delay after start of motor is approximately 1.5
+seconds.
+
+The header field consist of following entries:
+
+Header
+MK
+( N
+Leading Record Record Number Data
+1-bits 0 | type mmber of bytes block
+(byte) (word) (word)
+|_Synchronization bit
+
+where the leader consist of 2024 ones (used to eliminate
+problems caused by a slow accelerating cassette motor). The
+synchronization bit tells when the leader is finished. The
+record type tells what kind of record this is,- either
+"file header", "data record" or "end of file”.
+
+RC Computer -79-

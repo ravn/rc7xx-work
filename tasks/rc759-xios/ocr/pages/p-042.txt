@@ -1,0 +1,48 @@
+4. Console Module PICCOLINE
+
+Example:
+
+; Print the string "RC PICCOLINE" at position (8,20):
+
+push DS ; save DS
+push cs ; get segment of string
+pop DS
+mov SI,offset string 1 ; and offset
+mov CX,lenght string 1 ; get string length
+mov DH,8 ; row number
+mov DL, 20 ; column number
+mov AL, 35
+int 28h
+pop DS ; restore DS
+ret
+string 1 db "RC PICCOLINE'
+
+4.2.3 Display Buffer Manipulation
+
+In some cases it is desirable to manipulate the display
+buffer directly. For example to dump the screen contents to
+a file or a printer. It may also be used to modify the
+screen, e.g. for horizontal scrolling or scrolling part of
+the screen. Printing to the display buffer is easily done
+using the Int-28h function 35 (see 4.2.2).
+
+To give a programmer the possibility to manipulate the
+display, the console driver offers a function that gives
+access to a table of address offsets to the display line
+buffers.
+
+Each virtual console is internally represented as 24 (25)
+display line buffers each describing one character line of
+the display. A character line consists of one 16 bit word
+for each of the 80 character positions of the line. Each 16
+bit word consists of. a character value (low byte) and a set
+of attribute bits (high byte). Do not use the information
+in the attribute bytes as the interpretation of these is
+version dependent.
+
+The address of the table is obtained by means of an Int-28h
+function with the following register contents:
+
+Registers on entry:
+
+-32- RC Computer

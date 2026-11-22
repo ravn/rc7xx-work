@@ -1,0 +1,46 @@
+PICCOLINE 4. Console module
+
+Example:
+
+The following sequence gives function key F2 the value
+"“PICCOLINE”:
+
+Esc : < PICCOLINE NULL
+
+Dec: 27 58 60 80 73 67 67 79 76 73 78 69 00
+Hex: 1B 3A 3C 50 49 43 43 4F 4c 49 4E 45 00
+
+The contents of the function keys will remain valid until
+the program that defined the keys, is terminated. After the
+program has terminated the function keys will regain their
+default values. The default values are common to all the
+virtual consoles. To change the default assignment use the
+FUNCTION program.
+ESC < - Scroll Window Up
+Scrolls a window consisting of a number of consecutive
+lines one row up. A blank row is inserted at the bottom of
+the window.
+The format of the sequence is:
+
+ESC < row-start row-end
+Rows are numbered from 0 to 23 (in 24 line mode) or 0 to 24
+(in 25 line mode). The value 32 (20H) is added to the row
+numbers. '
+Example:
+
+The following sequence scrolls row 4 to row 11 one line up:
+
+Esc < $ + i (dec: 27 60 36 43)
+(hex: 1B 3C 24 2B)
+
+ESC > - Scroll Window Down
+
+Scrolls a window consisting of a number of consecutive
+lines one row down. A blank row is inserted at the top of
+the window.
+
+The format of the sequence is:
+
+ESC > yrow-start row-end
+
+RC Computer -51-

@@ -1,0 +1,44 @@
+PICCOLINE 8. Disk system
+
+CCP/M drive characteristics:
+
+77 cylinders per disk
+2 track per cylinder
+8 sectors per track
+1024 bytes per sector
+2 sectors per block ( 2 K bytes block size)
+2 reserved tracks
+616 blocks per disk
+384 directory entries (FCB's) per disk
+128 directory entries (SFCB's) per disk
+1200 K bytes total disk capacity
+
+8.2 Floppy Disk Controller
+
+The floppy disk controller is based on the WD2797 control-
+ler chip. The floppy disk controller (FDC) and an external
+control register (FCR) (for precompensation, motor on/off
+and drive select) are accessed using the following I/O ad-
+dresses:
+
+Address Direction Function
+0280H I Read FDC status register
+0 Write control command
+0282H I Read FDC TRACK register
+re) Write FDC TRACK register
+0284H I Read FDC SECTOR register
+(9) Write FDC SECTOR register
+0286H I Read FDC DATA register
+fo) Write FDC DATA register
+0288H fe) Write FCR register
+I Not defined
+028EH fe) Reserve floppy
+I Bus 7 = 0 means wait upon floppy
+Bus 7 = 1 means ack from floppy
+02908 oO Release floppy
+
+Further information on programming the registers on address
+0280H-0286H may be found in the Western Digital documenta-
+tion.
+
+RC Computer -87-

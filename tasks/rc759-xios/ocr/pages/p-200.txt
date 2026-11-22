@@ -1,0 +1,60 @@
+A. Int-28h Function Interface PICCOLINE
+
+Function 20
+
+Defines a character in the alternative character set.
+
+Registers on entry:
+
+20
+
+Character number (0-255)
+
+Address segment of character definition block
+Address offset of character definition block
+
+Registers on return:
+
+Undefined
+
+See 4.3.2.
+
+Function 21
+
+Returns a pointer to a console display list.
+
+Registers on entry:
+
+AL
+
+21
+
+Registers on return:
+
+See 4.2.3.
+
+Function 22
+
+Address segment display list table
+Address offset display list table
+Display buffer segment
+
+Intel 82730 command block
+
+Returns the current cursor position.
+
+Registers on entry:
+
+AL
+
+22
+
+Registers on return:
+
+BH Row
+
+BL Column
+
+See 4.2.4.
+
+-190- RC Computer

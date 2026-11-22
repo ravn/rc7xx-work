@@ -1,0 +1,53 @@
+PICCOLINE 11. Local Area Network
+
+An RCLLC entity will not transmit a TEST command protocol
+element, except when directed by a TEST.request primitive.
+
+When an RCLLC entity correctly receives a TEST command pro-
+tocol element addressed to itself or to an active SAP, with
+the poll bit set to 1, it will respond by transmitting a
+TEST response protocol element addressed to the source
+RCLLC entity or SAP. The received information is copied to
+the response protocol element. If the information field
+could not be held in the receive buffer(s) of the RCLLC en-
+tity due to overlength, the response protocol element will
+contain an empty information field. The receiving of the
+TEST command protocol element will not effect the receiving
+RCLLC entity's clients.
+
+A TEST command protocol element received with poll bit set
+to 0 is discarded.
+
+11.4.1.3 Station Identification Exchange
+
+Type 1 station identification exchange is not supported as
+part of the RCLLC service interface, and an RCLLC entity
+will not, therefore, transmit XID command protocol
+elements. It will, however, answer politely when an XID
+protocol element addressed to itself or to an active SAP is
+correctly received. Observe that the source station in this
+case will not be an RCLLC station.
+
+11.4.2 Procedures for Client Network Service
+
+This section contains a general description of the
+procedures for client network service. Details not covered
+in the general description are given in conjunction with
+the individual protocol elements in section 11.4.3.
+
+Client networks are supervised by the RCLLC layer. The pro-
+tocol element ACTIVE SAP plays a central role in this re-
+spect. Whenever a SAP belonging to a client network is ac-
+tive the RCLLC entity serving the SAP will regularly trans-
+mit this protocol element to its peer entities using the
+multicast address for the client network. An RCLLC recei-
+ving the ACTIVE_SAP protocol element will discard it unless
+the included SAP mask matches the mask of the local SAP be-
+longing to the same client network.
+
+This procedure serves to make an SAP known throughout the
+client network so all desired connections to the SAP may be
+established. Notice that the SAP remains unknown to all
+stations where its mask does not match the local SAP mask.
+
+RC Computer -133-

@@ -1,0 +1,49 @@
+PICCOLINE i 12. iSBX Bus Specification
+
+12.1.2.1 Control Lines
+
+The following signals are classified as control lines:
+
+COMMANDS:
+IORD/ (I/O Read)
+IOWRT/ (I/O Write)
+
+DMA:
+MDRQT (DMA Request)
+MDACK/ (DMA Acknowledge)
+TDMA (Terminate DMA)
+INITIALIZE:
+RESET
+CLOCK:
+
+MCLK (iSBX Multimodule Clock)
+
+SYSTEM CONTROL:
+MWAIT/
+MPST/ (iSBX Multimodule Board Present)
+
+Command Lines (IORD/, IOWRT/)
+
+The command lines are active low signals which provide the
+communication link between the base board and the iSBX
+Multimodule board. An active command line, conditioned by
+chip select, indicates to the iSBX Multimodule board that
+the address lines are valid and the iSBX Multimodule board
+should perform the specified operation.
+
+DMA Lines (MDRQT, MDACK/, TDMA)
+
+The DMA lines are the communication link between the DMA
+controller device on the base board and the iSBX Multi-~
+module board. MDRQT is an active high output signal from
+the iSBX Multimodule board to the base board's DMA device
+requesting a DMA cycle. MDACK/ is an active low input sig-
+nal to the iSBX Multimodule board from the base board DMA
+device acknowledging that the requested DMA cycle has been
+granted. TMDA is used by the iSBX Multimodule board to ter-
+minate DMA activity. The use of the DMA lines is optional
+as not all base boards will provide DMA channels and not
+all iSBX Multimodule boards will be capable of supporting a
+DMA channel.
+
+RC Computer -149-

@@ -1,0 +1,48 @@
+A. Int-28h Function Interface PICCOLINE
+
+Function 9
+
+Step floppy drive head one track out.
+Registers on entry:
+
+AL 9
+
+Stack on entry:
+
++10 Drive (0/1)
++ 8 Head (0/1)
+
++ 6 Cylinder
+
++ 4 Bytecount
+
++ 2 DMA segment
++ 0 DMA offset
+
+Registers on return:
+
+AL Floppy disk controller status register
+
+Function 10
+
+Write a track to floppy disk.
+Registers on entry:
+
+AL 10
+
+Stack on entry:
+
++10 Drive (0/1)
++ 8 Head (0/1)
++ 6 Cylinder
+
++ 4 Bytecount
+
++ 2 DMA segment
++ 0 DMA offset
+
+Registers on return:
+
+AL Floppy disk controller status register
+
+-186- RC Computer

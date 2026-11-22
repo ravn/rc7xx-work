@@ -1,0 +1,59 @@
+4. Console Module PICCOLINE
+
+4.2 Direct Console Access
+
+The display is normally accessed through the CCP/M
+Operating System console handling functions (ref.2). In
+cases where speed has a high priority, the operating system
+may be bypassed in different ways:
+
+1. Through XIOS Conout entry
+2. Through Int-28h function 35
+
+3. Direct manipulation of the display buffer
+
+WARNING!
+
+When the XIOS console driver is accessed directly, the
+protection offered by the operating system is bypassed,
+so be sure only to write to consoles that have been
+attached to the process through a previous operating
+system call.
+
+4.2.1 XIOS Conout
+The XIOS console driver can be accessed directly through a
+
+CALLF to the address XIOS_ENTRY found in the SYSDAT area
+(ref.2) with the following register contents:
+
+AX = 2 (Console output function)
+
+DS = SYSDAT segment (ref.2)
+
+ES = UDA segment (ref.2)
+
+CL = Character to output
+
+DL = Virtual console number
+Example
+
+The following subroutine prints a specified number of
+characters on a process's default console. It is assumed
+that DS = SS.
+
+Ne ee Se Ne Se se
+
+entry exit
+BX pointer to string undefined
+cx length of string undefined
+
+print_string:
+
+push bp ; Save old stack frame
+push cx + save length of string
+push bx ; Save pointer to string
+mov e1,153 ;
+
+int 224 + get default console
+
+-30- RC Computer

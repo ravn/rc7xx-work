@@ -1,0 +1,39 @@
+PICCOLINE 8. Disk system
+
+8.4 Reservation of Shared Disks
+
+The floppy disks of a PICCOLINE system are resident inside
+the PICCOLINE Disk/Printer-Controlunit (DPC), and can be
+shared by up to 4 PICCOLINES. Therefore a PICCOLINE has to
+reserve the DPC before accessing it and release it
+afterwards. Usually this is handled by the disk driver
+described in section 8.3, but if the disk controller is
+accessed directly the following int-28h functions can be
+used.
+
+8.4.1 Reserve Shared Disk
+
+This function reserves the shared disk resident inside the
+PICCOLINE DPC. The function returns when reservation is
+done.
+
+42
+1 (Reserve)
+
+AL
+AH
+
+8.4.2 Release Shared Disk
+
+This function releases the shared disks resident inside the
+PICCOLINE DPC.
+
+AL
+AH
+
+wow
+LS)
+
+(Release)
+
+RC Computer -89-

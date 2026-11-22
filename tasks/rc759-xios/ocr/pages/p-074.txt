@@ -1,0 +1,51 @@
+4. Console module PICCOLINE
+
+4.7 Keyboard Interface
+
+The keyboard is connected to the system via a special
+serial port with I/O address 32 (20H). When a character is
+received, an interrupt is generated, and no further
+characters will arrive before the character is read.
+
+The interrupt is connected to level 1 of the external
+interrupt controller 8259A (interrupt level 21H, interrupt
+vector address 84H).
+
+When a key is pressed, an 68-bit position code is received
+and when the key is released, the keyboard sends the same
+code with the high order bit set. The position codes are
+shown in Appendix E.
+
+4.7.1 Keyboard Driver
+
+In normal applications the XIOS keyboard driver handles all
+input from the keyboard. The driver converts the position
+codes into ASCII values and handles special keys (Ctrl,
+Alt, Shift, Shift Lock and programmable function keys).
+
+The RC739 keyboard includes 98 keys of which 26 are
+programmable. The values returned by the keyboard driver
+when a key or combination of keys is pressed, are shown in
+appendix D.
+
+When a programmable function key is pressed, the driver
+returns the programmed string of characters. The function
+keys are programmed by the escape sequence ESC-: (see
+4.4.1).
+
+The following key combinations invoke special actions in
+the driver and no value is returned to the application:
+
+Ctrl+Print hardcopy of display
+(in character mode)
+
+Ctrl+Al enter setup mode
+
+Ctr1l+A2 no action
+
+Ctr1l+A3 wake up window manager
+(if installed)
+
+Ctrl+A4 full screen key
+
+-64- RC Computer

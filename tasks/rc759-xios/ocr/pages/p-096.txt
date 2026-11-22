@@ -1,0 +1,75 @@
+8. Disk system
+
+PICCOLINE
+
+Access time
+Average
+Track to track
+Settling time
+
+Head load time
+Motor start time
+
+Floppy disk format:
+
+Capacity
+
+Cylinders
+Tracks
+Sectors/track
+Sector length
+
+91 msec
+3 msec
+15 msec
+
+50 msec
+1 sec
+
+1232 K bytes formatted
+
+77
+
+154
+
+8
+1024 Bytes
+
+Precompensation (write)
+
+Cylinder 0-76
+
+Track format:
+
+Sector format:
+
+125 nsec
+
+No. of bytes Value (hex)
+
+80 * 4E
+12 * 00
+3 * F6 (writes C2)
+1 * FC (index mark)
+50 * 4E (gap 1)
+8 * sec (see below)
+1150 x 4E (gap 4)
+600 * 4E (filler)
+12 * 00 (gapl/gap3)
+3 * F5 (writes Al)
+1 * PE (ID addres mark)
+1 * track no.
+1 * sector no.
+1 * 03 (sector length)
+1 * F7 (2 CRC written)
+22 * 4E (gap 2)
+12 x 00
+3 * F5 (write Al)
+1 * FB (data addressmark)
+1024 * E5 (data)
+1 * F7 (2 CRC written)
+54 * 4E (gap 3)
+
+786-
+
+RC Computer

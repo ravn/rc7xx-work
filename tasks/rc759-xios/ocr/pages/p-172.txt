@@ -1,0 +1,25 @@
+12. iSBX Bus Specification PICCOLINE
+
+MAIN)
+bane ft
+|_——__—
+mcsiny
+fen få nmi
+. tr
+MWAIT/
+r————
+IORD/
+me FF nt pb ty |
+ty u
+MDO-MD7 ll EE
+
+Fig.12.13 iSBX Multimodule Board I/O Read Timing
+
+MDACK/ re -——
+po te po trim
+10 CMD/ ve
+TOMA
+
+Fig.12.14 iSBX Multimodule Board I/O DMA Timing
+
+-162- RC Computer

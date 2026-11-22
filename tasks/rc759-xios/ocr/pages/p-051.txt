@@ -1,0 +1,44 @@
+PICCOLINE 4. Console module
+
+ESC B - Cursor Down
+
+Moves cursor down one line. If the cursor is already at the
+bottom line, this sequence has no effect.
+
+ESC C - Cursor Forward
+
+Moves the cursor one position to the right. If the cursor
+is on the rightmost position on the screen, this sequence
+has no effect.
+
+ESC D - Cursor Backward
+
+Moves the cursor one position to the left. This is a non-
+destructive move because the characters that the cursor
+moves over are not erased. If the cursor is in column 0,
+this sequence has no effect.
+
+ESC E - Clear Screen
+
+Moves the cursor to column 0, row 0 (top-left corner on the
+screen) and clears the whole screen (filled with blanks).
+ESC H - Home Cursor
+
+Moves cursor to colum 0, row 0. The screen is not cleared.
+
+ESC I - Reverse Index
+
+Moves the cursor up one line. If the cursor is on the top
+line, a scroll down is performed and a blank line is inser-
+ted at the top of the screen.
+
+ESC J - Erase to End of Screen
+Clears from cursor (including cursor position) to the end
+of the screen.
+
+ESC K - Erase to end of line
+
+Clears the line, the cursor is on from the cursor position
+to the end of the line.
+
+RC Computer -41-

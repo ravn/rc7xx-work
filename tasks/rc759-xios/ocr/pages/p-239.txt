@@ -1,0 +1,125 @@
+PICCOLINE
+
+Catchword Index
+
+H
+
+hardcopy seere eeeeeeseseeeeee
+header field co.cc cree cce verve accccces
+high pulse secco.
+high resolution ..cecececcececccccccecs
+horizontal scrolling .....eceeecccccses
+
+I
+
+I/O system screen oe re
+T/O-address 112 secs reee
+T/O-address 118 ses eeeemereeeeeeeee
+I/O-address 70H seere eee
+T/O-address 76H wcccccccrevcceccccccces
+18259 int. crt. core eccccccccccvccccece
+IMC wc ccc cree c ccc cv cece eee eee eee eee re
+indication ... cece ccc ccc ccvccvcevveecs
+indication acknowledge ........cccecees
+indication queue ......- cer cece eee
+indication queue buffer format ........
+Anit graphics 2... ceccwccccccccvvevvce
+initialize iSBX351 1... ccc eee crcccvee
+initialize mouse ....ccccecececcsecvece
+insert character .ecccecccccvcccccccces
+insert line wcrc crcreccrcccen veces
+Int-28h seeren eee eee eee.
+Int-28h function ..cccerccscccrecccvees
+INTO sees eee eee eee eee
+INTL sees eee eee eee eee
+INT3 sees eee eee eee ee
+INTAO seere ses esse.
+Intel 80186 00000000 eee
+Intel 8259A seere eee eee
+Intel 82730 ..cccccccvcccccrccccscsccee
+intensity sees eee eee
+Inter Module Communication 000000.
+internal interrupt controller .........
+interrupt controller ...cccccrecccccces
+interrupt external seere
+interrupt internal seere
+interrupt level 21 ...ccrevscrerecvcves
+interrupt routine ....cceecccrcccnccees
+interrupt system ...ecccrerccressescvce
+interrupt Vector .ccccscccrcnncccvccece
+interrupt vector address ....seseeseseee
+interrupt vector assignment 2...
+INTRO wee ccc cece cence rere ccc eccenccccs
+INTRI ccc ccc ccc cc ccc cere rr ccc rece seere
+TORD/ srereeeeeeeeeeeserseeee eee sees ee
+
+64
+79
+78
+26
+32
+
+see
+78
+
+78
+
+see
+see
+203
+113
+115
+116
+117
+116
+see
+see
+see
+see
+see
+205
+see
+11
+
+12
+
+12
+
+11
+
+see
+see
+see
+
+XIOS
+
+I/O-address 112
+I/O-address 118
+
+function 0
+function 24
+function 30
+ESC O
+ESC L
+
+function
+
+CPU
+interrupt controller
+text processor
+
+27,43
+
+see
+11
+11
+205
+205
+64
+25
+
+IMc
+
+RC Computer
+
+-229-

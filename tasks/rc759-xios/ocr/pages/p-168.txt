@@ -1,0 +1,24 @@
+12. iSBX Bus Specification PICCOLINE
+
+12.2 Electrical Specifications
+
+This section will define all electrical specifications for
+an iSBX Multimodule board. First the ac timing is specified
+and then the dc specifications are described.
+
+12.2.1 General Bus Considerations
+
+Fig.12.10 shows the relationship between logical and elec-
+trical states.
+
+12.2.2 Power Supply Specifications
+
+All power supply voltages are + 5%.
+
+fronts) \votts) ! Mivolts) (current)
+$4.75 +5.0 +5.25 4.0A
++114 +12 +12.6 0.3A
+12.6 12 —11.4 0.3A
+- GND - 2.0A
+
+-158- RC Computer

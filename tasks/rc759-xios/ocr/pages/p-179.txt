@@ -1,0 +1,13 @@
+PICCOLINE 12. iSBX Bus Specification
+
+370.
+
+] ¢ . | |
+TT
+CT REN
+
+COMPONENT SIDE
+
+Fig.12.23 20/50 Pin Connector
+
+RC Computer -169-

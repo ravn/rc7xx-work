@@ -1,0 +1,42 @@
+PICCOLINE 11. Local Area Network
+
+11.2.2.2 UDATA.confirm
+The primitive which is issued in response to a
+UDATA.request primitive is passed from the driver to the
+client. This is done by writing a long pointer (pointing to
+the data buffer) to the clients confirm queue.
+Format of the returned data buffer:
+byte number
+
+0 DSAP is the remote SAP address
+
+1 confirm kind = 2 (UDATA.confirm)
+
+2 result indicates how the transmission of the
+
+data buffer went, e.g. 'no problems'
+
+11.2.2.3 UDATA.indication
+The primitive which is used to deliver a received RCLLC
+service data unit is passed from the driver to the client.
+This is done by writing a long pointer (pointing to the
+
+indication datastructure) to the clients indication queue.
+
+Format of the indication datastructure:
+
+byte number
+0 indication kind = 2 (UDATA.indication)
+1 reserved
+2-3 the length of the received data buffer
+4-7 reserved
+8-9 received data buffer offset
+10-11 received data buffer segment
+12-13 reserved
+14-19 source Ethernet address
+The information part of the data buffer begins at the
+
+fourth byte in the data buffer. The first three bytes are
+included in the length of the data buffer.
+
+RC Computer -123-

@@ -1,0 +1,44 @@
+PICCOLINE 1l. Local Area Network
+
+11.2.3.4 DISCONNECT_ACKNOWLEDGE.confirm
+
+The primitive, which is issued in response to a DISCON-
+NECT.ACKNOWLEDGE primitive, is passed from the driver
+to the client. This is done by writing a long pointer
+(pointing to the disconnect acknowledge buffer) to the
+clients confirm queue.
+
+Format of the returned disconnect acknowledge buffer:
+
+byte number
+0 unused
+1 confirm kind = 6 (DISCONNECT. acknowledge)
+
+2 result
+
+11.2.3.5 DATA. request
+The primitive, which requests that a data buffer be trans-
+mitted on a connection, is passed from a client to the
+driver.
+NOTE
+
+The client must not request transmission on the same con-
+
+nection until confirmation (DATA.confirm) has been recei-
+ved. There are no restrictions on other connections.
+
+Format of the request buffer:
+
+byte number
+0 request kind = 5 (DATA. request )
+
+1 connection index. This is the logical address
+of the remote MAC entity
+
+2 DSAP is the local SAP address, i.e. the
+client network number
+
+3 SSAP is the local SAP address, i.e. the
+client network number
+
+RC Computer -127-

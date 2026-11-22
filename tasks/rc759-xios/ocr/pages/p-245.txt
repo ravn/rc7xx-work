@@ -1,0 +1,83 @@
+PICCOLINE Catchword Index
+
+scroll window down sees er res. See ESC >
+
+scroll window up .eceeceeeesevccescceese See ESC <
+scroll, line 00000000 eee 0000447. See line scroll
+scroll, soft seere eee 00000000. See soft scroll
+sector register seere 0000000 203
+
+select alt. char. set ...eeeeeeeeeee eee See ESC P
+
+select std. char. set ....cceeseeseeeee See ESC Q
+
+serial communication soceesereree 000008 99
+
+serial controller ....-0002000: 000 See ISBX351
+serial interface .... cece ec ec rece eccee 99
+
+serial number ......cececcccevccceccecee 17
+
+Service Access Point ....ceeeecceeeee ee See SAP
+
+service primitive eoerececeececeeceveee 112
+
+set attribute byte ...........e.eeeee-- See function 38
+set background colour ..........eee-+ee- See ESC c
+
+set blinking cursor .....ececeecceeeeee See ESC <241>
+set character mode ........ - see function 1
+set cursor position ....... . see function 36
+set cursor representation . eoeee See ESC <243>
+set foreground colour ..... » see ESC b
+
+set line scroll] veere eee eee eee See ESC <245>
+set non-blinking cursor ...:222…. See ESC <242>
+set soft scroll "00000000 028 See ESC <244>
+set tracking mode ........e2eeeeeeee--2- See Xfunction 21
+set Viewpoint eee eee 00000000. See Xfunction 21
+set window manager state .............. see Xfunction 19
+set wrap around column .......-ee.ee+ee. See Xfunction 22
+Shift seere sees eee eee 64
+
+Shift lock seere. 64
+signal sources sseeeeseeeeeereeeeeeeee… TL
+soft scroll Loc cc rece reece cnc eve ccerccee 53
+sound sees eee eee. 203
+
+sound device seere eee eee IL
+
+sound device, registers ...00220.… 71
+
+sound generator 00000000 000 71,187
+
+sound, control register "00220000. 71
+
+sound, example seere eee 74,75
+
+special keys seere. 64
+
+square Wave seere eee 77
+
+standard character set .....csecceeeeee 35
+
+state of window manager .....-eeeeeeeees 62
+
+station we cce wee en ccc cer ere vccveevcccee 112
+
+station identification exchange ....... 133
+
+status input port "00000000 93
+
+status iSBX351 ssseeeeereeeee 00000004 See function 23
+Status line ... cw cece ewe ee rece e+. 48
+
+status line off ...000000000 0000000 See ESC 0
+Status line on seere eee 20000000 See ESC 1
+status read port seere 40.. Il
+
+stop bit wee cere reece ewe wee e revere ccvee 18
+
+switch between screen and window ...... see Xfunction 23
+
+RC Computer -235-

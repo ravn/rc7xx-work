@@ -1,0 +1,10 @@
+PICCOLINE 12. iSBX Bus Specification
+
+MCLK . | L
+
+arsv
++6 VOLTS see |
+
+Fig.12.15 iSBX Multimodule Board I/O Reset Timing
+
+RC Computer -163-

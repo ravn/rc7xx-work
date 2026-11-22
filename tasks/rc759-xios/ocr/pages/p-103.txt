@@ -1,0 +1,49 @@
+PICCOLINE 9. Parallel Interface
+
+Control register
+
+dec
+Local interface OUT 260H 608
+DPC interface OUT 28CH 652
+
+Bit 0-3 of this register are connected through open collec-
+tor inverters to corresponding connector pins (all four
+having pull up resistors to +5V).
+
+Bit no. Signal (Pin no.) Description
+
+0 -,STROBE (1) See above
+1 -,AUTOLF (14) See above
+2 -,INIT (16) See above
+3 -,SELECT (17) See above
+4 OUT DISABLE Output register disable
+if 0: enables output register
+line drivers
+if 1: three-states the output
+register and allows pins
+2-9 to be used for inputs.
+5 NOT USED
+6 NOT USED
+7 INT DISABLE Interrupt disable
+
+if 0: enables interrupts when
+BUSY input pin (11) is
+LOW.
+
+if 1: disables interrupts.
+
+Interrupts from the parallel interfaces has been asigned:
+
+IR interrupt vector address
+Local interface 6 98H
+DPC interface 2 88H
+Status input port
+dec
+Local interface IN 260H 608
+DPC interface IN 28CH 652
+
+Each bit in this port represents the inverse state of a pin
+in the connector. The 5 LSB are inputs only while the 3 MSB
+inputs the state of 3 of the open collector outputs.
+
+RC Computer -93-

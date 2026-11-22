@@ -1,0 +1,45 @@
+4. Console module PICCOLINE
+
+ESC L - Insert Line
+
+Inserts a blank line by scrolling the line that the cursor
+is on and all following lines down one line. The cursor is
+moved to the beginning of the new line.
+
+ESC M - Delete Line
+
+Moves the cursor to the beginning of the line and deletes
+the line that the cursor is on by moving all the following
+lines up one line. A blank line is added at the bottom of
+the screen.
+
+ESC N - Delete Character
+
+Deletes the character at the cursor position and moves the
+rest of the line one character position to the left. A
+blank character is inserted at the end of the line.
+
+ESC O - Insert Character
+
+Inserts a blank character at the cursor position and moves
+the rest of the line one character position to the right.
+
+ESC P - Select Alternative Character Set
+
+Selects the user definable character set.
+
+ESC Q - Select Standard Character Set
+
+Selects the standard PICCOLINE character set.
+
+ESC Y - Position Cursor
+
+Moves the cursor to the row and column specified by the two
+characters that follow the "Y". The first character speci-
+fies the row, the second specifies the column. Rows are
+numbered from 0 to 23 (in 24 line mode) or 0 to 24 (in 25
+line mode). Columns are numbered from 0 to 79.
+
+The value 32 (20H) is added to the row and column numbers.
+
+-42- RC Computer

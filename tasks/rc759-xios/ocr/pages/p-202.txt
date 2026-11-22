@@ -1,0 +1,47 @@
+A. Int-28h Function Interface PICCOLINE
+
+Function 26
+Read file header record from cassette tape.
+
+Registers on entry:
+
+AL 26
+Cx Max number of bytes to read
+DX Input buffer offset
+
+Stack on entry:
+
++0 Input buffer segment
+
+Registers on return:
+
+Al Function result
+= 0 ok
+= 1 CRC error
+= 2 no data on tape
+= 3 no leader found
+= 4 wrong record number
+= 5 end of file
+AH, BX Undefined
+cx Number of bytes read
+Dx Offset of next byte in input buffer
+
+Stack on return:
+Unchanged
+
+See 7.2.5
+
+Function 27
+Write file header on cassette tape.
+
+Registers on entry:
+
+AL 27
+cx Number of bytes to write
+Dx Output buffer offset
+
+Stack on entry:
+
++0 Output buffer segment
+
+-192- RC Computer

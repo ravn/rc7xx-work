@@ -1,0 +1,55 @@
+11. Local Area Network PICCOLINE
+
+11.1 Fundamental Concepts
+
+The following terms are used in this document with their
+standard meaning as defined in the ISO model for Open
+Systems Interconnection (ref.7): station, layer, entity,
+peer, protocol, service primitive, datalink, connection.
+
+Further concepts and terminology which are not necessarily
+found in the ISO model, but used in this section, are defi-
+ned in the following:
+
+An RCLLC station is a station which is attached to the
+local area network and hosts an RCLLC entity that
+communicates with peer entities in other RCLLC. stations
+according to the RCLLC protocol. A station which supports
+only the LLC type 1 protocol and not the full RCLLC
+protocol is not considered an RCLLC station. Until the
+RCLLC protocol is adopted by other manufacturers, an RCLLC
+station will be the same as an RC product attached to the
+network.
+
+The Medium Access Control (MAC) layer is the only protocol
+layer between the RCLLC layer and the physical network.
+Each RCLLC station contains precisely one MAC entity and
+one RCLLC entity. The station address is a unique address
+which identifies the station within the local area network.
+It follows that the station address is also a unique
+address of the RCLLC entity.
+
+The data units that are transmitted among RCLLC entities
+using the MAC service are called RCLLC protocol elements.
+
+A client is an RCLLC-user, i.e. an entity making use of the
+RCLLC service and located in the layer above the RCLLC
+layer.
+
+An RCLLC Service Access Point (SAP) is the (logical) point
+at which a client accesses the RCLLC service. Within an
+RCLLC station each SAP is assigned a local SAP address in
+the range 1..63. The complete SAP address is the pair
+(station address, local SAP address) which uniquely
+identifies a SAP within the local area network.
+
+A SAP can be inactive, in which case it is effectively
+unknown to the RCLLC layer so that all data and control
+information addressed to it are discarded; or it can be
+active. An active SAP can be used to obtain either type 1
+service or client network service, but not both.
+
+The RCLLC layer maintains a number of logical client
+networks. A client network has a network number (within the
+
+-112- RC Computer

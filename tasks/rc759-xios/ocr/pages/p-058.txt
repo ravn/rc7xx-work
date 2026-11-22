@@ -1,0 +1,47 @@
+4. Console module PICCOLINE
+
+ESC 0 - Status Line Off (25 Line Mode)
+
+This sequence turns off the status line, thereby leaving
+all 25 lines for the application.
+
+ESC 1 - Status Line On (24 Line Mode)
+
+This sequence displays the status line at the bottom of the
+screen, thereby leaving 24 lines for the application.
+
+ESC 2 - Save Current Attributes
+
+Saves the values of the attributes blinking, underline and
+reverse video, foreground and background colour and
+character set selection.
+
+ESC 3 - Restore Attributes
+
+Restores the previously saved values of the attributes
+blinking, underline and reverse video, foreground and
+background colour and character set selection.
+
+ESC 6 - Function Key Expansion Off
+
+Causes the programmable function keys to return their key
+identifiers (ref. ESC-:) with the high order bit set in-
+stead of the assigned strings.
+
+ESC 7 - Function Key Expansion On
+
+Enables normal function key expansion, so that the program-
+mable function keys return their assigned strings.
+
+ESC : - Program Function Keys
+
+This sequence programs the programmable function keys. The
+table below lists the keys that are programmable.
+
+The format of this escape sequence is:
+ESC : <key-id> <string> NULL
+
+<key-id> is a key identifier that specifies the key to be
+programmed (see table page 50). <string> is an arbitrary
+
+-48- RC Computer

@@ -1,0 +1,51 @@
+PICCOLINE 3. Confiquration
+in al,dx ; get high nibble
+add dx,2 ;
+xchg ah,al ;
+in al,dx ; get low nibble
+mov cl,4 ;
+shl ah,cl ; shift high nibble to
+; the correct byte
+; position
+and al,nibble msk ; clear high nibble in al
+or al,ah ; transform nibbles to
+; bytes
+pop cx ;
+pop dx ;
+ret
+nvm_control_port equ 745
+clear_msk equ OCFH
+
+address_block:
+
+mov
+in
+
+and
+mov
+shl
+or
+
+out
+ret
+
+dx,nvm control port
+al,dx
+
+al,clear msk
+
+cl,4
+
+ah,cl
+
+al,ah
+
+dx,al
+
+Ne Ne Se Se Se Se te Se
+
+select block number(ah)
+
+RC Computer
+
+-23-

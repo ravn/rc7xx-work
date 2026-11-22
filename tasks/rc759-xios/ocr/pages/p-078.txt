@@ -1,0 +1,62 @@
+5. Real time clock PICCOLINE
+
+The RTC registers are numbered as follow:
+
+RTC control register
+
+sec 2
+min 3
+hour 4
+
+The following example shows two routines which can be used
+to read and write the RTC control registers.
+
+Example
+
+Registers at entry:
+AL = RTC register
+
+Registers at exit
+AL = contents of RTC register
+
+Se ne Ne Nee Se we
+
+rtc_adr equ 5CH
+
+read_adr_set_up equ 80H
+
+supply_read_pulse equ OA0H
+
+remove_read_pulse equ 9FH
+ReadRTC:
+
+; read register address setup
+Mov DX,rtc_adr
+
+Or AL,read adr set up
+
+Out DX,AL
+
++ generate read pulse
+Or AL, supply_read_pulse
+
+Out DX,AL
+
+; Wait at least 1 micro sec
+Nop
+
+Nop
+
+Nop
+
+Nop
+
+; read from register
+
+Xchg AH,AL
+
+In AL,DX
+
+Xchg AH,AL
+
+-68- RC Computer

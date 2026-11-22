@@ -1,0 +1,36 @@
+C. Interrupt Vector Assignment
+
+Cause Type Vector
+
+Divide error exception Internal 0 0000:0000H
+Single step interrupt Internal 1 0000:0004H
+Non maskable interrupt Internal 2 0000: 0008H
+Breakpoint interrupt Internal 3 0000: 000CH
+INT 0 detected Internal 4 0000:0010H
+Array bounds exception Internal 5 0000: 0014H
+Unused opcode exception Internal 6 0000: 0018H
+ESC opcode exception Internal 7 0000:001CH
+Timer 0 interrupt Internal 8 0000:0020H
+Timer 1 interrupt Internal 18 0000:0048H
+Timer 2 interrupt Internal 19 0000: 004CH
+DMA 0 interrupt Internal 10 0000:0028H
+DMA 1 interrupt Internal 11 0000:002CH
+INT 0 interrupt Internal 12 0000: 0030H
+INT 1 interrupt Internal 13 0000:0034H
+INT 2 interrupt Internal 14 0000:0038H
+INT 3 interrupt Internal 15 0000: 003CH
+Floppy controller External 0 0000: 0080H
+Keyboard interface External 1 0000: 0084H
+DPC interface External 2 0000: 0088H
+Real time clock External 3 0000: 008CH
+CRT External 4 0000:0090H
+Net controller External 5 0000:0094H
+Parallel interface External 6 0000: 0098H
+Not used External 7 0000: 009CH
+Int-28h functions Int 28H 0000: OOA0H
+Net driver Int 29H 0000: 00A4H
+IMC Int 30H 0000: 00A8H
+
+RC Computer
+
+-205-

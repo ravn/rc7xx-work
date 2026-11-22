@@ -1,0 +1,50 @@
+PICCOLINE 6. Sound
+
+wsg: ; write to sound
+mov ax,12 ; device
+int 28H ;
+ret
+
+t db 0
+
+va db 0
+
+6.2 Programming Noise
+
+The noise generator produces pseudorandom noise by means of
+a shift register. The rate at which the register shifts
+determines whether the noise contains a majority of high-
+frequency or low-frequency components.
+
+To change the output of the noise source, change the noise-
+control and noise-attenuation registers. Both use single-
+byte commands with the following format.
+
+1 RO R1 R2 x FB NFO NF1
+
+The FB bit controls the feedback in the noise-generator
+shift register. If the FB bit is a logical 1, the result is
+white noise. If the FB bit is a logical 0, the feedback is
+disabled, and a lower-frequence periodic noise is produced.
+
+Two bits, NFQ and NFl, control the clock frequency fed to
+the noise-generator shift register. Four options are avail-
+able:
+
+Three options select fixed rates, the fourth selects the
+output from tone generator 3 as the noise generator shift
+register clock.
+
+NFO NF1 Shift rate
+0 0 clock rate/512
+0 1 clock rate/1024
+1 0 clock rate/2048
+1 1 tone generator 3 output
+
+where clock rate = 2 MHz
+Example
+
++ The following subroutine generates an
+; explosion sound
+
+RC Computer =-75-

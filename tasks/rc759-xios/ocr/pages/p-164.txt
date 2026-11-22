@@ -1,0 +1,37 @@
+12. iSBX Bus Specification PICCOLINE
+
+MAO-MA2 I VALID ADDRESS bl
+
+i L
+IOWRT/
+
+woomo7 VALID DATA -——————_
+
+Fig.12.5 iSBX Multimodule Board Write, Full Speed
+
+The second type of 1/0 WRITE is an extended write
+(fig.12.6). This write is used by iSBX Multimodule boards
+that cannot write into an I/O port with the full speed spe-
+cifications. The base board again generates valid address
+and chip selects. The iSBX Multimodule board will activate
+the MWAIT/ signal based on address information (chip select
++ MAO-1). This will remove the ready from the CPU causing
+it to go into a wait state after the WRITE command has been
+activated and valid data provided. The iSBX Multimodule
+board will remove the MWAIT/ signal (allowing the CPU to
+leave its wait state) when it has satisfied its write pulse
+width requirement. The base board will then remove the WRI-
+TE command, then the data, address, and chip select after
+the hold times are met.
+
+wacwaz — YX — VALID ADDRESS a
+mes/ i af
+“ary ” a JT
+
+towns SURE
+
+mom? mm (TT VALID DATA —~—
+
+Fig.12.6 iSBX Multimodule Board Extended Write
+
+-154- RC Computer

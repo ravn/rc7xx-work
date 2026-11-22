@@ -1,0 +1,63 @@
+Table of Contents PICCOLINE
+
+10. Serial Interfaces cccrseccccccccceveccccceveevcessece 99
+10.1 Standard Serial Communication Support.......... 99
+10.1.1 V24 Handshake Scheme...…0000000000 0000 99
+
+10.2 Serial Communication Controller............+.+. 100
+10.2.1 Asynchronous Communication............. 101
+
+10.3 Initializing the iSBX351..00re0eereeeere 0 102
+10.4 Sample Asynchronous Communication Program..... 105
+
+11. Local Area Network... .ccccccrccnccccvccesecceceeses ALL
+11.1 Fundamental Concepts... ...cecccccccccscecerevee 112
+11.2 The Datalink Layer Service Interface.......... 113
+
+11.2.1 RCLLC Services. 116
+11.2.1.1 ACTIVATE.request......e.ee20-- 117
+11.2.1.2 ACTIVATE.confirm... 0. 118
+11.2.1.3 DEACTIVATE.request........+6-6- 119
+11.2.1.4 DEACTIVATE.confirm....-..e.e0+ 119
+11.2.1.5 TEST. request....cccesecescceee 120
+11.2.1.6 TEST.confirm...000000200000… 121
+11.2.1.7 TEST.indication.......… 121
+
+11.2.2 Type 1 Service... 00s0000r000000… 122
+11.2.2.1 UDATA.request........eceeneee. 122
+11.2.2.2 UDATA.confirm...cccssecseseeese 123
+11.2.2.3 UDATA.indication........seee0. 123
+
+11.2.3 Client Network Service....cccesccseseee 124
+11.2.3.1 CONNECT. indication.....ssceesee 125
+11.2.3.2 DISCONNECT. indication......... 125
+11.2.3.3 DISCONNECT. acknowledge........ 126
+11.2.3.4 DISCONNECT_ACKNOWLEDGE.confirm 127
+11.2.3.5 DATA. request....ecescsseceeves 127
+11.2.3.6 DATA.confirm....ecccccccceseee 128
+11.2.3.7 DATA.indication......ceeeseee4 128
+
+11.3 MAC Services... essere. 129
+, 11.3.1 Controller Specific Information........ 130
+11.4 RCLLC Datalink Layer Protocol........seesesee- 131
+
+11.4.1 Type 1 Procedures.....0r000000002000… 132
+11.4.1.1 Unacknowledged Data Transfer.. 132
+11.4.1.2 Loop-back Test Procedure...... 132.
+11.4.1.3 Station Identification
+
+Exchange. eos 133
+
+11.4.2 Procedures for Client Network Service... 133
+
+11.4.3 RCLLC Protocol Elements.............. 138
+11.4.3.1 UI (Unnumbered Information)... 141
+11.4.3.2 XID (eXchange IDentification). 141
+11.4.3.3 TEST... cc ccc cece cree cc eecscee 141
+11.4.3.4 ACTIVE SAP. 00000000. 142
+11.4.3.5 RESET. .000000r0emeseeeeeeee0r… 142
+11.4.3.6 RACK... ccc cece ccc eeeeereee 143
+11.4.3.7 DATA... cc ccc cece ccccccvccccese 143
+11.4.3.8 ACK... ccc ccc ccrcccccccccccecee 143
+
+RC Computer

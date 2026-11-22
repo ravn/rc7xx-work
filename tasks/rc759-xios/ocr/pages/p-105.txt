@@ -1,0 +1,70 @@
+PICCOLINE 9. Parallel Interface
+
+sysdat dw
+dispatcher rw
+supervisor rw
+
+; initialize interrupt vector
+
+xor ax,ax
+
+MOV eS,ax
+
+mov di,98H
+
+mov ax,offset parallel interrupt
+stos ax
+
+mov ax,cs
+
+stos ax
+
+ret
+
+NNO
+
+list_out:
+
+Entry: CL = character
+
+; output character to register
+mov al,cl
+
+mov dx,250h
+
+out dx,al
+
++ interrupt disabled,SELECT and STROBE on
+mov al,10001001b
+
+mov dx,260h
+
+out dx,al
+
+; interrupt disabled, SELECT on, STROBE off
+mov al,10001000b
+out dx,al
+
+; allow printer to activate BUSY before enabling
+; interrupt (otherwise interrupt will occur at the
+; Moment interrupt is enabled)
+
+mov cx,3
+
+list_delay:
+
+loop list_delay
+
+; Interrupt enable, SELECT on, STROBE off
+mov al,00001000b
+out dx,al
+
+; wait for interrupt
+mov dx,list flag
+call flagwait
+
+ret
+
+RC Computer
+
+-95-

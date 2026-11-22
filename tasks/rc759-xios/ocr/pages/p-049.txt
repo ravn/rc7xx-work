@@ -1,0 +1,37 @@
+PICCOLINE 4. Console Module
+
+pop cx
+
+add si,2
+
+loop char_loop ; next character
+ret
+
+the following is a table of characters to alter
+
+; and the corresponding character definitions in
++ the standard character set.
+char_table:
+
+db '§',17
+
+db 'RE',18
+
+db. 'Ø',19
+
+db "A',20
+
+db 'v',21
+
+db ‘a',23
+
+db "ø',24
+
+db "a',25
+
+ab "u', 26
+
+char buffer:
+rw 16 ; room for one definition
+
+RC Computer -39-

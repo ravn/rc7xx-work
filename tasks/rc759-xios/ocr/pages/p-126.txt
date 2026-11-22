@@ -1,0 +1,50 @@
+11. Local Area Network PICCOLINE
+
+The format of the queue buffer is:
+
+byte number
+0 indication structure offset
+2 indication structure segment
+
+The content of the indication structure will be described
+below in the description of the individual indications.
+
+NOTE
+The indication structure must not be modified by the
+
+client. Modifications of the indication structure can
+make the system behave unpredictably.
+
+INDICATION ACKNOWLEDGE
+
+Whenever the driver writes an indication event to the
+indication queue, it will pass resources (the indication
+structure and in most cases a data buffer) to the client.
+Immediately after processing the indication event (i.e.
+copying a possible data buffer into a local buffer), the
+client must return these resources to the driver with an
+INDICATION ACKNOWLEDGE. In assembly language it is done
+with a few lines of code:
+
+; assumption ds:bx long pointer to the indication structure
+
+;push parameters onto the stack
+
+push ds ;segment part of the long pointer
+
+push bx ;offset part of the long pointer
+
+int 29h ;the software interrupt executes
+;the indication acknowledge
+
+add sp,4 ;clean up stack
+
+11.2.1 RCLLC Services
+
+The RCLLC services are obtained by a client through an ac-
+tive SAP. A SAP can be used either for type 1 service or
+for client network service, but not for both. The loop-back
+test facility is available regardless of the choice of type
+1 or client network service.
+
+-116- RC Computer

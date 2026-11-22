@@ -1,0 +1,45 @@
+PICCOLINE 10. Serial Interface
+
+where the status in AX is encoded in the following way:
+
+bit 0 = Receiver ready
+bit 2 = Transmitter empty
+bit 3 = Data set ready
+bit 5 = Transmitter ready
+bit 12 = Parity error
+
+bit 13 = Overrun error
+
+bit 14 = Framing error
+
+Further details can be found in the relevant Intel docu-
+mentation.
+
+10.4 Sample Asynchronous Communication Program
+
+All examples in this chapter use the following decla-
+rations:
+
+P_Flagset Equ 133; CCP/M flagset function
+P_Flagwait Equ 132; - flagwait -
+ReceiveFlag Equ 13; Flag allocated to receive
+TransmitFlag Equ 14; Flag allocated to transmit
+DataPort Equ 300; channel data port
+CommandPort Equ 302; channel command port
+
+Before any data transfer can take place the hardware and
+software must be initialized.
+
+The responsibility of the initialization routine is to do
+all hardware and software initialization needed (e.g. set-
+ting up the iSBX351 and initialize all driver variables).
+
+Example
+
+Initialize:
+; get sysdat segment
+Mov CL,154
+Int 224
+Mov sysdat,ES
+
+RC Computer -105-

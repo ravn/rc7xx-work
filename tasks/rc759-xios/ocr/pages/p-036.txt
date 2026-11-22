@@ -1,0 +1,56 @@
+4. Console module PICCOLINE
+
+4.1.2 Character Format
+
+The 82730 fetches characters from main memory and outputs
+these to the CRT controller. The characters have the
+following format in alphanumeric mode:
+
+bit 0-9 character address
+bit 10-14 palette select
+bit 15 0
+
+and in graphics mode:
+
+bit 0-9 pixel block address
+bit 10-13 palette select
+bit 14 0 = high resolution graphics
+1 = medium resolution graphics
+
+bit 15 0
+
+If bit 15 is a 1, the 82730 interprets the character as a
+character stream command.
+
+In both alphanumeric and graphics mode bit 0-9 of the
+character addresses a pixel block in the 32k pixel memory
+located at address D000:0000H
+
+In alphanumeric mode the pixel blocks function as character
+generators. One pixel on the screen corresponds to one bit
+in the pixel memory. The width of the character may vary
+from 7 to 15 pixels depending on the contents of the pixel
+memory (see 4.3). The height of one character row is 10
+videolines in the standard configuration.
+
+In graphics mode the pixel blocks are normally organized so
+that the 32k pixel memory makes up a complete bitmap of the
+screen. One pixel on the screen corresponds to one bit in
+the pixel memory in high resolution graphics mode, and to
+two bits in medium resolution. The pixel blocks are 16
+pixels high by 16 pixels wide in high resolution and 8 by
+16 pixels in medium resolution corresponding to 16 words of
+memory.
+
+The total resolution is 560 by 250 pixels in alphanumeric
+mode, 560 by 256 pixels in high resolution graphics mode
+and 280 by 256 pixels in medium resolution graphics mode.
+
+4.1.3 Palette
+
+The output from the pixel memory is used to select one of
+two (alphanumeric and high resolution graphics mode) or one
+of four (medium resolution graphics mode) colours from a
+palette.
+
+-26- RC Computer

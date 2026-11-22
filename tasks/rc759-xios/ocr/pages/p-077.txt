@@ -1,0 +1,49 @@
+5. Real Time Clock
+
+The PICCOLINE standard configuration includes a real time
+clock controller (RTC) with battery backup.
+
+The RTC time and date information is read during power up
+and is used to initialize the time and date fields found in
+the SYSDAT area (see ref.2).
+
+After power up the RTC generates an interrupt each second
+and this interrupt is used to update the above mentioned
+SYSDAT fields.
+
+If a program disables interrupts for more than one second,
+it will cause a loss of one or more interrupts from the
+RTC. As a consequence, the time and date fields will not be
+updated correctly (but the real time clock itself still
+holds the correct time and date).
+
+5.1 Real Time Clock Controller
+
+RTC controllers from two different manufacturers are used
+in the PICCOLINE. To distinguish between the two types
+refer to the KONFIG area byte 'RTC second source' (see
+3.1). If this byte is 0 the real time clock is a National
+Semiconductor chip: MM58167. If the byte has the value OFFH
+the real time clock is an RCA chip: CDP1879.
+
+The two real time clock controllers differs in programming
+and in facilities. A detailed description may be found in
+the documentation from the manufacturers.
+
+5.2 Reading and Writing Real Time Clock Registers
+
+Although the two RTC controllers are different, they are
+interfaced in a way, that makes it possible to read and
+write their control registers using the same software rou-
+tines. The content of the RTC control registers are coded
+in BCD-code, which means that a number is stored with the
+the first ciffer in the four MSB and the last ciffer in the
+four LSB. For example the number 35 is stored as:
+
+bit no 7 6 5 4 3 2 1 0
+0 0 1 1 0 1 0 1
+
+where bit 0-3 contain the ciffer 5 and bit 4-7 contain the
+ciffer 3.
+
+RC Computer -67-

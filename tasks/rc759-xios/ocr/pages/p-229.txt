@@ -1,0 +1,44 @@
+G. References
+
+1. Concurrent CP/M-86, User's Guide.
+Digital Research
+
+2. Concurrent CP/M-86, Programmer's Reference Guide.
+Digital Research
+
+3. Concurrent CP/M-86, System Guide.
+Digital Research
+
+4. DrNet, Network operating system, System guide.
+Digital Research
+
+5. PICCOLINE brugervejledning.
+sw1401D
+RC COMPUTER
+
+6. Local Area Networks - Logical Link Control - Draft E
+ISO/DP 8802/2 (TC 97/SC 6 N2925)
+
+7. Data Processing - Open Systems Interconnection
+Basic Reference Model
+Feb. 4, 1982
+ISO/DIS 7498
+
+8. Distributed System Architecture, Report
+RCSL No. 42-i1982
+RC Computer
+
+9. DSA Inter Module Communication,
+Functional Description
+RCSL No. 42-i1983
+RC Computer
+
+10. Intel 82586 Reference Manual
+order number 210891-001
+Intel Corporation, 1983
+
+11. RC 759 Techical Hardwaredocumentation
+SW1493D
+RC Computer, 1985
+
+RC Computer -219-

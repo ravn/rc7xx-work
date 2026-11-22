@@ -1,0 +1,42 @@
+4. Console module PICCOLINE
+
+intensity than the foreground colour, the foreground is
+shown as black and the background in high intensity. If
+the foreground and background have the same intensity
+they are impossible to distinguish.
+
+At any time 16 combinations of background and foreground
+colours can be displayed simultaneously. Any escape se-
+quence that would result in more than 16 colour
+combinations will be ignored.
+
+ESC c - Set Background Colour
+
+This function sets the background colour. The colour is
+specified by a colour selection character that follows the
+"ce". The colour selection character is interpreted in the
+same way as described under ESC-b (Set Foreground Colour).
+
+NOTE
+At any time 16 combinations of background and foreground
+colours can be displayed simultaneously. Any escape se-
+
+quence that would result in more than 16 colour
+combinations will be ignored.
+
+ESC d - Erase Beginning of Screen
+
+Clears the screen from the home position (0,0) to the cur-
+sor position, including the character that the cursor is
+on.
+
+ESC e - Enable Cursor
+
+This sequence causes the cursor to be visible on the
+screen. i
+ESC f - Disable Cursor
+
+This sequence causes the cursor to be invisible. The cursor
+may still be moved on the screen.
+
+-44- RC Computer

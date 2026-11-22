@@ -1,0 +1,53 @@
+11. Local Area Network PICCOLINE
+
+11.4.3.4 ACTIVE SAP
+
+An RCLLC entity transmits this protocol element periodical-
+ly for each active SAP it serves which belongs to a client
+network. It is transmitted using the multicast address for
+the client network in question so that all relevant RCLLC
+entities will receive it. The frequency with which the pro-
+tocol element is transmitted depends on the implementation.
+
+The first word of the information field contains the SAP
+mask of the active SAP. Unless the mask matches that of the
+local SAP at the receiving RCLLC entity the protocol ele-
+ment is discarded.
+
+The Param 1 field contains a sequence number in the range
+0..254. The first 255 ACTIVE SAP protocol elements trans-
+mitted after activation of a SAP will have sequence numbers
+0, 1, 2,.. 254. In all subsequent ACTIVE SAP protocol ele-
+ments the sequence number will also be 254. This procedure
+allows the receiving RCLLC entity to detect when an SAP is
+deactivated and swiftly reactivated, possibly because of
+station reinitialization.
+
+When an ACTIVE_SAP protocol element is received from a pre-
+viously unknown SAP a PE new SAP event is generated (cf.
+section 11.4.2). The same is the case if the sequence num-
+ber is less than the sequence number found in the last re-
+ceived ACTIVE_SAP or RESET protocol element from the same
+SAP. However, when the sequence number are equal or ascend-
+ing, the protocol element is only taken to indicate that
+the SAP is still active. In the latter case the SAP alive
+timer is restarted.
+
+The Information field from the third byte contains the cli-
+ent_info passed from the client when the SAP was activated.
+11.4.3.5 RESET
+
+This protocol element is transmitted in conjunction with
+establishment of a connection.
+
+The Param 0 field contains the index assigned to the con-
+nection by the sending RCLLC entity.
+
+The Param 1 field contains the sequence number to be inclu-
+ded in the next ACTIVE_SAP protocol element to be transmit-
+ted from the sender.
+
+The Information field contains the client_info passed from
+the client when the SAP was activated.
+
+-142- RC Computer

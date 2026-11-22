@@ -1,0 +1,48 @@
+8. Disk System
+
+The disk configuration of a PICCOLINE consists of:
+
+0,1 or 2 floppy disk drives
+0 or 1 memory disk
+
+Floppy disk drives are always resident inside the PICCOLINE
+Disk/Printer-Controlunit (DPC). Up to 4 PICCOLINES are able
+to share the same DPC. Therefore a PICCOLINE has to reserve
+the floppy disks before accessing them. This is described
+in section 8.4.
+
+The disk naming conventions are as follows.
+
+1. disk drive A
+2. disk drive B
+Memory disk M
+
+8.1 Disk Characteristics
+
+The PICCOLINE diskformat uses a sector to sector skew
+factor of 1, and a track to track skew factor of 0, i.e. no
+skewing at all.
+
+The PICCOLINE floppy disks, although the size of a 5 1/4"
+
+disk, use a format equivalent to an 8" double sided/dual
+density disk.
+
+Drive performance:
+
+Capacity 1604 Kbytes unformatted
+1232 Kbytes formatted
+
+Recording density 9646 BPI
+
+Track density 96 TPI
+Cylinders 77
+
+Tracks 154
+
+Encoding method MEM
+Rotational speed 360 RPM
+Transfer rate 500 Kbits/sec
+Latency (average) 83 msec
+
+RC Computer -85-

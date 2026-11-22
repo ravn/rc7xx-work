@@ -20,12 +20,21 @@ Fil loades ved paragraph 0x0048 (physical 0x0480). Fem MEMIF-moduler + XIOS:
 | Fil-offset | Størrelse | Indhold |
 |-----------|-----------|---------|
 | 0x0000 | 0x80 | GENSYS-header (sysdat=0x06FA, supervisor=0x0048:0x0003) |
-| 0x0080 | ~5 568 B | Modul 0 (RTM kerne) |
-| 0x1640 | ~4 224 B | Modul 1 (BDOS del 1) |
-| 0x26C0 | ~2 848 B | Modul 2 (BDOS del 2) |
-| 0x31E0 | ~2 288 B | Modul 3 (BDOS del 3) |
-| 0x03AD0 | 62 512 B | **Modul 4 = SYSDAT + XIOS** (stor — indeholder alt) |
-| 0x0B163 | ~30 KB | XIOS JMP/JMP entry ved SYSDAT:0xC00 |
+| 0x0080 | 5 568 B | Modul 0 (RTM kerne: mod0_rtm.asm) |
+| 0x1640 | 4 224 B | Modul 1 (BDOS filsystem: mod1_bdos.asm) |
+| 0x26C0 | 2 848 B | Modul 2 (Memory Manager: mod2_mem.asm) |
+| 0x31E0 | 2 288 B | Modul 3 (Tegn-I/O CIO: mod3_cio.asm) |
+| 0x03AD0 | 49 776 B | **Modul 4 = SYSDAT + XIOS** (`XIOS1.CON`, mod4_xios.asm) |
+| 0x0FD40 | 12 736 B | **Resident System Processes (RSP)**: TMP759, CLOCK, PIN, VOUT, SCROLL |
+
+**Total systemstørrelse**: 77 568 bytes (identisk med `CCPM1.SYS` på distributionsdisk 3/4).
+**Reassembly-status**: 100% byte-for-byte verificeret via Docker `rc759-nasm`.
+
+Se også de uddybende referencer oprettet 2026-11-22:
+- [reference_rc759_nvram_map.md](reference_rc759_nvram_map.md) — Fuld 128-byte NVRAM specifikation, checksum ($\sum=0xAA$) og konfiguration.
+- [reference_rc759_int28h_xios_api.md](reference_rc759_int28h_xios_api.md) — Samtlige 54 funktioner (0..53) i INT 28H interfacet.
+- [reference_rc759_screen_architecture_piccoline_vs_partner.md](reference_rc759_screen_architecture_piccoline_vs_partner.md) — Skærmhukommelse (0 KB vs 24 KB), rulning og interrupter.
+- [reference_ccpm86_rsp_process_model.md](reference_ccpm86_rsp_process_model.md) — RSP 8080-model, GENCCPM struktur og placering.
 
 **SYSDAT-segment**: 0x06FA (physical 0x06FA0). XIOS starter ved SYSDAT:0xC00.
 

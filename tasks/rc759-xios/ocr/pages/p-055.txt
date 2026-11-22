@@ -1,0 +1,44 @@
+PICCOLINE 4. Console module
+
+ESC g - Enter Underline Mode
+
+Following the invocation of this sequence, characters are
+displayed underlined if the underline attribute is enabled
+(see ESC-<247>).
+
+This sequence also selects the upper 256 characters of the
+character set.
+
+ESC h - Exit Underline Mode
+
+Exits underline mode.
+
+This sequence also selects the lower 256 characters of the
+character set.
+
+ESC i - Enter Non-Displayed Mode
+
+This sequence causes characters to be displayed as blanks.
+
+ESC j - Save Cursor Position
+
+This sequence saves the current cursor position. The cursor
+can be restored to the saved position with ESC-k.
+
+ESC k - Restore Cursor Position
+
+This sequence restores the cursor to a previously saved po-
+sition. If this sequence is used without a previously saved
+cursor position, then the cursor will be moved to the home
+position (0,0).
+
+ESC 1 - Erase Line
+
+Clears the entire line that the cursor is on.
+
+ESC m - Enable Cursor
+
+Included to be compatible with some CP/M-86 implementa-
+tions. Use ESC-e under CCP/M-86.
+
+RC Computer -45-

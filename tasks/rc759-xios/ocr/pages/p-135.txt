@@ -1,0 +1,38 @@
+PICCOLINE 11. Local Area Network
+
+11.2.3.1 CONNECT.indication
+
+The primitive, which indicates that a connection has been
+established, is passed from the driver to the client. This
+is done by writing a long pointer (pointing to the indica-
+tion datastructure) to the clients indication queue.
+
+Format of the indication datastructure:
+
+byte number
+0 indication kind = 3 (CONNECT.indication)
+
+1 connection index (th station address of the
+remote SAP) i
+
+2-3 the length of the received client information
+4-7 reserved
+8-9 received client information offset
+10-11 received client information segment
+12-13 reserved
+14-19 source Ethernet address
+The information part of the client information begins in
+the ninth byte in the client information buffer. The first
+eigth bytes are included in the length of the client
+information.
+After receiving the primitive the client may issue
+DATA.request primitives on the connection, and should
+expect DATA.indication primitives to arrive.
+11.2.3.2 DISCONNECT.indication
+The primitive, which indicates that a connection has been
+removed, is passed from the driver to the client. This is
+
+done by writing a long pointer (pointing to the indication
+datastructure) to the clients indication queue.
+
+RC Computer -125-

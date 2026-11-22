@@ -1,0 +1,40 @@
+1. Introduction
+The intention of this manual is to enable programmers to
+use the PICCOLINE peripherals in their own ways.
+
+The following peripherals, which are either part of the CPU
+or devices connected to the CPU, are standard in a PICCO-
+LINE system:
+
+2 DMA channels (integrated on CPU)
+
+3 Timers (integrated on CPU)
+
+1 Interrupt controller (integrated on CPU)
+
+1 Intel 8259A programmable interrupt controller
+
+CRT controller based on Intel 82730
+
+Keyboard interface
+
+Real time clock
+
+Sound device
+
+Non volatile memory (NVM)
+
+Local parallel printer interface
+
+Cassette tape interface
+
+Connector to PICCOLINE Disk/Printer-Adaptor
+
+Connector to micronet interface
+
+iSBX-connector
+
+The interconnection of these peripherals is shown on:
+fig.1.1 page 2.
+
+RC Computer -1-

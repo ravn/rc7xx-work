@@ -1,0 +1,48 @@
+13. Inter Computer File Transfer
+
+This chapter provides technical information concerning the
+FILEX file transfer program which in its standard form can
+be used to transfer files between a PICCOLINE and one of
+the following computers:
+
+1) Another PICCOLINE (RC759)
+2) An RC750 Partner
+3) An RC702 Piccolo
+4) An RC703 Piccolo
+
+5) An RC855 Workstation
+
+Together with the FILEX source program included on the PIC-
+COLINE distribution disk, this chapter contains the neces-
+sary information for an experienced user to modify FILEX or
+implement a FILEX type file transfer program on another
+computer with serial communication support (e.g. an IBM PC
+with SYNC/ASYNC controller option installed).
+
+13.1 Requirements
+
+Since the FILEX file transfer program is based on serial
+communication the PICCOLINE system has to be enhanced with
+an iSBX351 serial interface (V24-interface).
+
+The two computers on which FILEX is to run must be connec-
+ted by means of an appropiate cable.
+
+To connect two computers, arbitrarily chosen among the
+RC702, RC703, RC855, RC750 and RC759, one of the following
+cables should be used:
+
+1) CBL912 (5 metres)
+2) CBL913 (12 metres)
+3) CBL914 (25 metres)
+
+Furthermore, the user should configurate the two selected
+computers to ensure:
+
+1) that the two computers use the same baudrate on
+the channel used, .
+2) that the line character format is set to 7 bits
+
+per character.
+
+RC Computer -177-

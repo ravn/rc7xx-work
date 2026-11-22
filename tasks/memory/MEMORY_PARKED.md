@@ -7,7 +7,12 @@
 - [RC759 GSX source comparison](../../rc700-gensmedet/rc759-gsx/notes/04-gsx11-source-comparison.md) — H1 sine/vector tables; GIOS11 is disassembled source
 - [DRI C Programmer's Guide](reference_dri_cpm86_manuals_location.md) — DR C 1.11 ref already at cpm86-crossdev/docs/manuals/DRI_C_Programming_86.pdf
 - [emu2 workspace-sti + PTY-krav](reference_emu2_workspace_location.md) — `/Users/ravn/z80/emu2-cpm86/emu2` (macbook) + `/home/ravn/z80/emu2-cpm86/emu2` (sonnyboy); ikke et eksternt værktøj
+- [**RC759 XIOS Handoff 2026-11-22**](../rc759-xios/HANDOFF-2026-11-22.md) — Seneste komplette statusnotat, modulariseret ccpm.sys, 100% byte-identisk, næste skridt
 - [**RC759 XIOS 2.3 RE** — binær-layout, RTM-konvention, io_const/io_conin/io_read](reference_rc759_xios_re_2026-11-20.md) — ccpm.sys struktur, dispatch-tabel fil 0x16A4, MODFUNC.DEF CX=(modul×256+fn), hardware-portskort
+- [**RC759 NVRAM map & checksum**](reference_rc759_nvram_map.md) — 128B layout, byte 0x12 scroll mode, byte 0x35 machine ID, sum mod 256 == 0xAA
+- [**RC759 INT 28H XIOS API (54 funktioner)**](reference_rc759_int28h_xios_api.md) — dispatcher 0x7831, tabel 0x784C (CS:0CAC), base 0x6BA0, grafik, font, FDC, iSBX, bånd, mus
+- [**RC759 vs RC750 skærm & interrupter**](reference_rc759_screen_architecture_piccoline_vs_partner.md) — Piccoline 0KB sys RAM / 32KB CRT-RAM (82730) vs Partner 24KB sys RAM; auto-config byte 23 'P'
+- [**CCP/M-86 RSP procesmodel**](reference_ccpm86_rsp_process_model.md) — 8080-model uden relokering, GENCCPM Data Group først så Code Group, ccpm.sys grænser
 - [RC759 GSX-86 emu2 verification](../rc700-gensmedet/tasks/memory/reference_rc759_gsx_emu2_verification.md) — current emu2 needs controlling PTY; OBJ/CMD match MAME byte-for-byte
 - [DR C float/8087 ABI](reference_drc_float_8087_abi.md) — no 8087 on RC759; double DX:CX:BX:AX, float BX:AX
 - [wlink vs DR C OMF/.L86](reference_wlink_drc_omf_l86.md) — wlink reads OMF fine; rejects .L86 container (E2012); unpack_l86.py

@@ -1,0 +1,64 @@
+9. Parallel Interface
+
+PICCOLINE
+
+Connector
+Bit no. Pin no. Signal description
+
+0 11 NOT BUSY, 0 when input signal BUSY
+is high.
+
+1 10 ACK, 0 when input signal is high.
+
+2 15 FAULT, 0 when input signal is high.
+
+3 12 NOT PAPER END, 0 when input signal
+is high.
+
+4 13 NOT SELECTED, 0 when input signal
+is high.
+
+5 1 STROBE, signal is
+high.
+
+6 16 INIT, 0 when input signal is high.
+
+7 17 SELECT, signal is
+high.
+
+9.2 Sample Printer Driver Routines
+
+In the following an example
+the local interface is listed
+
+list_flag Equ 12
+
+list_init:
+; get sysdat segment
+mov cl1,154
+int 224
+mov sysdat,es
+
++ get dispatcher address
+mov ax,es:.38
+
+mov dispatcher,ax
+
+mov ax,es:.40
+
+mov dispatcher+2,ax
+
+; get supervisor address
+mov ax,es:.0
+
+mov supervisor,ax
+
+mov ax,es:.2
+
+mov supervisor+2,ax
+
+of printer driver routines to
+
+-94-
+
+RC Computer

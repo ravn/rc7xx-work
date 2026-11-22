@@ -1,0 +1,33 @@
+A. Int-28h Function Interface
+
+PICCOLINE
+
+Subfunction 2:
+Release shared disk.
+Registers on entry:
+
+AL 42
+AH 2
+
+Registers on return:
+Undefined
+
+See 8.4.2
+
+Function 43-49
+
+Reserved
+
+Function 50
+
+Reset iSBX351.
+Registers on entry:
+AL 50
+Registers on return:
+Undefined
+
+see 10.3
+
+-200-
+
+RC Computer

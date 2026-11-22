@@ -1,0 +1,48 @@
+3. Configuration PICCOLINE
+Low nibble designates channel
+usage:
+
+0: virtual console
+1: printer
+
+14 Stop bit and parity.
+
+Parity is coded in bit no 0 and 1:
+0: no
+
+1: odd
+
+3: even
+
+Stop bit is coded in bits no 2 and
+1: 1
+
+2: 1.5
+
+3: 2
+
+15 Initial value of RTS. Bit no 1 is
+coded as follows:
+0: low
+1: high
+
+16 Reserved.
+
+17 Number of bits pr. char. The bits
+no 6 and 7 are encoded as follows:
+0 5
+1 6
+2 7
+3 8
+
+18 4 most significant bits hold CRT
+scroll mode. (0=jmp mode; 1=soft
+scroll mode).
+
+19 4 most significant bits hold the
+cursor height (1 to 10 video
+lines). 4 least significant bits
+holds the cursor blink mode
+(O=solid; 1l=blinking).
+
+-18- RC Computer

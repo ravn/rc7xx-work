@@ -1,0 +1,69 @@
+10. Serial Interface PICCOLINE
+
+; get dispatcher address
+Mov AX,ES:.38
+
+Mov dispatcher ,AX
+
+Mov AX,ES:.40
+
+Mov dispatcher+2,Ax
+
++ get supervisor address
+Mov AX,ES:.0
+
+Mov supervisor,AX
+
+Mov AX,ES:.2
+
+Mov supervisor+2,AX
+
+; initialize interrupt vectors
+
+Cli
+
+Xor AX,AX
+
+Mov ES,AX
+
+Mov Di,3CH ; vector for transmit interrupt
+Mov AX,Offset TransmitInterrupt
+
+Stos AX
+
+Mov AX,CS
+
+Stos AX
+
+Mov Di,34H ; vector for receive interrupt
+Mov AX,Offset ReceivelInterrupt
+
+Stos AX
+
+Mov AX,CS
+
+Stos AX
+
+Sti
+
+; Initialize iSBX controller (see 10.3)
+Call SetSIO
+
+Ret
+sysdat dw 0
+dispatcher rw 2
+supervisor rw 2
+
+The receive routine is executed when the user program needs
+data from the communication line.
+
+The program waits for data by means of a P_Flagwait opera-
+ting system call. This operating system call will suspended
+the program until data has arrived and this has been sig-
+nalled by the interrupt routine by means of a P_Flagset
+operating system call. To avoid loss of data it may be ne-
+cessary to maintain a circular buffer which is filled with
+received data by the interrupt routine and emptied by the
+input routine when the user program needs data.
+
+-106- RC Computer

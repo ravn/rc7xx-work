@@ -1,0 +1,44 @@
+4. Console module PICCOLINE
+
+Rows are numbered from 0 to 23 (in 24 line mode) or 0 to 24
+(in 25 line mode). The value 32 (20H) is added to the row
+numbers.
+
+Example:
+
+The following sequence scrolls row 4 to row 11 one line
+down:
+
+ESC > $ + (dec: 27 62 32 48)
+(hex: 1B 3E 20 30)
+
+ESC <241> - Set Blinking Cursor
+<241> denotes one character with the decimal value 241.
+Selects a blinking cursor.
+ESC <242> - Set Non-Blinking Cursor
+<242> denotes one character with the decimal value 242.
+Selects a non-blinking cursor.
+ESC <243> - Set Cursor Representation
+<243> denotes one character with the decimal value 243.
+Defines the shape of the cursor. The character following
+ESC-243 specifies the start and end videoline numbers of
+the cursor. The four least significant bits specifiy the
+start videoline and the four most significant bit specifiy
+the end videoline.
+The videolines of a row are numbered 0-9. The number
+specified for the end videoline is 1 greater than the
+videoline number of the bottom videoline of the cursor.
+
+Examples:
+
+The following sequence selects a block cursor (occupying
+videolines 0-9):
+
+dec: 27 243 160 hex: 1B F3 AO
+
+The following sequence selects a double underline cursor
+(occupying videolines 8-9):
+
+dec: 27 243 168 hex: 1B F3 A8
+
+-52- RC Computer

@@ -1,0 +1,24 @@
+1. Introduction PICCOLINE
+
+; Enter the routine via the XIOS entry field in SYSDAT
+Mov AX,routine number
+Callf DS:Dword Ptr .28h
+
+As an extension to the standard XIOS routines some extra
+routines have been implemented. Opposed to the standard
+routines, which are entered through a far call via the XxIOS
+entry field in the SYSDAT area, these extra routines are
+entered by executing a software interrupt on level 28h. A
+detailed description of the extra routines may be found in
+appendix A. In the remaining chapters the extra routines
+will be denoted as ‘Int-28h functions’.
+
+The synchronization between the interrupt service routines
+for the different peripherals and the programs using the
+peripherals is done by means of the CCP/M flag mechanism
+(see refs.2,3).
+
+Table 1.2 shows how these flags are assigned on the PICCO-
+LINE.
+
+-6- RC Computer

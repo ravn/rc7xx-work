@@ -1,0 +1,37 @@
+PICCOLINE 11. Local Area Network
+
+SP dack An expected DISCONNECT.acknowledge service
+primitive is received from the client.
+
+An overview of the state changes caused by events and the
+associated actions, i.e. protocol elements and service
+primitives that are generated, is given in figure 1. Note
+that the figure and the description which follows apply to
+a single connection, in fact to each end-point separately.
+
+UNKNOWN +
+
+PE. new. SAP | | PE_reset
+
+<RESET> <RACK>
+<CONNECT_indication> <CONNECT_indicstion>
+iz PEeck
+RESETTING >= i DATA
+| PE_new BAP " PE_new sap |
+PE_reset
+give up give up
+
+<DISCONNECT. dicetion>
+
+sP_deck
+DISCONNECTING
+
+Figure 11.1: State graph for a connection.
+
+A general procedure applies to the transmission of protocol
+elements for which an acknowledgement is required in the
+form of a protocol element transmitted in the opposite di-
+rection, viz. RESET and DATA which are acknowledged by RACK
+and ACK, respectively. Initiating the transmission of one
+
+RC Computer -135-

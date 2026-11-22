@@ -1,0 +1,52 @@
+PICCOLINE 4. Console module
+
+4.5 Graphics Mode
+
+A function is offered in the XIOS to put a console into
+graphics mode.
+
+When this function is used, the console module handles
+transitions between alphanumeric and graphics mode when a
+console is switched from foreground to background and vice
+versa. At the same time the console module saves or resto-
+res the graphic image on the screen. It also supports con-
+sole output in graphics mode.
+
+In graphics mode the bitmap for the display occupies the
+32k pixel memory. The character definitions therefore have
+to be saved in a save-buffer elsewhere in memory. The
+graphics save-buffer must be provided by the application
+program.
+
+When a console is switched in or out, the console module
+swaps the contents of the pixel memory and the save-buffer.
+The application program must provide a variable in which
+the console module places a pointer to the segment that
+currently contains the graphic image.
+
+To avoid swapping the segments while the graphics segment
+is being updated, a semaphore is used to ensure exclusive
+access to the graphics segment.
+
+NOTE
+
+In a PICCOLINE l1-console system (i.e. no background
+consoles) the save buffer will allways contain the
+character definitions. In order to save memory space only
+the lower standard character set is saved in the save-
+buffer. Therefore in this case the save-buffer need only
+be of size 8k. This also means that only the lower
+standard character set may be used in graphics mode.
+
+4.5.1 Init Graphics
+
+Graphics mode is entered by an Int-28h function called with
+the following register contents:
+
+AL = 0 (function number)
+AH = graphics mode (1 = high resolution)
+(2 = medium resolution)
+CX = address offset of graphics control block
+DX = address segment of graphics control block
+
+RC Computer -55-

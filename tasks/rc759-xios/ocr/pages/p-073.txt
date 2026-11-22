@@ -1,0 +1,40 @@
+PICCOLINE 4. Console module
+
+4.6.4 Set Cursor Tracking Mode and Viewpoint
+
+This call sets the tracking mode and viewpoint. The
+tracking mode determines whether the window is fixed or
+follows the cursor. The viewpoint determines which part of
+the virtual console is visible in the window.
+
+entry: al = 21
+dl = ve number
+dh = cursor tracking mode
+
+0 => window is fixed on ve image
+1 => window tracks scrolling
+cx = row,column of top-left viewpoint
+
+exit: none
+
+4.6.5 Set Wrap Around Column
+
+This call sets the column in which the cursor automatically
+wraps around if wrap around is enabled.
+
+entry: al = 22
+dl = ve number
+cl = wrap column number
+
+exit: none
+
+4.6.6 Switch Between Full Screen and Window
+
+This call toggles the window between full screen and not
+full.
+
+entry: al = 23
+dl = ve number
+exit: none
+
+RC Computer -63-

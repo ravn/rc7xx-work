@@ -1,0 +1,44 @@
+PICCOLINE 12. iSBX Bus Specification
+
+12.2.3 Environmental
+
+All bus specifications should be met while the environment
+is within the following ranges:
+
+Signal Electrical At At
+Name State Signal Level Receiver Driver
+1ORD/ (u H = TTL High State §22H2 20V 5.25 2H 2 2.4V
+IORD/ 1 L = TTL Low State 0.8 2L > —0.5V O52L 20V
+IORD 0 L = TTL Low State 08 2L 2>-05V 052L 20V
+IORD 1 H = TTL High State §.252H2> 20V 5.25 2H 2 2.4V
+Vee = 5 volts +5% referenced to togica! ground.
+V = volts.
+
+Fig.12.10 Logical and Electrical States
+
+Temperature: 0-55 C (32-131 F) Free moving air across the
+base board and iSBX Multimodule board.
+
+Humidity: 90% max relative (no condensation).
+
+Shock: 30 g's of force for an 11 msec duration 3 ti-
+mes in 3 planes both sides (total of 18
+drops).
+
+Vibration: Sweeping from 10 Hz to 55 Hz and back to 10
+
+Hz at a distance of 0.010 inches peak-to-peak
+lasting 15 minutes in each of three planes.
+
+12.2.4 Timing
+
+Fig.12.11 summarizes all the ac timing specifications. The
+timing diagrams are shown in fig.12.12 through 12.15.
+
+NOTE
+
+The input waveforms for the ac timing specifications are
+as follows:
+
+RC Computer -159-
+

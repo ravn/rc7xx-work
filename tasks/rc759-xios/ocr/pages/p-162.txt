@@ -1,0 +1,45 @@
+12. iSBX Bus Specification PICCOLINE
+
+12.1.3 iSBX Multimodule Command Operations
+
+The command lines are driven from the base board by tri-
+state drivers with pull-up resistors or standard TTL totem
+pole drivers. These lines indicate to the iSBX Multimodule
+board what action is being requested.
+
+12.1.3.1 I/O READ
+
+There are two I/O READ operations that a base board can
+perform. The iSBX Multimodule board determines which type
+of I/O READ is performed. The first type is a full speed
+I/O READ (fig.12.3). The base board generates a valid 1/0
+address and a valid chip select for the iSBX Multimodule
+board. After the set up timings are met, the base board
+activates the IORD line. The iSBX Multimodule board must
+generate valid data from the addressed I/O port in less
+than 250 ns. The base board then reads the data and removes
+the read command, address, and chip selects shown in the
+timing diagram.
+
+VALID ADDRESS
+
+—Å
+MCS/ es V
+
+t
+
+worD/ \
+m00-MD7 —{ Y vauo DATA }-———_—_
+
+\
+
+In
+
+Fig.12.3 iSBX Multimodule Board Read, Full Speed
+
+The second type of I/O READ is an extended read (fig.12.4).
+This type of read is used by iSBX Multimodule boards that
+cannot perform a READ operation under the full speed speci-
+fications. The base board generates a valid address and
+
+-152- RC Computer

@@ -1,0 +1,41 @@
+PICCOLINE 11. Local Area Network
+
+11.2.1.6 TEST.confirm
+
+The primitive which is issued in response to a TEST.request
+primitive is passed from the driver to the client. This is
+done by writing a long pointer (pointing to the test buf-
+fer) to the clients confirm queue.
+
+Format of the returned test buffer:
+
+byte number
+0 DSAP is the remote SAP address.
+1 confirm kind = 4 (TEST.confirm)
+
+2 result indicates how the transmission of test
+data unit went, e.g. ‘no problems’ or ‘too
+many collisions'
+
+11.2.1.7 TEST.indication
+
+The primitive which indicates that a TEST response protocol
+element addressed to the local SAP has been received is
+passed from the driver to the client. This is done by
+writing a long pointer (pointing to the indication
+datastructure) to the clients indication queue.
+
+Format of the indication datastructure:
+
+byte number
+0 indication kind = 1 (TEST.indication)
+1 reserved
+2-3 the length of the received test buffer
+4-7 reserved
+8-9 received test buffer offset
+10-11 received test buffer segment
+12-13 reserved
+
+14-19 source Ethernet address
+
+RC Computer -121-

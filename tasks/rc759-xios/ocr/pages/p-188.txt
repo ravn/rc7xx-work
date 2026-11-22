@@ -1,0 +1,36 @@
+13. Inter Computer File Transfer PICCOLINE
+
+13.2 How FILEX Works
+FILEX type file transfers take place as follows.
+
+The local computer sends a number of transactions to the
+remote computer. Each time the remote computer receives a
+transaction, it carries out the appropriate file operation
+and sends an answer back to the local computer. The trans-
+actions sent depend upon whether the file is to be trans-
+ferred to or from the local computer (see the FILEX program
+listing for details).
+
+The entire set of transactions and the transmission proto-
+col are described in the following.
+13.2.1 FILEX Transactions
+
+The effect of the file operations below is as described in
+ref.2.
+
+OPEN
+Request Field Answer
+1 opcode 1
+0 unused 0
+0 result result
+file name name
+16 byte
+MAKE
+Request Field Answer
+2 opcode 2
+0 unused 0
+0 result result
+file name name
+16 byte
+
+-178- RC Computer

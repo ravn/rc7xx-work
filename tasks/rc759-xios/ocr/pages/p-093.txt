@@ -1,0 +1,110 @@
+PICCOLINE
+
+7. Cassette Tape
+
+Registers on return:
+
+AL
+ok
+
+Mom mom won
+
+Um WN ©
+
+Function result
+
+CRC error
+no data on tape (time out)
+no leader found
+wrong record number
+end of file
+
+AH and BX are modified
+
+CX
+
+last byte
+
+read
+
+Stack is unchanged.
+
+Note
+
+(after 10 tries)
+
+= Number of bytes actually read
+DX = Offset (in input buffer)
+
+to the byte after the
+
+If the record number of the data record is different from
+
+the preceeding record number
+
+occurs (AL = 4).
+
+Example
+
+ne Se Noe Se ne
+
+console.
+cseg
+
+mov al,27
+mov cx,length
+
+mov dx,offset
+push ds
+int 28h
+
+mov al,29
+mov cx,length
+mov dx,offset
+
+int 28h
+mov cl,9
+
+mov dx,offset
+int 224
+
+textoutl
+textoutl
+
+textout2
+textout2
+
+wait_text
+
+me ne ne Se ne
+
+Se Se Ne Se ne
+
+incremented by one an error
+
+This program writes a file header record followed by
+
+a data record to cassette tape. Then it waites for
+user to rewind the tape before reading the two records
+again. Finally the characters read are written on the
+
+write file header
+number of bytes in CX
+offset in DX
+
+segment on top of stack
+write it!
+
+write next data record
+number of bytes in CX
+offset in DX
+
+segment allready on stack
+write it!
+
+write string
+on console
+
+RC Computer
+
+-83-

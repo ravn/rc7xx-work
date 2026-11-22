@@ -1,0 +1,29 @@
+12. iSBX Bus Specification PICCOLINE
+
+LAN NEN
+aOR 1.270 —
+8 PLACES +00 —e ‘ssa
+MW TESE 3
+\ U
+? i
+20
+vs =
+2.100
+==
+tocarion” | oa
+~——- 1.50-———>}
+
+Fig.12.24 13/26 and 20/40 Pin Connector
+
+12.4 Design Example
+
+This section provides a functional description of a design
+example. The design example that will be used is an Serial
+Multimodule Board. The functional description includes de-
+tails on the RS232C and RS422/449 communications interface
+signals, the interface signals between the iSBX Multimodule
+board and the host microcomputer, and the clock generation
+hardware on the iSBX Multimodule board. Fig.12.25 shows a
+block diagram of the Communication Multimodule board.
+
+-170- RC Computer

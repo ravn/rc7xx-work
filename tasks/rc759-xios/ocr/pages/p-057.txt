@@ -1,0 +1,43 @@
+PICCOLINE 4. Console module
+
+ESC s - Enter Blink Mode
+
+Causes characters to be displayed blinking.
+
+ESC t - Exit Blink Mode
+
+Causes characters to be displayed not blinking.
+
+ESC u - Exit Intensify Mode
+
+Causes characters to be displayed in normal intensity.
+
+ESC v - Wrap at End of Line
+
+Causes the cursor to move to the beginning of the next line
+if a character is written in the rightmost position of the
+line. If at the bottom line, the screen is scrolled up one
+line.
+
+ESC w - Discard at End of Line
+
+Following the invocation of this sequence, if a character
+is written in the rightmost position of the line, the cur-
+sor remains in the same position. The following characters
+overprint.
+
+ESC x - Exit Non-Displayed Mode
+
+This sequence causes characters to be displayed normally.
+
+ESC z - Reset Attributes
+
+This sequence turns off the attributes blinking, underline,
+high intensity, non-displayed mode to the off condition.
+The background colour is set to black and the foreground to
+the default colour. Also, cursor is enabled, standard
+character set is selected, wrap at end of line enabled,
+function keys are expanded normally, and the status line is
+enabled (24 line mode).
+
+RC Computer -47-

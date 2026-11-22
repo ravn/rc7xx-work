@@ -1,0 +1,13 @@
+PICCOLINE 4. Console module
+
+string of characters; for the F1-F12 keys used alone,
+strings can be up to 20 characters long. For the remaining
+function keys, strings can be up to 4 characters. NULL is a
+character with value 0, that terminates the string.
+
+With the function key expansion disabled by ESC-6, the
+function keys return the hexadecimal value of the function
+key identifier with the high order bit set. ESC-7 restores
+the normal expansion of function keys.
+
+RC Computer -49-

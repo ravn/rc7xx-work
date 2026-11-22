@@ -1,0 +1,56 @@
+4. Console module PICCOLINE
+
+The graphics control block has the following format:
+
+gcb:
+gcb_mx db 0 ; Mutual exclusion semaphore
+gcb_seg dw seg buffer; segment of savebuffer
+
+The gcb_seg field must contain the address segment of a 32k
+save buffer (8k in case of a l-console system).
+
+When the gcb_mx field is set to 255 (FFH), the console will
+not be switched in or out, thus avoiding buffer swapping
+when the graphics segment is being updated. As the PIN
+process may be waiting for this semaphore, it should not be
+set for a longer period.
+
+Example
+
+; this routine puts the console in graphics mode.
+; it is assumed that the ES register points at the
++ extra segment.
+
+init_graphics:
+mov gcb_seg,es
+mov al,0
+mov ah,1
+
+initialize the buffer segment
+function code for init graphics
+high resolution
+
+Ree One se se
+
+mov cx,cs:offset gc ; get offset and segment
+mov 4dx,cs of the control block
+int 28h do the call
+ret
+gcb rb 0 + graphics control block
+gcb_mx db 0
+gcb_seg rw 1
+eseg
+buffer rb 8000h ; make room for save buffer
+
+2000h in case of 1l-console system
+
+~
+
+4.5.2 Exit Graphics
+
+Alphanumeric mode is entered by an Int-28h function called
+with the following register content
+
+AL = 1
+
+-56- RC Computer

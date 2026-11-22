@@ -1,0 +1,53 @@
+PICCOLINE 11. Local Area Network
+
+The result can have one of the following values:
+
+result value explanation
+0 no problems
+1 link down
+2 protocol error - already one outstanding data
+request on the requested connection
+4 SAP class error - the requested service
+requires that the SAP has been activated as a
+RCLLC SAP
+5 SAP class error - the requested service
+requires that the SAP has been activated as a
+type 1 SAP
+6 SAP occupied by another client
+7 can't activate a new SAP - no resources
+8 illegal SAP number
+9 data buffer too big ( > 1076 bytes)
+10 protocol error SAP removed - reason why
+unsyncronized disconnect acknowledge
+255 request not implemented
+INDICATION
+
+The indication event. is signaled by the
+
+driver to the
+
+client to indicate an internal event which is significant
+
+to the client i.e. a data buffer has been
+connection has been established or removed.
+The driver will write indication events to
+by a client. This queue is made known to
+the client activates an SAP.
+
+The indication queue must be created with a
+bytes and a number of buffers that will
+driver will not be suspended in an attempt
+queue.
+
+received ora
+
+a queue created
+the driver when
+
+buffer size = 4
+ensure that the
+to write to the
+
+RC Computer
+
+-115-

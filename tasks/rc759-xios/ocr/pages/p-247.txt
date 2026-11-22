@@ -1,0 +1,66 @@
+PICCOLINE Catchword Index
+
+U
+
+UDA seere eee eee eee eee O
+udata.confirm sees eeeeeeeee000 0. 123
+udata.confirm buffer format ........... 123
+udata.indication "00000000 2002. 123
+udata.indication datastructure ........ 123
+udata-. request 00000000. 122
+udata.request buffer format ........... 122
+
+UI cece cece cece cence cece eee eee eee L41
+unacknowledged data transfer .......... 132
+underline attribute .......cccceeeeeeee 35,45,93
+underline mode 2... ecceecccccceccceces 45
+unnumbered information .--eeececeeeeeees See UI
+update window seere eee eee 04000. See function 39
+User Data Area seere eee, See UDA
+
+Vv
+
+VCMXQO .ccccccccccccccocs
+VOMXQL wc cw eee c eer cnccee
+VCMXQ2 wccccevevcvaccceece
+VOMXQ3 seere eee se ee
+videoline seere.
+viewpoint essere eee eee
+VINQO seere sees ee
+VINQI seere
+VINQ2 cocvacccsccccrccccccvesece
+
+wan
+
+VINQ3 wc cccccc vce cc ccvcvvcccee .
+virtual console ...cc cece cccceee
+VOUTQO seere eee
+VOUTQL coc cncccvcnccnvveevvvccces
+VOUTQ2 .cccccccec cr ccc cccecrcvccne
+VOUTQ3 wecervccecccncvevvccevvccs
+
+DODOANDWMADADAHAWADWADO
+
+Ww
+
+wake up window manager ..cecccccscoeese See Ctrl+A3
+WD1797 veere eee ere, 87
+
+white seernes esse se sees ee 43
+
+window handling seere ere 00 0… G1
+
+window manager seere 0000002 61,62,64
+window manager data block .......e5e+--- 61
+
+window manager state ....eeeeeeeceeeees 62
+
+WINGOWS reserve eee eres. Ol
+
+wrap around seere 63
+
+wrap around column .....-..-cce-ceeeeee See Xfunction 22
+wrap at end of line ...0022222294222+ See ESC V
+write end of file seere e eee eee 81,198
+
+RC Computer -237-

@@ -1,0 +1,39 @@
+A. int-28h Function Interface
+
+Function 0
+Changes the console mode to graphics mode.
+
+Registers on entry:
+
+AL 0
+
+AH l=high resolution/2=medium resolution
+
+DX Address segment of graphics control block.
+cx Address offset of graphics control block.
+
+Registers on return:
+Undefined
+
+See 4.5.1.
+
+Function 1
+
+Changes the console mode to character mode.
+Registers on entry:
+
+AL 1
+
+Registers on return:
+
+Undefined
+
+See 4.5.2.
+
+Function 2
+
+Reserved
+
+RC Computer
+
+-183-

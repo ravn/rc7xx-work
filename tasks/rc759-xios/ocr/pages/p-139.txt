@@ -1,0 +1,47 @@
+PICCOLINE 11. Local Area Network
+
+Format of the indication datastructure:
+
+byte number
+0 indication kind = 4 (DATA. indication)
+
+1 connection index (identify the connection on
+which the data has been received)
+
+2-3 the length of the received data buffer
+4-7 reserved
+8-9 received data buffer offset
+
+10-11 received data buffer segment
+
+12-13 reserved
+
+14-19 source Ethernet address
+
+The information part of the data buffer begins at the
+seventh byte in the data buffer. The first six bytes are
+included in the length of the data buffer.
+
+11.3 MAC Services
+
+The function performed by the MAC layer is to accept from
+an RCLLC entity a MAC service data unit, to transmit it to
+one, several (multicast), or all stations in the network,
+and in the receiving station(s) to deliver the unit to the
+destination RCLLC entity(ies).
+
+In the PICCOLINE (CSMA/CD) type network the MAC service
+includes retransmission following a detected collision.
+
+There is no guarantee that a MAC service data unit which is
+transmitted from one station on the network is received at
+the destination station(s).
+
+Each MAC entity is sensitive to its station address and
+possibly one or more multicast addresses, i.e. addresses of
+groups of stations to which the station belongs. Only MAC
+service data units transmitted with one of these addresses
+or the broadcast address will be received by the MAC
+entity.
+
+RC Computer -129-

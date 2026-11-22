@@ -1,0 +1,53 @@
+PICCOLINE 11. Local Area Network
+
+Enabling interrupts from the net controller:
+
+mov dx,2 ;8259 interrupt controller 1/0
+;address
+
+and a1,10111111B ;enable net interrupt
+
+out dx,al ;execute the open
+
+The communication with the net controller is performed by
+information exchange in common memory (the SCB and related
+control structures). When the user will force the
+controller to look in the common memory, he executes a
+channel attention. When the controller will force the user
+to look in the common memory, it executes an interrupt.
+
+A channel attention is performed:
+
+mov dx,100H ;net controller channel
+;attention I/O address
+
+in al,dx ;note overwrites the contents of al
+;reg with non significant
+zinformation
+
+Due to an Intel based inconsistency between the CRT con-
+troller's and the net controller's interpretation of the
+SYSBUS bit, the initialization of the net controller dif-
+fers a little bit from the description given in ref.11.
+Ref.10 prescribes that the System Configuration Pointer
+(SCP) begins at location OFFFF:6 (PICCOLINE Prom address
+room). In PICCOLINE the SCP is placed in the RAM address
+room. The SCP segment is 3000H and the SCP offset is
+OFFF6H. The SYSBUS byte in the SCP must be 0 to indicate 16
+bits bus word mode.
+
+11.4 RCLLC Datalink Layer Protocol.
+
+The description of RCLLC procedures falls in two parts:
+
+- 1) the type 1 procedures which are in conformance with
+(ref.6)
+
+2) the procedures for client network service which con
+stitute a functional extension to the type 1 procedures.
+
+In general, an RCLLC protocol element may be a command pro-
+tocol element or a response protocol element. As a protocol
+element is transmitted using the services of the MAC layer
+
+RC Computer -131-

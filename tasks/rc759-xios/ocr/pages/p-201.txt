@@ -1,0 +1,37 @@
+PICCOLINE A. _Int-28h Function Interface
+
+Function 23
+
+Returns status of iSBX351 controller (if installed).
+Registers on entry:
+
+AL 23
+
+Registers on return:
+
+AX Status
+
+See 10.3
+
+Function 24
+
+Initializes the iSBX351 controller (if installed).
+Registers on entry:
+
+AL 24
+
+Stack on entry:
+
++2 Parameter block segment
++0 Parameter block offset
+
+Registers on return:
+Undefined
+
+See 10.3
+
+Function 25
+
+Reserved.
+
+RC Computer -191-

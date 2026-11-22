@@ -1,0 +1,29 @@
+PICCOLINE 12. iSBX Bus Specification
+
+12.4.5 DC Specifications
+
+The dc specifications for the iSBX bus are summarized in
+fig.12.16. The figure is divided into two sections, output
+specifications and input specifications. The output speci-
+fications are the requirements on the output drivers of the
+iSBX Multimodule board (i.e., the data bus output drivers
+must guarantee at least 1.6 mA @ 0.5 volts). The output
+specifications in fig.12.16 are the minimum drive require-
+ments. The input specifications are the requirements of the
+receivers on the iSBX Multimodule board (e.g., the loading
+of the address lines (MAO-MA2) can be no greater than 0.5
+mA @ 0.8 volts). Fig.12.16 also summarizes the maximum
+loading permitted on an iSBX Multimodule interface at any
+one time.
+
+main) i
+MCS(N)/ ” I
+tap» 0 +>
+MWAIT/ L
+fr. he
+JOWRT/
+MDO-MDT
+
+Fig.12.12 iSBX Multimodule Board 1/0 Write Timing
+
+RC Computer -161-

@@ -1,0 +1,57 @@
+PICCOLINE 10. Serial Interface
+
+The interrupts from the iSBX351 are connected to the 80186
+CPU INTl and INT3 pins. The receiver and transmitter are
+assigned interrupt level ODH and OFH respectively. This
+corresponds to the following interrupt vector addresses:
+
+Interrupt address
+hex dec
+
+receiver 0:34 0:52
+
+transmitter 0:3c 0:60
+
+10.2.1 Asynchronous Communication
+
+Counter 2 of the 8253 PIT is used to generate both receiver
+and transmitter baud rate. Therefore it is impossible to
+have different receiver and transmitter baud rate in the
+standard configuration. If it is necessary to have
+different baud rates it is possible to strap the channel to
+use two different counters of the PIT to generate the
+different baud rates.
+
+In order to get the appropriate baud rate the counter 2
+register of the PIT is set to one of the values in the
+following table.
+
+Value Baud rate
+1024 75
+698 110
+512 150
+256 300
+128 600
+64 1200
+32 2400
+16 4800
+8 9600
+
+Example
+
+Initialize the 8253 PIT to generate a 2400 baud rate clock
+for the serial channel (both receiver and transmitter baud
+rate).
+
+mov dx,316H
+mov al,0OB6H
+out dx,al
+
+PIT control register
+select counter 2. Read
+least sign. byte first
+then most sign. byte
+
+Se oe ee
+
+RC Computer -101-

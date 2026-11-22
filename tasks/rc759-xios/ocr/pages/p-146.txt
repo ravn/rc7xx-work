@@ -1,0 +1,53 @@
+11. Local Area Network PICCOLINE
+
+of these elements means: initializing the retransmission
+counter, starting the acknowledgement timer, and actually
+transmitting the protocol element. When the acknowledging
+protocol element arrives, the transmission is considered
+successfully completed, and the timer is stopped. If, on
+the other hand, the acknowledgement timer expires, the
+retransmission counter is decremented, and if it was
+exhausted, i.e. became zero, the connection is given up
+(give_up event). Otherwise, the timer is restarted and the
+protocol element retransmitted.
+
+There is never more than one outstanding protocol element
+requiring acknowledgement, i.e. transmission of a RESET or
+DATA protocol element is not initiated until transmission
+of the previous element is completed. For this reason a
+DATA.request primitive containing an RCLLC service data
+unit for transmission on a connection may be accepted while
+an unacknowledged protocol element is outstanding, but it
+will then be queued (by the RCLLC entity) for transmission
+rather than processed immediately.
+
+The remaining part of this section contains a discussion of
+the meaning of each state of a connection (end-point) and
+the procedures followed by an RCLLC entity in each state.
+
+UNKNOWN
+
+The RCLLC entity has no knowledge of the remote SAP, but is
+ready to establish a connection. No service primitives are
+accepted and all protocol elements except ACTIVE SAP and
+RESET are discarded.
+
+A received ACTIVE_SAP protocol element (with matching SAP
+mask) constitutes a PE_new_SAP event. It causes the RCLLC
+entity to establish a connection to the remote SAP by
+starting the SAP alive timer, initiating the transmission
+of a RESET protocol element, resetting the sequence
+counters, passing a CONNECT.indication primitive to the
+client, and changing the connection state to RESETTING.
+
+A received RESET protocol element constitutes a PE_reset
+event indicating that the local SAP has become known to the
+remote RCLLC entity and caused it to establish a
+connection. The local RCLLC entity will establish its end
+of the connection by starting the SAP alive timer, trans-
+mitting a RACK protocol element to acknowledge RESET,
+resetting the sequence counters, passing a
+CONNECT.indication primitive to the client, and changing
+the connection state to DATA.
+
+-136- RC Computer

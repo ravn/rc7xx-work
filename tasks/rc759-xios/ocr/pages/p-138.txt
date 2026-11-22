@@ -1,0 +1,45 @@
+11. Local Area Network PICCOLINE
+
+4-5 length of the data buffer
+6-7 data buffer offset
+8-9 data buffer segment
+10-14 unused
+The first six bytes of the data buffer are reserved by the
+
+driver. The length of the data buffer includes the bytes
+reserved by the driver.
+
+11.2.3.6 DATA.confirm
+
+The primitive, which indicates that a data buffer previous-
+ly passed in a DATA.request primitive has been transmitted
+on a connection, is passed from the driver to the request-
+ing client. This is done by writing a long pointer (point-
+ing to the data buffer) to the clients confirm queue.
+
+Format of the returned data buffer:
+
+byte number
+
+0 DSAP is the remote SAP address, i.e. the
+client network number.
+
+1 confirm kind = 5 (DATA.confirm)
+
+2 result indicates how the transmission went,
+e.g. ‘no problems' , 'too many collisions' or
+"link down'
+
+The primitive may confirm that the data unit has been
+transmitted and acknowledged, but not that it has been
+delivered to and received by the remote client.
+
+11.2.3.7 DATA.indication
+
+The primitive, which is used to deliver a data buffer re-
+ceived on a connection, is passed from the driver to the
+client. This is done by writing a long pointer (pointing
+to the indication datastructure) to the clients indication
+queue.
+
+-128- RC Computer

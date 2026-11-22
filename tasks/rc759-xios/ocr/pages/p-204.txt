@@ -1,0 +1,26 @@
+A. Int-28h Function Interface PICCOLINE
+
+Function 29
+Write next data record on cassette tape.
+
+Registers on entry:
+
+AL 29
+cx Number of bytes to write
+DX Output buffer offset
+
+Stack on entry:
++0 Output buffer segment
+
+Registers on return:
+
+AX, CX 0
+BX Undefined
+DX Offset of next byte in output buffer
+
+Stack on return:
+Unchanged
+
+See 7.2.3
+
+-194-— RC Computer

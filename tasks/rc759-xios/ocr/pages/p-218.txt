@@ -1,0 +1,34 @@
+D. Character Set and Keystrokes
+
+PICCOLINE
+
+VALUE VALUE
+DEC |HEX | KEYSTROKES DEC [HEX | KEYSTROKES
+32 | 20 space bar 48 | 30 0 0
+| 1
+33 | 24 SHIFT! ] ” 49 | 34 4
+så rad
+34 | 22 SHIFT ” 50 | 32 2
+-
+35 | 23 SHIFT § =: 54 | 33 3 3
+36 | 24 SHIFT $ $ 52 | 34 4 4
+a
+37 | 25 SHIFT % a 53 | 35 5 a
+38 | 26 SHIFT & & 54 | 36 6 6
+i "4
+39 | 27 SHIFT " 55 | 37 7
+40 | 28 SHIFT ( ¢ 56 | 38 8 5
+44 | 29 SHIFT .) 2 57 | 39 g 3
+¥ 8
+42 | 2A SHIFT * 58 | 3A .
+a
+43 | 2B SHIFT + + 59 | 3B -| 3
+44 | 2C ÅR 60 | 3C SHIFT < <
+45 | 2D -|~ 64 | 30 SHIFT =| ~
+46 | 2€ . 62 | 3E SHIFT > ?
+2
+47 | 2F / é 63 | 3F SHIFT ?| ©
+
+-208-
+
+RC Computer

@@ -1,0 +1,56 @@
+PICCOLINE 3. Configuration
+20 Number of idle seconds before the
+floppy motor stops (0-255). Must
+not be less than 2. It is also the
+time before the floppy disks is
+
+released.
+
+21 Reserved.
+
+22 Default foreground colour. The bits
+are encoded as follows:
+
+Bit 0 blue beam on/off
+
+Bit 1 yellow beam on/off
+Bit 2 red beam on/off
+
+Bit 3 high intensity on/off
+Bit 4-7 0
+
+23 The month of the last power on (1H-
+12H).
+
+24 Current year (78H-99H).
+
+25 Load device (i.e. the device from
+which the operating system is
+loaded). The value is the disc
+drive letter 'A' and 'B' or the
+letter 'N' which means load via the
+local area network.
+
+It is also possible to load from
+prom on special PICCOLINEs and in
+this case the value is 'P'.
+26 Number of disk buffers (0-255).
+27 Memory disk size:
+0: 0 Kbytes
+1: 64 Kbytes
+2: 128 Kbytes
+3: 192 Kbytes
+4: 256 Kbytes
+28 Hardcopy printer type:
+
+0: All characters in the range 32
+to 126 are printed without
+conversion. All other characters
+are converted to blanks.
+
+1: All characters are printed
+without conversion.
+
+RC Computer
+
+-19-

@@ -1,0 +1,45 @@
+PICCOLINE 4. Console module
+
+ESC <244> - Set Soft Scroll
+
+<244> denotes one character with the decimal value 244.
+Selects soft scroll mode.
+
+ESC <245> - Set Line Scroll
+
+<245> denotes one character with the decimal value 245.
+Selects line scroll mode.
+
+ESC <246> - Disable Underline Attribute
+
+<246> denotes one character with the decimal value 246.
+Following the invocation of this escape sequence, the un-
+derline attribute is disabled. .
+
+As the upper 256 characters of the character sets are
+addressed when the underline attribute is on, the lower and
+upper 256 characters must be identical in normal uses of
+the underline attribute. Disabling underline makes it
+possible to use all 512 characters of the character set.
+The escape sequences ESC-g and ESC-h are used to select the
+upper and lower 256 characters respectively.
+
+ESC <247> - Enable Underline Attribute
+
+<247> denotes one character with the decimal value 247.
+Following the invocation of this escape sequence, the un-
+derline attribute is enabled.
+
+The escape sequences ESC-g and ESC-h are used to enter and
+exit underline mode.
+
+ESC <253> - Save Function Keys
+
+<253> denotes one character with decimal value 253.
+Saves the current value af the programmable function keys.
+
+NOTE
+
+Only one set af values can be stored.
+
+RC Computer -53-

@@ -1,0 +1,21 @@
+PICCOLINE 1. Introduction
+
+The Tmp queues (Tmp0Q, Tmpl, Tmp2 and Tmp3) are primarily
+intended for use in connection with the menu system to fa-
+cilitate the loading of menu programs and the return to the
+outermost menu level, but may also be used by ordinary pro-
+grams.
+
+The function of the Tmp queues is as follows:
+
+When a Tmp succeeds in the attempt to attach to its default
+console, the first step is to make a conditional queue read
+on the relevant Tmp queue. If this read is successfull the
+Tmp will use the data read as if it was a command line read
+from the keyboard (i.e. the same syntax as for command
+lines is valid, including multible commands separated with
+the sequence '//'). If no data was read the Tmp makes a
+‘read console buffer' operating system call to get the
+command line from the keyboard.
+
+RC Computer -9-

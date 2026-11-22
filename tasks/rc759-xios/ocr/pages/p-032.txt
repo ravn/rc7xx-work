@@ -1,0 +1,95 @@
+Configuration
+
+PICCOLINE
+
+and al,nibble_msk
+
+add ax,2
+out dx,al
+
+sub bl,cl
+add bh,bl
+
+mov ah,checksum_block
+call address_block
+
+mov dx,block base
+mov al,bh
+
+mov cl,4
+
+shr al,cl
+
+out dx,al
+mov al,bh
+and al,nibble_msk
+
+add dx,2
+out dx,al
+pop bx
+pop dx
+ret
+
+Ne ee ee Ne Ne Ne Se Se Ne ne ne ne Ne Se ne Se Se Ne te Se ne Neo ee
+
+strip most significant
+nibble
+
+checksum update new val
+
+in cl old val in bl old
+
+sum in bh
+
+oldval-newval
+
+sum: =sum
++(oldval-newval)
+
+address the checksum
+block
+
+strip least signifi-
+cant nibble
+
+strip most significant
+nibble
+
+;procedure read nvm(block,offset,value);
+sentry:
+al: offset from block base to the desired byte
+
+ee ne Ne Ne
+
+ah: block number (0,1,2 or 3)
+
+exit:
+
+al: the desired byte
+
+read_nvm:
+
+push dx
+push cx
+push ax
+call address_block
+mov dx,block_base
+
+pop ax
+shl al,1
+shl al,1
+xor ah,ah
+add dx,ax
+
+See Se ONS ONE No NE se se te we
+
+save registers
+
+select block
+
+convert byte to nibble
+offset
+
+-22-
+
+RC Computer

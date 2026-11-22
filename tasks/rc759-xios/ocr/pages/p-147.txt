@@ -1,0 +1,54 @@
+PICCOLINE 11. Local Area Network
+
+RESETTING
+
+The RCLLC entity has established the connection by initia-
+ting the transmission of a RESET protocol element. The sta-
+te is used to wait for the acknowledging RACK protocol ele-
+ment after which data may be transmitted in both direc-
+tions.
+
+DATA.request primitives are accepted (queued). DISCONNECT.-
+acknowledge primitives are discarded.
+
+A received RESET or RACK protocol element constitutes a
+PE_rack event and causes the RCLLC entity to change the
+connection state to DATA. RESET, which may occur if RESET
+protocol elements are transmitted in both directions simul-
+taneously, is answered with RACK.
+
+Received DATA or ACK protocol elements are discarded.
+
+If a PE_new_SAP event occurs (see section 11.4.3.4), or if
+the connection is given up, either because the SAP alive
+timer expires or because the RESET protocol element is re-
+transmitted to exhaustion, the RCLLC entity will pass a
+DISCONNECT.indication primitive to the client and change
+the connection state to DISCONNECTING.
+
+DATA
+
+The connection has been completely established through the
+exchange of RESET and RACK protocol elements. In this state
+RCLLC service data units are transferred between the two
+SAPs through the exchange of DATA and ACK protocol elements
+between the RCLLC entities.
+
+Each DATA.request primitive received from the client causes
+initiation of the transmission of a DATA protocol element
+containing the service data unit passed as a parameter of
+the primitive. The sequence number of the protocol element
+is set equal to the value of N(S), and subsequently N(S) is
+incremented modulo 2. Initiation of the transmission of the
+protocol element takes place: either when an ACK or RACK
+protocol element is received marking the successful comple-
+tion of a previous transmission provided a non-empty queue
+of service data units are awaiting transmission; or immedi-
+ately upon receipt of the DATA.request primitive if there
+is no outstanding protocol element awaiting acknowledge-
+ment.
+
+When a DATA protocol element is received, its sequence
+number is compared to the value of N(R). If they are equal
+
+RC Computer -137-

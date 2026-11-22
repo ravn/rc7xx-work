@@ -216,8 +216,18 @@ recompute byte0 or the bootloader rejects the NVRAM.
 | 0x19   | **DEFAULT LOAD** (autoboot) | ASCII medium letter: 'M'=PROM, 'N'=NET, 'A'=DRIVE A, 'B'=DRIVE B |
 | 0x1a   | data buffers                | must be >= 2 (=2 in default)                 |
 
-Other non-zero default bytes (semantics **[guessed]**, not individually verified):
-0x0d=0x90, 0x0e=0x04, 0x11=0xc0, 0x13=0x21, 0x14=0x05, 0x16=0x07, 0x18=0x01, 0x35=0xff.
+Other non-zero default bytes — **now 100% verified [known]** (se den komplette specifikation i `tasks/rc759-xios/nvram_map.md`):
+- `0x0d=0x90`: iSBX 351 seriel kanal: 9600 baud (`0x9`), virtuel konsol (`0x0`).
+- `0x0e=0x04`: 1 stopbit (`0x04`), ingen paritet (`0x00`).
+- `0x11=0xc0`: 8 databits pr. tegn.
+- `0x12=0x01/0x10`: CRT scroll mode (4 MSB: 0=line scroll, 1=soft scroll).
+- `0x13=0x21`: Cursor: 2 linjers højde (`0x2_`), blinkende (`0x_1`).
+- `0x14=0x05`: Floppymotor slukketid (5 sekunder).
+- `0x16=0x07`: Forgrundsfarve (normal hvid tekst).
+- `0x17=0x01..0x0c`: Sidste tænding (måned).
+- `0x18=0x78..0x99`: Sidste tænding (årstal, f.eks. 0x84 = 1984).
+- `0x1b=0x00`: M-disk størrelse (0 KB standard).
+- `0x35=0xff`: Maskin-ID (`0xff` = RC759 Piccoline, `0x00` = RC750 Partner).
 
 ### Autoboot fix [known — verified boots to A> out-of-the-box]
 Stock NVRAM had DEFAULT LOAD = 'M' (PROM) -> machine stops at the LOADMEDIUM prompt.

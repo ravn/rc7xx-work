@@ -1,0 +1,45 @@
+PICCOLINE 4. Console Module
+
+4.3 Character Sets
+
+When the display operates in text mode, the character
+definitions are placed in the 32 Kbytes pixel memory
+located at address D000:0000H.
+
+The pixel memory has room for 1024 character definitions.
+As the XIOS handles 8-bit characters, the characters are
+divided into 4 different character sets:
+
+0 - 255 Lower Standard Character Set
+256 - 511 Upper Standard Character Set
+512 - 767 Lower Alternative Character Set
+768 -1024 Upper Alternative Character Set
+
+The character sets are selected by escape sequences (see
+4.4.1):
+
+ESC-P Select Alternative Character Set
+ESC-Q Select Standard Character Set
+ESC-g Select upper 256 characters
+ESC-h Select lower 256 characters
+
+The default assignment of the alternative character set is
+as for the standard character set (see App. D). This is
+convenient when only a few changes from the standard cha-
+racter set are wanted.
+
+When the underline attribute is set, the upper 256 charac-
+ters of the character set are addressed. So normally the
+two halves of the character set are identical.
+
+The underline attribute however may be disabled giving a
+full 512 character alternative character set. This is also
+true for the standard character set, but other processes
+may be using the underline attribute, which requires the
+two halves of the character set to be identical.
+
+If the console is locked (console switching inhibited) and
+the standard character set restored before termination, all
+1024 characters may be altered.
+
+RC Computer -35-

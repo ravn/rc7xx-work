@@ -1,0 +1,44 @@
+PICCOLINE ll. Local Area Network
+
+SAP Activation and Deactivation
+
+There are four primitives to request activation and deac-
+tivation of a SAP and to confirm the processing of these
+requests. They are described in the following subsections.
+
+11.2.1.1 ACTIVATE. request
+
+The primitive which requests the activation of a SAP is
+passed from a client to the driver by writing a request
+buffer to the 'link_req' queue. The driver can support two
+simultaneous SAPs of any type.
+
+Format of the request buffer:
+byte number
+0 request kind = 0 (activate.request)
+1 specifies the local SAP address of the
+SAP to be activated (must be in the
+range 1 - 63).
+2 specifies whether type 1 service (value
+
+= 1) or client network service (value =
+0) is requested
+
+3-4 queue ID for the indication queue
+5-6 queue ID for the confirm queue
+7-8 the length of the client information
+(max 46 bytes)
+9-10 client information offset
+11-12 client information segment
+13-14 unused
+
+The indication queue and the confirm queue must be created
+and opened by the client before any attempts to request
+activation of a SAP. The queue IDs must be fetched from the
+Queue Parameter Block (QPB see ref.2) after the queues have
+been opened.
+
+Client_information is a data unit which is transmitted and
+passed to the remote client in the CONNECT_indication
+
+RC Computer -117-

@@ -1,0 +1,48 @@
+12. iSBX Bus Specification PICCOLINE
+
+Initialize Lines (Reset)
+
+This input line to the iSBX Multimodule board is generated
+by the base board to put the iSBX Multimodule board into a
+known internal state.
+
+Clock Lines (MCL)
+
+This input to the iSBX Multimodule board is a timing sig-
+nal. The clock frequency is 10 MHZ. This clock is asynchro-
+nous from all other iSBX bus signals.
+
+System Control Lines (MWAIT/, MPST/)
+
+These output signals from the iSBX Multimodule board con-
+trol the state of the system.
+
+Active MWAIT/ (Active Low) will put the CPU on the board
+into a wait state providing additional time for the iSBX
+Multimodule board to perform the requested operation.
+MWAIT/ must be generated from address (address plus chip
+select) information only. If MWAIT/ is driven active due to
+a glitch on the CS line during address transitions, MWAIT/
+must be driven inactive in less than 75 ns.
+
+The iSBX Multimodule board present (MPST/) is an active low
+signal (tied to signal ground) that informs the base board
+I/O decode logic that an iSBX Multimodule board has been
+installed.
+
+12.1.2.2 Address and Chip Select Lines
+
+The address and chip select lines are made up of two groups
+of signals.
+
+Address Lines: MAO-MA2
+Chip Select Lines: MCS0/-MCS1/
+
+The base board decodes I/O addresses and generates the chip
+selects for the iSBX Multimodule boards. The base board de-
+codes all but the lower order three addresses in generating
+the iSBX Multimodule board chip selects. Thus, a base board
+would normally reserve two blocks of 8 I/O ports for each
+iSBX socket it provides.
+
+-150- RC Computer

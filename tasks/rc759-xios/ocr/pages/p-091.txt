@@ -1,0 +1,51 @@
+PICCOLINE 7. Cassette Tape
+
+Registers on return:
+
+AX = 0
+CX = 0
+DX = Offset (in output buffer) to the byte after the
+
+. last one written
+
+BX is modified.
+
+Stack is unchanged.
+
+Note
+
+The cassette driver itself assigns a record number to the
+record. A file header record is allways assigned record
+number 0. The succeeding data records are then assigned
+record number 1, 2, 3,... etc. That is, in order to get a
+
+proper record numbering, data records have to be
+preceeded by a file header record.
+
+7.2.4 Cassette Write End of File
+
+This function writes an end of file record on the cassette
+tape.
+
+Registers on entry:
+
+Registers on return:
+
+AX = 0
+BX, CX and DX are modified
+
+7.2.5 Cassette Read File Header
+
+This function reads the data of a file header record on
+cassette tape into the specified input buffer.
+
+Registers on entry:
+
+AL = 26
+CX = Max number of bytes to read
+DX = Offset address to input buffer
+
+Topmost element on stack contains segment register of
+input buffer.
+
+RC Computer -81i-

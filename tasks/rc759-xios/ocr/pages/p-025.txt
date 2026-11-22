@@ -1,0 +1,50 @@
+3. Configuration
+The basic configuration of the PICCOLINE has two forms:
+
+1. During the initialization after power up or any kind of
+reset, the software investigates the hardware environ-
+ment to determine the size of the main memory, the num-
+ber of disks attached etc. This kind of configuration
+is called the auto configuration.
+
+2. During system initialization the operating system ini-
+tializes the serial communication controller if any,
+the cursor representation, the floppy motor timer etc.
+This initialization is done on the basis of the
+contents of the non volatile memory (NVM). The content
+of the NVM is normally only modifiable by the KONFIG
+program (ref.5).
+
+If the file KDEF.SYS exist on the load device, the file
+is read during system initialization and the content of
+KDEF.SYS is written in the NVM.
+
+The file KDEF.SYS is modified by the program OKONFIG.
+
+3.1 Auto Configuration
+
+The hardware configuration map is accessible for the pro-
+grammer by means of the Int-28h function 4.
+
+This function returns a pointer to the configuration map
+(see appendix A).
+
+NOTE
+
+The contents of the configuration map must not be
+modified.
+
+The configuration map has the following format:
+
+Byte offset explanation
+
+0-3 This double word contains the main
+memory size in bytes.
+
+4-7 This double word contains the total
+memory size in bytes (including the
+CRT pixel memory).
+
+8-11 Reserved.
+
+RC Computer -15-

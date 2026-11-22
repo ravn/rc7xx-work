@@ -543,71 +543,106 @@ Via kildekodematching mod DRI CCP/M 3.1 (`scratch/ccpm31-src/`):
 
 ---
 
-## Modulær opdeling af ccpm.asm (GENNEMFØRT 2026-11-21)
+## Modulær opdeling af ccpm.asm & udskillelse af RSP-processer (GENNEMFØRT 2026-11-22)
 
-Den store monolitiske assembly-fil (39.500 linjer) er opdelt i 5 modul-filer i `tasks/rc759-xios/`, bundet sammen via `%include` i master [ccpm.asm](file:///Users/ravn/z80/tasks/rc759-xios/ccpm.asm):
+Den oprindeligt monolitiske assembly-fil (39.500 linjer) er nu fuldt modulariseret i 5 kerne-/drivermoduler plus 5 selvstændige RSP-processer i `tasks/rc759-xios/`, bundet sammen via `%include` i master [ccpm.asm](file:///Users/ravn/z80/tasks/rc759-xios/ccpm.asm):
 
-1. `mod0_rtm.asm` (2.692 linjer, fil 0x00000–0x0163F): Supervisor & Real-Time Monitor
-2. `mod1_bdos.asm` (2.260 linjer, fil 0x01640–0x026BF): BDOS filsystem
-3. `mod2_mem.asm` (1.641 linjer, fil 0x026C0–0x031DF): Hukommelsesmanager (MEMIF.MEM)
-4. `mod3_cio.asm` (1.405 linjer, fil 0x031E0–0x03ACF): Tegn-I/O (CIOIF.CIO)
-5. `mod4_xios.asm` (32.002 linjer, fil 0x03AD0–0x12F00): RC759 Hardware XIOS & SYSDAT
+### Kerne- og drivermoduler:
+1. `mod0_rtm.asm` (2.654 linjer, fil 0x00000–0x0163F, 5.568 B): Supervisor & Real-Time Monitor
+2. `mod1_bdos.asm` (2.217 linjer, fil 0x01640–0x026BF, 4.224 B): BDOS filsystem
+3. `mod2_mem.asm` (1.608 linjer, fil 0x026C0–0x031DF, 2.848 B): Hukommelsesmanager (MEMIF.MEM)
+4. `mod3_cio.asm` (1.372 linjer, fil 0x031E0–0x03ACF, 2.288 B): Tegn-I/O (CIOIF.CIO)
+5. `mod4_xios.asm` (24.776 linjer, fil 0x03AD0–0x0FD3F, 49.776 B): RC759 Hardware XIOS & SYSDAT
 
----
+### Resident System Processes (RSP):
+6. `rsp_tmp759.asm` (2.397 linjer, fil 0x0FD40–0x1156F, 6.192 B): Terminal Message Processor (CLI/kommandofortolker)
+7. `rsp_clock.asm` (380 linjer, fil 0x11570–0x117CF, 608 B): Tids-/datostyring via systemtick (venter på Flag 2)
+8. `rsp_pin.asm` (1.704 linjer, fil 0x117D0–0x125DF, 3.600 B): Process INput (tastatur- og linjeeditering for Piccoline)
+9. `rsp_vout.asm` (1.155 linjer, fil 0x125E0–0x12E5F, 2.176 B): Virtual OUTput multiplexer (skærmoutput)
+10. `rsp_scroll.asm` (102 linjer, fil 0x12E60–0x12EFF, 160 B): Blød rulning via Intel 82730 tekstprocessor og MXdma0
 
-## Modul 4 (XIOS) Hardware-subroutines (GENNEMFØRT 2026-11-21)
+Reassembly verificeret via Docker `rc759-nasm`: **PASS (77.568 bytes, 100% byte-identisk)**.
 
-30 centrale hardware-driver subroutines i Flemming Kraglunds XIOS er identificeret, navngivet og verificeret:
-* **WD2797 Floppy Disk Controller & DMA**:
-  * `xios_fdc_fcr_setup` (`0x09D4E`) & `xios_fdc_fcr_write` (`0x09E00`) — opsætning af Floppy Control Register
-  * `xios_fdc_select_drive` (`0x09E05`, port 0x288) — drev-selektering og status-check
-  * `xios_fdc_restore_track0` (`0x09E48`, kommando 0x0C) — seek til spor 0
-  * `xios_fdc_step_in` (`0x09ECA`, kommando 0x5C) — step-in kommando
-  * `xios_fdc_cmd_read_sector` (`0x09EF3`, sektor-reg 0x284, kommando 0x88)
-  * `xios_fdc_send_cmd` (`0x09F06`) & `xios_fdc_send_cmd_wait` (`0x0A0B0`)
-  * `xios_fdc_read_track_reg` (`0x09F0E`, port 0x282) & `xios_fdc_wait` (`0x09F4D`)
-  * `xios_fdc_test_busy` (`0x09F95`, port 0x280 test busy/not-ready)
-  * `xios_dma_chan_ctrl` (`0x0A295`, port 0x76) & `xios_dma_mask_reg` (`0x0A29A`, port 0x74)
-  * `xios_fdc_isr` (`0x0A2BE`), `xios_floppy_ack` (`0x0AC27`), `xios_floppy_status_check` (`0x0AD64`)
-* **Tastatur & iSBX Seriel Konsol**:
-  * `xios_kbd_isr` (`0x07A99`) — tastatur-afbrydelse (port 0x20, scancode-oversættelse via ISO-646-DK tabel ved `0x2C52`, RTM flag `0x13`)
-  * `xios_con_status_poll` (`0x0AD8E`, port 0x302 status bit 0x80)
-  * `xios_con_data_read` (`0x0B032`, port 0x302 data)
-* **Intel 82730 CRT & Afbrydelseshåndtering**:
-  * `xios_crt_retrace_isr` (`0x07BFE`, IRST port 0x230, CA port 0x240, tick flag 1)
-  * `xios_crt_trigger_ca` (`0x09601`, Channel Attention port 0x240)
-  * `xios_eoi_pic_and_cpu` (`0x0AF11`, EOI 0x20 til 8259 port 0 + EOI 0x8000 til 80186 port 0xFF22)
-  * `xios_switch_to_priv_stack` (`0x0AF1D`, stakskift til dedikeret XIOS-stak ved 0x441E)
-  * `xios_rtm_flag_set` (`0x078C0`), `xios_rtm_flag_wait` (`0x078D1`), `xios_rtm_svc_call` (`0x078DC`)
+## SW1400 CCP/M-86 3.1 Distributionsanalyse & Målidentifikation (2026-11-22)
 
-Reassembly verificeret: **PASS (77.568 bytes, 100% byte-identisk)**.
+Baseret på **Bits:30005381** (`CCPM_v3.1_releasenotes.pdf`, dateret 03.02.1987) og scanning af de 4 distributionsdisketter (`scratch/rc759-pce/images/disk[1-4].img`):
+
+1. **Vores målbinær (`ccpm.sys`, 77.568 bytes) er `CCPM1.SYS`**:
+   - 100% byte-for-byte identisk med `CCPM1.SYS` på Disk 3/4.
+   - Konfiguration: **1 virtuel konsol uden netværk** (`nvcns = 1`, `xpcns = 1`, 9 CCBs, 3 LCBs).
+   - Linket med **`XIOS1.CON`** (25.728 bytes, 99,4% blok-identisk med modul 4).
+   - 4-konsol modparten er **`CCPM4.SYS`** (87.168 bytes, linket med **`XIOS4.CON`**, 29.440 bytes, `nvcns = 4`).
+
+2. **Udtræk af officielle kerne-moduler (`.CON`) og RSP-processer (`.RSP`)**:
+   - Udtrækket til `scratch/tmp/dist/` via nyudviklet værktøj `tasks/rc759-xios/tools/cpm_extract.py`:
+     - `BDOS.CON` (15.744 B), `CIO.CON` (5.504 B), `MEM.CON` (6.144 B), `RTM.CON` (7.552 B), `SUP.CON` (5.632 B)
+     - `SYSDAT.CON` (3.328 B), `XIOS1.CON` (25.728 B), `XIOS4.CON` (29.440 B)
+     - `CLOCK.RSP` (640 B), `PIN.RSP` (3.328 B), `SCROLL.RSP` (640 B), `TMP759.RSP` (7.168 B), `VOUT.RSP` (2.944 B)
+   - Dokumentation samlet i `tasks/rc759-xios/distribution_sw1400.md`.
+
+3. **Afkodning af XIOS-konfigurationstabel (`struct xios_table`)**:
+   - Identificeret ved `SYSDAT:0x0C0C` (fil-offset `0x77AC`):
+     - `xt_ticks_sec = 60` (60 Hz VSYNC systemtick).
+     - `xt_nvcns = 1` (1 virtuel konsol).
+     - Drev-tabel `xt_dphtab`: Drev A = `0x3942`, Drev B = `0x3956`, Drev M (M-Disk) = `0x3A32`.
+   - Tidligere fejlagtig adskillelse som kode (`aad 0xe`, `inc dx`, `cmp [bp + 0x39], dx`) oprettet som strukturerede data i `mod4_xios.asm`.
+
 
 Alle 65 subroutines er opdateret i `tasks/rc759-xios/ccpm.asm` og `KNOWN_LABELS` i `tasks/rc759-xios/tools/gen_nasm.py`.
----
 
-## Modul 4 (XIOS) Hardware-subroutines (GENNEMFØRT 2026-11-21)
+## NVRAM / NVM Komplet Specifikation & Scroll-mode (2026-11-22)
 
-30 centrale hardware-driver subroutines i Flemming Kraglunds XIOS er identificeret, navngivet og verificeret:
-* **WD2797 Floppy Disk Controller & DMA**:
-  * `xios_fdc_fcr_setup` (`0x09D4E`) & `xios_fdc_fcr_write` (`0x09E00`) — opsætning af Floppy Control Register
-  * `xios_fdc_select_drive` (`0x09E05`, port 0x288) — drev-selektering og status-check
-  * `xios_fdc_restore_track0` (`0x09E48`, kommando 0x0C) — seek til spor 0
-  * `xios_fdc_step_in` (`0x09ECA`, kommando 0x5C) — step-in kommando
-  * `xios_fdc_cmd_read_sector` (`0x09EF3`, sektor-reg 0x284, kommando 0x88)
-  * `xios_fdc_send_cmd` (`0x09F06`) & `xios_fdc_send_cmd_wait` (`0x0A0B0`)
-  * `xios_fdc_read_track_reg` (`0x09F0E`, port 0x282) & `xios_fdc_wait` (`0x09F4D`)
-  * `xios_fdc_test_busy` (`0x09F95`, port 0x280 test busy/not-ready)
-  * `xios_dma_chan_ctrl` (`0x0A295`, port 0x76) & `xios_dma_mask_reg` (`0x0A29A`, port 0x74)
-  * `xios_fdc_isr` (`0x0A2BE`), `xios_floppy_ack` (`0x0AC27`), `xios_floppy_status_check` (`0x0AD64`)
-* **Tastatur & iSBX Seriel Konsol**:
-  * `xios_kbd_isr` (`0x07A99`) — tastatur-afbrydelse (port 0x20, scancode-oversættelse via ISO-646-DK tabel ved `0x2C52`, RTM flag `0x13`)
-  * `xios_con_status_poll` (`0x0AD8E`, port 0x302 status bit 0x80)
-  * `xios_con_data_read` (`0x0B032`, port 0x302 data)
-* **Intel 82730 CRT & Afbrydelseshåndtering**:
-  * `xios_crt_retrace_isr` (`0x07BFE`, IRST port 0x230, CA port 0x240, tick flag 1)
-  * `xios_crt_trigger_ca` (`0x09601`, Channel Attention port 0x240)
-  * `xios_eoi_pic_and_cpu` (`0x0AF11`, EOI 0x20 til 8259 port 0 + EOI 0x8000 til 80186 port 0xFF22)
-  * `xios_switch_to_priv_stack` (`0x0AF1D`, stakskift til dedikeret XIOS-stak ved 0x441E)
-  * `xios_rtm_flag_set` (`0x078C0`), `xios_rtm_flag_wait` (`0x078D1`), `xios_rtm_svc_call` (`0x078DC`)
+1. **Udtømmende NVRAM specifikation etableret**:
+   - Oprettet [tasks/rc759-xios/nvram_map.md](file:///Users/ravn/z80/tasks/rc759-xios/nvram_map.md) med samtlige bytes 0–127 afkodet og verificeret mod *Programmer's Guide* kapitel 3 og XIOS-kildekoden.
+   - Alle tidligere gættede bytes i default-konfigurationen (`0x0D`–`0x35`) er nu 100% verificerede facts:
+     - `0x0D=0x90`: iSBX 351 seriel kanal (9600 baud, virtuel konsol).
+     - `0x0E=0x04`: 1 stopbit, ingen paritet.
+     - `0x11=0xC0`: 8 databits pr. tegn.
+     - `0x12=0x01/0x10`: CRT scroll mode (4 MSB: 0=line scroll, 1=soft scroll).
+     - `0x13=0x21`: Cursor (2 linjers højde, blinkende).
+     - `0x14=0x05`: Floppymotor slukketid (5 sekunder).
+     - `0x16=0x07`: Forgrundsfarve (hvid, normal intensitet).
+     - `0x1B=0x00`: M-disk (RAM-disk) størrelse (0 KB standard).
+     - `0x35=0xFF`: Maskin-ID (`0xFF` = RC759 Piccoline, `0x00` = RC750 Partner).
+   - Checksum-regel dokumenteret: $\sum_{i=0}^{95} \text{byte}[i] \pmod{256} = \text{0xAA}$.
 
-Reassembly verificeret: **PASS (77.568 bytes, 100% byte-identisk)**.
+2. **Kortlægning af blød vs. hård rulning**:
+   - Konsol-flag: `[bx + 0x71]` (og global standard `[cs:0x2c08]`).
+   - `0` = Hård rulning (*Line/Jump Scroll*): Opdaterer 82730 displayliste direkte.
+   - `1` = Blød rulning (*Soft Scroll*): XIOS signalerer Flag 4 (vækker `SCROLL.RSP`) og synkroniserer med Flag 9/10.
+   - Dynamisk skift via escape-koder:
+     - `ESC <244>` (`0x1B, 0xF4`): Set Soft Scroll (`mov byte [bx + 0x71], 1`).
+     - `ESC <245>` (`0x1B, 0xF5`): Set Line Scroll (`mov byte [bx + 0x71], 0`).
+
+3. **Skærmarkitektur og -håndtering: Piccoline vs. Partner**:
+   - Oprettet [screen_architecture_piccoline_vs_partner.md](file:///Users/ravn/z80/tasks/rc759-xios/screen_architecture_piccoline_vs_partner.md).
+   - Beskriver de to fundamentale forskelle:
+     - **Skærm-RAM (0 KB vs. 24 KB)**: Piccoline bruger 32 KB dedikeret CRT-RAM uden for system-RAM via Intel 82730 coprocessor; Partner stjæler de øverste 24 KB af system-RAM til sit frame-buffer.
+     - **Interrupthandlere**: På Partner bevares og gendannes INT 1, INT 3 og INT 0xE1 for at beskytte maskinens indbyggede ROM-debugger; på Piccoline overtager XIOS selv INT 3 (`CS:0x471E`).
+   - Indeholder historisk og ingeniørmæssig analyse af, hvorfor Regnecentralen valgte disse to løsninger og forenede dem i ét dynamisk tilpassende XIOS.
+
+## RSP Grænserevision & Fuldførelse af CLOCK.RSP & PIN.RSP (2026-11-22)
+
+1. **Afkodning af GENCCPM-pakkede RSP-strukturer**:
+   - `GENCCPM` adskiller koden og dataene i to segmenter pr. proces og placerer Data Segment først (`RSPHDR` + `PD` + `UDA`) efterfulgt af Code Segment.
+   - Reelle grænser og segmentstørrelser:
+     - `rsp_tmp759.asm`: `0x0FD40`–`0x1142F` (TMP kode & data)
+     - `rsp_clock.asm`: `0x11430`–`0x115EF` (CLOCK Data 320 B + Kode 128 B = 448 B)
+     - `rsp_pin.asm`: `0x115F0`–`0x125DF` (PIN Data 480 B + Kode)
+   - `rsp_clock.asm` er 100% symboliseret, kommenteret og verificeret mod Digital Research kilderne (`CLOCK.A86`).
+   - PIN dataområdet (480 B) er flyttet til `rsp_pin.asm`.
+
+## Kortlægning og Symbolisering af samtlige 54 INT 28H Funktioner (2026-11-22)
+
+1. **Udtømmende kortlægning af INT 28H funktioner**:
+   - Oprettet [int28h_functions_map.md](file:///Users/ravn/z80/tasks/rc759-xios/int28h_functions_map.md) med samtlige 54 funktioner (Funktion 0–53) dokumenteret og verificeret mod *PICCOLINE Programmer's Guide v2*, Appendix A (*Int-28h Function Interface PICCOLINE*, side 183–202).
+   - Beskriver kaldeparametre, returværdier, registre og implementering i Flemming Kraglunds XIOS for alle 54 funktioner.
+2. **Rekonstruktion af INT 28H dispatch-tabellen i `mod4_xios.asm`**:
+   - Den tidligere rå disassemblering ved `0x0784C`–`0x078B7` (108 bytes, 54 ord) er erstattet af den strukturerede tabel `int28h_jump_table`.
+   - Etableret `xios_code_base` ved `0x06BA0` som grundlag for CS-offset beregning: `dw target - xios_code_base`.
+   - Alle 54 funktions-indgangspunkter er forsynet med beskrivende labels (`xios_int28_fn_...`).
+   - Fejldisassemblering af kassettebånd-hovedlæsning (`0x0C6B6`) rettet til `call sub_0C9D9`.
+3. **Reassembly-verifikation**:
+   - `rebuild_and_verify.sh`: **PASS (77.568 bytes, 100% byte-identisk mod original ccpm.sys)**.
+
+

@@ -1,0 +1,63 @@
+PICCOLINE 4. Console Module
+
+Registers on return:
+
+ES = segment of the table
+BX = offset of the table
+DX = the segment that should be used together with a
+single table entry contents to give the full
+address of one line buffer.
+Example
+
+The following routine return a pointer to a specified
+display line buffer.
+
+At call CX contains the line number (0-24).
+
+At return ES:SI contains a pointer to the specified
+display line buffer.
+
+Ne Noe we Se Se
+
+get line pointer:
+
+push cx ; save line number
+
+mov ax,21 ; function number
+
+int 28h ;
+
+pop cx restore line number
+
+shl cx,1 each table entry is two bytes
+add bx,cx bx contains offset to display
+
+line table
+
+now si contains offset to
+specified display line buffer
+now es contains segment of
+specified display line buffer
+
+mov si,es:RbxA
+
+mov es,dx
+
+We we Se we se Ne Se Ne ne
+
+ret
+
+The screen is automatically updated if the console is in
+the foreground or when the console is switched to the
+foreground. If, however, the console is displayed ina
+window on the screen, the window is not updated when the
+display buffer is modified.
+
+Instead the window must be updated using an Int-28h
+function with the following register contents:
+
+As there are no means to know whether the console is
+displayed in a window or not, this routine must always be
+called, if the display buffer is modified.
+
+RC Computer -33-

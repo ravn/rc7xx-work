@@ -1,0 +1,51 @@
+12. iSBX Bus Specification PICCOLINE
+
+The serial interface provides RS232C or RS422 buffers for
+eight lines. These lines are the Data In, Data Out, Request
+to Send, Clear to Send, Data Set Ready, Data Terminal Rea-
+dy, Receive Clock, and DTE Transmit Clock. All necessary
+driver and receiver chips are supplied with the board.
+
+12.4.2 CPU Interface
+
+The interface between the host microcomputer and the iSBX
+Multimodule board consists of several signals that are de-
+fined in the following paragraphs. The DC characteristics
+for these signals are given in fig.12.26.
+
+RESET (Reset). This active high input signal to the 8251A
+USART places the USART chip into the IDLE mode until a new
+set of control words is written to the chip.
+
+MAO (Address bit 0). This active high input to the 8251A
+USART and to the 8253 is used in conjunction with IORD/ and
+IOWRT/ signals to define which register on the 8251A or
+8253 is addressed.
+
+MAl (Address bit 1). This active high input signal to the
+8253 isused in conjunction with MAO to select one of the
+counters to be operated on in 8253 and to address the con-
+trol word register for mode selection.
+
+IORD/ (I/O Read). This active low input signal to the iSBX
+Multimodule board performs one of two functions depending
+on the chip selected. When low, IORD/ informs the 8251A
+that the host iSBC microcomputer is reading data or status
+from the 8251A, and it informs the 8253 that the host iSBC
+microcomputer is reading the value of a counter.
+
+IOWRT/ (1/0 Write). This active low input to the iSBX Mul-
+timodule board may perform one of two functions dependent
+on chip select. When low, IOWRT/ informs the 8251A that the
+host microcomputer is writing data or control words to the
+8251A. IOWRT/ also informs the 8253 that the host micro-
+computer is outputting mode information or loading coun-
+ters.
+
+MCSO/ (Chip Select). This active low input signal to the
+8251A USART enables it to perform read and write operati-
+ons. When MCSO/ is high, the USART bus is held in a float
+state and the IORD/ and IOWRT/ signals do not effect the
+USART.
+
+-172- RC Computer

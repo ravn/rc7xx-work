@@ -1,0 +1,55 @@
+11. Local Area Network PICCOLINE
+
+Padding of frames containing MAC service data units in
+order to reach the minimum size (46 bytes) is performed by
+the MAC layer. The padding is removed again before
+delivery.
+
+The maximum size (1076 bytes) for MAC service data units is
+also enforced by the MAC layer, i.e. data units exceeding
+the maximum size will not be transmitted, and the receiver
+part of a MAC entity will discard all incoming frames that
+would yield a data unit longer than the maximum size.
+
+The RCLLC layer uses the MAC service by transmitting each
+RCLLC protocol element as a MAC service data unit.
+
+11.3.1 Controller Specific Information.
+
+This subsection describes the PICCOLINE specific
+programming of the INTEL 82586 Ethernet controller. For
+general information about programming the controller we
+refer to ref.10.
+
+Interrupt vector.
+
+The offset part of the pointer to the net controller
+interrupt rutine must be placed in 0:94H. The segment part
+of the pointer to the net controller interrupt routine must
+be placed in 0:96H.
+
+Setting up interrupt vector:
+
+; assumption cs:ax long pointer to net controller
+; interrupt routine
+; es segment register = 0 (interrupt table starts in 0:0)
+
+eli ;disable all interrupts
+
+mov di,94H 7;94H = offset part of net interrupt
+; routine
+
+stosw ;
+
+Mov ax,cs ;get segment pointer
+
+stosw 796H = segment part of net
+;interrupt
+
+sti zenable interrupts
+
+After setting of the interrupt vector the interrupt source
+must be enabled. It is default disable after system
+initialization.
+
+-130- RC Computer

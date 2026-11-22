@@ -1,0 +1,48 @@
+PICCOLINE 11. Local Area Network
+
+11.4.3.6 RACK
+
+This protocol element is transmitted to acknowledge receipt
+of a RESET protocol element in conjunction with establish-
+ment of a connection.
+
+The Param 0 field contains the index assigned to the con-
+nection by the sending RCLLC entity.
+
+The Param 1 field contains the index assigned to the con-
+nection by the receiver as indicated in the RESET protocol
+element being acknowledged.
+
+The Information field is empty.
+
+11.4.3.7 DATA
+
+This protocol element is transmitted to carry an RCLLC
+service data unit from the source SAP to the destination
+SAP.
+
+The Param 0 field contains the sequence number of the ele-
+ment, cf. section 11.4.2. The sequence number, which can
+only be 0 or 1, is placed in bit 0. The remaining bits are
+all 0.
+
+The Param 1 field contains the index assigned to the con-
+nection at the destination RCLLC entity.
+
+The Information field contains the RCLLC service data unit.
+
+11.4.3.8 ACK
+
+This protocol element is transmitted to acknowledge receipt
+of a DATA protocol element on a connection.
+
+The Param 0 field contains the sequence number of the ele-
+ment being acknowledged.
+
+The Param 1 field contains the index assigned to the con-
+nection at the destination RCLLC entity, i.e. the sender of
+the DATA element.
+
+The Information field is empty.
+
+RC Computer -143-

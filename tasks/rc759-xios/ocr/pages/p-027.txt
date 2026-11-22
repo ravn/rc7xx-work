@@ -1,0 +1,52 @@
+PICCOLINE 3. Configuration
+
+After a block has been selected, the 64 nibbles in the
+block are accessible on the even I/O addresses from 80H to
+OFEH. When an IN or OUT instruction is executed with one of
+these addresses, the four least significant bits of regis-
+ter AL will be transferred to/from the NVM.
+
+A copy of the NVM is accessible for the programmer by means
+of Int-28h function 3:
+
+Registers at entry:
+AL 3
+Registers at return:
+
+ES NVM copy pointer segment
+SI NVM copy pointer offset
+
+The NVM layout is as follows (seen as bytes):
+
+byte number description
+
+0 Checksum (see below).
+
+1-2 Type number.
+
+3-4 0
+
+5-6 Serial number.
+
+7-12 Reserved.
+
+13 Baud rate and mode for the
+
+iSBX351/V24 channel. High nibble is
+baudrate (receive baudrate = trans-
+
+mit baudrate). The nibble coding
+is:
+
+0: 75 baud
+1: 75 -
+2: 110 -
+3: 150 -
+4: 300 -
+5: 600 -
+6: 1200 -
+7s 2400 -
+8: 4800 -
+9: 9600 -
+
+RC Computer -17-

@@ -1,0 +1,40 @@
+12. iSBX Bus Specification PICCOLINE
+Symbol Parameter Min (ns) Max (ns) neue
+tr Address stable before read 50 - 13
+te Address stable after read 30 — 13
+ts Read pulse width 300 - 13
+te Data valid trom read 0 250 13
+ts” Data float after read 0 150 13
+te Time between RD and/or WRT - Note 3
+ty CS stable before CMD 25 - 13
+ts CS stable after CMD 30 -— 13
+ts Power up reset pulse width 50 Msec - 15
+to Address stable before WRT 50 _ 12
+tas Address stable after WRT 30 _ 12
+tie Write pulse width 300 - 12
+1457 Data valid to write 250 - 12
+tra Date valid after write 30 _ 12
+tis MCLK cycle 100 110 15
+the MCLK width 35 65 15
+17 MWAIT/ pulse width 0 4 msec 12, 13
+te Reset pulse width 10 Msec _ 15
+tre MCS/ to MWAIT/ valid 0 75 12, 13
+120 DACK set up to /O CMD 100 - 14
+tar DACK hold 30 - 14
+tee CMD to DMA ROT removed to end of DMA cycie - 200 14
+tes TDMA pulse width 500 - 14
+tea MWAIT/ to valid read data - 0 13
+tes’ MWAIT/ to WRT CMD 0 _ 12
+NOTES:
+
+1. Required only if WAIT is activated.
+2. If MWAIT/ not activated.
+
+3. To be specified by each iSBX Multimodule board.
+
+Fig.12.11 iSBX Multimodule Board I/O AC Specifications
+
+-160-
+
+RC Computer
+

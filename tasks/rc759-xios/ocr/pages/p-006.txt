@@ -1,0 +1,129 @@
+PICCOLINE
+
+Table of Contents
+
+4.6 Window Handling... .ccccccccsccevresesesvvcesvsece
+Return PointerS. 0000000
+Set Window Manager State... ceevccsecceces
+
+4.6.1
+
+4.6
+4.6
+4.6
+4.6
+4.6
+4.7 Key
+
+Create a
+
+New Window... cece cccrvccvencccece
+
+Set Cursor Tracking Mode and Viewpoint.....
+
+Set Wrap
+
+Around Column.....cccccscccssccces
+
+Switch Between Full Screen and Window......
+
+board Interface... cece ccc cere env c cree cnncsves
+
+4.7.1 Keyboard Driver. ececscccccrccesesencecccce
+4.8 Mouse Interface... cece ccevcccvccscvcccvevsesecvcs
+
+Real Time Clock... cceccvccvcevvccccescvvesevseccces
+5.1 Real Time Clock Controller... .cccesecceccccsccece
+5.2 Reading and Writing Real Time Clock Registers....
+
+SOUNG... ce wcrc ccc rece eee eee see eee eee eee eee eee eee
+6.1 Programming Tones. 00000000 eee sees
+6.2 Programming NOiSE. .cceccccrccrcccccseccscccccvccs
+
+Cassette Tape. eee eee eee eee eee
+7.1 Cassette Tape Control... cc wcccerccvecsvccesvcces
+7.2 Cassette Tape Driver... ccccscccccvccvcrccccvccee
+Data Record Architecture... cccccccccsecce
+
+7.2.1
+
+Cassette
+Cassette
+Cassette
+Cassette
+Cassette
+
+Write File Header........ccecccvee
+Write Next Data... ccccccecsecvece
+Write End of File... .cccceccees
+Read File Header........cccccccece
+Read Next Data..cercccccvccvevccee
+
+isk System. cece cccccvecsecccscsccvcrsevesevere
+1 Disk Characteristics... .cccccccccrcccccccssecsvcce
+2 Floppy Disk Controller... ccc ccccccvcccencccvecce
+3 Floppy Disk Driver....ccccccccccccvcccccvccccccvcee
+4 Reservation of Shared Disks........cecececcccccce
+
+8.4.1 Reserve Shared Disk... .ccccccccevccccvcce
+8.4.2 Release Shared Disk... cc ccecccrccvccvcens
+
+Parallel
+
+(Printer)
+
+Interfaces... ccececccccccsccvcvvcce
+
+9.1 Parallel Interfaces Description.......sscesceeees
+9.2 Sample Printer Driver RoutineS....ccceccccccvcece
+9.3 The DPC Interface... cc ccc ccccveascncseccessevcee
+9.3.1 Reserve the DPC Interface......cseeeceevece
+9.3.2 Release the DPC Interface... .....cceseesceee
+
+61
+61
+62
+62
+63
+63
+63
+64
+64
+65
+
+67
+67
+67
+
+71
+72
+75
+
+77
+77
+78
+79
+80
+80
+81
+81
+82
+
+85
+85
+87
+88
+89
+89
+89
+
+91
+91
+94
+97
+98
+98
+
+RC
+
+Computer

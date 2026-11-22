@@ -1,0 +1,52 @@
+11. Local Area Network PICCOLINE
+
+The remaining bits of the Control field specify the type of
+protocol element in question, viz.:
+
+00000011 UI, Unnumbered Information
+101X1111 XID, eXchange IDentification
+1111x0011 TEST
+
+The use of the Type 1 Information field depends on the type
+of protocol element, and is described for each element type
+in the section Type 1 Protocol Elements page 141.
+
+The protocol elements for client network service are UI
+commands addressed to an individual SAP with three extra
+bytes of RCLLC header in addition to the LLC type 1 header.
+Source
+
+and destination SAPs have the same local address which is
+equal to the client network number, Netno. The format is as
+shown below: i
+
+bit no. 7 6 5 4 3 2
+byte no. 0 Netno
+Netno type 1
+0 0 oO 0 0 0 header RCLLC
+Function header
+Param 0
+Param 1
+
+Hlolole
+HHololo
+
+Ou ef WHF
+
+Information
+
+The value in the Function field specifies the type of
+protocol element, viz.:
+
+00000000 (binary 0) " ACTIVE SAP
+00000001 (binary 1) RESET
+00000010 (binary 2) RACK
+00000011 (binary 3) DATA
+00000100 (binary 4) ACK
+
+The use of the Param 0 and 1 fields and of the Information
+field depends on the type of protocol element, and is des-
+cribed for each element type in the section Protocol Ele-
+ments for Client Network Service page 141.
+
+-140- RC Computer

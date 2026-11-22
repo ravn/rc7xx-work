@@ -1,0 +1,18 @@
+A. Int-28h Function Interface PICCOLINE
+
+Function 53
+
+Get XIOS version
+Registers on entry:
+AL 53
+
+Registers on return:
+
+AH Year (BCD)
+
+AL Version number (BCD)
+BH Month (BCD)
+
+BL Day (BCD)
+
+-202- RC Computer

@@ -1,0 +1,82 @@
+4. Console Module PICCOLINE
+
+4.3.3 Define Character Font
+
+This function defines a character in the standard or
+alternative character set.
+
+The function is executed with the following register
+contents:
+
+AL = 52
+
+CX = character value (0-1023)
+
+DX = address offset of character definition block
+DS = address segment of character definition block
+
+4.3.4 Get Character Font Definition
+
+This function returns a character definition in the stan-
+dard or alternative character set.
+
+The function is executed with the following register con-
+tents:
+
+AL = 51
+
+CX = character value (0-1023)
+
+DX = address offset of character definition block
+
+DS = address segment of character definition block
+Example
+
+; This routine changes the standard character set to
+; US-ASCII
+us_ascii:
+
+mov cx,9 ; no. of characters
+
+mov si,offset char table ; get table address
+char_loop:
+
+push cx
+
+push si
+
+lodsw
+
+mov dx,offset char buffer
+
+xchg cl,ah
+
+push ax
+
+push dx
+
+mov al,51
+
+int 28h
+
+pop dx
+
+pop ax
+
+xchg cl,al
+
+mov al,52
+
+int 28h ; define the font
+
+pop si
+
+load an ASCII value
+
+~
+
+a
+
+get the definition
+
+-38- RC Computer

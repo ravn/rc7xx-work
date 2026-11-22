@@ -1,0 +1,40 @@
+PICCOLINE A. Int-28h Function Interface
+
+Fl Error Write DW 0,0 ; Bit 0 - BUSY
+DW 0,0 ; Bit 1 - DRQ
+Dw 0,0 ; Bit 2 - LOST DATA
+DW 0,0 ; Bit 3 - CRC ERROR
+DW 0,0 ; Bit 4 - RECORD NOT FOUND
+DW 0,0 ; Bit 5 - DELETED DATA
+DW 0,0 ; Bit 6 - NOT USED
+0,0 ; Bit 7 - READY
+
+Function 14-18
+
+Reserved
+
+Function 19
+Returns 16 mS counter.
+
+To offer a better time resolution than the one second from
+the real time clock, the XIOS maintains a 32 bit wide se-
+cond count field and a tick (16 millisecond) count field
+which together make it possible to make relative time mea-
+surements with a 16 millisecond resolution.
+
+Both the second and the tick count field are initialized to
+zero at boot time and it is not possible to adjust them
+later (the counters are intended for relative time measure-
+ments only).
+
+Registers on entry:
+
+AL 19
+
+Registers on return:
+
+Dx Second count high
+AX Second count low
+Cx Elapsed 16 mS periods of next second.
+
+RC Computer -189-

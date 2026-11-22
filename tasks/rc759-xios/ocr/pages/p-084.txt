@@ -1,0 +1,60 @@
+6. Sound PICCOLINE
+
+A 0 dB setting turns the volume on full. The resulting for-
+matted control byte is
+
+1 0 0 1 0 0 0 0
+Example
+
+; The following subroutine simulates the
+; ringing of bells.
+
+chime:
+call silence
+mov d1,140
+
+call wsg tone 1 = 679 Hz
+mov  d1,5
+call wsg
+mov dl1,170
+call wsg tone 2 = 694 Hz
+mov 41,5
+call wsg
+mov t,-1
+
+cloopl: strike chime 12 times
+cmp t,12
+3z cloop_exit
+inc t
+mov va,144
+
+cloop2: step attenuation
+inc va
+
+cmp va,160
+jz cloopl
+mov dl,va
+
+Me ne NS Ne Nu me ee Se Se ne te te Ne Se Nee Ne Se Ne Se Nes Se ne Se Ne Ne te ne
+
+call wsg
+mov dl,va
+add 41,32
+call wsg
+mov cx,0A000H
+cloop3:
+loop cloop3 step delay
+jmp cloop2
+cloop_exit:
+ret ;
+silence: ; shut off:
+mov d1,9FH ; tone generator 1
+call wsg ;
+mov dl,0BFH ; tone generator 2
+call wsg ;
+mov dl,0DFH ; tone generator 3
+call wsg ;
+
+mov 4d1,0FFH noise generator
+
+-74- RC Computer

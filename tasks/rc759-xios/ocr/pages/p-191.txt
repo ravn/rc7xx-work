@@ -1,0 +1,22 @@
+PICCOLINE 13. Inter Computer File Transfer
+
+If the number of characters in the string to be transmitted
+is N, then the actual number of characters transmitted are:
+
+(start character)
+(block size)
+(data section)
+
+(checksum)
+
+RP+nNn+y + ete
+*
+4
+
+(stop character)
+
+i]
+
+2*N + 8 characters.
+
+RC Computer -181-

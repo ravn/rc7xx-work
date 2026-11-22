@@ -1,0 +1,60 @@
+PICCOLINE 4. Console Module
+
+As the character sets are common to all consoles, it should
+be insured that only one process is using the alternative
+character set. This is done by reading the mutual exclusion
+queue 'MXalt'. The alternative character set is released by
+a write to the queue.
+
+4.3.2 Define Character Font (Alternative Character Set)
+This function defines a character in the alternative cha-
+racter set. The character is defined in both the lower and
+
+upper (underlined) character sets.
+
+The function is executed with the following register con-
+tents:
+
+AL = 20
+
+CL = character value (0-255)
+
+DX = address offset of character definition block
+
+DS = address segment of character definition block
+Example
+
+; This routine defines the character number 255 in the
+; alternative character set.
+; define alternative char:
+mov dx,offset char def
+mov c1,255
+mov ax,20
+int 28h
+ret
+
+character definition
+character ident
+define char. function
+call xios function
+
+We Se Ne Se Se
+
+char def dw 0000000011111111B Character definition.
+dw 0101110011111111B
+dw 0110000011111111B
+dw 0100110011111111B
+dw 0101000011111111B
+dw 01010000111111118
+dw 0101000011111111B
+dw 0100110011111111B
+dw 0000000011111111B
+dw 0000000011111111B
+
+The character is 7 bit
+wide (As the tail is
+011111111).
+
+Se Se ne ne we
+
+RC Computer -37-

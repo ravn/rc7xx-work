@@ -1,0 +1,50 @@
+4. Console Module PICCOLINE
+
+4.2.4 Get/Set Cursor Position
+
+Another useful console driver function returns the current
+cursor position.
+
+The cursor position is obtained by means of an Int-28h
+function with the following register contents:
+
+Registers on entry:
+
+Registers on return:
+
+BH
+BL
+
+line position of cursor (0-24)
+coloumn position of cursor (0-79)
+
+The cursor position may be changed with an Int-28h function
+with the following register contents:
+
+AL = 36
+BH = line (0-23 if 24 line mode, 0-24 if 25 line mode)
+BL = coloumn (0-79)
+
+4.2.5 Get/Set Attribute
+
+The current attribute byte is returned by the following
+Int-28h function:
+
+AL = 37
+At return register AH contains the attribute byte.
+
+The current attribute byte may be changed by the following
+Int-28h function:
+
+AL = 38
+AH = attribute byte
+
+These functions are useful in connection with direct
+manipulation of the display buffer.
+
+WARNING!
+
+The coding of the attribute byte may be subject to
+changes in future releases.
+
+-34- RC Computer

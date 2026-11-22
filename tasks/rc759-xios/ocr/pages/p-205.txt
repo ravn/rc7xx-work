@@ -1,0 +1,33 @@
+PICCOLINE
+
+A. Int-28h Function Interface
+
+Function 30
+
+Subfunction 1:
+
+Initializes mouse.
+Registers on entry:
+
+AL 30
+cL 1
+
+Registers on return:
+
+Undefined
+
+Subfunction 2:
+
+Deinitializes mouse.
+Registers on entry:
+
+AL 30
+cL 2
+
+Registers on return:
+
+Undefined
+
+RC Computer
+
+-195-

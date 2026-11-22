@@ -1,0 +1,36 @@
+7. Cassette Tape
+
+The PICCOLINE standard configuration includes a cassette
+tape interface. The interface control is implemented in
+software by using Timer 0 of the 80186 to control the data
+of the cassette recorder.
+
+This chapter describes the interface to the cassette tape.
+The plug definition of the interface can be found in ref.5
+(appendix D).
+
+7.1 Cassette Tape Control |
+
+The cassette tape control is implemented in software in the
+following way.
+
+Timer 0 output from the 80186 is used to control the output
+data to the cassette recorder. The method used in the
+existing driver is to set Timer 0 to the period of the
+desired data bit. The timer is set to a period of
+approximately 1 millisecond for an one bit and 0.5
+millisecond for a zero bit. The timer then outputs a square
+wave with the period given by the count register (see fig.
+7.1). When more data bits are written the period of the
+timer is changed on the fly.
+
+A detailed description of how to ‘program Timer 0 can be
+found in the Intel documentation of the 80186 CPU.
+
+: 1 bit
+
+1 millisec |
+
+Fig.7.1 Square wave of data bits.
+
+RC Computer -77-

@@ -1,0 +1,49 @@
+11. Local Area Network
+
+The network software in the PICCOLINE can be considered as
+a collection of layers. The higher layers network software
+such as DR-NET (ref.4) and IMC (refs.8,9) utilize a common
+datalink service.
+
+This section describes in detail the datalink service in-
+terface enabling the programmer to implement higher layer
+network software using the PICCOLINE datalink service. Fur-
+thermore a detailed description of the datalink layer pro-
+tocol, the RCLLC protocol, is given. This decription makes
+it possible for the programmer to attach non RC-products to
+the RC Local Area Network (LAN) at the datalink level.
+
+The protocol and service defined in this section form an
+extension to the proposed ISO LLC type 1 protocol and ser-
+vice (ref.6), viz.:
+
+- all frames which are valid according to the RCLLC
+protocol are also valid ISO LLC type 1 frames
+
+- RCLLC adds protocol functions and interface service
+functionality to ISO LLC type 1 in a fashion which
+one might choose to consider as a sublayer added on
+top of an LLC type 1 sublayer
+
+The services of LLC type 1 are data transfer on connection-
+less data links, allowing multiple independent clients
+within each station, plus facilities for point-to-point
+loop back test traffic.
+
+The essential service of the RCLLC layer, which constitutes
+an extension to the type 1 service, is called client
+network service. This service comprises the dynamic
+configuration, maintenance and supervision of multiple
+independent networks of clients. Connection-based data
+transfer with sequence control and retransmission to avoid
+loss of or damage to data is performed between any pair of
+clients belonging to the same client network.
+
+The RCLLC protocol assumes that the services of a Medium
+Access Control layer are available. The services of this
+layer are in the PICCOLINE mainly implemented by the Intel
+82586 Ethernet controller (ref.10). To enable the program-
+mer to access the controller directly, PICCOLINE specific
+information about handling the controller is given.
+
+RC Computer -111-

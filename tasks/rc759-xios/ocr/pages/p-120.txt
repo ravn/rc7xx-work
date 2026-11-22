@@ -1,0 +1,27 @@
+10. Serial Interface PICCOLINE
+
+Suplf 1:
+Xor CH,CH
+Mov DS,sysdat
+Callf supervisor
+Ret
+
+Example
+
+The following program uses the routines described above to
+indefinitely receive and transmit a character on the commu-
+nication line.
+
+CSEG
+ORG 100H
+
+Call Initialize
+NextChar:
+
+Call Receive
+
+Call Transmit
+
+Jmps NextChar
+
+-110- RC Computer

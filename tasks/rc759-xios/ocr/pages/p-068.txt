@@ -1,0 +1,78 @@
+4. Console module PICCOLINE
+
+xchg ax,bx ; set the noswitch flag
+or es:ccb_state&bxA,cf_noswitch
+ret
+
+unlock_console:
+mov es,sysdat
+
+mov bx,ccb addr ; clear noswitch bit
+and es:ccb_state&bxA,not cf_noswitch
+
+mov bx,pd_addr ; and turn off keep flag
+and es:p flag&bxA,not pf keep
+
+ret
+
+sysdat rw
+pd_addr rw
+ecb_addr rw
+
+Pee
+
+Example
+
+this routine demonstrates the use of the mutual exclusion
+semaphore.
+
+it is assumed that an init graphics call has been made
+and the gcb_seg field initialised.
+
+We Se se we
+
+clear_graphics:
+call get_mx
+mov es,gcb_seg
+mov di,0
+mov ax,0
+mov cx,4000h
+rep stosw
+call free_mx
+
+get the semaphore
+
+=
+
+fill with zero's
+16k words
+
+wee
+
+release the semaphore
+
+~
+
+mov al,0ffh
+xchg al,gcb_mx
+or al,al
+
+jz got_mx
+
+is it free?
+yes - we have it
+
+me se Se Se
+
+push ax no - delay one tick
+push bx save what has to be saved
+mov cl,141
+mov dx,1 ; one tick delay
+int 224
+pop bx
+pop ax ; restore saved registers
+jmps get mx ; and try again
+got mx:
+ret
+
+-58- RC Computer

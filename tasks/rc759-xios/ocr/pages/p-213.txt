@@ -1,0 +1,45 @@
+B. Peripheral Device 2/0 Addresses
+
+Address Peripheral Direction Interrupt request
+0000H 18259 Int. Crt.
+0020H Keyboard I 1
+0056H-005CH
+Sound fe)
+005CH RTC 3
+0060H CRT Control fe) 4 3
+0070H PPI Port A I
+0072H PPI Port B I
+00748 PPI Port C o
+0076H Control 70H-74H fe)
+0080H-OOFEH
+NVM 1/0
+0100H Net Ch. Attent
+0180H-01BEH
+Palette fe)
+0230H Reset Int. CRT
+0240H Ch. Attent.
+0250H Local Prin. Data 1/0 6
+0260H Local Prin. Contr.
+0280H Floppy Control I/O 0
+0282H Track Reg. 1/0
+0284H Sector Reg. 1/0
+0286H Data Reg. 1/0
+0288H Floppy Control co)
+028AH DPC Prin. Data 1/0
+028CH DPC Prin. Contr. 1/0 2
+028EH Test Floppy I
+028EH Reserve Floppy fo)
+0290H Release Floppy oO
+0292H Test Printer I
+0292H Reserve Printer oO
+0294H Release Printer fe)
+0300H-0O30EH
+iSBX 1/0 INT1
+0310H-031EH
+iSBX 1/0 INT3
+0320H DMA ACK to iSBX oO
+0330H TC to iSBX o
+
+RC Computer
+
+-203-

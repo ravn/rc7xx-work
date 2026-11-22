@@ -1,0 +1,87 @@
+4. Console module
+
+PICCOLINE
+
+4.4 Console Control Characters
+
+The XIOS console driver recognizes the following characters
+
+as control characters:
+
+Character
+
+NULL
+
+BELL
+
+BS
+
+LF
+
+CR
+
+ESC
+
+Value
+(decimal)
+
+00
+07
+08
+
+10
+
+13
+
+27
+
+Meaning
+
+Ignored
+Acoustic signal
+
+Backspace - Cursor left, if the
+cursor is at column 0, it is moved
+to the last position on the
+previous line.
+
+Line feed - Cursor down one row. If
+the cursor is at the bottom line,
+the screen is scrolled up one row.
+
+Carriage return - move cursor to
+column 0.
+
+initiate escape sequence (see
+4.4.1)
+
+4.4.1 Console Escape Sequences
+
+Escape sequences are used to control the cursor, change co-
+lours, programming function keys and various other purpo-
+ses. An ASCII escape character (dec 27) triggers escape se-
+quence processsing. The character immediately following the
+
+escape character
+
+indicates which function is to be per-
+
+formed. More characters may follow, depending on the func-
+
+tion.
+
+The escape codes and their functions are summarized in
+
+Appendix F.
+
+ESC A - Cursor Up
+
+Moves the cursor up one
+
+line. If the cursor is already on
+
+the top line, this sequence has no effect.
+
+-40-
+
+RC Computer

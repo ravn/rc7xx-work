@@ -1,0 +1,23 @@
+2. CPU PICCOLINE
+
+; restore context
+
+Pop AX
+Pop Dx
+Iret
+
+2.3 Timers
+
+The three 16-bit timers are used for the following pur-
+poses:
+
+Timer 0 is used to generate serial output to the audio
+cassette interface
+
+Timer 1 is used to generate audio output (the 'BELL')
+Timer 2 is reserved for future use
+
+Detailed information about the timers may be found in the
+Intel reference documentation.
+
+-14- RC Computer

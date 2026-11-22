@@ -1,0 +1,46 @@
+PICCOLINE 4. Console module
+
+4.8 Mouse Interface
+
+The optical mouse is supported by an Int-28h function. This
+function is called with the following register contents:
+
+30
+mouse function number
+
+AL
+CL
+
+Three mouse functions numbers are provided:
+
+CL = 1: Initialize mouse
+CL = 2 : Deinitialize mouse
+CL = 3 : Return mouse status
+
+When function 3 (return mouse status) is called, the mouse
+status is returned in the following registers:
+
+Registers on return:
+AL = 0: nothing happened
+AL = 1: button press
+
+register AH contains a button code:
+
+AH = 20H: left button
+AH = 21H: middle button
+AH = 22H: right button
+
+AL = 2: coordinate information
+
+registers BX and cx contain the change in
+coordinates since the last call of mouse status.
+
+BX
+cx
+
+delta x
+delta y
+
+"ou
+
+RC Computer -65-

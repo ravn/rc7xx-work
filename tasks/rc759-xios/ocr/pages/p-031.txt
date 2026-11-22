@@ -1,0 +1,79 @@
+PICCOLINE 3. Configuration
+
+Example
+
+This example shows how to read and write in the NVM while
+maintaining the checksum.
+
+;procedure write_nvm(block,offset,value) ;
+sentry : al: offset from block base to the desired byte
+; ah: block_number (0,1,2 or 3)
+
+; cl: byte to be written
+jexit : the nvm checksum (0AAH) are maintained
+;detroyed: none
+checksum_block equ 0
+checksum_offset equ 0
+block base equ 80H
+nibble msk equ OFH
+write_nvm:
+push dx save registers
+push bx
+push cx
+push ax
+
+read the old value
+save old value in bl
+
+call read_nvm
+
+mov bl,al
+
+mov .ah,checksum_block
+mov al,checksum_offset
+call read_nvm
+
+mov bh,al
+
+pop ax
+
+push ax
+
+call address_block
+
+read the old checksum
+save it in bh
+
+save byte number
+address the block to
+be written
+
+pop ax
+
+mov dx,block_base
+
+shl al,1
+
+shl al,1
+
+xor ah,ah
+
+add dx,ax address of first nible
+
+pop cx retrieve value to be
+written
+
+push cx
+
+mov al,cl
+mov cl,4
+shr al,cl strip least signifi-
+cant nibble
+
+out dx,al
+pop cx
+mov al,cl
+
+Me Ne te Ne Se ne Se Ne Ne Me ne Ne Ne Se Ne Se Ne Na Se Na ne Ne Se Se we Ne Ne Se ne ne
+
+RC Computer -21-

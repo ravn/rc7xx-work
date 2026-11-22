@@ -1,0 +1,28 @@
+RETURN LETTER
+
+Title: PICCOLINE Programmer's Guide RCSLNo.: 99 0 00864
+Version 2.0
+
+A/S Regnecentralen af 1979/RC Computer A/S maintains a continual effort to im-
+
+prove the quality and usefulness of its publications. To do this effectively we need
+
+user feedback, your critical evaluation of this manual.
+
+Please comment on this manual’s completeness, accuracy, organization, usability,
+and readability:
+
+Do you find errors in this manual? If so, specify by page.
+
+How can this manual be improved?
+
+Other comments?
+
+Name: Title:
+Company:
+Address:
+
+Date:
+Thank you
+
+PN: 99200176

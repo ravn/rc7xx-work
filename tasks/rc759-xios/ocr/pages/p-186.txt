@@ -1,0 +1,21 @@
+12. iSBX Bus Specification
+
+PICCOLINE
+
+ADDRESS VALID
+je ta <2]
+CHIP SELECT/ \
+ean tg.
+Ro; f
+ty. \ .
+_{ 4
+DATA YL x VALID —_——
+Fig.12.28 READ Timing
+ADORESS VALID
+pro
+CHIP SELECT/ N }
+war. fa
+Å Jj
+OATA VALID
+Pig.12.29 WRITE Timing
+-176- RC Computer

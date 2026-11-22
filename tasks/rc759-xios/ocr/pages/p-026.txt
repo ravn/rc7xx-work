@@ -1,0 +1,51 @@
+3. Configuration PICCOLINE
+
+12 The value of this byte is OFFH if
+the real time clock second source
+is installed (see 5.1). Otherwise
+
+the value is 0.
+
+13 The value of this byte is OFFH in
+case the local area net work con-
+troller is installed. Otherwise the
+value is 0.
+
+14 The value of this byte is OFFH in
+case any iSBX module is installed.
+Otherwise the value is 0.
+
+15 This byte is set to OFFH if the
+Disk/Printer (DPA) is installed.
+Otherwise the value is 0.
+
+16-17 Reserved.
+18 This byte specifies the type of
+attached monitor:
+OH 15.625 kHz colour
+1H 15.625 kHz monochrome
+2H 22 kHz colour
+3H 22 kHz monochrome
+19 This byte hold the number of floppy
+drives connected to the system.
+20-21 Reserved.
+22 This byte contains the value of the
+
+nationality code switch of the key-
+board (range 0-15).
+
+3.2 Non Volatile Memory
+
+The function of the NVM is to keep various system parame-
+ters during power down periods.
+
+The NVM is made up of a 256 by 4 bit CMOS RAM with battery
+backup.
+
+The NVM is divided into 4 blocks each containing 64 4-bits
+nibbles. A block is selected by means of bit 4 and bit 5 in
+the I/O port at address 74H. Please note that a block se-
+lect operation must not affect the other bits in the 1/0
+port.
+
+-16- RC Computer

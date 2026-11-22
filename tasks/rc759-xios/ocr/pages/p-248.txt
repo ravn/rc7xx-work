@@ -1,0 +1,98 @@
+Catchword Index i PICCOLINE
+
+write file header 20022220 2242220. 80,192
+
+write next data sorcerer eeer 100. 80,194
+
+write RTC register ........- eee cceeercee 67
+
+write to sound generator .............. see function 12
+write nvm seere ser. 21
+
+WW CURSOR VIEW seere 02442222. See Xfunction 21
+WW FULL WINDOW seere: See Xfunction 23
+WW IM HERE seere eee. See Xfunction 19
+WW KEY srereeereeereeeeeeerr eee. See Xfunction 17
+WW NEW WINDOW seere eee, See Xfunction 20
+WW POINTER seere 04 40 See Xfunction 16
+WW STATLINE seere ere. See Xfunction 18
+WW SWITCH DISPLAY ............2.-2+2+-. See Xfunction 24
+WW WRAP COLUMN seere 0000040. See Xfunction 22
+
+x
+
+Xfunction
+Xfunction
+
+0 ….…
+Xfunction 1 cece ceccccccvucnvvevcccves
+Xfunction 2 wecccecrcccccvvecerccsveces
+Xfunction 3 .ccccccrccccccccccccvcveces
+Xfunction 4 wcccrecccccccccveccevcccves
+Xfunction 5 wo... ccc ecccccccevvcccccvves
+Xfunction 6 wcrc eeccccccvcccvvccccevees
+Xfunction 7 wc. cccwcccccccccvcccccccvvce
+Xfunction 8 vere eee
+
+9
+
+Xfunction
+Xfunction 10 00000000 0ee
+Xfunction 11 2... cee cece ccc crc cnc encvee
+Xfunction 12 . . .
+Xfunction 13 . . .
+Xfunction 16 0000000 reee
+Xfunction 17 . . .
+Xfunction 18 .
+
+Xfunction 19 se00ceeeee0eeee00eee…e
+Xfunction 20 ......-..20.8
+Xfunction 21 ...cccccceee
+Xfunction 22 ....c er ccecccscceces 3
+Xfunction 23 seere 4,63
+Xfunction 24 ..........
+Xfunction 30 ........-.
+XID cece wccrvvecnccvvce
+XIOS cece reece ccc c ne ccnccrcesccsecveses 3
+
+XIOS entry field vere eee wer eevee 6
+
+XIOS function 2... ccc nce ccccecvceeeeee See Xfunction
+XIOS overview seere 3
+
+XIOS routine 00000000 See XIOS function
+XIOS version seceeeeeseeseeeeer er 0040 See function 53
+XMIT sseeeeeeeeeeeeseeeeeeeeeeeeeeee 0 113
+
+XMIT REQ wc cece cece eee c cece rs0…:… 8
+
+[4
+
+PhP bee eH SEES SS bh bh W
+
+an
+NN
+
+,
+
+”…….… 4,63
+
+eee
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+>
+
+-238- RC Computer

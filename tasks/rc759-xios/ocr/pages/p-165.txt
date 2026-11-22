@@ -1,0 +1,42 @@
+PICCOLINE 12. iSBX Bus Specification
+
+12.1.3.3 Direct Memory Access (DMA)
+
+An iSBX Multimodule system can support DMA when the base
+board has a DMA controller and the iSBX Multimodule board
+can support DMA mode. The following example is for a base
+board using an 8257 DMA controller. Because of the simila-
+rity between DMA reads and DMA writes, only the DMA write
+is given in the following example. A DMA cycle is initiated
+when the iSBX Multimodule board activates MDRET, which goes
+to the DMA controller on the base board (fig.12.7). Once
+the DMA controller gains control of the base board bus, it
+acknowledges back to the iSBX Multimodule board with
+MDACK/. The DMA controller then activates a memory write or
+I/O write respectively. The delay may be zero, if the me-
+mory is a trailing edge type (data is written when the wri-
+te pin changes from active to inactive state). The MDACK/
+signal must act as a chip select and address to the iSBX
+Multimodule board (the MCS and MAO-MA1 signals are undeter-
+mined as they are driven by the memory address). The iSBX
+Multimodule board will remove the DMA request during the
+cycle to stop the DMA cycle. Once the write operation is
+complete (MWAIT inactive and memory acknowledge active),
+the DMA controller deactivates the write command and the
+read command providing a data hold time. If the DMA request
+signal was removed, the controller will release the base
+board bus back to the CPU and remove MDACK/. If the request
+is not removed, the DMA controller will proceed to do ano-
+ther DMA cycle (burst mode).
+
+wane BD MDA mme) =
+BASE BD nD/ —- -—
+BASE BD MEM WAITE/ ze eee
+
+moemor = ——_________{ Y TEX VALID READ DATA }—_—__
+
+Fig.12.7 iSBX Multimodule Board DMA Cycle
+
+(iSBX Multimodule to Base Board Memory)
+
+RC Computer -155-

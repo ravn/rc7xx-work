@@ -1,0 +1,43 @@
+PICCOLINE 12. iSBX Bus Specification
+
+12.3 Mechanical Specifications
+
+This sections describes all the physical attributes of an
+iSBX Multimodule board.
+
+12.3.1 iSBX Connector
+
+The male iSBX connector is attached to the iSBX Multimodule
+board and the female iSBX connector is attached to the base
+board. Fig.12.17 is an outline drawing of the iSBX connec-
+tor and also shows the pin numbering. Fig.12.19 lists the
+signal pin assignments.
+
+12.3.2 iSBX Multimodule Board Height Requirement
+
+Fig.12.18 shows the iSBX Multimodule board height require-
+ments. The total board height minus the iSBX connector is:
+
+Maximum component height (0.400 Max) 0.400
+
+P.C. board thickness (0.62 + 0.005) 0.067
+
+Component lead length (0.093 Max) 0.093
+0.560 in.
+
+eh
+Ed
+
+1—
+
+{ ff
+Z
+Cc
+ue "ll
+foc o 0-H
+[00 oa
+ne Le
+
+Fig.12.17 iSBX Connector
+
+RC Computer -165-

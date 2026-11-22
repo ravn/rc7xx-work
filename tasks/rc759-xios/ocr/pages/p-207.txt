@@ -1,0 +1,53 @@
+PICCOLINE A. Int-28h Function
+
+Interface
+
+Function 35
+Write a string direct to the console buffer.
+
+Registers on entry:
+
+AL 35
+
+DL Column
+
+DH Row
+
+Cx Count
+
+DS Address segment of string
+SI Address offset of string
+
+Registers on return:
+Undefined
+
+See 4.2.2.
+
+Function 36
+Set cursor position.
+Registers on entry:
+
+BH Row
+BL Column
+
+Registers on return:
+Undefined
+
+See 4.2.4.
+
+Function 37
+
+Returns current attributes.
+Registers on entry:
+
+AL 37
+
+Registers on return:
+
+AH Current attributes
+
+See 4.2.5.
+
+RC Computer
+
+-197-

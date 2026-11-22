@@ -1,0 +1,46 @@
+11. Local Area Network PICCOLINE
+
+The information part of the test buffer begins at the
+fourth byte in the test buffer. The first three bytes are
+included in the length of the test buffer.
+
+Note that a TEST.request primitive issued by a client in an
+RCLLC station does not cause this primitive to be generated
+in remote RCLLC station(s), as the protocol element (TEST
+command) which is transmitted in this case is not addressed
+to a SAP, but to one or more remote RCLLC entities.
+
+11.2.2 Type 1 Service
+
+Type 1 service comprises unacknowledged connectionless data
+transfer between SAPs.
+
+11.2.2.1 UDATA.request
+
+The primitive which requests transmission of a data buffer
+is passed from a client to the driver by writing a request
+
+buffer to the 'link_req' queue.
+
+Format of the request buffer:
+
+byte number
+
+0 request kind = 2 (UDATA.request)
+
+1 DSAP is the remote SAP address.
+2 SSAP is the local SAP address.
+3-8 Ethernet address. This is the MAC address of
+
+the remote RCLLC entity; a multicast or
+broadcast address may be used in place of a
+specific station address.
+9-10 length of the data buffer
+11-12 data buffer offset
+13-14 data buffer segment
+The first three bytes in the data buffer are reserved by
+
+the driver. The length of the data buffer includes the
+bytes reserved by the driver.
+
+-122- RC Computer

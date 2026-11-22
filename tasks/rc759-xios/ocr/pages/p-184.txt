@@ -1,0 +1,33 @@
+12. iSBX Bus Specification PICCOLINE
+
+12.4.3 Interface Buffering
+
+Interface buffering is provided by three receiver/driver
+logic elements Ul, U2, and U3. Ul is an input buffer that
+may be used with either RS232C or RS442 configuration, de-
+pending on the position of the mode selection header
+blocks. U2 provides RS422 output buffering, and U3 provides
+RS232C output buffering.
+
+12.4.4 Clock Generation Circuitry
+
+The Communication 351 board includes an 8224 Clock Gene-
+rator chip that creates a 2.46 MHz output from a 22.1148
+MHz crystal input. The output is then passed through a syn-
+chronous four-bit counter which generates a 1.23 MHz clock
+and a 153.6 KHz clock to drive the 8253 PIT. The clock
+output frequency labeled OUT 2, which is produced by the
+8253 PIT, will vary according to the configuration and
+programming of the PIT chip.
+
+The two remaining clock frequencies output from the 8253
+PIT are jumper selectable to generate interrupts for the
+iSBX Multimodule board.
+
+12.4.5 AC Specifications
+The ac specifications for the Communication Multimodule
+
+Board are listed in fig.12.27. Fig.12.28 and 12.29 define
+the timing parameters for the board.
+
+-174- RC Computer

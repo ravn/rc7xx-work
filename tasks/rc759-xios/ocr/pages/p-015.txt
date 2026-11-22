@@ -1,0 +1,57 @@
+PICCOLINE 1. Introduction
+
+All the above mentioned XIOS routines have a common
+convention concerning the contents of the registers when
+the routines are entered. The convention is as follows:
+
+Register AL contains the routine number
+
+Register ES contains the paragraph address of the
+calling process' User Data Area (UDA)
+
+Register DS contains the SYSDAT segment address
+
+When the XIOS routines are entered as a consequence of a
+CCP/M operating system call, CCP/M manages the above
+mentioned conventions. On the other hand, when the XIOS
+routines are entered directly from a user program it is the
+responsibility of this program to establish the register
+contents before entering the routine.
+
+Besides the common register contents, a XIOS routine may
+require some parameters which for some of the routines are
+transferred in a register and for other routines are
+transferred on the stack. A detailed description may be
+found in ref.3.
+
+Example
+
+This example shows how a program can initialize the ES and
+DS register with the UDA and SYSDAT values and how the
+standard XIOS routines are entered.
+
+; Get Process Descriptor Address.
+
+; The address segment is returned in ES and
+; in BX (used later)
+
+Mov CL,156
+
+Int 224
+
+; Initialize DS to SYSDAT segment using
+; the fact that the process descriptor
+
+; segment is the same as the SYSDAT segment
+Push ES
+
+Pop DS
+
+; Initialize ES with UDA address. UDA address
+; is taken from the process description word 10H
+Mov’ ES,10HABXA
+
+; Now initialize all routine dependent parameters
+; (either register parameters or parameters on stack).
+
+RC Computer -5-

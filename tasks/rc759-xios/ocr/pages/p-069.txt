@@ -1,0 +1,70 @@
+PICCOLINE 4. Console module
+
+free mx:
+mov gcb_mx,0
+ret
+
+gcb_mx db 0
+gcb seg rw 1
+
+4.5.4 Pixel Address Calculation
+
+The following example shows how the offset in the pixel
+memory and the bit number is calculated given an X-Y coor-
+dinate. The origin is assumed to be in the lower left hand
+corner.
+
+Example
+
+; entry: BX = X-coordinate
+
+; DX = Y-coordinate
+
+; exit: DI = offset of word containing pixel
+; BX = bit mask
+
+,
+
+; Algoritm used:
+
+; word_address (X div 16) * 16*16 + Y
+
+pixel address = X mod 16
+
+y_max equ 255
+color equ false set to true if assembling to
+
+medium resolution
+
+we Ne
+
+calc_pixel_addr:
+
+mov ax,y_max ;get the Y size
+
+sub ax,dx ;move 0 for the Y axis
+if color
+
+shl bx,1
+endif
+
+save X value
+mask out bit number
+
+mov di,bx
+and bx,0fff0h
+mov dx,bx
+mov cl,4
+
+me ne Ne
+
+shl bx,cl ; BX * 16
+
+add bx,ax ; add in Y-addr
+
+shl bx,1 ; byte addr
+
+and di,0fh ; mask to pixel address
+xchg bx,di
+
+RC Computer -59-

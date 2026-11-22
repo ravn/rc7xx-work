@@ -1,0 +1,57 @@
+3. Confiquration PICCOLINE
+
+29 DR Net node id (0-254).
+
+30 DR Net default server id (0-254).
+
+31 Autologon mask:
+
+Bit 0=1: Virtual console 0 is
+automatically logged on to
+default server when the
+system is started.
+
+Bit 1=1: Same as above for console
+1.
+
+Bit 2=1: Same as above for console
+
+Bit 3=1: Same as above for console
+3.
+
+32-33 Reserved.
+
+34-41 DR Net server password (8 ascii
+characters).
+
+42 Reserved.
+
+43-50 Name of file to load when load from
+the local area network is used (8
+ascii characters).
+
+51 Identification of the iSBX module:
+0: Ingen
+1: 351
+2: 488
+
+52 System disk number (0-15).
+
+53 CPU identification.
+
+i FFH if PICCOLINE and OH if Partner.
+
+54-127 Reserved.
+
+Byte number 14, 15, 16 and 17, which hold the format of the
+iSBX351/V24 channel, has the same format as Intel 8274 se-
+rial controller write registers 4, 5, 1 and 3, which is
+used in the Partner (RS232C/V24 channel)
+
+The checksumbyte is used to ensure data integrity in the
+NVM. The checksum is calculated so that if the bytes in NVM
+block 0, 1 and 2 (not block 3) are added (modulo 256) the
+sum should be 0AAH. The checksum must be maintained when
+the NVM contents are changed.
+
+-20- RC Computer

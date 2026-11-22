@@ -1,0 +1,106 @@
+Cassette Tape
+
+PICCOLINE
+
+dseg
+
+textouti
+textout2
+
+wait text
+
+text
+
+end
+
+mov
+int
+
+mov
+mov
+mov
+int
+mov
+mov
+int
+pop
+mov
+
+mov
+int
+
+mov
+int
+
+in
+
+cl,1
+224
+
+al,26
+
+cx,100
+
+dx, offset textin
+28h
+
+al,28
+
+cx,100
+
+28h
+
+ds
+
+c1,9
+
+dx, offset textin
+224
+
+cx,0
+224
+
+db 'PICCOLINE
+db 'the best school
+
+db 'rewind tape and
+
+rb 100
+
+U
+
+; read character
+; from keyboard
+
+; read file header
+; max no of chars
+
+; segment allready on stack
+; read it!
+
+read next data
+
+max no of chars
+
+offset allready in DX
+segment allready on stack
+read it!
+
+Se ne NE Se se
+
+; remove segment from stack
+
+; write string
+on console
+
+~
+
+; terminate process
+
+micro §$'
+
+press any key',10,13,'S'
+
+-B4-
+
+RC Computer

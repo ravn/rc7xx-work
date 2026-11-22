@@ -1,0 +1,52 @@
+PICCOLINE 11. Local Area Network
+
+The general format for type 1 protocol elements consists of
+a three-octet link control header followed by an
+information field:
+
+bit no. 7 6 5 4 3 2 1 0
+byte no. 0 DSAP Lo 0
+1 SSAP Lo |[c/R
+2 Control
+3
+Type 1 Information
+
+The DSAP field contains the local SAP address of the desti-
+nation SAP and the SSAP field the local SAP address of the
+source SAP.
+
+If the DSAP field contains 0 (all bits 0) the protocol ele-
+ment is interpreted as addressed to the destination RCLLC
+(or other LLC type 1) entity rather than to a client.
+
+If the DSAP field does not contain all 0 bits, its contents
+taken as a binary number in the range 1..63 are interpreted
+as the address of an individual SAP.
+
+A C/R bit with value 0 indicates | a command protocol
+element, and one with value 1 a response protocol element.
+The UI protocol element, and thus all protocol elements for
+client network service, can only be transmitted as
+commands, i.e. with the C/R bit set to 0.
+
+Bit 0 of byte 0 and bit 1 of byte 1 must always be 0.
+
+If the SSAP field contains 0 (all bits 0), the protocol
+element is interpreted as originating from the source RCLLC
+(or other LLC type 1) entity rather than from a client.
+Otherwise, the contents of the SSAP field are interpreted
+as a binary number in the range 1..63.
+
+Bit 4 of byte 2 (the Control field) is the Poll/Final bit.
+When this bit is set to 1 (Poll) in a command, a response
+is requested. The response should contain the same coding
+of the Control field; i.e., bit 4 (Final) should also be
+set in the response. The Poll bit must not be set in a UI
+protocol element; this bit is 0 in all protocol elements
+for client network service.
+
+The SSAP field of a response protocol element always con-
+tains the same value as the DSAP field of the command
+protocol element to which it corresponds, and vice versa.
+
+RC Computer -139-

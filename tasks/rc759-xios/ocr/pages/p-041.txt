@@ -1,0 +1,54 @@
+PICCOLINE 4. Console Module
+
+mov def_con,al ; save default console
+mov c1,156 ;
+int 224 ; get PD address
+
+; Now use the fact that the PD segment is the same as
+; the SYSDAT segment
+
+push es ;
+pop ds ; SYSDAT segment to DS
+mov es, 10HEDxA ; UDA segment to ES
+pop bx ; get pointer to string
+pop cx + get length of string
+char_loop:
+push cx ; save count
+push bx ; save position
+mov cl,ss:kbxA + get char from position
+mov dl,ss:def con ; get default console
+mov ax,2 ; conout function
+callf as:dword ptr .28H ; callf xios_entry
+pop bx 7 get position
+pop cx + get count
+inc bx ; increment position
+loop char_loop ;
+mov ax,38 ;
+Mov ds,ax ; get old DS
+pop bp ; get old stackframe
+ret :
+def_con db 0 ; default console number
+
+4.2.2 Direct Console Buffer Output
+
+Int-28h function 35 is provided to quickly update large
+portions of the display. This function stores character
+strings in the display buffer with the current attribute.
+If the console is shown in a window, this is automatically
+updated.
+
+No control character or escape sequence interpretation is
+done by this routine.
+
+The routine is called with the following register contents:
+
+AL = 35 (function number)
+
+DX = character position (DH = row, DL = column)
+CX = number of characters in the string
+
+SI = string address offset
+
+DS = string address segment
+
+RC Computer -31-

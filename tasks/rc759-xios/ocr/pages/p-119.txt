@@ -1,0 +1,52 @@
+PICCOLINE 10. Serial Interface
+
+; force a dispatch
+Jmp DispatchReturn
+
+Sio EOI:
+Mov DX,0FF22H ; non specific end of
+Mov Ax,8000H ’ ; interrupt to internal
+Out DX,AX ; interrupt controller.
+Ret
+
+DispatchReturn:
+; reestablish old context
+Popa
+Pop ES
+Pop DS
+jmpf cs:dword ptr dispatcher
+
+NodispatchReturn:
++ reestablish old context
+Popa
+Pop ES
+Pop DS
+Iret
+
+FlagSet:
+Push Dx
+Mov CL,P_Flagset
+Call Supif 1
+Pop DX
+Test AX,AX
+Jz FlagSet ret
+
+; if error code='flag set ignored'
+; then try again
+Cmp CL,2aH
+Jz FlagSet
+FlagSet ret:
+Ret
+
+FlagWait:
+Mov CL,P_Flagwait
+
+SupIf:
+; get running process
+; (sysdat:68 is pointer to running process)
+Mov BX,.68
+
++ get process's UDA
+Mov’ ES,CS:10HEABXA
+
+RC Computer -109-

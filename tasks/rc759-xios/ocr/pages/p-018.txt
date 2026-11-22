@@ -1,0 +1,57 @@
+1. Introduction PICCOLINE
+
+In order to manage reservation of different resources, the
+operating system maintains a number of queues. As queue
+names must be unique, the names of these queues are
+reserved by the operating system. A list of reserved queue
+names may be found in table 1.3.
+
+Number of Message
+
+Name messages length Usage
+
+TmpO 1 112 See below
+
+Tmpl 1 112 See below
+
+Tmp2 1 112 See below
+
+Tmp3 1 112 See below
+
+VCMXQ0 1 0 Virtual console 0
+
+VOUTQ0 16 2 - do -
+
+VINQO 64 2 - do -
+
+VCMXQ1 1 0 Virtual console 1
+
+VOUTQ1 16 2 - do -
+
+VINQI 64 2 - do -
+
+VCMXQ2 1 0 Virtual console 2
+
+VOUTQ2 16 2 - do -
+
+VINQ2 64 2 - do -
+
+VCMXQ3 1 0 Virtual console 3
+
+VOUTQ3 16 2 - do -
+
+VINQ3 64 2 - do -
+
+MXalt 1 0 Alt. charset reservation
+XMIT_REQ 10 15 Net driver (Net system only)
+link req 1 15 Net driver (Net system only)
+MXdmal 1 0 DMA channel 0 reservation
+MXdma2 1 0 DMA channel 1 reservation
+MXsound 1 0 Sound device reservation
+MXLoad 1 0 Used during program load
+MXdisk 1 0 Disk system reservation
+MXcass 1 1 Cassette tape reservation
+
+Table 1.3. Reserved Queue Names.
+
+-8- RC Computer

@@ -1,0 +1,49 @@
+11. Local Area Network PICCOLINE
+
+the received service data unit is passed to the client by
+means of a DATA.indication primitive, and N(R) is incremen-
+ted modulo 2. Otherwise, the service data unit is discar-
+ded. In both cases an ACK protocol element with sequence
+number equal to that of the DATA protocol element is trans-
+mitted to the remote SAP in order to acknowledge receipt.
+
+If a RACK protocol element or a DISCONNECT.acknowledge ser-
+vice primitive is received, it is discarded.
+
+If a PE_new_SAP event occurs (see section 11.4.3.4), if a
+RESET protocol element is received, or if the connection is
+given up, either because the SAP alive timer expires or be-
+cause a DATA protocol element is retransmitted to exhaus-
+tion, the RCLLC entity will pass a DISCONNECT.indication
+primitive to the client and change the connection state to
+DISCONNECTING.
+
+DISCONNECTING
+
+The connection has been disconnected as seen from the point
+of view of the RCLLC layer. This state allows the client to
+decide when it will accept the connection to be reesta-
+blished.
+
+All received protocol elements and service primitives are
+discarded except the DISCONNECT.acknowledge primitive. When
+this primitive is received the connection state is changed
+to UNKNOWN.
+
+11.4.3 RCLLC Protocol Elements
+
+All RCLLC protocol elements conform to the syntax for LLC
+type 1 protocol elements ("protocol data units"). This is
+achieved by defining the formats of all the protocol ele-
+ments used in the procedures oriented toward client network
+service to be instances of type 1 UI (Unnumbered Informa-
+tion) commands.
+
+The following conventions apply to the figures in this sec-
+tion: the octets of a protocol element are shown in the or-
+der they are transmitted downward on the page, and the bits
+within an byte similarly from right to left. The least sig-
+nificant bit position within an byte, the contents of which
+are transmitted first, is numbered 0, and so forth.
+
+-138- RC Computer

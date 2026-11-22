@@ -1,0 +1,47 @@
+11. Local Area Network PICCOLINE
+
+REQUEST
+
+The driver accepts requests written to a queue named
+"link req". This queue is created by the driver. The buffer
+written to the queue will contain information of the
+request kind and request specific parameters described
+below. The resources (i.e. buffers) passed to the driver in
+a request buffer must be regarded as locked and must not be
+modified until release (see CONFIRM below).
+
+CONFIRM
+
+The driver will always respond to an issued request with a
+confirm event. The purpose of the confirm event is partly
+to signal to the client that his outstanding resource (e.i.
+a data buffer) has been released and partly to inform the
+client about the result of the issued request.
+
+The driver will write confirm messages to a queue created
+by a client. This queue is made known to the driver when
+the client activates a SAP. The confirm queue must be crea-
+ted with a buffer size = 4 bytes and a number of buffers
+that will ensure that the driver will not be suspended in
+an attempt to write to the queue.
+
+The format of the queue buffer is:
+
+byte number
+
+0 user buffer offset
+
+2 user buffer segment
+User buffer refers to the buffer pointer in the request
+buffer (see below) passed by the client to the driver in
+the confirmed request. The first three bytes of the buffer
+will have the following format:
+byte number
+
+0 depend on the confirmed request
+
+1 depend on the confirmed request
+
+2 result of the confirmed request
+
+-114- RC Computer

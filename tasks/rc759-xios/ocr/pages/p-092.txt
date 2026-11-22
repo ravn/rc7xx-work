@@ -1,0 +1,51 @@
+7. Cassette Tape PICCOLINE
+
+Registers on return:
+AL Function result
+
+ok
+
+CRC error
+
+no data on tape (time out!
+
+no leader found (after 10 tries)
+
+wrong record number
+
+end of file
+
+Mon omomom om om
+
+ObmWNRr O
+
+AH and BX are modified
+
+= Number of bytes actually read
+
+DX = Offset (in input buffer) to the byte after the
+last byte read
+
+Stack is unchanged.
+
+Note
+The number of bytes actually read is the maximum of the
+
+specified number of bytes and the number of bytes
+actually in the record.
+
+7.2.6 Cassette Read Next Data
+
+This function reads the data of the next data record on
+cassette tape into the specified input buffer.
+
+Registers on entry:
+
+AL = 28
+CX = Max number of bytes to read
+DX = Offset address to input buffer
+
+Topmost element on stack contains segment register of
+input buffer.
+
+-82- RC Computer

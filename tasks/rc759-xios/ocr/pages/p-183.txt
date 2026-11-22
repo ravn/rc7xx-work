@@ -1,0 +1,44 @@
+PICCOLINE 12. iSBX Bus Specification
+
+MCS1/ (Chip Select). This active low input signal to the
+8253 PIT enables it to perform read and write operations.
+However, MCS1/ has no effect on the operation of the inter-
+nal counters in the 8253.
+
+MDO-MD7 (Bidirectional Data Bus). These active high I/O li-
+nes are the iSBX Multimodule boards' tie-in to the host
+iSBC microcomputer data bus. MDO through MD7 transfer data,
+commands, and status between the iSBX Multimodule board and
+the host iSBC microcomputer.
+
+MINTRO, MINTR1 (Interrupt Request Lines). These active high
+output lines may be jumpered to OUT 0, or OUT 1 on the
+8253, or to TXRDY on the 8251A.
+
+OPTO, OPT1 (Option Lines). These active high I/O lines are
+included to give the iSBX Multimodule board greater func-
+tional flexibility. These lines may be user-configured for
+special functions.
+
+Output
+“fame” | me | “tanh | cts. |e | sonia, | oe,amm
+MOO-MO07 TRI 22 0.45 —380 2.4 130
+MINTRO-1 TH 2.2 0.45 —200 2.4 40
+OPTO-1 TTL 2.2 0.45 —200 2.4 40
+Input
+Bus Signal Type in Max (mA) Va Max hun Max (mA) Vin Min Ci (Max)
+Name Receiver Vu = 0.45V Vm = 2.4V (pf)
+MDO-MD7 TRI —0.02 0.8 0.02 2.2 40
+MAO-1 TTL ~0.02 0.8 0.02 22 2
+MCSO/-1/ TTL 0.01 0.8 0.01 2.2 20
+RESET TTL —0.01 0.8 0.02 2.0 20
+oe, TTL 0.02 0.8 0.02 22 40
+OPTO-1 TTL 1.6 0.8 0.02 2.2 40
+
+TTL = Standard totem pole output.
+TRI = Three state output.
+
+Fig.12.26 DC Characteristics
+
+RC Computer -173-
+

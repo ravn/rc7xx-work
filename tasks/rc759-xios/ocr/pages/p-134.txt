@@ -1,0 +1,53 @@
+11. Local Area Network PICCOLINE
+
+11.2.3 Client Network Service
+
+The driver automatically establishes and maintains a
+connection between each pair of SAPs belonging to the same
+client network, except when the connection is excluded
+because the SAP masks do not match.
+
+When an SAP is activated, connections will be established
+to those remote SAPs which were already active. The (local)
+client will receive a CONNECT.indication primitive for each
+connection when it has been established. Similarly the
+- remote clients will each receive a CONNECT.indication
+primitive.
+
+When a connection has been established, both clients may
+request the transmission of RCLLC service data units by
+issuing DATA.request primitives. A received data unit is
+passed to the client at the destination SAP by means of a
+DATA.indication primitive.
+
+The order in which RCLLC service data units are passed to
+the driver for transmission on a connection is preserved to
+the point of delivery. RCLLC service data units are deli-
+vered free of transmission errors.
+
+When an SAP is deactivated, either because of a request or
+because the station in which it exists ceases to operate or
+is reinitialized, the driver will detect the event and
+remove the connections in which the SAP took part. Each of
+the clients at the remote end of such a connection will be
+notified by means of a DISCONNECT.indication primitive.
+
+There is no guarantee that all service data units passed to
+the driver for transmission will have been delivered before
+a connection is removed.
+
+When the driver has removed (one end-point of) a connection
+and passed the indication to the client it will not estab-
+lish a new connection to the same remote SAP until the cli-.
+ent has acknowledged the removal of the connection by issu-
+ing a DISCONNECT.acknowledge primitive. This procedure is
+significant when a connection is removed because of a tem-
+porary malfunction or the reinitialization of a station. It
+allows the client to gracefully terminate any activity as-
+sociated with the connection before it is reestablished.
+
+Details about the six primitives used in conjunction with
+client network service are given in the following
+subsections.
+
+-124- RC Computer

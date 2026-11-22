@@ -1,0 +1,60 @@
+4. Console module PICCOLINE
+
+The call returns a pointer to a control structure of the
+following format:
+
+rw 26 ; display line table (see 4.2.3)
+rw 1 ; extra line used when scrolling
+rb 1 } virtual console number
+
+rb 1 ; internal XIOS semaphore
+
+rb 1 ; left column of window
+
+rb 1 ; top row of window
+
+rb 1 ; rigth column of window
+
+rb 1 ; bottom row of window
+
+rw 1 ; last top-left corner
+
+rw 1 ; last bottom-right corner
+
+rb 1 ; actual no. of columns
+
+rb 1 ; actual no. of rows
+
+rb 1 ; window view point, column
+
+rb 1. ; window view point, row
+
+4.6.2 Set Window Manager State
+
+This call is used to tell the XIOS the state of the window
+manager and to change which window is on top (console
+switch).
+
+entry: al = 19
+cl = state
+0 => manager not resident
+1 => resident but not active
+2 => resident and active
+3 => leave state unchanged
+dl = ve number to switch to top
+if dl = OFFH, then no switch
+
+exit: none
+
+4.6.3 Create a New Window
+
+This call is used to create a new window for a virtual
+console. The positions of the windows top-left and bottom-
+right corners on the screen are passed as parameters.
+
+entry: al = 20
+dl = virtual console number
+cx = top left (row,column)
+bx = bottom right (row,column)
+
+-62- RC Computer

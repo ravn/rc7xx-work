@@ -1,0 +1,48 @@
+12. iSBX Bus Specification PICCOLINE
+
+12.1.1.1 Base Boards
+
+The base board provides an electrical and mechanical inter-
+face for the iSBX Multimodule boards. The electrical inter-
+face provides the communication link between the two ele-
+ments. The base board is the master of this link, in that
+it controls the address and command signals. The base board
+also provides the mounting for the iSBX Multimodule board.
+With the aid of screws, spacers, nuts, and the iSBX connec-
+tor, the iSBX Multimodule board is mounted to the base
+board.
+
+There are two classes of base boards: those with Direct
+Memory Access (DMA) support and without.
+
+Base boards with DMA support are boards with DMA control-
+lers on them. These boards, in conjunction with an iSBX
+Multimodule board (with DMA capability), can perform direct
+I/O to memory or memory to 1/0 operations. Base boards
+without DMA support use a subset of the iSBX bus and simply
+do not use that aspect of the iSBX Multimodule board.
+
+12.1.1.2 iSBX Multimodule Boards
+
+The iSBX Multimodule boards are small, specialized, 1/0
+mapped boards which plug into base boards. The iSBX boards
+connect to the iSBX bus connector and convert the iSBX bus
+signals to a defined I/O interface.
+
+12.1.2 iSBx Bus Interface
+
+The iSBX bus interface can be grouped into six functional
+classes:
+
+Control Lines
+
+Address and Chip Select Lines
+Data Lines
+
+Interrupt Lines
+
+Option Lines
+
+Power Lines
+
+-148- RC Computer

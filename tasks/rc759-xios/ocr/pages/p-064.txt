@@ -1,0 +1,16 @@
+4. Console module
+
+PICCOLINE
+
+ESC <254> - Restore Function Keys
+
+<254> denotes one character with decimal value 254.
+
+Restores the saved value
+(see ESC 253).
+
+of the programmable function keys
+
+-54-
+
+RC Computer

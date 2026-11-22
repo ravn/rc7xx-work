@@ -1,0 +1,48 @@
+11. Local Area Network PICCOLINE
+
+Loop-back Test Service
+
+The loop-back test facility allows a client to request a
+test of the transmission path between the local RCLLC
+entity and one or more remote RCLLC entities without
+requiring the participation of any remote client(s). This
+is done by transmitting a TEST protocol element (command)
+to the specified RCLLC entity/entities to which it/each of
+them must respond by transmitting a TEST protocol element
+(response) addressed to the requesting client (SAP).
+
+Note
+No indication is given if the responding protocol element
+fails to arrive from any or all of the RCLLC entities
+addressed in the TEST.request primitive.
+11.2.1.5 TEST.request
+The primitive, which requests that one or more transmission
+paths be tested, is passed from a client to the RCLLC
+entity by writing a request buffer to the 'link_req' queue.
+
+Format of the request buffer:
+
+byte number
+0 request kind = 4 (test.request)
+
+1 DSAP is the remote SAP address.
+
+SSAP is the local SAP address.
+
+o n
+
+Ethernet address. This is the MAC address of
+the remote RCLLC entity; a multicast or
+broadcast address may be used in place of a
+specific station address to request testing
+of multiple transmission paths.
+
+9-10 length of the test buffer
+11-12 test buffer offset
+13-14 test buffer segment
+The first three bytes in the test buffer are reserved by
+
+the driver. The length of the test buffer includes the
+bytes reserved by the driver.
+
+-120- RC Computer

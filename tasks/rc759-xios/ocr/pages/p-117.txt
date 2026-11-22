@@ -1,0 +1,55 @@
+PICCOLINE 10. Serial Interface
+
+Example
+
+Receive:
+; wait for receive interrupt
+Mov DX,ReceiveFlag
+Mov CL,P_FlagWait
+Int 224
+
+; get character from buffer
+Mov AL,char
+Ret
+
+char db 0
+
+The Transmit routine is executed when the user program
+wants to send data on the communication line.
+
+The Transmit routine sends data and then wait for comple-
+tion by means of a P_Flagwait operating system call. When
+the controller completes its task the transmitter interrupt
+service routine will signal this by means of a P_Flagset
+operating system call.
+
+Example
+
+Transmit:
+Mov DX,DataPort
+Out DxX,AL
+
+; wait for transmitter interrupt
+Mov DX,TransmitFlag
+
+Mov CL,P_FlagWait
+
+Int 224
+
+Ret
+
+In order to handle the interrupts from the serial communi-
+cation channel the system has to be enhanced with two in-
+terrupt routines:
+
+1) Transmit interrupt routine. This routine will gain con-
+trol when the controller has sent a character and is
+ready for the next one. The routine should clear the
+interrupt by issuing an ‘end of interrupt" command to
+the INTEL 80186 interrupt controller, set the appro-
+priate flag by means of a P_Flagset operating system
+call (see above) and force a process dispatch to allow
+a process that waits for the flag to continue execu-
+tion.
+
+RC Computer -107-

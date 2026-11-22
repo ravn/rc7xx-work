@@ -1,0 +1,79 @@
+1.
+
+Introduction
+
+PICCOLINE
+
+Table 1.1 is an overview of the available XIOS routines.
+
+Routine Name
+
+Routine Number
+
+IO CONST
+IO CONIN
+
+IO CONOUT
+IO LISTST
+IO LIST
+
+IO AUXIN
+
+IO AUXOUT
+IO SWITCH
+IO STATLINE
+IO SELDSK
+IO READ
+
+IO WRITE
+
+IO FLUSHBUF
+IO POLL
+Not used
+Not used
+WW POINTER
+WW KEY
+
+WW STATLINE
+WW IM HERE
+
+WW NEW WINDOW
+WW CURSOR VIEW
+WW WRAP COLUMN
+WW FULL WINDOW
+WW SWITCH DISPLAY
+
+used
+used
+used
+used
+used
+
+"SCREEN MODE
+
+used
+used
+used
+used
+used
+used
+
+VæNOMRWN EO
+
+Table 1.1. XIOS routines.
+
+The routines with
+ref.3, while a description of the remaining routines may be
+found in chapter 4.6.
+
+numbers
+
+from
+
+0 to
+
+13 is described in
+
+—4-
+
+RC Computer

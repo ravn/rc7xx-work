@@ -1,0 +1,29 @@
+9. Parallel Interface PICCOLINE
+
+9.3.1 Reserve the DPC Interface
+This function reserves the DPC interface:
+
+AL
+AH
+
+"un
+en
+
+(Reserve)
+
+Note that return take place only when then DPC has been
+reserved.
+
+9.3.2 Release the DPC Interface
+
+This function releases the DPC interface:
+
+AL
+AH
+
+41
+2 (Release)
+
+nm
+
+-98- RC Computer

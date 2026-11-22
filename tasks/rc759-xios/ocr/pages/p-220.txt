@@ -1,0 +1,20 @@
+D. Character Set and Keystrokes PICCOLINE
+VALUE VALUE
+DEC |HEX | KEYSTROKES DEC | HEX | KEYSTROKES
+96 | 60 | ° 412 | 70 P p
+97 | 64 | a 443 | 74 Q q
+98 | 62 B b 144] 72 A r
+99 | 63 Cc Cc 445 | 73 S =
+100 | 64 D d 116 | 74 T t
+101 | 65 E E 147 | 75 U U
+102 | 66 F f 118 | 76 V ¥
+403 | 67 G g 419 | 77 H W
+104 | 68 H h 120 | 78 X x
+105 | 69 I L 121 | 79 Y i
+106 | 6A J J 122 | 7A Z z
+107 | 6B K k 123 | 7B A
+108 | 6C L l 124 | 7C 2| 2
+409 | 6D M M 125 | 7D Å a
+110 | 6E nn 126 | 7E 0 i
+1141) 6F 0 Q 4271 7F | CTAL ¢
+-210- RC Computer

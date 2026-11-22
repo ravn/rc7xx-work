@@ -1,0 +1,58 @@
+A. Int-28h Function Interface
+
+PICCOLINE
+
+Subfunction 3:
+Returns the current
+Registers on entry:
+
+AL
+CL
+
+30
+3
+
+Registers on return:
+a) Nothing happened
+AL 0
+
+b) Button pressed
+
+AL
+AH
+
+1
+
+c) Mouse moved
+
+AL 2
+BX Delta x
+cx Delta y
+
+See 4.7.
+
+Function 31
+Defines palette contents.
+Registers on entry:
+
+31
+
+Registers on return:
+Undefined
+
+See 4.1.3.
+
+Function 32-34
+
+Reserved
+
+status of the mouse device.
+
+Character information.
+
+Address segment of palette definition
+Address offset of palette definition
+
+-196-
+
+RC Computer

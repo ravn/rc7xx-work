@@ -1,0 +1,50 @@
+4. Console Module
+
+The console module handles the virtual consoles and the
+keyboard. The operating system accesses the console module
+through the XIOS conin and conout calls.
+
+The operating system may also be bypassed and the console
+module accessed directly, and for special purposes the
+application program may access the hardware directly e.g.
+by supplying its own interrupt routines.
+
+This section contains a description of the software
+interface to the console module and a brief description of
+the associated hardware.
+
+4.1 CRT controller
+
+The CRT controller is built around an Intel 82730 text
+processor. For a complete description of this chip please
+refer to the relevant Intel documentation.
+
+This section contains information for programmers who want
+to make special use of the PICCOLINE hardware including the
+Intel 82730 text processor.
+
+To access the CRT controller, palette and pixel memory
+directly it is required that
+
+1. The process is executing in the foreground
+2. The console is locked (console switching inhibited)
+3. The CRT controller environment is restored before
+program termination
+4.1.1 82730 Command Block
+Communication between the 82730 and the CPU takes place
+through a command block placed in main memory. The address
+of the command block is returned by an Int-28h function
+
+accessed with the following register contents:
+
+Registers on entry:
+
+Registers on return:
+
+ES
+SI
+
+segment register of the command block
+offset register of the command block
+
+RC Computer -25-

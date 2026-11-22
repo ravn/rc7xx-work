@@ -1,0 +1,29 @@
+PICCOLINE 13. Inter Computer File Transfer
+READ
+Request Field Answer
+3 opcode 3
+0 unused 0
+0 result result
+area area
+128 byte
+WRITE
+Request Field Answer
+4 opcode 4
+0 unused 0
+0 result result
+area area
+128 byte
+CLOSE
+Request Field Answer
+5 opcode 5
+0 unused 0
+0 result result
+END
+Request Field Answer
+6 opcode 6
+0 unused 0
+0 result result
+
+RC Computer
+
+=179-

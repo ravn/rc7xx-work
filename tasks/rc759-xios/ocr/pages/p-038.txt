@@ -1,0 +1,56 @@
+4. Console module PICCOLINE
+
+High resolution graphics:
+
+Palette
+Selector
+
+Pixel Pixel
+= 1 = 0
+
+1 0
+
+3 2
+
+5 4
+
+31 30
+
+Medium resolution graphics:
+
+Palette
+Selector
+
+Examples:
+
+Pixel pair
+
+Alphanumeric mode:
+
+character
+
+bit 0-9
+
+bit 10-14
+
+11 10 01 00
+
+33 32 1 0
+
+35 34 3 2
+
+37 36 5 4
+
+63 62 31 30
+= 0100000010000000B
+
+character number = 128
+address D000:1000H in the pixel memory.
+
+palette selector = 16:
+select the colour nibbles 32 and 33 at I/O
+address 180H + 32.
+
+-28-
+
+RC Computer

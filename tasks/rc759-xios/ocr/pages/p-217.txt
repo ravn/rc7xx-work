@@ -1,0 +1,28 @@
+D. Character Set and Keystrokes
+
+VALUE VALUE
+DEC [HEX | KEYSTROKES DEC [HEX | KEYSTROKES
+0 | 00 CTAL & 16 | 40 CTAL P =
+1] 04 CTRL A E 47] 44 CTAL Q #
+2| 02 CTAL B Ai 18 | 42 CTAL R [
+3| 03 CTAL C o 19] 43 CTAL S ‘
+4| 04 CTAL D = 20 | 44 CTAL T ]
+ee *
+5 | 05 ctrl c| & 21 | 45 CTAL U
+O %
+6 | 06 CTAL F 22| 416 CTAL V
+7107 CTAL G 23| 47 CTAL W <
+'
+8 | 08 ¢ E: 24 | 18 CTAL x{ !
+9 | 09 ” | £ 25 | 19 CTAL Y +
+1 ag
+40 | 0A CTAL J 26 | 4A CTAL Z
+44 | 0B CTAL K ia 27 | 4B ESC fe
+12 | oc ie Øg 28 | 1C ctr. o| &
+13 | 0D va 29 | 4D cra ål @
+14] 06 CTAL N A 30 | 4£ cTAL 0 a
+15 | OF crt o| Ml 31] 4F ctaL _| We
+-207-
+
+RC Computer
+

@@ -1,0 +1,56 @@
+PICCOLINE 4. Console module
+
+4.5.3 Exclusive Access to Pixel Memory
+
+Exclusive access to the graphics image can be ensured in a
+
+number of ways.
+
+1. Use the CHSET utility program to stop program
+execution while the console is in the background
+
+(Suspend= On). This is probably the
+solution.
+
+easiest
+
+2. Inhibit console switching by setting the no-switch
+
+bit in the console control block.
+
+3. Disable interrupts while updating the image. Should
+
+only be used for very short updates.
+
+4. Use the mutual exclusion semaphore located in the
+graphics control block. A pointer to the graphics
+
+control block is rendered to the XIOS in the init
+graphics call.
+Example
+; this routine sets the no-switch bit in the console
+; control block. The keep flag is set in the process
+; descriptor so we cannot be terminated before the
+; no-switch bit has been cleared.
+os equ 224
+sys_ccb . equ word ptr 54h
+p_flag equ word ptr 6
+pf_keep equ 2
+ccb size equ 2ch
+ccb state equ word ptr 14
+cf noswitch equ 8
+lock console:
+mov c1,156 + get process descriptor
+int os
+mov sysdat,es
+mov pd_addr,bx ; set the keep flag
+or es:p_flag&bxA,pf_keep
+; now get the ccb address
+mov cl,153 + get console no.
+int os
+cbw
+mov cx,ccb_ size
+mul cx
+add ax,es:sys_ccb
+mov ccb_addr,ax
+RC Computer ~57-

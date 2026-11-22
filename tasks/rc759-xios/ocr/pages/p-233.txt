@@ -1,0 +1,94 @@
+PICCOLINE Catchword Index
+
+connection state change ..........--2-6-- 134
+
+connection states. 0002 134,135
+
+CONOUT 2. cece crc ccc rece enc eee eee 25,30
+
+CONSOLES 5 seereeeeseneeeeeseeee seere 99
+
+console buffer write ........ .… see function 35
+console display ...eereeeeeee .… see function 21
+console driver seere eseeeeree 0. 30
+
+console escape sequences .... .… 217
+
+console mode seere eee 000000 99,183
+
+console module seere 0000000. 295,55
+
+console output 00000000. 30
+
+console switching sereseeereeeee eee 0000 57
+
+control block sees 00. Al
+
+control characters seere eee 40
+
+control output register .............. 91
+
+control PPI seeeeeeeeeeeeeseeeeseee 008 203
+
+control register ...0000000 0000000 87,88,93
+
+control, cassette .....20000020 020004 See Cassette control
+controller specific information ....... 130
+
+… ……………
+
+… … ……………
+
+……………
+
+Counter, 16 mS eee eee eee 000. See function 19
+CPU sees eee eee esse. Al
+
+CPU identification 00000000 000. 20
+
+CR sees eee eee 00 40
+
+CRC sees sees eee eee eee eee 79,82
+
+create new window "00000000 0000 See Xfunction 20
+CRT control seere 0000 203
+
+CRT controller ..00000eeeeeeeeer 00000 25
+
+CRT scroll mode .....ccecececcccreceeee 18
+
+Ctrl seeren eee OF
+
+Ctrl+Al coerce ence ccc ccn ccc cevecccrecsee 64
+
+Ctr1l+A3 concen rcccccreveecvcvesecceccces 64
+
+Ctrl+A4 cece r nc crcccrcccncccccevcccees 64
+
+Ctrl+Print weverecccveccsecvccecseccessee O4
+
+current attributes ............eeeee0e+- See function 37
+current year wecccrecccececcccseecseser 19
+
+cursor backward seere 0000» See ESC D
+
+cursor blink seere eeeeeeeere 0000. 18
+
+cursor down seere eee 0000000. See ESC B
+cursor forward 00000000 eee See ESC C
+cursor height 00000000. 18
+
+Cursor home seerererereeereer eee eee See ESC H
+
+cursor position soeeeeeeeseeeeeereeeee… 34
+
+cursor position current ......++-++-eee-. See function 22
+cursor position set ......eeeeceeeeeee- See function 36
+cursor representation ..0002222222.+ 52
+
+cursor tracking mode ........eee+eeeee- See Xfunction 21
+cursor UP seere eee eee see 00. See ESCA
+
+CYAN cov ewe ccc ccc eee eee eee eee eee er eee 43
+
+RC Computer -223-

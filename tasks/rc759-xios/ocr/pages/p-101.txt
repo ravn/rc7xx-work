@@ -1,0 +1,56 @@
+9. Parallel (Printer) Interfaces
+
+The parallel interfaces on the PICCOLINE system are prima-
+rily intended for attachment of printers, but may also be
+used as general input/output ports.
+
+The CCP/M operating system supports the parallel interfaces
+as printer devices. If no mapping to the printers (in the
+connection to the net) is used, printer 0 will be the port
+on the CPU, called the local interface, and printer 2 will
+be the DPC (Disk/Printer-Controlunit) interface.
+
+The main difference between the two interfaces is that the
+DPC interface can be shared by up to 4 PICCOLINES, and
+therefore it is necessary to reserve the interface before
+use and release it afterwards.
+
+9.1 Parallel Interfaces Description
+
+An overview of the electrical signals used in the
+interfaces is shown below.
+
+pin number name
+
+1 STROBE
+
+2-9 8 data bit
+10 ACK
+
+11 BUSY
+
+12 PAPER END
+13 SELECTED
+14 AUTO LINE FEED
+15 FAULT
+
+16 INIT PULSE
+17 SELECT
+18-25 0 Volt
+
+The interface consists of 4 registers.
+
+- Data output register, directly controlling the data pins
+if enabled.
+
+- Data input port, reflecting the state of the data pins at
+the time of reading.
+
+- Control output register, directly controlling 4 control
+output pins and enabling of data output register and
+interrupt.
+
+- Status read port, reflecting the state of the 8
+control/status pins at the time of reading.
+
+RC Computer -91-

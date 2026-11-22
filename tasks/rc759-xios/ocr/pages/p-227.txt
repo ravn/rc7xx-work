@@ -1,0 +1,88 @@
+F. Console Escape Sequences
+
+Sequence Function
+
+ESC A Cursor Up
+
+ESC B Cursor Down
+
+ESC C Cursor Forward
+
+ESC D Cursor Backward
+
+ESC E Clear Screen, Cursor Home
+
+ESC H Cursor Home
+
+ESC I Reverse Index
+
+ESC J Erase to End of Screen
+
+ESC K Erase to end of line
+
+ESC L Insert Line
+
+ESC M Delete Line
+
+ESC N Delete Character
+
+ESC O Insert Character
+
+ESC P Select Alternative Character Set
+
+ESC Q Select Standard Character Set
+
+ESC Y x x Position Cursor
+
+ESC a Ignored
+
+ESC b x Set Foreground Colour
+
+ESC c x Set. Background Colour
+
+ESC a Erase Beginning of Screen
+
+ESC e Enable Cursor
+
+ESC f Disable Cursor
+
+ESC g Enter Underline Mode
+
+ESC h Exit Underline Mode
+
+ESC i Enter Non-Displayed Mode
+
+ESC j Save Cursor Position
+
+ESC k Restore Cursor Position
+
+ESC 1 Erase Line
+
+ESC m Enable Cursor
+
+ESC n Disable Cursor
+
+ESC o Erase Beginning of Line
+
+ESC p Enter Reverse Video Mode
+
+ESC q Exit Reverse Video Mode
+
+ESC r Enter Intensify Mode
+
+ESC s Enter Blink Mode
+
+ESC t Exit Blink Mode
+
+ESC u Exit Intensify Mode
+
+ESC v Wrap at End of Line
+
+ESC w Discard at End of Line
+
+ESC x Exit Non-Displayed Mode
+z
+
+Reset Attributes
+
+RC Computer -217-

@@ -1,0 +1,56 @@
+Catchword Index PICCOLINE
+
+D
+
+data seere eee eee eee ere 00 143
+data block seere ere eee 79
+data input port "00000000 000 91,92
+data output register ......0022...…. 91,92
+data record were ceccccccccccrccccscccces 19,82
+data register .. cece ceccccccececrecvees 203
+Gata.confirm ..e eee c ccc cc cccsceenccvreee 128
+data.confirm buffer format ............ 128
+data.indication 00000000. 128
+data.indication datastructure ......... 129
+data. request 2... cece cece cece cece 0002 118,127
+data.request buffer format ..........+. 127
+Gatalink ...ccecccccccccccsccscccseceee 112
+deactivate buffer ........ cee eeeeceeeee 119
+deactivate.confirm 00000000 119
+deactivate.confirm buffer format ...... 119
+deactivate.request ..00000000000 000000. 119
+deactivate.request buffer format ...... 119
+define character font .......cccecceeee 37,38
+define font ..00000eeeee eee 00000000. See function 52
+deinitialize mouse ...........-eee25e+2. See function 30
+delete character ...cccccccccccccceesee See ESC N
+delete line .... cc cece cere eee ss 04 See ESC M
+device addresses ...ccceeccencccvececee 203
+direct console access seere. 30
+direct console output ..........eee2-5- 31
+direct memory access ......2.eeeeeeeee- See DMA
+disable cassette roere eee 0000 78
+disable cursor seere 00000000 see ESC f
+disable interrupts secco: 57
+disable underline attribute ........... see ESC <246>
+discard at end of line ..........+.+-.- see ESC w
+disconnect.acknowledge ........ececcee- 126
+disconnect.acknowledge request buffer . 126
+disconnect.indication 00020000... 125
+disconnect.indication datastructure ... 126
+disconnect_acknowledge.confirm ........ 127
+disconnect_acknowledge.confirm buffer
+
+format . 127
+disk bufferS 2... ccccccccevesccesseee 19
+disk characteristics 00000000... 85
+disk controller ....cccccecccccccercece 87
+disk driver seere rer 0 00 88
+disk driver statistics ......-.+..e-.2-.. see function 13
+disk format seere cere eee es 85,86
+disk naming 2... cece rece cre eee. 85
+disk number seere eee eee ee 20
+disk release "seere 00004040 See function 42
+disk reserve seere eeer eee See function 42
+
+-224- RC Computer

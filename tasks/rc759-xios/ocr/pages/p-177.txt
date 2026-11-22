@@ -1,0 +1,34 @@
+PICCOLINE 12. iSBX Bus Specification
+
+Pin Mnemonic Description Pin Mnemonic Description
+35 GNO , Signal Ground 36 +5V +5 Volts
+3 MDO MDATA Bit 0 34 MDRQT M DMA Request
+31 MD1 , | | MDATA Bit 1 32 MDACK/ © M DMA Acknowledge
+29 MD2 _ | MDATA Bit 2 30 OPTO Option 0
+27 MD3 MDATA Bit 3 28 OPT1 Option 1
+25 MD4 MDATA Bit 4 26 TOMA Terminate DMA
+23 MOS MDATA Bit 5 24 Reserved
+21 MD6 ‘| MDATA Bit 6 22 MCSO/ M Chip Select 0
+19 M07 MDATA Bit 7 20 MCS1/ M Chip Select 1
+17 GND Signal Gnd 18 +5V +5 Volts
+15 IORD/ VO Read Cmd 16 MWAIT/ M Wait
+13 IowRT, | vo write Cmd 14 MINTRO | M Interrupt 0
+11 MAO M Address 0 12 MINTR1 M Interrupt 1
+9 MAI M Address 1 10 Reserved
+7 MA2 M Address 2 8 MPST/ SEX Multimodule
+5 RESET Reset 6 MCIK |, M Clock
+3 GND “| Signal Gnd 4 +5V N +5 Volts
+1 +12V +12 Volts 2 -12V i —12 Volts
+
+Ali undefined pins are reserved for future use.
+
+Fig.12.19 iSBX Signal Pin Assignments
+
+12.3.3 iSBX Multimodule Board Outline
+
+The iSBX Multimodule boards will have two standard board
+outlines. Fig.12.20 and 12.21 show the iSBX Multimodule
+board outlines.
+
+RC Computer -167-
+

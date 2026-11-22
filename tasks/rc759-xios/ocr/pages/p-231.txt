@@ -1,0 +1,64 @@
+Catchword Index:
+
+24 lines seere: 48
+
+25 lines seere eee eee 48
+
+80186 essere eee eee eee 0002, See CPU
+
+8251A USART seere eeeeeeseses eee. 100
+
+8253 PIT seere eee seere. 100
+
+8259A seere eee eee eee eee 00, See interrupt controller
+82730 seere eee eee ere eee. See text processor
+
+A
+
+activate.confirm 00000000 0000000 118
+activate.confirm buffer format ........ 118
+activate.request sees eereeeee00 0. 117
+activate.request buffer format ........ 117
+
+active SAP seere eee eee eee 000. 142
+alphanumeric mode ....00200 0000200 See character mode
+alternative character set .......... 35
+
+ASCII value ...ccccerccccccccccccecveee 64
+
+asynchronous mode seere 00000 99,100
+attenuation seere eee eee AL
+
+attenuation weight seere 73
+
+attribute bits .... ccc eee eeeeeereseeee 32
+
+attribute byte sees 34
+
+attributes .. cc ccc cece cence rece c eee 48
+
+attributes current ....ceeccceccceeeee- See function 37
+attributes set .....000 00000000 0000. See function 38
+auto configuration 00000000 0000. 15
+
+auto LOGON seere eee eee 00 20
+
+B
+
+basic configuration ...ccecc cece ee eeeee 15
+baud rate 0000000 eee eee eee 99
+BCD code seeren eee eee eee. 67
+BELL seere eee eee 40
+bitmap seere ere eee eee 000 26,36,55
+bitmapped graphics "0000000. 29
+bits pr. char seeesereeereeeeeer eee. 18
+black seere eee 43
+blink mode "000 eee 0e 47
+blinking cursor ....cccccccecevcsrecceee 52
+blue cece ccc c wcrc er ccvccrccvevccecccees 43
+blue beam serene seere 27
+BS seeeeeemreeeeeeeeeee eee seere 000 40
+bus interface seere eeeeeeeee00 040 145
+bus specification "rese 0000… 145
+
+RC Computer -221-

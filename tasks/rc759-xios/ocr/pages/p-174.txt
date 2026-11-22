@@ -1,0 +1,35 @@
+12. iSBX Bus Specification
+
+PICCOLINE
+
+Output
+Name Dive | —Mintmay | cveemaxy | -Min'gay | (vonminy | “ogni”
+MDO-MD7 TRI 1.6 0.5 —200 2.4 130
+MINTRO-1 TTL 2.0 0.5 —100 2.4 40
+MDROT TH 1.6 0.5 - 50 2.4 40
+MWAIT/ TTL 1.6 0.5 - 50 2.4 40
+OPT1-2 TT 1.6 05 - 50 24 40
+MPST/ TTL Note 3
+Input
+Bus Signal Type? tu Max @ Vin Max tot Max @ Vin Max Ci Max
+Name Receiver (mA) (volts) WA) (volts) (pf)
+
+MDO-MD7 TRI —0.5 0.8 70 2.0 40
+MAO-MA2 TT 0.5 0.8 70 2.0 40
+MCS0/-MCS1/ TIL —4.0 0.8 100 2.0 40
+MRESET TTL —2.1 0.8 100 2.0 40
+MDACK/ TIL —1.0 0.8 100 2.0 40
+lowers TTL -1.0 0.8 100 2.0 4
+MCLK TTL —2.4 0.8 100 2.0 40
+OPT1-OPT2 TTL —2.0 0.8 100 2.0 40
+NOTES:
+
+2. TTL = standard totem pole output. TRi = Three-state.
+3. iSBX Multimodule board must connect this signal to ground.
+
+Fig.12.16 iSBX Multimodule Board I/O DC Specifications
+
+-164-
+
+RC Computer
+

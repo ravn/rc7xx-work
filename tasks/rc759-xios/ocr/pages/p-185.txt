@@ -1,0 +1,36 @@
+PICCOLINE
+
+12.  iSBX Bus Specification
+
+Symbol Parameter tas) (ra)
+fy Address stable before IORD/ 50 -
+12 Address stable atter JORD/ 30 —
+13 READ pulse widtn 300 —
+te Data valid from IORD/ - 250
+ts Data float atter IORD/ o | 100
+te” Time between commands 1000 -
+t7 CS stable before CMD 25 ~
+ts CS stable after CMD wi] —
+ts Address stable before IOWRT/| SO| —
+tro Address stable after IOWRT/ 30 -
+ty WRITE pulse width 300 -
+tie Data valid to IOWRT/ 250 —
+tis Data valid after IOWRT/ 30 band
+tra | Reset pulse width nel -
+NOTES:
+
+1.
+
+During initialization, all writes to the control port:
+te = 1.92 ys. After initialization in asynchronous
+mode ail writes to the control port: te = 2.56 ps.
+After initialization in synchronous mode all writes
+to the contro! port: te = 5.12 ys. All writes to the
+data port: Depends upon the baud rate since
+TXRDY must be true.
+
+Fig.12.27 AC Specifications
+
+RC Computer
+
+-175-

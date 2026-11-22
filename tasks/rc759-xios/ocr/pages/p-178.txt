@@ -1,0 +1,30 @@
+12. iSBX Bus Specification PICCOLINE
+
+12.3.4 iSBX Multimodule Board User I/O Connector Outlines
+
+The top of the iSBX Multimodule board can be defined by the
+user. Fig.12.22 through 12.24 show the dimensions of sugge-
+sted top edge connectors for the most common designs.
+
+4 PLACES x —— 7
+TTT]
+ping |
+p yA nn
+
+SER
+4 PLACES
+
+100
+
+1
+|
+
+ae
+Ae
+
+LOCATION
+COMPONENT SIDE
+
+Fig.12.21 iSBX Multimodule Board Outline
+
+-168- RC Computer

@@ -1,0 +1,49 @@
+4. Console Module PICCOLINE
+
+The following escape sequences disables and enables the
+underline attribute:
+
+ESC-<246> Disable underline attribute
+
+ESC-<247> Enable underline attribute
+
+4.3.1 Altering the Character Set
+
+A character definition block consists of 16 words (16 bit
+memory location), each defining a single video rasterline
+of the character.
+
+The width of a character is variable from 7 to 15 pixels
+and is controlled by the contents of the definition for
+each videoline. The character width is defined by the posi-
+tion of the first zero bit followed by all one's.
+
+Example:
+
+A character 7 bit wide is defined by the following bits:
+Xxxxxxx011111111B
+
+WARNING!
+
+When variable character width is used, it is the
+responsibility of the programmer to fill the entire line
+with characters (e.g. by means of variable length space
+characters).
+
+The standard character width is 7 pixels. The height of one
+character row is 10 videolines.
+
+When the display operates in graphics mode about 25 Kbytes
+of the pixel memory is used as bitmap. Consequently the
+character definitions must be saved each time a process
+running in graphics mode takes over the display.
+
+This means that the definition may be in one of two places,
+so the character set cannot be altered simply by modifying
+the pixel memory. Instead a set of functions is offered in
+the XIOS.
+
+The functions which are accessed through software interrupt
+28h are described in the following.
+
+-36- RC Computer

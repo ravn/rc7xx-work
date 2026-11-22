@@ -1,0 +1,47 @@
+4. Console module PICCOLINE
+
+ESC n - Disable Cursor
+
+Included to be compatible with some CP/M-86 implementa-
+tions. Use ESC-f under CCP/M-86.
+
+ESC o - Erase Beginning of Line
+
+Clears the start of the line to the cursor position, inclu-
+ding the cursor position.
+
+ESC p - Enter Reverse Video Mode
+
+Following the invocation of this sequence, the foreground
+and background colours are reversed. If display is already
+
+in reverse video mode, this sequence has no effect.
+
+In reverse video mode, setting foreground colour will
+effectively set the background colour.
+
+NOTE
+At any time 16 combinations of background and foreground
+colours can be displayed simultaneously. Any escape se-
+
+quence that would result in more than 16 colour
+combinations will be ignored.
+
+ESC q - Exit Reverse Video Mode
+
+Exits the reverse video mode.
+
+ESC r - Enter Intensify Mode
+
+Following the invocation of this sequence, characters are
+displayed in high intensity.
+
+In reverse video mode the background will be intensified.
+NOTE
+At any time 16 combinations of background and foreground
+colours can be displayed simultaneously. Any escape se-
+
+quence that would result in more than 16 colour
+combinations will be ignored.
+
+-46- RC Computer

@@ -1,0 +1,39 @@
+PICCOLINE 12. iSBX Bus Specification
+
+chip select, just as in a full speed read. The iSBX Multi-
+module board then activates the MWAIT/ signal which in turn
+deactivates the ready input to the CPU (putting it into a
+WAIT state). The iSBX Multimodule board will remove the
+MWAIT/ signal when valid READ data is on the iSBX Multimo-
+dule data bus. The base board then reads the data and deac-
+tivates the command, address, and chip select.
+
+MAO-MA2 LX a VALID ADDRESS y
+
+MWAIT/ a Srey
+
+a
+vA
+f Y VALID DATA -—
+
+Fig.12.4 iSBX Multimodule Board Extended Read
+
+12.1.3.2 I/O WRITE
+
+There are two I/O WRITE operations that a base board can
+perform. The iSBX Multimodule board determines which type
+of I/O WRITE is performed.
+
+The first type of write is a full speed I/O WRITE
+(fig.12.5). The base board generates a valid I/O address
+and chip select. The base board activates the IOWRT line
+after the set up times are met. The IOWRT/ line will remain
+active for 300 ns and the data will be valid for 250 ns
+before the IOWRT/ command is removed. The base board will
+then remove the data address and chip select after it meets
+the hold times as shown in fig.12.5.
+
+.
+
+RC Computer -153-
+

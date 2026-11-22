@@ -1,0 +1,24 @@
+D. Character Set and Keystrokes PICCOLINE
+VALUE VALUE
+DEC |HEX | KEYSTROKES DEC |HEX | KEYSTROKES
+460 | AO | ALT SPACE 176 | BO ALT 0| @
+= |
+464 | Ai | SHIFT ALT ! 477 | Bi ALT 1] @
+a a
+462 | A2 | SHIFT ALT ” 178 | Be ALT 2]
+= =
+463 | A3 | SHIFT ALT @ 179 | B3 ALT 3| 0E
+464 | A4 | SHIFT ALT $ a 180 | B4 ALT 4 |
+165 | A5 | SHIFT ALT % i 484 | BS ALT 5 |
+166 | A6 | SHIFT ALT & = 182 | B6 ALT 6 i
+467 | A7 | SHIFT ALT ° Fr 183 | B7 ALT 7 F
+168 | AB | SHIFT ALT ( a 484 | BB ALT 8 at
+469 | AQ | SHIFT ALT ) "i 185 | B9 ALT 9 a
+170 | AA | SHIFT ALT * i 186 | BA ALT : dl
+171 | AB | SHIFT ALT + 4 187 | BB ALT ; a
+= FF
+172 | AC ALT , 488 | BC | SHIFT ALT <
+473 | AD ALT - ik -) 189 | BD | SHIFT ALT = I
+174 | AE ALT . ul 490 | BE | SHIFT ALT > rs
+175 | AF ALT / a 491 | BF | SHIFT ALT ? F
+-212- RC Computer

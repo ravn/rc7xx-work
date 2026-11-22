@@ -1,0 +1,43 @@
+7. Cassette Tape PICCOLINE
+
+Cassette input data is read on the I/O-address 70H (112)
+bit 0. A one bit read corresponds to a high pulse of the
+data bit and a 0 bit read to a low pulse (see fig.7.1). By
+continously reading the pulse value it is possible to
+determine the period of the square wave and thereby to
+determine the value of the data bit. Timer 0 is used for
+measuring the pulse width of the square wave.
+
+Note
+
+Since both reading from and writing to the cassette tape
+is very time dependent it may be necessary to turn off
+all interrupts while reading or writing.
+
+The casssette drive motor is controlled (on/off) by I/0-
+address 76H (118), see fig.7.2.
+
+Cassette input and output are enabled or disabled by I/0-
+address 76H (118). This can be very usefull for instance
+while accelerating or descelerating the cassette drive mo-
+tor.
+
+I/O address Output Operation
+hex dec value
+76 118 2 Motor on
+76 118 3 Motor off
+76 118 1 Enable cassette
+76 118 0 Disable cassette
+
+Fig.7.2 Cassette Control.
+
+7.2 Cassette Tape Driver
+
+Because the CCP/M operating system does not support a
+cassette tape this device is accessed through Int-28h
+function calls.
+
+Before describing the driver functions the general format
+of the data written on the cassette tape is described.
+
+-78- RC Computer

@@ -1,0 +1,46 @@
+8. Disk system PICCOLINE
+
+The FCR register has the following encoding:
+
+Bit Name Description
+0 Drive select 0 selects drive 0
+1 selects drive 1
+1 Motor 0 0 Motor off
+1 Motor on
+2 Motor 1 0 Motor off
+1 Motor on
+3 Write Precomp. enable 0 Disabled
+1 Enabled
+4 Not used
+5 Not used must be 0
+6 Not used must be 1
+7 Ready control 0 Ready from drive
+
+1 Ready always set
+Precompensation is normally applied in the following way.
+
+Cylinder no. Precompensation
+
+0-77 125 nsec.
+
+The FDC is normally initialized to transfer data in DMA-
+mode using DMA channel 0. In order to avoid data overrun,
+DMA channel 0 is assigned a high priority (see 2.2.3) when
+it is used by the FDC.
+
+8.3 Floppy Disk Driver
+
+The XIOS floppy disk driver supports the three basic CCP/M
+disk I/O functions:
+
+IOSELDSK
+IOREAD
+IOWRITE
+
+See ref.3 for detailed information about these functions.
+Additionally the XIOS floppy disk driver supports several
+
+int-28h functions which are described in appendix A (func-
+tions 5, 8, 9, 10, 11 and 13).
+
+-88- RC Computer

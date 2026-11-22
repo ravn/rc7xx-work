@@ -1,0 +1,57 @@
+PICCOLINE
+
+1. Introduction
+
+Flag number
+
+Use
+
+0
+
+13-18
+
+20-21
+
+26-63
+64-127
+128-255
+
+Reserved by CCP/M
+
+Tick
+
+Second
+
+Minute
+
+Scroll synchronization
+Key available flag
+Reserved
+
+Floppy disk
+
+Scroll synchronization
+Scroll synchronization
+Floppy motor
+
+Local parallel interface
+Reserved
+
+Error key flag
+Reserved
+
+Net transmitter
+
+Net receiver
+
+Window manager
+
+DPC parallel printer
+Reserved for future use
+Free
+
+Reserved by DR Net
+
+Table 1.2. Flag Assignments
+
+RC Computer

@@ -1,0 +1,57 @@
+10. Serial Interface PICCOLINE
+
+PIT counter 2
+2400 baud
+least significant byte
+
+mov dx,316H
+mov ax,32
+out dax,al
+exch ah,al
+out ax,al
+
+Se Se se Ne Se
+
+most significant byte
+
+Further information about the programming af the 8253 PIT
+and the 8251A USART can be found in ref.1l.
+
+10.3 Initializing the iSBX351
+
+Two Int-28h functions are available for initializing the
+iSBX351 to operate in standard asynchronous mode.
+
+Int-28h function 24 is used to initialize the channel
+according to a parameter block with the following format.
+The format is chosen to be the same as the format used in
+the Rc Partner. Hereby the serial communication channel of
+the PICCOLINE system is made work like channel B of the
+Partner system.
+
++ 0 1 (allways)
+
++ 1 Mode (0: Console; 1: Printer)
+
++ 2 Protocol (0: None; 1: Xon-Xoff)
+
++ 3 Receiver baud rate (0: 75 1: 75; 2: 110;
+3: 150; 4: 300; 5: 600; 6: 1200; 7: 2400;
+8: 4800; 9: 9600)
+
++ 4 Transmitter baud rate (as for receiver)
+
++ 5 No. of subsequent write register
+specification (see relevant INTEL doc.)
+
++ 6 Register no.
+
++ 7 Register contents
+
++ 8 Register no.
+
++ 9 Register contents
+
+etc.
+
+-102- RC Computer

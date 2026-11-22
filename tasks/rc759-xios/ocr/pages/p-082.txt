@@ -1,0 +1,57 @@
+6. Sound PICCOLINE
+
+Example
+
+; This piece of code reserves the sound device by reading
+; the mutual exclusion queue 'MXsound '.
+
+mov cl1,135
+mov dx,offset qpb_sound
+
+; Queue open function
+int 224 ;
+
+queue parameter block
+
+mov cl1,137 ; queue read function
+mov dx,offset qpb sound queue parameter block
+int 224 ;
+
+; the process will not proceed before the sound device is
+reserved.
+qpb_sound dw 0,0,0,0
+
+db "MXsound '
+
+After use, the program should release the device as fol-
+lows:
+
+; This piece of code releases the sound device by writing
+; to the mutual exclusion queue 'MXsound '.
+
+mov c1,139 ; queue write function
+mov dx,offset qpb sound ; queu parameter block
+int 224 ;
+
+6.1 Programming Tones
+
+Each of the three tone generators cover a range of five
+octaves: from two octaves below middle C to three octaves
+above it.
+
+Setting a frequency of 440 Hz for tone generator 1 is done
+as follows.
+
+First find I
+
+clock rate/(32 + £)
+2 MH2/(32 * 440)
+
+I
+I
+I 142.045
+
+Since 'I' must be an integer quantity set it to 142. The
+actual frequency will be 440.14 Hz.
+
+-72- RC Computer

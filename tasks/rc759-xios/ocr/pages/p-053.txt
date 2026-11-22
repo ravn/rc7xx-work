@@ -1,0 +1,72 @@
+PICCOLINE 4. Console module
+
+Example:
+To position the cursor in position (23,79), the sequence is
+
+ESC Y 70 dec: 27 89 55 111
+hex: 1B 59 37 6F
+
+ESC b - Set Foreground Colour
+
+The foreground colour displays the character. The colour is
+specified by a colour selection character, that follows the
+"b". Only the four least significant bits of the character
+are used, with the individual bits having the following
+significance:
+
+Colour Monitor Monochrome Monitor
+0 Blue
+
+1 Green
+
+2 Red
+
+3 High Intensity 2-3 Intensity
+
+Examples of colour select characters:
+
+Colour Monitor Monochrome monitor
+
+- Black 0 - Black
+- Blue
+
+- Green
+
+- Cyan (Blue + Green)
+
+- Red 4
+- Magenta (Red + Blue)
+
+Yellow (Red + Green)
+
+- White (Red + Green + Blue)
+
+- Grey 8 - Low Intensity
+- High intensity Blue
+
+- High intensity Green
+
+- High intensity Cyan
+
+- High intensity Red <
+- High intensity Magenta
+
+- High intensity Yellow
+
+- High intensity White
+
+Normal Intensity
+
+High Intensity
+
+NV Ass OONIKHU WHE O
+U
+
+NOTE
+
+The monochrome monitor of PICCOLINE is not able to show
+more than one intensity, - the high intensity. Normal and
+low intensity are therefore shown as high intensity too.
+But if the background colour is chosen to have higher
+
+RC Computer -43-

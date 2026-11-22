@@ -1,0 +1,39 @@
+PICCOLINE 1. Introduction
+
+Besides these standard peripherals the PICCOLINE system may
+be enhanced with
+
+- A local area network controller based on the Intel
+82586 ethernet controller
+
+- A PICCOLINE Disk/Printer-Adaptor (if PICCOLINE is
+connected to disks resident inside the PICCOLINE
+Disk/Printer-Controlunit (DPC))
+
+- Other controllers connected to the iSBX-connector. This
+connector is supported in accordance to the iSBX bus
+standard from INTEL. In this manual only the iSBXx
+serial multimodule board is described.
+
+In this manual the software interface to the above mentio-
+ned peripherals will be described.
+
+1.1 XIOS Overview
+
+The XIOS (eXtended Input/Output System) is the lowest layer
+of software in the PICCOLINE.
+
+The XIOS consists of a set of routines, each controlling a
+specific hardware component, which together constitutes a
+welldefined interface to the CCP/M operating system (see
+ref.3)
+
+A XIOS routine is executed as part of the user programs as
+a consequence of operating system calls. When a user pro-
+gram has requested a service by means of an operating sys-
+tem call, the program will be suspended (i.e. the program
+will not return from the XIOS routine) until the requested
+service can be fullfilled (e.g. a sector on the floppy disk
+has been read).
+
+RC Computer =3-+

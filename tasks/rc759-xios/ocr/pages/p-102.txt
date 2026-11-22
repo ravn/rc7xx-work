@@ -1,0 +1,55 @@
+9. Parallel Interface PICCOLINE
+The registers have the following layouts:
+
+Data output register
+
+dec
+Local interface OUT 250H 592
+DPC interface OUT 28AH 650
+Connector
+
+Bit Pin no. Description
+
+0 2 If the output register is enabled (i.e.
+
+1 3 control register, bit 4 = 0) then a bit in
+2 4 the register directly controls the
+
+3 5 corresponding connector pin as follows:
+
+4 6
+
+5 7 Bit state TTL ouput
+
+6 8 0 LOW
+
+7 9 1 HIGH
+
+Data input port
+
+dec
+Local interface IN 250H 592
+DPC interface IN 28AH 650
+Connector
+
+Bit Pin no. Description
+
+0 2 Read back of data output register, or if this
+
+1 3 is disabled the state of the connector pins.
+
+2 4
+
+3 5 Pin TTL level Bit state read
+
+4 6 Low 0
+
+5 7 HIGH 1
+
+6 8
+
+7 9
+
+-92-
+
+RC Computer

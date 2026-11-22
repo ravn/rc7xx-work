@@ -1,0 +1,44 @@
+2. CPU PICCOLINE
+
+INTRO from the iSBX connector is connected to INT1 on the
+CPU (vector type 13) and INTR1 to INT3 (vector type 15)
+
+The internal interrupt controller is initialized to cascade
+mode and level triggered interrupts.
+
+The Intel 8259A is initialized to buffer mode, master,.no
+slaves connected, fully nested interrupts, specific end of
+interrupt, level triggered and first vector 80H.
+
+A list of interrupt vector assignments may be found in ap-
+pendix C.
+
+Details about the interrupt controllers may be found in the
+Intel reference documentation.
+
+2.2 Direct Memory Access
+
+The two integrated DMA channels are able to transfer data
+between memory and I/O space (e.g. Memory to I/O) or within
+the same space (e.g. Memory to memory or I/O to I/O). Data
+can be transferred either in bytes (8 bits) or in words (16
+bits) to or from even or odd addresses.
+
+DMA channel 0 is connected to the iSBX connector while DMA
+channel 1 is used as floppy tranfer channel.
+
+Detailed information about the DMA channels may be found in
+the Intel reference documentation.
+
+2.2.1 DMA Channel Reservation
+
+As the two DMA channels are shared among different periphe-
+ral devices, it is necessary to reserve a channel before
+using it. The reservation of the channels are done by means
+of two mutual exclusion queues, 'MXdma0' and 'MXdmal'. When
+a program succeeds in reading one of these queues, it has
+got the right to use the corresponding DMA channel. The DMA
+channel is released by writing to the relevant mutual
+exclusion queue.
+
+-12- RC Computer

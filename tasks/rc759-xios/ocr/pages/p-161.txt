@@ -1,0 +1,50 @@
+PICCOLINE 12. iSBX Bus Specification
+
+Address Lines (MA0-MA2)
+
+These positive true input lines to the iSBX Multimodule
+boards are generally the least three significant bits of
+the I/O address. In conjunction with the commmand and chip
+select lines, they establish the I/O port address being ac-
+cessed.
+
+Chip Select Lines (MCS0/-MCS1/)
+
+These input lines to the iSBX Multimodule board are the re-
+sult of the base board I/O decode logic. MCS/ is an active
+low signal which conditions the I/O command signals and
+enables communication with the iSBX Multimodule boards.
+
+NOTE
+
+If MCS/ glitches, the MWAIT/ line may also glitch. MWAIT/
+must be in its proper state in less than ty, (75 ns) af-
+ter MCS/ is in its proper state.
+
+12.1.2.3 Data Lines (MDO-MD7)
+
+Eight bidirectional data lines (active high) are used to
+transmit or receive information to or from the iSBX Multi-
+module ports. MDO is the least significant bit.
+
+12.1.2.4 Interrupt Lines (MINTRO-MINTR1)
+
+These active high output lines from the iSBX Multimodule
+board are used to make interrupt requests to the base
+board.
+
+12.1.2.5 Option Lines (OPTO, OPT1)
+
+These two signals are two reserved lines that are connected
+to wire wrap posts on both the base board and iSBX Multimo-
+dule board. They are for unique requirements where a user
+needs a base board signal on the iSBX Multimodule board and
+is willing to put a potentially long wire on the base board
+to connect it.
+
+12.1.2.6 Power Lines
+
+All base boards will provide +5 and +12 /-12 volts to the
+iSBX Multimodule boards.
+
+RC Computer -151-

@@ -1,0 +1,57 @@
+6. Sound
+
+The sound device produces sound via the loudspeaker located
+in the CPU unit (some CRT units have a loudspeaker).
+
+The sound device contains four signal sources: three inde-
+pendent generators of single-frequency tones and one gene-
+rator of noise. In addition, each source has its own atte-
+nuator with a 28-dB attenuation range. The output signal
+from the four attenuators are summed together as a single
+amplified output.
+
+The sound device contains 8 registers that control the va-
+rious noise and tone outputs:
+
+RO R1 R2 Control register
+
+0 0 0 tone 1 frequency
+
+0 0 1 tone 1 attenuation
+0 1 0 tone 2 frequency
+
+0 1 1 tone 2 attenuation
+1 0 0 tone 3 frequency
+
+1 0 1 tone 3 attenuation
+1 1 0 noise control
+
+1 1 1 noise attenuation
+
+RO, Rl and R2 denote bit positions in the control bytes
+sent to the sound device as described below.
+
+Noise and attenuation parameters are sent to the sound de-
+vice as 1-byte values, while frequence updates require 2
+bytes. To differentiate between the first and second byte
+of any data transfer, all first-byte or single-byte trans-
+fers have the most significant bit equal to a logic 1. The
+second byte always has the MSB equal to logic 0.
+
+Because the CCP/M operating system does not support such
+exotic devices as sound generators, this device is accessed
+through Int-28h function 12:
+
+AX
+DL
+
+12
+sound device control byte
+
+To prevent more than one program from using the sound devi-
+ce at the same time, the programs should reserve the device
+before using it. This is done with the help of a mutual ex-
+clusion queue of the name 'MXsound'. The device is reserved
+when a queue read from MXsound succeeds.
+
+RC Computer -71-

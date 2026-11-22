@@ -1,0 +1,55 @@
+PICCOLINE A. Int-28h Function
+
+Interface
+
+Function 5
+
+Recalibrate floppy disk drive.
+Registers on entry:
+
+AL 5
+
+Stack on entry:
+
++10 Drive (0/1)
++ 8 Head (0/1)
++ 6 Cylinder
+
++ 4 Bytecount
+
++ 2 DMA segment
++ 0 DMA offset
+
+Registers on return:
+
+AL Floppy disk controller status register
+
+Function 6-7
+
+Reserved.
+
+Function 8
+
+Step floppy drive head one track in.
+Registers on entry:
+
+AL 8
+
+Stack on entry:
+
++10 Drive (0/1)
++ 8 Head (0/1)
++ 6 Cylinder
+
++ 4 Bytecount
+
++ 2 DMA segment
++ 0 DMA offset
+
+Registers on return:
+
+AL Floppy disk controller status register
+
+RC Computer
+
+-185-

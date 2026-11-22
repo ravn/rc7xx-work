@@ -1,0 +1,42 @@
+13. Inter Computer File Transfer PICCOLINE
+
+13.2.2 Transmission protocol
+
+The transactions described in 13.2.1 are sent by means of
+the blocked tranmission protocol described below.
+
+A block consists of the following elements:
+
+1) start character:
+ASCII value 35
+
+2) Block size:
+
+The size defines the number of characters (N) in the
+string to be sent, not the number of characters necess-
+ary to send the string (2*N+8, explained below). The
+block size is a 16-bit integer (0..65535) split into
+four 4-bit digits. Each digit is interpreted as an in-
+teger to which 64 has been added, so that the resulting
+value lies between 64 and 79. These values are trans-
+mitted as characters, the most significant part first,
+the least significant part last.
+
+3) Data section:
+Each character in the string to be sent is split into
+two 4-bit digits, to which 64 is added, as above. These
+two integers are transmitted as ASCII values, the most
+significant part first.
+
+4) Checksum:
+An 8-bit number which is transmitted as two ASCII valu-
+es as explained above. The checksum is calculated so
+that the following condition is satisfied:
+
+((the sum of the values of the characters in the origi-
+nal string) + checksum) modulo 256 = 0.
+
+5) Stop character:
+ASCII value 13.
+
+-180- RC Computer

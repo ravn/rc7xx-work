@@ -1,0 +1,52 @@
+PICCOLINE A. Int-28h Function Interface
+
+Function 11
+
+Read a track from floppy disk.
+Registers on entry:
+
+AL 11
+
+Stack on entry:
+
+Drive (0/1)
+
+Head (0/1)
+
+Cylinder
+
+Bytecount
+
+DMA segment
+DMA offset
+
+ONS HD@O
+
+Registers on return:
+
+AL Floppy disk controller status register
+
+Function 12
+Write a byte to the sound generator.
+Registers on entry:
+
+AL 12
+DL byte
+
+Registers on return:
+
+Undefined
+
+Function 13
+
+Get address of disk driver statistics
+Registers on entry:
+
+AL 13
+
+Registers on return:
+
+ES Address segment
+BX Address offset
+
+RC Computer -187-

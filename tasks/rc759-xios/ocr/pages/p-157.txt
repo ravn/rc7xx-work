@@ -1,0 +1,43 @@
+PICCOLINE 12. iSBX Bus Specification
+
+12.1 Functional Description
+
+This section will give the reader an overall understanding
+of how the iSBX Multimodule board functions. It describes
+the basic elements of an iSBX Multimodule board, defines
+the iSBX Multimodule interface signals and describes the
+basic communication operations.
+
+In this section, as well as throughout the specification, a
+clear and consistent notation for signals has been used.
+The I/O Read (IORD) signal will be used to explain this
+notation. The terms one, zero, true, and false can be
+ambiguous, so their use will be avoided. In their place,
+the terms electrical High and Low (H and L) will be used. A
+slash following a signal name (IORD/) indicates that the
+signal is active low as shown:
+
+IORD/ = IORD = IORD- = Asserted at 0 volts
+
+The signal (IORD/), driven by a three state driver will be
+pulled up to VCC when not asserted. Fig.12.2 is used to
+further explain the notation used in this specification.
+
+. Definition
+Signal
+Name Electrical Logical State
+H 1 True
+Active,
+IORD L 0 False ctive, Asserted
+IORD/ L 1 True | active, Asserted
+H 0 False *
+
+Fig.12.2 Notational Summary
+
+12.1.1 iSBX Multimodule System Elements
+
+This section will describe the two basic elements in an
+iSBX Multimodule system: base boards and iSBX Multimodule
+boards (see fig.12.1).
+
+RC Computer -147-

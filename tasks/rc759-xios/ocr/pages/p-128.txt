@@ -1,0 +1,51 @@
+11. Local Area Network PICCOLINE
+
+primitive whenever a connection is established between the
+activated SAP and a remote SAP. The format of the client
+information buffer is:
+byte number
+
+0-5 reserved by the driver
+
+6-7 the SAP mask used to prevent establishment of
+undesired connections, cf. section 11.1
+
+8-45 client defined information
+
+The length of the client information includes the reserved
+bytes and the two SAP mask bytes.
+
+11.2.1.2 ACTIVATE.confirm
+
+The primitive which is issued in response to an
+ACTIVATE.request primitive is passed from the driver to the
+requesting client. This is done by writing a long pointer
+(pointing to the client information buffer) to the clients
+
+confirm queue.
+
+Format of the returned client information buffer:
+
+byte number
+0 unused
+1 confirm kind = 0 (activate.confirm)
+
+2 confirm result indicates whether the SAP was
+successfully activated
+
+When a SAP has been activated for type 1 service
+UDATA.request primitives may be issued requesting the
+transmission of data.
+
+When a SAP has been activated for client network service,
+the RCLLC layer will automatically begin to establish the
+appropriate connections. As each connection is established,
+the client will be informed by means of a
+CONNECT.indication primitive and may subsequently request
+transmission of data by issuing DATA.request primitives.
+
+In either case, once a SAP has been activated, the client
+May issue the TEST.request primitive to request a loop-back
+test.
+
+-118- RC Computer

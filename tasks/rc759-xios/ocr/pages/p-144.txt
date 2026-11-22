@@ -1,0 +1,54 @@
+11. Local Area Network PICCOLINE
+
+Moreover, the procedure allows RCLLC entities to supervise
+that all existing connections are alive. When the ACTI-
+VE SAP protocol element fails to arrive from an SAP to
+which a connection exists, for a sufficiently long period
+of time, this will be taken to indicate that the SAP is no
+longer active, and the RCLLC entity will therefore remove
+its end of the connection.
+
+All protocol elements other than ACTIVE_SAP are transmitted
+using individual station address.
+
+The rigorous description of the procedures for establish-
+ment and supervision of connections which is given in the
+following is based on a state, two timers and a retransmis-
+sion counter maintained by an RCLLC entity for each connec-
+tion in which it takes part, i.e. for each remote SAP it
+knows. The following connection states exist: UNKNOWN,
+RESETTING, DATA, DISCONNECTING. The timers are:
+
+- the acknowledgement timer which runs when an
+acknowledgement, i.e. a RACK or ACK protocol element,
+is expected
+
+- the SAP alive timer which runs whenever the remote
+SAP is known and is restarted each time an ACTIVE_SAP
+protocol element is received.
+
+In addition to the state, timers, and retransmission
+counter an RCLLC entity maintains for each connection two
+sequence counters for data units, N(S): the number of the
+data unit to transmit, and N(R): the number of the next
+data unit to be received.
+
+The following events may cause the state of a connection to
+change:
+
+PE_new_SAP An ACTIVE_SAP protocol element is received
+from the remote SAP indicating it has become
+active, possibly by reinitialization, see.
+section 11.4.3.4
+
+PE_rack A RACK or RESET protocol element is received from
+the remote SAP when RACK is expected.
+
+PE_reset A RESET protocol element is received from the
+remote SAP, except when RACK is expected.
+
+give_up The RCLLC entity gives up the connection when the
+retransmission counter is exhausted, or when the
+SAP alive timer runs out.
+
+-134- RC Computer

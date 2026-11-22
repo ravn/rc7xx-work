@@ -1,0 +1,83 @@
+Catchword Index PICCOLINE
+
+read file header ssceeeeeeree0e 00000000 81,192
+
+read next data seere eee 000 82,193
+
+read RTC register seere 000000. 67
+
+read nvMm seems eee sees 0000» 22
+
+real time clock seere 000000 See RTC
+
+REC wc ccwcccccccc ccc ccccccccecccsesseee 113
+recalibrate disk drive ................ see function 5
+receiver baud rate "see 000000. 101
+
+record number ...ccccccccccccrccccsccee 19,81
+
+record type cece eseesccccesesevesesesee 79
+
+record, Cassette .....:00 00000040 See Cassette record
+red seere 43
+
+register usage seere eeeeeeee 9
+
+release DPC interface seere 000000… 97
+
+release sound device seere eresee00… 72
+
+request 00000000 seeeeoereeeeeee eee eee 114
+
+reserve disk seere 0002. 89
+
+reserve DPC interface ....0:2,... 97
+
+reserve sound device seere eeeers0r… 72
+
+reset secco 142
+
+reset attributes ...0000000 00000000 See ESC z
+
+reset int. CRT seere 04. 203
+
+reset iSBX351 seere 000000, See function 50
+resolution seere eee. 26
+
+resolution (high/medium) .............. see function 0
+restore attributes ........cccceeccreee- See ESC 3
+restore cursor position ...-..cececceeee-s See ESC k
+restore function keys ......eccecceeeee see ESC <254>
+return mouse status ..-.-..cceccccccceee- See function 30
+return POinterS "00000000 0000400 See Xfunction 16
+reverse index eee 00000 See ESC I
+
+RTC seems eee eee eee. 16,67
+
+RTC controller 00000000. 67
+
+RTC second source seere. 67
+
+RTS seere eeersee eee eee seer. 18
+
+SAP seeeesemeeereeeeeeseeee eee ere 000 112
+
+SAP activation vere 00. 117
+
+SAP address seere 112
+
+SAP deactivation .. cece e reece cccceveee LIT
+
+SAP mask .ccccerercccccvcccsevccvecsces 113
+
+save current attribute ..........-+.+.-+. see ESC 2
+Save Cursor position .....ceeeeeeeeeees See ESC Jj
+save function keys .......cceceseeeeees See ESC (253>
+save-buffer .. 2... cece cece c ccc eneecceve OD
+
+screen dump .. eer eevee ccccvevverecccee 32
+
+screen update .....ereee 00000000 000 See function 39
+scroll mode 2... ccc ecrcccccceccvece 18
+
+-234- RC Computer

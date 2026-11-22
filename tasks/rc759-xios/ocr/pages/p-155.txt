@@ -1,0 +1,33 @@
+12. iSBX Bus Specification
+
+The iSBX bus is a unique interface facilitating on-board
+expansion with iSBX Multimodule boards. The iSBX bus is
+derived directly from the on-board CPU bus and, as such, an
+iSBX Multimodule board plugged into the iSBX bus becomes an
+integral element of the PICCOLINE computer. The physical
+interface between the single board computer and the iSBX
+Multimodule board is a unique connector designed specifi-
+cally for the iSBX bus. The iSBX bus is brought out toa
+female iSBX bus connector on the computer and mates with
+its male equivalent resident on the iSBX Multimodule board
+(fig.12.1) page 146.
+
+The iSBX Multimodule board concept offers a unique design
+approach to board level users. The iSBX Multimodule boards
+bring a new concept to expansion, providing a product fami-
+ly of smaller modules that can be plugged directly onto the
+single board computer. In short, the user may now tailor
+his application directly onboard the single board computer
+at a minimal cost. In addition, the iSBX Multimodule boards
+offer maximum performance because they are tightly coupled
+to the microprocessor through the iSBX bus.
+
+This chapter has been prepared for those users who intend
+to evaluate or design custom iSBX Multimodule board
+products that will be compatible with RC759 base board. The
+chapter defines the logical, electrical, and mechanical
+aspects of the iSBX Multimodule boards. The iSBX Multi-
+module board specifications are defined in a similar way an
+I/O component would be.
+
+RC Computer -145-

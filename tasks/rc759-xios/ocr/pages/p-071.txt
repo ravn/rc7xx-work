@@ -1,0 +1,58 @@
+PICCOLINE 4. Console module
+
+4.6 Window Handling
+
+The Concurrent CP/M Windows are handled by a number of XIOS
+routines. The routines are called through the normal XIOS
+entry point. '
+
+Some of the routines are used only by the standard window
+manager, the rest may be of interest to the application
+programmer. They are described in the following sections.
+
+NOTE
+
+In a PICCOLINE l-console system it makes no sense to use
+windows. Therefore, in order to save memory space, the
+routines are removed. A call of XIOS function number 19
+results in an error message in the status line, whereas
+call of the other functions has no effect.
+
+4.6.1 Return Pointers
+
+This funtion return pointers to two different data
+structures.
+
+A pointer to the window manager data block is returned by
+the following call:
+
+entry: al = 16
+dl = OFFH
+exit: ax = window data block pointer
+
+The window data block has the following format:
+
+list of console numbers from the
+
+priority rb nvcns
+back window to the front window
+
+state rb 1 3 window manager state
+; 0 = not resident
+; 1 = resident but not active
+; 2 = resident and active
+
+nvc db nvens ; number of virtual consoles
+4
+7
+
+If register DL is a virtual console number the call is
+Similar to Int-28h function 21 (see 4.2.3).
+
+entry: al = 16
+dl = virtual console number
+exit: ax = ve structure pointer
+ax = screen segment
+es = ve structure segment
+
+RC Computer -61-

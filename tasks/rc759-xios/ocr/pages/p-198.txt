@@ -1,0 +1,66 @@
+A. Int-28h Function Interface PICCOLINE
+
+The disk driver statistics has the following layout:
+
+Read Count RW 16 ; Each word contain number of
+; read operations on the
+; corresponding drive (word 0 is
+; count for drive A etc.)
+
+Write Count RW 16 Each word contain number of
+
+write operations on the
+corresponding drive.
+
+Se one ne
+
+Each word contain number of
+non recoverable errors occured
+during read operations on the
+corresponding drive.
+
+Hard Err Read RW 16
+
+one ne ne
+
+Each word contain number of
+non recoverable errors occured
+during write operations on the
+corresponding drive.
+
+Hard Err Write RW 16
+
+We Noe ne Nee
+
+Each word contain number of
+recoverable errors occured
+during read operations on the
+corresponding drive.
+
+Soft Err Read RW 16
+
+se one te Ne
+
+Each word contain number of
+recoverable errors occured
+during write operations on the
+corresponding drive.
+
+Soft Err Write RW 16
+
+Se Ne we Ne
+
+; Floppy controller status bit statistics. First word in
+; each field is count for drive A, second field is count
+; for drive B. See WD1797 controller manual for details.
+
+Fl_Error_Read DW 0,0 ; Bit 0 - BUSY
+DW 0,0. ; Bit 1 - DRQ
+DW 0,0 ; Bit 2 - LOST DATA
+DW 0,0 ; Bit 3 - CRC ERROR
+Dw 0,0 ; Bit 4 - RECORD NOT FOUND
+Dw 0,0 ; Bit 5 - DELETED DATA
+Dw 0,0 ; Bit 6 - NOT USED
+DW 0,0 ; Bit 7 - READY
+
+-188- RC Computer

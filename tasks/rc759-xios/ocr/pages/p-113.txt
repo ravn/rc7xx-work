@@ -1,0 +1,49 @@
+PICCOLINE 10. Serial Interface
+
+Since the channel uses only one baud rate generator only
+the receiver baud rate field has any effect.
+
+The write registers mentioned corresponds to the write re-
+gisters of the INTEL 8274 serial controller of the Partner
+system. The format of the registers can be found in section
+3.2 (NVM byte 14-17) and in the relevant INTEL documenta-
+tion (conserning the INTEL 8274 serial controller). Only
+parameters of write register 3-5 of the 8274 has any effect
+in the PICCOLINE system.
+
+A pointer to the parameter block must be on the stack when
+the function is entered.
+
+Registers on entry:
+
+Stack on entry:
+
++2 = Parameter block segment
++0 = Parameter block offset
+
+Stack on return:
+
+Unchanged.
+
+Example
+
+CSEG
+ORG 100H
+SetSIO:
+; Put pointer to ParamBlock on stack
+Mov AX,Offset ParamBlock
+
+Push CS
+
+Push AX
+
+Mov Ax,24
+
+Int 28H
+
+; clean-up stack
+Add Sp,4
+
+Ret
+
+RC Computer -103-

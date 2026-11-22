@@ -1,0 +1,38 @@
+A. Int-28h Function Interface
+
+PICCOLINE
+
+Function 3
+
+Returns the address of a
+contents.
+
+copy
+
+Registers on entry:
+AL 3
+
+Registers on return:
+
+ES Address segment
+SI Address offset
+See 3.2.
+
+Function 4
+
+of the nonvolatile memory
+
+Returns the address of a configuration description.
+
+Registers on entry:
+AL 4
+
+Registers on return:
+
+ES Address segment
+
+SI Address offset
+
+See 3.1.
+
+-184- RC Computer

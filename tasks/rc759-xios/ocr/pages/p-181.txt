@@ -1,0 +1,41 @@
+PICCOLINE 12. iSBX Bus Specification
+
+CLOCK
+MINTRO gpg GENERATOR
+MINTRI ag en
+OPTO ~—-po 2.08 MH
+OPTY geo
+[ crock omoer |
+180 Kr
+TERE.
+1.23 MHz
+c2 cy Co
+wcso lcs our,
+mm f——
+oe our2
+Ro nezac
+wn HEADERS 152120
+INTERFACE
+lm
+axc
+MDO-MD? De RECEIVER
+82534 SERIAL STERSAGE
+IORD/ ap
+towns | wn
+“cs CS
+RESET ————____________> RESET
+MEADERS nsen
+INTERFACE
+
+Fig.12.25 iSBX Board Block Diagram
+
+12.4.1 Serial I/O Communications Channel Interface
+
+The communications interface on the iSBX Multimodule board
+may be configured for either RS232C or RS422/449 operation
+via jumper modifications. Default wiring of the iSBX Multi-
+module board is for RS232C operation. To convert to
+RS422/449 operation, move the two 8-circuit shorting plugs
+from sockets XU6 and XU7 to XU4 and XU5.
+
+RC Computer -171-

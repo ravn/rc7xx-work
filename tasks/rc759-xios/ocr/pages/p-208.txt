@@ -1,0 +1,42 @@
+A. Int-28h Function Interface
+
+PICCOLINE
+
+Function 38
+Set attributes.
+Registers on entry:
+
+AL 38
+AH Attributes
+
+Registers on return:
+Undefined
+
+See 4.2.5.
+
+Function 39
+
+Update physical screen.
+Registers on entry:
+
+AL 39
+Registers on return:
+Undefined
+
+See 4.2.3
+
+Function 40
+
+Write an end of file record on cassette
+
+Registers on entry:
+AL 40
+Registers on return:
+
+AX 0
+
+-198-
+
+RC
+
+Computer

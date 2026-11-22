@@ -1,0 +1,49 @@
+11. Local Area Network PICCOLINE
+
+Format of the indication datastructure:
+
+byte number
+
+0 indication kind = 0 (DISCONNECT. indication)
+
+1 connection index of the disconnected
+connection
+
+2-19 reserved
+The client should acknowledge receipt of the primitive by
+issuing a DISCONNECT.acknowledge primitive. A new connec-
+
+tion to the same remote SAP will not be established until
+this has been done.
+
+11.2.3.3 DISCONNECT.acknowledge
+The primitive which acknowledges the removal of a connec-
+
+tion is passed from a client to the driver by writing a
+request buffer to the ‘link_req' queue.
+
+Format of the request buffer:
+byte number
+0 request kind = 6 (DISCONNECT.acknowledge)
+
+1 connection index. This is the logical address
+of the remote MAC entity.
+
+2 DSAP is the local SAP address, i.e. the
+client network number.
+
+3 SSAP is the local SAP address, i.e. the
+client network number.
+
+4-5 unused
+6-7 disconnect acknowledge buffer offset
+8-9 disconnect acknowledge buffer segment
+10-14 unused
+The disconnect acknowledge buffer must be at least three
+bytes long and it is returned to the client by the DISCON-
+NECT ACKNOWLEDGE confirm. After receiving the primitive the
+
+driver may establish a new connection to the same remote
+SAP.
+
+-126- RC Computer

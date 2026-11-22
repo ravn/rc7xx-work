@@ -1,0 +1,30 @@
+D. Character Set and Keystrokes : PICCOLINE
+
+om
+
+VALUE VALUE
+
+DEC | HEX | KEYSTROKES DEC |HEX | KEYSTROKES
+224 | EO ALT" te 240 | FO ALT P p
+225 | £4 ALT A = 244 | Få at al Ø
+226 | E2 ALT B Y 242 | F2 ALT R T
+227 | E3 ALT C 5 243 | F3 ALT S V
+228 | £4 ALT D € 244 | F4 ALT T ly
+229 | E5 ALT E ¢ 245 | F5 ALT U x
+230 | E6 ALT F Ti 246 | FG ALT V if
+231 | E7 ALT G a 247 | F7 ALT W W
+232 | EB ALT H L 248 | FB ALT X A
+233 | E9 ALT -I K 249 | FS ALT Y r
+234 | EA ALT J Å 250 | FA ALT Z 2
+235 | EB ALT K H 251 | FB ALT Æ fy
+236 | EC | ALT L ¥ 252 | FC ALT Ø +:
+237 | ED ALT M & 253 | FD ALT A #
+
+ds an
+238 | EE ALT N 254 | FE ALT O
+
+TI
+
+239 | EF ALT 0 255 | FF impossible
+
+-214- RC Computer

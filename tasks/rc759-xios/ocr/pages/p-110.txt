@@ -1,0 +1,55 @@
+10. Serial Interface PICCOLINE
+
+10.2 Serial Communication Controller
+
+The channel is only capable of operation in asynchronous
+mode, but may be strapped to operate in synchronous mode
+instead. Detailed information of how to programme the
+channel can be found in ref.11l.
+
+The channel consist basically of
+
+- a 8251A USART chip used to convert parallel output
+data into serial output data and serial input data
+into parallel input data.
+
+- a 8253 PIT used to generate the baud rate clock of
+the channel.
+
+These chips are programmed through a sequence of I/0-Read
+and I1/0O-Write commands. As shown in the following table
+each of the chips recognizes eight seperate I/0O-addresses
+used to control the various programmable functions. Where
+two or four addresses are listed for a single function
+either addresses may be used.
+
+vo Chip
+(hage Select Function
+300, 304 ' Write: Data
+308,30c 8251A Read: Data
+USART
+302 , 306 , Write: Mode or Command
+30a, 30e Read: Status
+
+Write: Counter 0
+310 0r 318 (Load Count + N)
+Read: Counter 0
+
+Write: Counter 1
+(Load Count + N)
+Read: Counter 1
+
+3120r31a
+
+8253 PIT
+
+Write: Counter 2
+3140r3le (Load Count = N)
+Read: Counter 2
+
+Write: Control
+31léor3le Read: None
+
+Fig.10.1 I/O Address Assignments
+
+-100- RC Computer

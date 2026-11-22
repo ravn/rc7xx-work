@@ -1,0 +1,54 @@
+7. Cassette Tape PICCOLINE
+
+A data file usually consist of consequtive data records.
+Therefore to keep track of the records a record number is
+saved in the header. Finally the header contains a field
+containing the number of bytes in this record.
+
+The normal format of a file written on cassette tape is:
+First a file header record describing the file (name,
+type,..). Then a number of data records and finally an end
+of file record.
+
+Following five Int-28h functions can be used for reading
+and writing files of the kind mentioned above.
+
+7.2.2 Cassette Write File Header
+
+This function writes data from the specified output buffer
+into a file header record on the cassette tape.
+
+Registers on entry:
+
+AL = 27
+CX = Number of bytes in output buffer
+Dx = Offset address to output buffer
+
+Topmost element on stack contains segment register of
+output buffer.
+
+Registers on return:
+
+AX = 0
+cx = 0
+DX = Offset (in output buffer) to the byte after the
+
+last one written
+BX is modified.
+Stack is unchanged.
+
+7.2.3 Cassette Write Next Data
+
+This function writes data from the specified output buffer
+into a data record on the cassette tape.
+
+Registers on entry:
+
+AL = 29
+CX = Number of bytes in output buffer
+Dx = Offset address to output buffer
+
+Topmost element on stack contains segment register of
+output buffer.
+
+-80- RC Computer

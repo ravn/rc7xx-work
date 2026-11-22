@@ -1,0 +1,48 @@
+10. Serial Interface PICCOLINE
+
+ParamBlock:
+Db 1 ;
+Db 0 ; Console mode
+Db 1 ; Xon-Xoff
+Db 8 ; Receive 4800 baud
+Db 8 ; Transmit 4800 baud
+Db 3 ; 3 registers to program
+Db 4,47H; write register 4:
+; Clock * 16
+; 1 stopbit
+
+; Even parity
+Db 3,61H; write register 3:
+; Transmit character length = 7 bit
+; Receive enable
+Db 5,0AAH;write register 5:
+; Data Terminal Ready
+; Receive character length = 7 bit
+; Transmit enabled
+; Request To Send
+
+END
+Int-28h function 50 is used to reestablish the standard
+
+initialization (as it is done when the PICCOLINE is
+booted). The function has no parameters.
+
+Example
+ResetSI0O:
+Mov AX,50
+Int 28H
+Ret
+
+Int-28h function 23 is used to read the status of the
+iSBX351 controller. The status returned is encoded in the
+following way (in order to be compatible to the rr0 and
+rrl registers of the communication channel B of the Partner
+system).
+
+Registers on entry:
+
+Registers on return:
+
+AX = Status
+
+-104- RC Computer

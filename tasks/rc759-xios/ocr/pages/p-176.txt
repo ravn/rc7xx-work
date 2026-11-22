@@ -1,0 +1,23 @@
+12. iSBX Bus Specification PICCOLINE
+
+400 MAX.
+500
+SOCKET
+ON
+209 |
+H
+7 | ' MULTIMODULE™ 1/0 PWB |
+i
+Bx
+H CONNECTOR ead
+' (Male)
+y
+U
+i
+U
+
+re Coo ee
+
+Fig.12.18 iSBX Multimodule Board Height
+
+-166- RC Computer

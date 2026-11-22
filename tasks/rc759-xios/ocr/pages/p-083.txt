@@ -1,0 +1,51 @@
+PICCOLINE 6. Sound
+
+Next, convert 'I' to a 10-bit binary value:
+
+FO Fl F2 F3 F4 FS F6 F7 F8 F9
+0 0 1 00 0311 1 0
+
+The frequency data for tone generator 1 must be transferred
+as a 2-byte quantity. The formats of the 2 frequency con-
+trol bytes are as follows:
+
+byte 1: 1 RO R1 R2 F6 F7 F8 F9
+byte 2: 0 x FO Fl F2 F3 F4 F5 (x = don't care)
+
+To address tone register 1 RO, R1 and R2 must be 000.
+Therefore, to set tone generator 1 at 440 Hz, the first
+control byte becomes
+
+10001110
+and the second byte becomes
+
+00001000
+Once these values have been transferred, tone generator 1
+is loaded, but the attenuator has not been set to enable
+any output. Changing the attenuator setting requires only a
+single byte of data:
+
+1 RO R1 R2 AO Al A2 A3
+
+RO, Rl and R2 address the register as mentioned before,
+while AO - A3 determine the attenuation as follows.
+
+AO Al A2 A3 Attenuation weight
+0 0 0 0 0 dB
+0 0 0 1 2 dB
+0 0 1 0 4 dB
+0 0 1 1 6 dB
+0 1 0 0 8 dB
+0 1 0 1 10 dB
+0 1 1 0 12 dB
+0 1 1 1 14 dB
+1 0 0 0 16 aB
+1 0 0 1 18 dB
+1 0 1 0 20 dB
+1 0 1 1 22 dB
+1 1 0 0 24 dB
+1 1 0 1 26 dB
+1 1 1 0 28 dB
+1 1 1 1 off
+
+RC Computer -73-

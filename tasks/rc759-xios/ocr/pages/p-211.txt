@@ -1,0 +1,39 @@
+PICCOLINE A. Int-28h Function Interface
+
+Function 51
+Get font.
+Returns a character from the character set.
+
+Registers on entry:
+
+AL 51
+
+CX Character number (0-1023)
+
+DS Address segment of character definition block
+DX Address offset of character definition block
+
+Registers on return:
+Undefined
+
+See 4.3.4.
+
+Function 52
+Define font.
+Defines a character in the character set.
+
+Registers on entry:
+
+AL 52
+
+CX Character number (0-1023)
+
+DS Address segment of character definition block
+DX Address offset of character definition block
+
+Registers on return:
+Undefined
+
+See 4.3.3.
+
+RC Computer -201-

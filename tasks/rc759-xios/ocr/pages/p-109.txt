@@ -1,0 +1,45 @@
+10. Serial Interface
+
+This chapter describes the serial communication support on
+the PICCOLINE.
+
+The PICCOLINE standard configuration does not include a
+serial communication controller. But if MF905 V24 Serial
+Interface (iSBX351) is installed the system supports this
+serial communication channel.
+
+10.1 Standard Serial Communication Support
+
+CCP/M supports the serial communication channel either as
+an extra console device (with console number 5) or as a
+list device (with device number 1).
+
+When the channel is operated as a console device access is
+gained in the same way as access to the normal virtual
+consoles i.e. using CCP/M console input/output functions
+(see ref.2).
+
+When the channel is operated as a list device, it is acces-
+sed through CCP/M's list device functions (ref.2).
+
+The various operating parameters (such as baudrate and se-
+lection between printer mode and console mode) are set
+using the KONFIG program (see ref.5).
+
+10.1.1 V24 Handshake Scheme
+
+When operating the communication channel in the standard
+asynchronous mode the connected devices must adhere to the
+handshake scheme, based on the signals RTS (Request To
+Send), DTR (Data Terminal Ready), CTS (Clear To Send) and
+TxD (Transmit Data) as illustrated below.
+
+DTR J
+RTS
+TxD KNEE UI Lis
+
+The receiver will start to sample data from the RxD (Recei-
+ve Data) line when the DCD (Data Carrier Detect) signal
+becomes active.
+
+RC Computer ' -99-

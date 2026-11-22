@@ -1,0 +1,50 @@
+PICCOLINE 11. Local Area Network
+
+local area network), which must be in the range 1..63, and
+comprises all active SAPs within RCLLC stations on the
+local area network whose local SAP addresses are equal to
+this number, and for which client network service has been
+requested.
+
+For all RC local area networks client network number 1 is
+assigned to an IMC network, i.e. the IMC nodes in the RCLLC
+stations of a local area network will all access the RCLLC
+service using a local SAP address of 1. Similarly, client
+network number 2 is used for DR NET.
+
+Associated with each client network within a local area
+network is a multicast address which delimits the RCLLC
+stations that take part in the client network from all
+other stations on the network; i.e. a frame which is
+transmitted on the local area network with this multicast
+address should be received by (the MAC entity within) a
+station if and only if the station is an RCLLC station
+containing a SAP belonging to the client network.
+
+Each SAP belonging to a client network has an associated
+SAP mask. The SAP mask is a 16-bit word. Two SAP masks
+match if at least one bit position contains a one in both
+masks, i.e. if a logical AND-operation yields a non-zero
+result. The RCLLC layer will maintain connections between
+all pairs of SAPs belonging to the same client network
+whose masks match.
+
+11.2 The Datalink Layer Service Interface
+
+The datalink layer (the RCLLC entity) is implemented as a
+CCP/M-86 Resident System Process named "“"NETDRV". This
+process creates at runtime two child processes "XMIT" and
+"REC". The process family will in the following description
+be named the driver.
+
+The concept ‘a long pointer' will in the following descrip-
+tion mean a pointer consisting of a segment and a offset
+value and 'octet' will be used synonymous with 'byte'.
+
+The interaction between the driver and the client is
+implemented as a message/answer concept utilizing the
+CCP/M-86 queue interprocess communication facility. The
+communication between the driver and a client will have
+four fundamental forms:
+
+RC Computer -113-

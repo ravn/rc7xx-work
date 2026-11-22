@@ -1,0 +1,41 @@
+PICCOLINE 11. Local Area Network
+
+11.2.1.3 DEACTIVATE. request
+The primitive which requests the deactivation of a SAP is
+
+passed from a client to the driver by writing a request
+buffer to the 'link_req' queue.
+
+Format of the request buffer:
+byte number
+0 request kind = 1 (deactivate.request)
+
+1 specifies the local SAP address of the SAP to
+be deactivated
+
+2-3 deactivate buffer offset
+4-5 deactivate buffer segment
+6-14 unused
+
+The deactivate buffer must be at least 3 bytes long and it
+is returned to the client by the deactivate.confirm.
+
+11.2.1.4 DEACTIVATE.confirm
+
+The primitive which is issued in response to a
+DEACTIVATE.request primitive is passed from the driver to
+the requesting client. This is done by writing a long
+pointer (pointing to the deactivate buffer) to the clients
+confirm queue. The deactivate confirm event is a signal to
+the client, that all outstanding resources i.e. queues or
+databuffers can be regarded as released.
+
+Format of the returned deactivate buffer:
+
+byte number
+0 unused
+1 confirm kind = 1 (deactivate.confirm)
+
+2 confirm result (always ok)
+
+RC Computer -119-

@@ -1,0 +1,45 @@
+4. Console module PICCOLINE
+
+The key identifiers are shown in table 4.1.
+
+Identifier Function Key Identifier Function Key
+; Fl a alt-Fl
+< F2 b alt-F2
+= F3 c alt-F3
+> F4 da alt-F4
+? F5 e alt-F5
+É F6 £ alt-F6
+A F7 g alt-F7
+B F8 h alt-F8
+Cc F9 i alt-F9
+D F10 3 alt-F10
+E F1ll k shift-Fl
+F F12 1 shift-F2
+G Home m shift-F3
+H Up Arrow n shift-F4
+I Al ° shift-F5
+J A2 p shift-F6
+K Left Arrow q shift-F7
+L Return (keypad) r shift-F8
+M Right Arrow s shift-F9
+N A3 t shift-F10
+ce) A4 u ctrl-Fl
+Pp Down Arrow v etrl-F2
+Q Tab (keypad) w ctrl-F3
+R Insert x ctrl-F4
+s Delete y ctrl-F5
+T Print z ctrl-F6
+U shift-Al 2 ctrl-F7
+v shift-A2 @ ctrl-F8
+w shift-A3 a ctrl-F9
+x shift-A4 ii ctrl-F10
+Y alt-Fll
+VA alt-F12
+E shift-F1l
+@ shift-F12
+A ctrl-F1l
+b ctrl-F12
+
+Table 4.1. Function Key Identifiers
+
+-50- RC Computer

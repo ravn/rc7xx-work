@@ -1,0 +1,57 @@
+10. Serial Interface PICCOLINE
+
+2) Receive interrupt routine. This routine will gain con-
+trol when the controller has received a character. The
+routine is responsible for reading and buffering the
+character, for issuing an ‘end of interrupt’ command,
+for setting the appropriate flag and for forcing a pro-
+cess dispatch.
+
+Example
+
+TransmitInterrupt:
+
+; Save context
+Push DS
+
+Push ES
+
+Pusha
+
+; set ds to sysdat segment
+Mov DS,CS:sysdat
+
+; execute non specific end of interrupt
+Call Sio_EOI
+
+Mov DX,TransmitFlag
+Call Flagset
+Jmp DispatchReturn
+
+ReceiveInterrupt:
+
+; Save context
+Push DS
+
+Push ES
+
+Pusha
+
+; set ds to sysdat segment
+Mov DS,CS:sysdat
+
+; read character from sio
+Mov DX,DataPort
+In AL,DX
+
+; save character in buffer
+Mov CS:char,AL
+
+; execute non specific end of interrupt
+Call sio_EOI
+
+; signal program that character is received
+Mov DX,ReceiveFlag
+Call Flagset
+
+-108- RC Computer

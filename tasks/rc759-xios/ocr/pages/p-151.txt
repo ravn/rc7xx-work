@@ -1,0 +1,47 @@
+PICCOLINE 11. Local Area Network
+
+Type 1 Protocol Elements
+
+This section specifies the encoding of the Type 1
+Information field of protocol elements used in conjunction
+with type 1 procedures.
+
+11.4.3.1 UI (Unnumbered Information)
+
+The UI protocol element may only be transmitted as a
+command, i.e. the C/R bit must be 1.
+
+When the protocol element is used for type 1 service the
+Type 1 Information field is used to hold an RCLLC service
+data unit.
+
+11.4.3.2 XID (eXchange IDentification)
+
+The Type 1 Information field in a received XID command is
+ignored. In an XID response protocol element transmitted by
+an RCLLC entity three octets, numbers 6 through 8, are
+encoded as follows:
+
+bit no. 7 6 5 4 3 2 1 0
+byte no. 6 1 0 0 0 0 0 0 ii1
+7 0 0 0 000 0 1
+
+8 0 0 0 0 0 0 0 0
+
+11.4.3.3 TEST
+
+The Type 1 Information field is used to hold a test data
+unit. The associated procedure is described in subsection
+11.4.1.2.
+
+Protocol Elements for Client Network Service
+
+In order to facilitate speedy access to status information
+associated with connections, each RCLLC entity will assign
+to each connection an index in the range 0..255. When a
+connection is established the assigned indices are exchan-
+ged between the two RCLLC entities. Subsequent DATA and ACK
+protocol elements each contains the index assigned to the
+connection by the receiver of the element.
+
+RC Computer -141-

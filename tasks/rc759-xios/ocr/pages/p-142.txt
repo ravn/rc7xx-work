@@ -1,0 +1,52 @@
+11. Local Area Network PICCOLINE
+
+it may be addressed to one or several stations, using an
+individual, multicast, or broadcast station address. Within
+each addressed station an RCLLC protocol element is addres-
+sed either to the RCLLC entity as such or to a specific
+SAP.
+
+11.4.1 Type 1 Procedures
+
+This section contains a general description of the type 1
+procedures. Details not covered in the general description
+are given in conjunction with the individual protocol ele-
+ments in section 11.4.3.
+
+11.4.1.1 Unacknowledged Data Transfer
+
+This subsection applies to data transfer between active
+SAPs for which type 1 service has been requested.
+
+Unacknowledged connectionless data transfer as requested by
+the UDATA.request primitive is accomplished by transmission
+of a UI protocol element containing the service data unit
+passed as a parameter of the primitive. This may occur at
+any time while the source SAP is active.
+
+When a UI protocol element is correctly received, the ser-
+vice data unit which it contains is passed to the client by
+means of a UDATA.indication primitive. There is no associa-
+ted acknowledgement or sequence checking. Notice that a UI
+protocol element which is found to be in error by the re-
+ceiving MAC or RCLLC entity is simply discarded. Buffer
+shortage in the receiving RCLLC entity may also cause a UI
+protocol element to be discarded.
+
+11.4.1.2 Loop-back Test Procedure
+
+An RCLLC entity will initiate the loop-back test procedure
+upon receipt of a TEST.request primitive from a client. It
+does so by transmitting a TEST command protocol element
+with the poll bit set to 1 and addressed as specified in
+the request. The information field of the TEST command will
+contain the specified test data unit. Notice that multi- or
+broadcasting may be used to test several transmission paths
+using one command protocol element.
+
+For each TEST response protocol element which is subse-
+quently received correctly, with or without an information
+field, the client is informed by means of a TEST.indication
+primitive.
+
+-132- RC Computer

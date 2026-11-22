@@ -1,0 +1,29 @@
+PICCOLINE 12. iSBX Bus Specification
+
+RC759 .
+I/0 device number iSBX signal
+(HEX) MCSX/ MA2 MAI MAO OPERATION
+IOBASE + 300 ) 0 0 0
+302 0 0 1 iSBX module dependent
+304 MCSO/ 0 1 0
+306 =0 0 1 1 \
+308 1 0 0
+30A 1 0 1
+30C 1 1 0
+30E J 1 1 1 J
+IOBASE + 310 " 0 0 0
+312 0 0 1
+314 MCS1/ 0 1 0
+316 \ =0 0 1 1 iSBX module dependent
+318 1 0 0 |
+31A 1 0 1
+31c 1 1 0
+31E 5 1 1 1 D
+IOBASE + 320 x x x Out to this device number
+generates MDACK/
+
+IOBASE = 0 for RC759
+
+Fig.12.9 RC759 Device Decoder
+
+RC Computer -157-

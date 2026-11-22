@@ -1,0 +1,56 @@
+PICCOLINE 2. CPU
+
+2.2.2 DMA Request Line Setup
+
+Each of the two DMA channels can handle DMA requests from
+the following different sources:
+
+DRQSEL DMAO source DMA1 source
+
+0 0 iSBX DPC (external floppy)
+0 1 0 0
+
+1 0 DPC (external floppy) iSBX
+
+1 1 1 0
+
+When a program has succeeded in reserving a DMA channel, it
+must set up a connection for the DMA request signal, be-
+tween the peripheral device and the DMA controller. This is
+done by writing a control byte to a parallel port located
+at I/O address 74H. The format of the control byte is as
+follows:
+
+Bit 0 ENABLE CAS(sette)
+
+Bit 1 MOTOR OFF i
+
+Bit 2-3 DRQO-1
+
+Bit 4-5 NVMAO-1 (NVM bank)
+
+Bit 6-7 must have the binary value 11.
+
+2.2.3 DMA Interrupt Handling
+
+The two DMA channels are connnected to the internal 80186
+interrupt controller. The interrupt level of DMA channel 0
+and 1 is 10 and 11.
+
+Example
+
+DMAInterruptService:
+; Save context
+Push DX
+Push AX
+
+; Non specific end of interrupt
+
+; to internal interrupt controller
+Mov DX,OFF22H
+
+Mov AX,8000H
+
+Out DX,AX
+
+RC Computer -13-

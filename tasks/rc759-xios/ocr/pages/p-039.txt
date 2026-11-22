@@ -1,0 +1,40 @@
+PICCOLINE 4. Console module
+
+Graphics mode:
+character = 0011010000000000B
+
+bit 0-9 pixel block number = 0
+address D000:0000H in the pixel memory.
+
+bit 10-13 palette selector = 13:
+select colour nibbles 26 and 27 at 1/0
+
+address 180H + 26.
+
+bit 14 resolution select = 0
+select high resolution graphics.
+
+Graphics mode:
+character = 0100100000010000B
+
+bit 0-9 pixel block number = 16
+address D000:0200H in the pixel memory.
+
+bit 10-13 palette selector = 2:
+select colour nibbles 4, 5, 36 and 37 at I/O
+addresses 180H + 4 and 180H + 36.
+
+bit 14 resolution select = 1
+select medium resolution graphics.
+
+4.1.4 Graphics Mode
+
+Graphics mode is selected by outputting the value OCH to
+I/O address 76H. Alphanumeric mode is selected by output-
+ting ODH.
+
+For normal bitmapped graphics, the graphics mode offered by >
+the XIOS is preferred, as this handles all initialization
+and supports console switching.
+
+RC Computer -29-

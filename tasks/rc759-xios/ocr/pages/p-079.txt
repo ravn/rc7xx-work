@@ -1,0 +1,58 @@
+PICCOLINE 5. Real time clock
+
+; remove read pulse
+
+And AL,remove_read_pulse
+Out DX,AL
+
+Xchg AH,AL
+
+Ret
+
+WriteRTC:
+
+Registers at entry:
+
+; AL = RTC register
+
+; AH = value
+
+write adr set up equ 1FH
+supply_write_pulse equ 40H
+remove_write_pulse equ 1FH
+
+; write register address setup
+Mov DX,rtc_adr
+And AL,write adr set up
+
+Out DX,AL
+
+; write value to register
+Sub DX,2
+
+Xchg AH,AL
+
+Out DX,AL
+
+Xchg AH,AL
+
+Add DX,2
+
+; generate write pulse
+Or AL,supply_write_pulse
+Out DX,AL
+
+; wait at least 1 micro sec
+Nop
+Nop
+Nop
+Nop
+
+; remove write pulse
+
+And AL,remove_write_pulse
+Out DxX,AL
+
+Ret
+
+RC Computer -69-
