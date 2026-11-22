@@ -482,11 +482,49 @@ def replace_ram_symbols(args_str):
     
     return re.sub(r"\[(BYTE |WORD |DWORD |CS:|DS:|ES:)?0*([0-9A-Fa-f]{1,4})[Hh]?\]", repl, args_str)
 
-def annotate_instruction(op_str, args_str):
+INSTRUCTION_ANNOTATIONS = {
+    0x001F: "SN76494 Kanal 0 dæmpning (1001 1111b = kanal 0, max attenuation / mute)",
+    0x0026: "SN76494 Kanal 1 dæmpning (1011 1111b = kanal 1, max attenuation / mute)",
+    0x002D: "SN76494 Kanal 2 dæmpning (1101 1111b = kanal 2, max attenuation / mute)",
+    0x0034: "SN76494 Kanal 3 dæmpning (1111 1111b = støjkanal, max attenuation / mute)",
+}
+
+CODE_BLOCK_COMMENTS = {
+    0x0004: [
+        "; Koldstart (Power-On Reset):",
+        "; Initialiserer 8255 PPI og dæmper de 4 lydkanaler på SN76494 lydgeneratoren.",
+        "; SN76494 har ingen hardware-reset og starter i tilfældig tilstand ved power-on.",
+        "; Uden øjeblikkelig dæmpning vil chippen støje eller hyle med udefinerede toner.",
+        "; Da CPU-stacken (SS:SP) endnu ikke er oprettet, bruges DI som link-register for retur.",
+    ],
+    0x003B: [
+        "; SN76494 Lydgenerator Mute / Write Helper:",
+        "; Skriver dæmpningsværdi i AL til port 0056h (SN76494) med indskudte delay-loops.",
+        "; SN76494 afspiller toner autonomt i hardwaren; programmeret musik og dynamiske lyde",
+        "; styres i baggrunden via timer-interrupts (f.eks. 80186 Timer 0/2 eller XIOS tick).",
+        "; Afslutter med JMP DI (coroutine-retur til kalderens registrerede returadresse).",
+    ],
+    0x005F: [
+        "; Initialisering af afbrydelsescontrollere:",
+        "; Konfigurerer 80186 integrerede INTC (INT 1/2 kontrol, poll og maske)",
+        "; samt ekstern 8259A Master PIC (ICW1 = 19h, ICW2 = 20h base vektor).",
+    ],
+    0x013F: [
+        "; Seriel Hex Word Transmit (iSBX Slot 0 Debug):",
+        "; Tester PPI Port B bit 7 (remote debug enable). Hvis aktiv, konverteres 16-bit",
+        "; ordet i CX til 4 ASCII hexcifre ('0'-'9', 'A'-'F') og sendes via iSBX serielporten.",
+        "; Afslutter med JMP DI for coroutine-retur.",
+    ],
+}
+
+def annotate_instruction(op_str, args_str, code_ip=None):
     """Add explanatory hardware comments to instruction."""
     comments = []
     op_upper = op_str.strip().upper()
     args_upper = args_str.upper()
+
+    if code_ip is not None and code_ip in INSTRUCTION_ANNOTATIONS:
+        comments.append(INSTRUCTION_ANNOTATIONS[code_ip])
     
     # Check for I/O ports when instruction is IN/OUT or loading DX with an immediate port number
     if op_upper in ("IN", "OUT") or (op_upper == "MOV" and re.match(r"^DX\s*,\s*0*[0-9A-F]+H?$", args_upper)):
@@ -1320,7 +1358,16 @@ def main():
         # Check for label
         if code_ip in all_labels:
             lbl = all_labels[code_ip]
-            if code_ip in KNOWN_CODE_LABELS:
+            if code_ip in CODE_BLOCK_COMMENTS:
+                if lines and lines[-1] != "":
+                    lines.append("")
+                lines.append(f"; ----------------------------------------------------------------------------")
+                lines.append(f"; {lbl} (ROM: {pos:04X}h, FB84:{code_ip:04X}h)")
+                for c_line in CODE_BLOCK_COMMENTS[code_ip]:
+                    lines.append(c_line)
+                lines.append(f"; ----------------------------------------------------------------------------")
+                lines.append(f"{lbl}:")
+            elif code_ip in KNOWN_CODE_LABELS:
                 if lines and lines[-1] != "":
                     lines.append("")
                 lines.append(f"; ----------------------------------------------------------------------------")
@@ -1357,7 +1404,7 @@ def main():
         elif op.arg_n >= 2:
             args = f"{arg1}, {arg2}"
 
-        comment = annotate_instruction(mnemonic, args)
+        comment = annotate_instruction(mnemonic, args, code_ip)
         comment_str = f" ; {comment}" if comment else ""
 
         args = replace_ram_symbols(args)
@@ -1432,7 +1479,7 @@ def main():
         elif op.arg_n >= 2:
             args = f"{arg1}, {arg2}"
 
-        comment = annotate_instruction(mnemonic, args)
+        comment = annotate_instruction(mnemonic, args, code_ip)
         comment_str = f" ; {comment}" if comment else ""
 
         args = replace_ram_symbols(args)

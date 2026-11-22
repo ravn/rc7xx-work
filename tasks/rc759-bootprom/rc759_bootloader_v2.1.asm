@@ -1253,6 +1253,11 @@ ram_segment_base:
 
 ; ----------------------------------------------------------------------------
 ; cold_boot_entry (ROM: 3844h, FB84:0004h)
+; Koldstart (Power-On Reset):
+; Initialiserer 8255 PPI og dæmper de 4 lydkanaler på SN76494 lydgeneratoren.
+; SN76494 har ingen hardware-reset og starter i tilfældig tilstand ved power-on.
+; Uden øjeblikkelig dæmpning vil chippen støje eller hyle med udefinerede toner.
+; Da CPU-stacken (SS:SP) endnu ikke er oprettet, bruges DI som link-register for retur.
 ; ----------------------------------------------------------------------------
 cold_boot_entry:
     MOV     DX, io_ppi_ctrl              ; 8255 PPI Control word (Mode setup) ; [0004: BA 76 00]
@@ -1270,27 +1275,32 @@ cold_boot_entry:
     OUT     DX, AL                                           ; [001B: EE]
     MOV     AL, 0F                                           ; [001C: B0 0F]
     OUT     DX, AL                                           ; [001E: EE]
-    MOV     AL, 9F                                           ; [001F: B0 9F]
+    MOV     AL, 9F                       ; SN76494 Kanal 0 dæmpning (1001 1111b = kanal 0, max attenuation / mute) ; [001F: B0 9F]
     MOV     DI, mute_sound_channel_1                         ; [0021: BF 26 00]
     JMPS    mute_sn76494_channel                             ; [0024: EB 15]
 
 mute_sound_channel_1:
-    MOV     AL, BF                                           ; [0026: B0 BF]
+    MOV     AL, BF                       ; SN76494 Kanal 1 dæmpning (1011 1111b = kanal 1, max attenuation / mute) ; [0026: B0 BF]
     MOV     DI, mute_sound_channel_2                         ; [0028: BF 2D 00]
     JMPS    mute_sn76494_channel                             ; [002B: EB 0E]
 
 mute_sound_channel_2:
-    MOV     AL, DF                                           ; [002D: B0 DF]
+    MOV     AL, DF                       ; SN76494 Kanal 2 dæmpning (1101 1111b = kanal 2, max attenuation / mute) ; [002D: B0 DF]
     MOV     DI, mute_sound_channel_3                         ; [002F: BF 34 00]
     JMPS    mute_sn76494_channel                             ; [0032: EB 07]
 
 mute_sound_channel_3:
-    MOV     AL, FF                                           ; [0034: B0 FF]
+    MOV     AL, FF                       ; SN76494 Kanal 3 dæmpning (1111 1111b = støjkanal, max attenuation / mute) ; [0034: B0 FF]
     MOV     DI, init_interrupt_controllers                   ; [0036: BF 5F 00]
     JMPS    mute_sn76494_channel                             ; [0039: EB 00]
 
 ; ----------------------------------------------------------------------------
 ; mute_sn76494_channel (ROM: 387Bh, FB84:003Bh)
+; SN76494 Lydgenerator Mute / Write Helper:
+; Skriver dæmpningsværdi i AL til port 0056h (SN76494) med indskudte delay-loops.
+; SN76494 afspiller toner autonomt i hardwaren; programmeret musik og dynamiske lyde
+; styres i baggrunden via timer-interrupts (f.eks. 80186 Timer 0/2 eller XIOS tick).
+; Afslutter med JMP DI (coroutine-retur til kalderens registrerede returadresse).
 ; ----------------------------------------------------------------------------
 mute_sn76494_channel:
     XCHG    AL, AH                                           ; [003B: 86 E0]
@@ -1316,6 +1326,9 @@ loc_005b:
 
 ; ----------------------------------------------------------------------------
 ; init_interrupt_controllers (ROM: 389Fh, FB84:005Fh)
+; Initialisering af afbrydelsescontrollere:
+; Konfigurerer 80186 integrerede INTC (INT 1/2 kontrol, poll og maske)
+; samt ekstern 8259A Master PIC (ICW1 = 19h, ICW2 = 20h base vektor).
 ; ----------------------------------------------------------------------------
 init_interrupt_controllers:
     MOV     DX, io_i186_int1_ctrl        ; 80186 INTC INT 1 Control register ; [005F: BA 38 FF]
@@ -1451,6 +1464,10 @@ serial_tx_banner_done:
 
 ; ----------------------------------------------------------------------------
 ; serial_tx_hex_word (ROM: 397Fh, FB84:013Fh)
+; Seriel Hex Word Transmit (iSBX Slot 0 Debug):
+; Tester PPI Port B bit 7 (remote debug enable). Hvis aktiv, konverteres 16-bit
+; ordet i CX til 4 ASCII hexcifre ('0'-'9', 'A'-'F') og sendes via iSBX serielporten.
+; Afslutter med JMP DI for coroutine-retur.
 ; ----------------------------------------------------------------------------
 serial_tx_hex_word:
     IN      AL, io_ppi_portb             ; 8255 PPI Port B (Monitor type 50/60Hz, RTC type) ; [013F: E4 72]
@@ -10025,12 +10042,12 @@ reset_check_test_lock:
     LOCK XCHG BYTE [ES:BX], AL                               ; [0017: F0 26 86 07]
     CMP     AL, 01                                           ; [001B: 3C 01]
     JZ      reset_check_test_lock                            ; [001D: 74 F6]
-    MOV     BYTE [ES:BX+01], 03                              ; [001F: 26 C6 47 01 03]
+    MOV     BYTE [ES:BX+01], 03          ; SN76494 Kanal 0 dæmpning (1001 1111b = kanal 0, max attenuation / mute) ; [001F: 26 C6 47 01 03]
     MOV     DX, io_i82730_ca_pulse       ; Intel 82730 Channel Attention (CA pulse) ; [0024: BA 40 02]
     OUT     DX, AX                                           ; [0027: EF]
     MOV     AX, 0000                                         ; [0028: B8 00 00]
     MOV     DS, AX                                           ; [002B: 8E D8]
-    MOV     DI, 0058                                         ; [002D: BF 58 00]
+    MOV     DI, 0058                     ; SN76494 Kanal 2 dæmpning (1101 1111b = kanal 2, max attenuation / mute) ; [002D: BF 58 00]
     MOV     WORD [DI], BX                                    ; [0030: 89 1D]
     MOV     WORD [DI+02], ES                                 ; [0032: 8C 45 02]
 reset_config_pcb_chips:

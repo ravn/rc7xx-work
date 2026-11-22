@@ -165,6 +165,14 @@ sequenceDiagram
 | `FFA6h` | 80186 MPCS | Mid-Range Peripheral Chip Select (`0x01F8`) |
 | `FFA8h` | 80186 MMCS | Mid-Range Memory Chip Select (`0x90BA`: CRT-RAM D0000h) |
 
+### 5.1 SN76494 Lydarkitektur og Afvikling
+
+* **Hardware-opbygning:** Texas Instruments SN76494 (taktet ved 2,0 MHz via 20 MHz XTAL / 10) med 3 firkantbølge-tonegeneratorer og 1 støjgenerator (hvid/periodisk støj).
+* **Autonom toneafspilning:** Chippen afspiller den valgte tonehøjde og volumen kontinuert i hardwaren, når data først er skrevet til port `0x0056`, uden videre CPU-intervention.
+* **Power-On initialisering:** SN76494 har ingen hardware-reset-pin. Ved power-on har chippen tilfældige registerværdier og vil hyle for fuld styrke, medmindre den dæmpes omgående. Derfor er de 4 mute-skrivninger (`9Fh`, `BFh`, `DFh`, `FFh`) noget af det allerførste koldstartskoden udfører.
+* **Programmeret lyd / musik uden realtidsløkke:** Chippen har ingen egne interrupt-ben (kun et `READY`-signal ført til 8255 PPI Port B bit 2). Programmeret musik og dynamiske lydeffekter (konvolutter/ADSR) afvikles derfor ved at lade en baggrunds-lydmotor i RAM opdatere port `0x0056` i takt med et **timer-interrupt** (f.eks. 80186 Timer 0/2 eller operativsystemets 50/100 Hz system-tick), så det styrende applikationsprogram ikke behøver køre i realtid.
+* **Bip-højttaler:** Udover SN76494 har maskinen en separat 1-bit højttaler direkte forbundet til 80186 on-chip Timer 1 (`tmrout1`), som bruges til enkle systembip (ASCII BELL).
+
 ---
 
 ## 6. Systemvariabler i RAM (Scratchpad `0000:0000`–`0000:0200`)
