@@ -1,5 +1,16 @@
 # Lessons Learned
 
+## 2026-11-22: RC759 CCP/M-86 4-console switching, keyboard scancode offsets & macOS shortcut conflicts
+
+1. **RC759 keyboard scancode matrix 1-based offset:**
+   In `mame/src/mame/regnecentralen/rc759_kbd.cpp`, `row_0` bit 0 is unused, bit 1 is `Tab` (scancode 1), and bit 2 is the `'1'` key (scancode 2). A naive mapping matching scancode `1` to Konsol 0 resulted in an off-by-one error where pressing `1` triggered scancode 2 (Konsol 1). Always verify physical key positions against the driver's matrix layout and XIOS translation tables.
+
+2. **macOS system shortcut interception and MacBook media keys:**
+   On macOS, `Ctrl + F1..F4` are globally bound by default to system navigation (turn on/off keyboard navigation, move focus to menu bar, dock, and windows) and handled by WindowServer before SDL/MAME receives them. In addition, MacBook keyboards treat top row keys as media controls unless `Fn` is held or standard function keys are toggled in macOS settings. For emulated machine environments requiring multi-console switching on modern laptops, `Ctrl + Option + 1..4` on the numeric row provides an unintercepted, ergonomic alternative.
+
+3. **Digital Research CCP/M-86 console switching architecture:**
+   Console switching is orchestrated between XIOS and the kernel's Process Input process (`PIN.RSP`): XIOS `IO_CONIN` decodes key scan positions (Keypad 0..3 with Ctrl held emitting `0xF5..0xF8`), returning `AH = 0xFF` (`ct$switch`) and `AL = 0..3`. `PIN.RSP` catches `AH == 0xFF`, invokes `call switch;`, updates the active `CCB` (Console Control Block), and calls XIOS routine 7 (`IO_SWITCH`) to swap the active display.
+
 ## 2026-11-15: Z80 IX pointer allocation, Ninja signal handling, and InstCombine CISC RMW
 
 1. **Allocatable IX register & proper superclass inflation (`hasSuperClassEq`):**

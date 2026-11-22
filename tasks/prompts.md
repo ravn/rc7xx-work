@@ -2040,4 +2040,27 @@ Gennemført implementering af loop-rotation og DJNZ:
 5. Inderste løkke i `_parse_packet_c` emitterer nu hardware `DJNZ` (16 bytes kerne, 0 B `.bss`).
 6. Alle tests verificeret: 189/189 lit tests (100% PASS), 92/92 e2e tests (100% PASS).
 
+## 2026-11-22 (RC759 CCP/M-86 4-konsol skift & MAME tastatur-mapping)
+
+> hverken ctrl-fn-højrepil eller fn-højrepil gør noget
+> hvilke taster skulle skifte direkte til en bestemt konsol
+> er der ikke en fn-kombination der giver keypad 0..3?
+> dette er en macbook air 2025
+> jeg vil gerne have ctrl-f1..ctr-f4 i standard mapning
+> vi har 100% kontrol over rc759 og rc750 mame targets
+> jatak, jeg vil gerne have ctrl-alt-1 giver konsol 0, og ctrl-alt-4 giver konsol 3
+> jeg havde slået tastaturnagivation til i macos, det er nu slået fra
+> ctrl-option-1 giver konsol1 , ikke konsol 0
+> ctrl-f1..f4 virker ikke.
+> det virekr som forventet med konsoller.
+> gem din nye viden i projektet
+
+Undersøgt og implementeret fuld understøttelse af 4-konsol skift under Concurrent CP/M-86 3.1 i MAME for RC759 Piccoline:
+1. Kortlagt konsolskiftets arkitektur: XIOS CONIN oversætter tastaturmatricens Keypad 0..3 (pos 97, 93, 94, 95) under Ctrl til koderne 0xF5..0xF8, som returneres som `AH = 0xFF` (`ct$switch`) og `AL = 0..3`. Digital Researchs `PIN.RSP` fanger `ct$switch`, opdaterer CCB og kalder XIOS routine 7 (`IO_SWITCH`).
+2. Identificeret faldgruber på moderne MacBook Air uden numerisk tastatur: macOS globale genveje optager `Ctrl + F1..F4` (tastaturnavigation, fokus til menulinje, dock, vinduer), og øverste række taster er som udgangspunkt medietaster.
+3. Udvidet MAME HLE-tastaturdriveren `rc759_kbd.cpp` med understøttelse af `Ctrl + Option + 1..4` $\rightarrow$ konsol 0..3 (samt `Ctrl + Option + 0` $\rightarrow$ konsol 0).
+4. Rettet 1-off i scancode-offset (tast `'1'` har scancode 2, ikke 1). Verificeret live under MAME af brugeren.
+5. Dokumenteret i `tasks/memory/reference_rc759_ccpm86_4console_and_keyboard.md` og opdateret `tasks/lessons.md`.
+
+
 
