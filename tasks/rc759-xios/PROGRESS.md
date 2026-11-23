@@ -886,3 +886,18 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
       - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+
+12. **Forening af Sektion 3B.5: Musedriver & CRT-register setup (CS:249F..264C, 2026-11-23)**:
+    - Omfatter `sub_08FDC:` til `loc_091BA:` (ret) (479 bytes i XIOS1, 450 bytes i XIOS4):
+      - `sub_08FDC:`, `sub_08FE7:`, `sub_08FEE:`, `sub_09001:`, `loc_09012:`, `sub_09073:`.
+      - `sub_09079:` (kopiering af 24 KB skærm-RAM) indkapslet i `%if NUM_VIR_CONS == 1` (29 bytes, kun i XIOS1).
+      - BIOS systemkald 35: `xios_int28_fn_35_write_str:`.
+      - Konsol-planløkke (`loc_0902B:`): `mov cx, 4 * NUM_VIR_CONS` (4 blokke i XIOS1, 16 blokke i XIOS4).
+      - Konsolvalidering (`091A9:`): `cmp dl, NUM_VIR_CONS` (afviser konsoller >= 1 i XIOS1 hhv. >= 4 i XIOS4).
+      - Omskrevet 4 rå `db 0x2E`-instruktioner til ægte `mov word [cs:0x613c + DELTA_TAIL], 0x000f` osv.
+      - Parametriseret med `DELTA_VMENU`, `DELTA_WINDOW`, `DELTA_TABLES` og `DELTA_TAIL`.
+    - Resultat: Yderligere **189 redundante linjer rå disassembly** elimineret fra XIOS4-blokken (i alt > 2.840 linjer fjernet på tværs af foreningen).
+    - Fuld verifikation:
+      - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
