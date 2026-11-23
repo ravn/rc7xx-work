@@ -12,7 +12,6 @@
 ; =============================================================================
 
 bits 16
-org 0
 
 %ifndef NUM_VIR_CONS
   %define NUM_VIR_CONS 1
@@ -35,32 +34,26 @@ org 0
 
 ; -----------------------------------------------------------------------------
 ; CCP/M-86 .CMD Header (128 bytes)
-; Gruppe 1: Code group. Paragraf-størrelse afhænger af antal virtuelle konsoller.
+; Gruppe 1: Code group. Paragraf-størrelse beregnes dynamisk fra kodens længde.
 ; -----------------------------------------------------------------------------
+section header vstart=0 align=1
 cmd_header:
   db 1                                         ; G-gruppe (Code group)
-%if NUM_VIR_CONS == 1
-  dw 0x0633                                    ; Længde i paragraffer (25.392 bytes)
+  dw (xios_code_end - xios_code_base) / 16     ; Længde i paragraffer (dynamisk beregnet)
   dw 0x0000                                    ; Min ekstra paragraffer
-  dw 0x0633                                    ; Max ekstra paragraffer
-%else
-  dw 0x0719                                    ; Længde i paragraffer (29.072 bytes)
-  dw 0x0000                                    ; Min ekstra paragraffer
-  dw 0x0719                                    ; Max ekstra paragraffer
-%endif
+  dw (xios_code_end - xios_code_base) / 16     ; Max ekstra paragraffer (dynamisk beregnet)
   dw 0x0000                                    ; Ekstra segment
   db 0
   times 115 db 0
-%if NUM_VIR_CONS == 1
-  db 0xc8, 0x00, 0x80
-%else
-  db 0xe5, 0x00, 0x80
-%endif
+  dw 1 + (xios_fixups - xios_code_base) / 128  ; ch_fixrec (record-nummer for fixup-tabel)
+  db 0x80                                      ; ch_lbyte (bit 7 sat = fixups til stede)
 
 ; -----------------------------------------------------------------------------
 ; SYSDAT Reservation Prefix (3072 bytes / 0x0C00)
 ; Ulinket template, som udfyldes af GENCCPM under systemgenerering.
+; Sektion text vstart=0 starter ved offset 0x0000 i CS (efter 128 bytes header).
 ; -----------------------------------------------------------------------------
+section text vstart=0 align=1
 xios_code_base:
 xios_prefix:
   times 0x8c db 0
@@ -72,13 +65,18 @@ xios_prefix:
 ; -----------------------------------------------------------------------------
 %include "xios_code.asm"
 
+xios_code_end:
+
+; -----------------------------------------------------------------------------
+; Fixup-tabel og padding (align til 128-byte disk records)
+; -----------------------------------------------------------------------------
 xios_tail:
+  align 128, db 0
+xios_fixups:
 %if NUM_VIR_CONS == 1
-  times 80 db 0
   db 0x11, 0x32, 0x04, 0x07, 0x11, 0x32, 0x04, 0x0b
-  times 120 db 0
 %else
-  times 112 db 0
   db 0x11, 0x6b, 0x04, 0x04, 0x11, 0x6b, 0x04, 0x08
-  times 120 db 0
 %endif
+  align 128, db 0
+

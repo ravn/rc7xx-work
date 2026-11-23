@@ -819,6 +819,16 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
    - Konverteret samtlige danske bruger- og systembeskeder i [xios_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios_code.asm), `mod4_xios.asm` og [rsp_tmp759.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_tmp759.asm) til `db_dk`.
    - Alle 9 distributionsmoduler og den monolitiske `ccpm.sys` bygger fortsat 100% byte-identisk (0 bytes diff mod originalerne).
 
+8. **Fjernelse af `xios_code_base` & Dynamisk `.CMD`-Header (2026-11-23)**:
+   - Opdelt [xios.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios.asm) i `section header vstart=0 align=1` (128 bytes CMD-header) og `section text vstart=0 align=1` (kodesegmentet).
+   - Med `section text vstart=0` starter CS-offset for koden ved `0x0000`, nøjagtig som hvis filen var samlet af RASM86.
+   - Fjernet alle `- xios_code_base` i `xios_function_table` og `int28h_jump_table` i [xios_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios_code.asm), så labels peger direkte på deres CS-offset.
+   - Gjort CMD-headerens paragrafstørrelser dynamisk beregnede: `(xios_code_end - xios_code_base) / 16` evaluerer automatisk til `0x0633` (XIOS1) og `0x0719` (XIOS4).
+   - Gjort `ch_fixrec` dynamisk beregnet: `1 + (xios_fixups - xios_code_base) / 128` evaluerer automatisk til record `0xC8` (XIOS1) og `0xE5` (XIOS4).
+   - Omlagt tail-padding til `align 128, db 0`.
+   - 100% byte-identisk verificeret for `XIOS1.CON`, `XIOS4.CON` og `ccpm.sys`.
+
+
 
 
 
