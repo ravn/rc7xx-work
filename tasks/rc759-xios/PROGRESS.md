@@ -645,4 +645,108 @@ Alle 65 subroutines er opdateret i `tasks/rc759-xios/ccpm.asm` og `KNOWN_LABELS`
 3. **Reassembly-verifikation**:
    - `rebuild_and_verify.sh`: **PASS (77.568 bytes, 100% byte-identisk mod original ccpm.sys)**.
 
+## Fuld Genskabelse af Samtlige 5 RSP-Moduler som Selvstændige Moduler (2026-11-23)
+
+Samtlige 5 Resident System Processes (RSP) fra Regnecentralen Piccoline SW1400 CCP/M-86 release 3.1 er nu fuldstændigt rekonstrueret som selvstændige assemblerkilder, kompileret rent via Docker `rc759-nasm` og verificeret **100% byte-identiske (0 bytes difference)** mod de originale distributionsbinærer:
+
+| Modul | Fil | Størrelse | Funktion | Status |
+|-------|-----|-----------|----------|--------|
+| **TMP759.RSP** | `tmp759.asm`, `rsp_tmp759.asm`, `rsp_tmp759_data.asm` | 7.168 B | Piccoline CLI/kommandofortolker, 14 kommandoer, RC-Net | **100% PASS** |
+| **SCROLL.RSP** | `scroll.asm` | 640 B | Intel 82730 smooth scrolling driver & DMA-synkronisering | **100% PASS** |
+| **CLOCK.RSP** | `clock.asm`, `rsp_clock.asm` | 640 B | TOD ur & statuslinje, system-tick flag 2 | **100% PASS** |
+| **PIN.RSP** | `pin.asm`, `rsp_pin_code.asm`, `rsp_pin_data.asm` | 3.328 B | Process INput, tastatur- og linjeeditering | **100% PASS** |
+| **VOUT.RSP** | `vout.asm`, `rsp_vout_code.asm`, `rsp_vout_data.asm` | 2.944 B | Virtual OUTput multiplexer, skærmkøer (VOUTQ, VINQ, VCMXQ) | **100% PASS** |
+
+### 1. SCROLL.RSP (Intel 82730 Smooth Scroll Driver)
+- Oprettet [tasks/rc759-xios/scroll.asm](file:///Users/ravn/z80/tasks/rc759-xios/scroll.asm).
+- Afkodet: 108 bytes 8086 kode, der koordinerer blød rulning per pixel-linje på Piccoline via Intel 82730 tekstprocessor og Intel 80186 DMA kanal 0 (`INT 28h, AL=2`), beskyttet af mutex `"MXdma0  "` og synkroniseret via System Flags 4, 7, 9 og 10.
+- Bygget via Docker `rc759-nasm` og verificeret mod `scratch/tmp/dist/SCROLL.RSP`: **100% byte-identisk PASS (0 bytes diff)**.
+
+### 2. TMP759.RSP (Terminal Message Processor / Piccoline CLI)
+- Oprettet [tasks/rc759-xios/tmp759.asm](file:///Users/ravn/z80/tasks/rc759-xios/tmp759.asm) og [tasks/rc759-xios/rsp_tmp759_data.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_tmp759_data.asm).
+- Fuld 7.168 bytes selvstændig RSP-pakke (128 bytes CMD-header, 5.872 bytes kode via `rsp_tmp759.asm`, 1.120 bytes data via `rsp_tmp759_data.asm`).
+- Komplet symbolisering af samtlige 14 kommandorutiner:
+  - `cmd_user` (`USER` / `BRUGER`): Brugernummer (0..15).
+  - `cmd_printer` (`PRINTER` / `SKRIVER`): Liste-enhed (BDOS 160 / 164).
+  - `cmd_size` (`SIZE`): Hukommelsesgrænse (16..768 KB i 16-byte paragraffer).
+  - `cmd_dir` (`DIR`): 4-kolonne katalogvisning, filtrering efter bruger og systemattribut `[S]` / `[G]`.
+  - `cmd_abort` (`ABORT`): Procesafbrydelse (BDOS 151: P_ABORT).
+  - `cmd_neton` / `cmd_netoff` (`TILMELD` / `AFMELD`): RC-Net login og logoff (BDOS 64 / 65).
+  - `cmd_logon` / `cmd_logoff` (`OPRET` / `AFBRYD`): Virtuelle netværksdrev mod filserver (BDOS 66 / 67).
+  - `cmd_navngiv` / `cmd_local` (`NAVNGIV` / `LOKAL`): Stationsnavngivning og drevnulstilling (BDOS 68 / 69, NAMSVR.DAT).
+  - `cmd_screen` / `cmd_line`: Skærm- vs. linjetilstand.
+  - `cmd_help` (`?`): Udskriver de 22 kommandonavne i 8-kolonne layout.
+- `cmd_dispatch_table` fuldt symboliseret med relative offsets (`dw cmd_target - rsp_tmp759_start`).
+- Symbolisering af alle centrale BDOS- og systemhjælperutiner.
+- Bygget via Docker `rc759-nasm` og verificeret mod `scratch/tmp/dist/TMP759.RSP`: **100% byte-identisk PASS (0 bytes diff)**.
+
+### 3. CLOCK.RSP (Piccoline TOD Clock & Status Line Driver)
+- Oprettet [tasks/rc759-xios/clock.asm](file:///Users/ravn/z80/tasks/rc759-xios/clock.asm).
+- 640 bytes selvstændig RSP-pakke (128 bytes CMD-header, 128 bytes kode via `rsp_clock.asm`, 320 bytes data, padding til 640 B).
+- Venter på BDOS Flag 2 (system 1-sekunds tick), opdaterer klokkeslæt og statuslinje.
+- Bygget via Docker `rc759-nasm` og verificeret mod `scratch/tmp/dist/CLOCK.RSP`: **100% byte-identisk PASS (0 bytes diff)**.
+
+### 4. PIN.RSP (Piccoline Process INput — Keyboard & Line Editor)
+- Oprettet [tasks/rc759-xios/pin.asm](file:///Users/ravn/z80/tasks/rc759-xios/pin.asm), [tasks/rc759-xios/rsp_pin_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_pin_code.asm) og [tasks/rc759-xios/rsp_pin_data.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_pin_data.asm).
+- 3.328 bytes selvstændig RSP-pakke (128 bytes CMD-header, 2.672 bytes kode / 167 paragraffer, 480 bytes data / 30 paragraffer, 48 bytes padding).
+- Indeholder tastaturlæsning, Piccoline linjeeditor, funktionstasthåndtering og printer/drev-fejlmeddelelser.
+- Bygget via Docker `rc759-nasm` og verificeret mod `scratch/tmp/dist/PIN.RSP`: **100% byte-identisk PASS (0 bytes diff)**.
+
+### 5. VOUT.RSP (Piccoline Virtual OUTput Multiplexer)
+- Oprettet [tasks/rc759-xios/vout.asm](file:///Users/ravn/z80/tasks/rc759-xios/vout.asm), [tasks/rc759-xios/rsp_vout_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_vout_code.asm) og [tasks/rc759-xios/rsp_vout_data.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_vout_data.asm).
+- 2.944 bytes selvstændig RSP-pakke (128 bytes CMD-header, 1.856 bytes kode / 116 paragraffer, 928 bytes data / 58 paragraffer, 32 bytes padding).
+- Indeholder skærmoutput-multiplexer, terminal-escapekoder og kø-deskriptorer: `VOUTQ` (16 beskeder á 2 bytes), `VINQ` (64 beskeder á 2 bytes) og `VCMXQ` (semafor-kø).
+- Bygget via Docker `rc759-nasm` og verificeret mod `scratch/tmp/dist/VOUT.RSP`: **100% byte-identisk PASS (0 bytes diff)**.
+
+## Fuld Genskabelse af XIOS.CON og RC-Net Modulerne (2026-11-23)
+
+Samtlige Regnecentralen systemdrivere og udvidelsesmoduler fra CCP/M-86 SW1400 distributionen er nu færdigrekonstrueret som selvstændige assemblerkilder og verificeret **100% byte-identiske (0 bytes forskel)**:
+
+| Modul | Kildetekstfiler | Størrelse | Beskrivelse | Verifikation |
+|-------|-----------------|-----------|-------------|--------------|
+| **XIOS1.CON** | [xios1.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios1.asm), [xios_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios_code.asm) | 25.728 B | 1-konsol XIOS hardwaredriver | **100% PASS (0 bytes diff)** |
+| **XIOS4.CON** | [xios4.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios4.asm), [xios4_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios4_code.asm) | 29.440 B | 4-konsol XIOS hardwaredriver | **100% PASS (0 bytes diff)** |
+| **NETDRV.RSP** | [netdrv.asm](file:///Users/ravn/z80/tasks/rc759-xios/netdrv.asm), [rsp_netdrv_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_netdrv_code.asm) | 17.664 B | RC-Net Intel 82586 Ethernet LAN controller datalink driver | **100% PASS (0 bytes diff)** |
+| **NETDRVB.RSP** | [netdrvb.asm](file:///Users/ravn/z80/tasks/rc759-xios/netdrvb.asm), [rsp_netdrvb_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_netdrvb_code.asm) | 22.784 B | RC-Net Intel 82586 driver (Revision B) | **100% PASS (0 bytes diff)** |
+
+### 6. XIOS1.CON (1-konsol XIOS) & XIOS4.CON (4-konsol XIOS)
+- **Arkitektur**:
+  - `XIOS.CON` følger DRI 8080-modellen (enkelt kodesegment, ingen separat datagruppe).
+  - De første 3.072 bytes (`0x0080`–`0x0C7F` i filen, offset `0x0000`–`0x0BFF` i kodesegmentet) er systembufferområde (`dw 0xFFFF` ved offset `0x8C`), så `struct xios_table` (`XTABLOC`) er placeret nøjagtigt ved `CS:0x0C0C` (`0x0C8C` i filen) som krævet af `GENCCPM`.
+  - XIOS-indgangsvektorer starter ved `CS:0x0C00` (`0x0C80` i filen) med `jmp near xios_init` og `jmp near xios_entry`.
+  - `XIOS1.CON` har `xt_nvcns = 1` og `xt_alloc = 0x01F4` (500 paragraffer).
+  - `XIOS4.CON` har `xt_nvcns = 4` og `xt_alloc = 0x0500` (1280 paragraffer) med 3 ekstra sæt CCB'er og skærmkøer.
+- Begge moduler er kompileret via Docker `rc759-nasm` og verificeret **100% byte-identiske mod originalerne (0 bytes diff)**.
+
+### 7. NETDRV.RSP & NETDRVB.RSP (Intel 82586 Ethernet LAN Controller & RC-Net Datalink)
+- **Arkitektur**:
+  - Multithreaded Resident System Process bestående af 3 interne processer:
+    1. `NETDRV` / `NETDRVB`: Hovedstyringsproces (prioritet 32, SP=0x015E, entry IP=0x0726).
+    2. `REC`: Modtagerproces (prioritet 2, SP=0x03BE, entry IP=0x0E15).
+    3. `XMIT`: Senderproces (prioritet 3, SP=0x061E, entry IP=0x0BF8).
+  - Interne proceskøer: `link_req` og `XMIT_REQ`.
+  - Hardware-kommunikation mod Intel 82586 LAN controller:
+    - Channel Attention (CA) via I/O port `0x0100` (`in al, 0x100` / `out 0x100, al`).
+    - Afbrydelsesstyring via `IR5` (Interrupt 37 = `0x25`).
+    - Datalink-interface mod applikationer og CCP/M via `INT 29H` og `INT 28H`.
+- Begge moduler er kompileret via Docker `rc759-nasm` og verificeret **100% byte-identiske mod originalerne (0 bytes diff)**.
+
+### Samlet Status for Samtlige 9 Regnecentralen Moduler
+Alle 9 moduler fra RC759 Piccoline SW1400 CCP/M-86 release 3.1 distributionen er nu 100% færdigrekonstrueret som assemblerkildetekster og passerer komplet binær verifikation mod originalerne:
+1. `CLOCK.RSP` (640 B) — **PASS**
+2. `SCROLL.RSP` (640 B) — **PASS**
+3. `TMP759.RSP` (7.168 B) — **PASS**
+4. `PIN.RSP` (3.328 B) — **PASS**
+5. `VOUT.RSP` (2.944 B) — **PASS**
+6. `XIOS1.CON` (25.728 B) — **PASS**
+7. `XIOS4.CON` (29.440 B) — **PASS**
+8. `NETDRV.RSP` (17.664 B) — **PASS**
+9. `NETDRVB.RSP` (22.784 B) — **PASS**
+
+### Monolitisk CCPM.SYS Verifikation
+- Monolitisk `ccpm.sys` verificeret via `rebuild_and_verify.sh`: **PASS (77.568 bytes, 100% byte-identisk mod original ccpm.sys)**.
+
+
+
+
 

@@ -1,5 +1,20 @@
 # Prompts
 
+## 2026-11-23 (CCP/M-86 kernebygning via GENCCPM & konsolskifte i MAME)
+
+> vi har en række forskellige kerrner, flere konsoller, net klient, net server osv.  jeg vil gerne se om de kan bygges fra en enkelt kildetekst
+> kan du bygge en ny kerne med genccpm?  er alle komponenterne der?
+> du kan bruge emu2 i projektet til at køre ccp/m-86 programmer
+> jeg vil gerne se din nye kerne køre under mame, kan du patche noget så vi kan se den er ændret?
+> kan du vise mig skærmbilledet?
+> jeg har ikke et sidepanel, hvad er stien
+> hvorfor crashede mame?  kan du fikse det?
+> det har jo virket før?  ska jeg starte en ny session?
+> mame startede for mig som du beskrev, det er kun når du forsøger.
+> jeg så teksten, konsolskifte virker ikke.
+> regnecentralend er stale
+> det virker nu
+
 ## 2026-11-15 (packet-parser optimering, IX allokering, Ninja resilience)
 
 > kan vi lære c compileren at bruge disse tricks?
@@ -2061,6 +2076,25 @@ Undersøgt og implementeret fuld understøttelse af 4-konsol skift under Concurr
 3. Udvidet MAME HLE-tastaturdriveren `rc759_kbd.cpp` med understøttelse af `Ctrl + Option + 1..4` $\rightarrow$ konsol 0..3 (samt `Ctrl + Option + 0` $\rightarrow$ konsol 0).
 4. Rettet 1-off i scancode-offset (tast `'1'` har scancode 2, ikke 1). Verificeret live under MAME af brugeren.
 5. Dokumenteret i `tasks/memory/reference_rc759_ccpm86_4console_and_keyboard.md` og opdateret `tasks/lessons.md`.
+
+> jeg lukkede, Ctrl + Option + 1..4 virker
+> gem din nye viden i projektet, commit
+> er der noet der ikke er committet?
+> jeg fik vinduesjustering til at virke ved at køre vmenu.cmd.   Her kan man sætte op at vise udsnit af andre skærme oveni hinanden.  Det fik jeg til at virke.  Er der nogen officiel måde i CCP/M at vide på at man kører i et vindue, og dimenseionerne af det?
+> kan et program få at vide når vinduets størrelse ændrer sig?
+> lav et issue på at lave et polypascal program der aflæser skærmens størrelse dynamisk
+
+Oprettet issue [#22](https://github.com/ravn/rc7xx-work/issues/22) på `ravn/rc7xx-work`: "RC759: PolyPascal-program til dynamisk aflæsning af vinduesstørrelse under CCP/M-86" med arkitektur og teknisk fremgangsmåde for direkte aflæsning af `vs_rows` og `vs_cols` fra XIOS `SYSDAT`.
+
+> tilføj den fornødne viden til issue
+
+Opdateret issue [#22](https://github.com/ravn/rc7xx-work/issues/22#issuecomment-7087179921) med en udtømmende teknisk specifikation:
+- Verificerede BDOS funktionskald (BDOS 154 `S_SYSDAT` for SYSDAT-segment, BDOS 156 `P_PID` for `p_uda` ved `+0x10` og `p_cns` ved `+0x20`).
+- XIOS funktion 16 (`ww_pointer`) kaldekonventioner via `SYSDAT:0x0C03`.
+- Nøjagtig feltoversigt for Virtual Console Structure (`vs_`) inkl. `vs_rows` (+16), `vs_cols` (+18), `vs_left` (+2), `vs_top` (+3).
+- Komplet fungerende PolyPascal-86 kodeeksempel med inline assembler, systemopslag og polling-løkke.
+
+
 
 
 

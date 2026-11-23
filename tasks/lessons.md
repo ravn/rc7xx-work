@@ -1,5 +1,22 @@
 # Lessons Learned
 
+## 2026-11-23: CCP/M-86 .CMD / .CON / .RSP binary structure & GENCCPM memory layout
+
+1. **RSP Disk Format vs. System Image Structure:**
+   - In standalone `.CMD` / `.RSP` files on disk, CP/M-86 places Group 1 (Code Group) first at offset `0x0080`, followed by Group 2 (Data Group), followed by block padding to 128 bytes.
+   - When `GENCCPM` builds `ccpm.sys`, it separates the groups: Data Groups (`RSPHDR` + `PD` + `UDA`) are packed first into the system tables segment (`SYSDAT`), and Code Groups are placed second into the execution segment.
+   - Disassemblies from monolithic images must separate process boundaries at the start of process data, avoiding spilling data from process $N+1$ into the tail of process $N$.
+
+2. **XIOS.CON 8080-Memory Model & 3.072-byte Buffer Prefix:**
+   - Digital Research's `GENCCPM` requires `XIOS.CON` to follow the 8080 model (a single code group containing code and tables; separate data groups are explicitly rejected by `GENCCPM`).
+   - `struct xios_table` (`XTABLOC`) is defined at `0x0C0C`. To satisfy this, `XIOS.CON` contains a 3.072-byte (`0x0C00`) buffer prefix (`dw 0xFFFF` at `+0x8C`) in front of the entry vectors (`CS:0x0C00`), placing `struct xios_table` at exact file offset `0x0C8C` (CS:0x0C0C).
+
+## 2026-11-23: MAME GUI (`-window`) under macOS sandbox-exec triggers Cocoa XPC crashes
+
+- **Never launch MAME with GUI / `-window` from sandboxed agent shells:**
+  On macOS, MAME's OSD initializes Cocoa (`NSApplication`). Inside the agent sandbox (`sandbox-exec` without window server permissions), Cocoa cannot establish an XPC connection to WindowServer (`com.apple.view-bridge` and `com.apple.hiservices-xpcservice`), spewing over 1 MB/sec of `Connection invalid` errors and spawning macOS crash dialogs on the user's desktop.
+  Agent tasks needing MAME execution must run headless (`-video none` or offscreen rendering) or via established batch/trace wrappers, while interactive visual GUI sessions must always be run directly by the user in their own terminal.
+
 ## 2026-11-22: RC759 CCP/M-86 4-console switching, keyboard scancode offsets & macOS shortcut conflicts
 
 1. **RC759 keyboard scancode matrix 1-based offset:**
