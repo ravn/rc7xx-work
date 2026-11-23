@@ -854,3 +854,19 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
      - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
      - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
      - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+10. **Forening af Sektion 3B.1 og 3B.2 i Master XIOS (2026-11-23)**:
+    - Forenet Sektion 3B.1 (CS:118D..12A6):
+      - Chunk 1 (CS:118D, +50 bytes i XIOS4): Validering af konsolskift og omskifter for aktiv virtuel konsol (`loc_07D2D:` og `loc_07D2F:`).
+      - Fælles skærmtrimningsmenu prologue (`loc_07D35:`).
+      - Chunk 2 (CS:1288, +21 bytes i XIOS4): Opdatering af de 4 konsollers CCB-adresser (`0x2D2E`, `0x2DC2`, `0x2E56`, `0x2EEA`, 148 bytes stride) mod XIOS1 enkelt-konsol (`0x2B5D`).
+    - Forenet Sektion 3B.2 (CS:12A7..1500):
+      - `vmenu_item_table` og de 5 konfigurationsstrukturer (Normal/Invers, Markør Blinker, Understregning, Baggrund, Tastatur) parametriseret med `DELTA_VMENU_TBL = 71`, `DELTA_VMENU_PROLOGUE = 50` og `DELTA_TABLES = 909`.
+      - Tal-strenge (`"1 2 3 4 5 6 7 8 9 101112131415", 0x9B, 0x20`, 33 bytes) forenet.
+      - Terminal & konsol output (`loc_07EEC:`, `loc_07F37:`, `io_conout:`).
+      - Chunk 3 (CS:14F6, +3 bytes i XIOS4): Virtuel konsol-opslag for skærmposition (`mov al, [cs:si + 0x4f9f]` for 4 konsoller hhv. `mov al, 1` for 1 konsol).
+      - Rettet NASM short jump relokering på `jne short loc_080C5`.
+    - Resultat: Yderligere 540 redundante linjer rå disassembly elimineret fra XIOS4-blokken (i alt > 1.070 redundante linjer fjernet).
+    - Fuld verifikation:
+      - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
