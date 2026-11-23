@@ -5,6 +5,9 @@
 ;   - Intel 80186 / 8259A / 8255A / 82730 / WD2797 Datasheets
 ; =============================================================================
 
+%ifndef _HARDWARE_INC_
+%define _HARDWARE_INC_
+
 ; -----------------------------------------------------------------------------
 ; Master Interrupt Controller (Intel 8259A PIC)
 ; -----------------------------------------------------------------------------
@@ -175,9 +178,9 @@ PORT_PCB_DMA1_CON       equ 0xFFDA      ; DMA 1 Control word register
         %elif %%c2 == 0x86
           db 0x5B       ; Æ -> [
         %elif %%c2 == 0x98
-          db 0x5C       ; Ø -> \
+          db 0x5C       ; Ø -> 0x5C (backslash)
         %elif %%c2 == 0x85
-          db 0x5D       ; Å -> ]
+          db 0x5D       ; Å -> 0x5D (bracket right)
         %else
           db 0xC3, %%c2 ; Ukendt C3-sekvens bevares uændret
         %endif
@@ -188,4 +191,7 @@ PORT_PCB_DMA1_CON       equ 0xFFDA      ; DMA 1 Control word register
     %endif
   %endrep
 %endmacro
+
+%endif ; _HARDWARE_INC_
+
 

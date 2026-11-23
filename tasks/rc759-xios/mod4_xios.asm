@@ -16075,49 +16075,75 @@ sub_0B341:                                     ; 0B341
 ; =============================================================================
 ; RC759 Piccoline Skærmtrimning & Diagnostic Menu (0x0B34B - 0x0B4FC)
 ; =============================================================================
-  db 0x14, 0x20, 0xFF, "759 SK", Æ, "RMTRIMNING "  ; 0B34B
-  db 0x0C, "Mark", ø, "r Blink"                ; 0B361
-  db 0x0C, "Mark", ø, "r H", ø, "jde"          ; 0B36E
-  db 0x0C, "Bl", ø, "d Rulning"                ; 0B37B
-  db 0x0E, "Standard Farve"                    ; 0B388
-  db 0x0E, "Sluk Sk", æ, "rm"                  ; 0B397
-  db "    sort   bl", å, "    gr", ø, "n   cyan   r", ø, "d    magentagul    hvid   NEJ JA   Konsol=", 0  ; 0B3A6
+  db 0x14, 0x20, 0xFF                          ; 0B34B
+  db_dk "759 SKÆRMTRIMNING "
+  db 0x0C                                      ; 0B361
+  db_dk "Markør Blink"
+  db 0x0C                                      ; 0B36E
+  db_dk "Markør Højde"
+  db 0x0C                                      ; 0B37B
+  db_dk "Blød Rulning"
+  db 0x0E                                      ; 0B388
+  db_dk "Standard Farve"
+  db 0x0E                                      ; 0B397
+  db_dk "Sluk Skærm"
+  db_dk "    sort   blå    grøn   cyan   rød    magentagul    hvid   NEJ JA   Konsol="  ; 0B3A6
+  db 0
   db " ", 0, 0, 0, 0, 0, 0, 0, 0, " ", 0, 0, 0, 0, 0, 0, 0, 0  ; 0B3F1
   db " ", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ; 0B403
   db " ", 0, 0, 0, 0, 0, 0, 0, 0, " Skriver=", 0, 0, " ", 0, 0, 0, 0, " 00:00:00 "  ; 0B415
-  db "DynamiskBufferetBuffer  L", å, "st    L", Å, "S"  ; 0B434
+  db_dk "DynamiskBufferetBuffer  Låst    LÅS"  ; 0B434
   times 52 db " "                              ; 0B458
-  db "- Tryk p", å, " en tast            "     ; 0B48C
+  db_dk "- Tryk på en tast            "        ; 0B48C
   times 80 db 0                                ; 0B4A9
   db "$ **"                                    ; 0B4F9
 
 ; =============================================================================
 ; RC759 Piccoline XIOS Status- og Fejlbeskeder (0x0B4FD - 0x0B5E0)
 ; =============================================================================
-  db " Venter p", å, " f", æ, "lles diskettestation"  ; 0B4FD
-  db 0x1C, " ** Venter p", å, " f", æ, "lles skriver1"  ; 0B521
-  db "** Kun 1 konsol - Vinduesstyring ikke installeret"  ; 0B53E
-  db 0x15, " ** Skriver ikke klar"             ; 0B570
-  db 0x16, " ** Skriver Reserveret"            ; 0B586
-  db 0x1A, " ** Grafiksk", æ, "rm reserveret2" ; 0B59D
-  db " ** Skriver ikke klar. 1=gentag,2=afbryd,3=ignorer"  ; 0B5B6
+  db_dk " Venter på fælles diskettestation"     ; 0B4FD
+  db 0x1C                                      ; 0B521
+  db_dk " ** Venter på fælles skriver1"
+  db_dk "** Kun 1 konsol - Vinduesstyring ikke installeret"  ; 0B53E
+  db 0x15                                      ; 0B570
+  db_dk " ** Skriver ikke klar"
+  db 0x16                                      ; 0B586
+  db_dk " ** Skriver Reserveret"
+  db 0x1A                                      ; 0B59D
+  db_dk " ** Grafikskærm reserveret2"
+  db_dk " ** Skriver ikke klar. 1=gentag,2=afbryd,3=ignorer"  ; 0B5B6
 
 ; =============================================================================
 ; RC759 Piccoline Boot Banner & Hardware Rapport (0x0B5E1 - 0x0B79D)
 ; =============================================================================
-  db "PICCOLINE XIOS version 2.3 - Marts 1985 ", 0x0D, 0x0A, 0x0A  ; 0B5E1
-  db "      K bytes hoved lager", 0x0D, 0x0A, 0  ; 0B613
-  db "      K bytes bruger lager", 0x0D, 0x0A, 0  ; 0B62F
-  db "      Diskette station(er)", 0x0D, 0x0A, 0  ; 0B64C
-  db "      Winchester disk station(er)", 0x0D, 0x0A, 0  ; 0B669
-  db "      Data buffer(e)", 0x0D, 0x0A, 0     ; 0B68D
-  db "      Katalog buffer(e)", 0x0D, 0x0A, 0  ; 0B6A4
-  db "      K bytes M-disk", 0x0D, 0x0A, 0     ; 0B6BE
-  db "  *** For lidt lager til M-disk", 0x0D, 0x0A, 0  ; 0B6DA
-  db 0x0D, 0x0A, "Lokalnet adaptor installeret", 0x0D, 0x0A, 0  ; 0B6F7
-  db 0x0D, 0x0A, "Numerisk Regneenhed installeret", 0x0D, 0x0A, 0  ; 0B718
-  db "Winchester disk  X er ikke initialiseret", 0x0D, 0x0A, 0  ; 0B73A
-  db "Winchester disk  x har d", å, "rlig konfigurations sektor", 0x0D, 0x0A, 0  ; 0B765
+  db_dk "PICCOLINE XIOS version 2.3 - Marts 1985 "  ; 0B5E1
+  db 0x0D, 0x0A, 0x0A
+  db_dk "      K bytes hoved lager"            ; 0B613
+  db 0x0D, 0x0A, 0
+  db_dk "      K bytes bruger lager"           ; 0B62F
+  db 0x0D, 0x0A, 0
+  db_dk "      Diskette station(er)"           ; 0B64C
+  db 0x0D, 0x0A, 0
+  db_dk "      Winchester disk station(er)"    ; 0B669
+  db 0x0D, 0x0A, 0
+  db_dk "      Data buffer(e)"                 ; 0B68D
+  db 0x0D, 0x0A, 0
+  db_dk "      Katalog buffer(e)"              ; 0B6A4
+  db 0x0D, 0x0A, 0
+  db_dk "      K bytes M-disk"                 ; 0B6BE
+  db 0x0D, 0x0A, 0
+  db_dk "  *** For lidt lager til M-disk"      ; 0B6DA
+  db 0x0D, 0x0A, 0
+  db 0x0D, 0x0A                                ; 0B6F7
+  db_dk "Lokalnet adaptor installeret"
+  db 0x0D, 0x0A, 0
+  db 0x0D, 0x0A                                ; 0B718
+  db_dk "Numerisk Regneenhed installeret"
+  db 0x0D, 0x0A, 0
+  db_dk "Winchester disk  X er ikke initialiseret"  ; 0B73A
+  db 0x0D, 0x0A, 0
+  db_dk "Winchester disk  x har dårlig konfigurations sektor"  ; 0B765
+  db 0x0D, 0x0A, 0
 loc_0B79D:                                     ; 0B79D
   db 0x00, 0x00                                ; 0B79D
   db 0x00, 0x00                                ; 0B79F

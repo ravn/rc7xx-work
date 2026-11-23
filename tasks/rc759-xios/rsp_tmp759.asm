@@ -2,6 +2,8 @@
 ; RSP 1: TMP759 — Terminal Message Processor (Piccoline CLI / kommandofortolker)
 ; Offset range: 0x0FD40 - 0x1156F (6.192 bytes)
 ; ===========================================================================
+%include "hardware.inc"
+
 ; ===========================================================================
 ; TMP759 Initialisering og Opstart
 ;
@@ -2551,70 +2553,132 @@ loc_10DB8:                                     ; 10DB8
   db 0x00
 
 ; --- CCP/M Fejlbeskeder (0x10DF0) ---
-  db "  CCP/M fejl: ", 0
-  db "For lidt lager", 0x0D, 0x0A, 0
-  db "PD tabel fuld", 0x0D, 0x0A, 0
-  db "Program indl", æ, "sning", 0x0D, 0x0A, 0
-  db "Kommando findes ikke", 0x0D, 0x0A, 0
-  db "RSP kommando k", ø, " fuld", 0x0D, 0x0A, 0
-  db "Kommando fortolkning afbrudt", 0x0D, 0x0A, 0
+  db_dk "  CCP/M fejl: "
   db 0
-  db "Diskette fejl", 0x0D, 0x0A, 0
-  db "Disketten skrive beskyttet", 0x0D, 0x0A, 0
-  db "Filen er skrive beskyttet", 0x0D, 0x0A, 0
-  db "Ulovlig diskbetegnelse", 0x0D, 0x0A, 0
-  db "Filen er i brug", 0x0D, 0x0A, 0
-  db "Lukke fejl", 0x0D, 0x0A, 0
-  db "L", ø, "sen passer ikke", 0x0D, 0x0A, 0
-  db "Filen findes", 0x0D, 0x0A, 0
-  db "Ulovligt filnavn", 0x0D, 0x0A, 0
-  db "Ingen plads i system listen", 0x0D, 0x0A, 0
-  db "V", æ, "rt fejl", 0x0D, 0x0A, 0
-  db "Netbruger fejl", 0x0D, 0x0A, 0
-  db "Fysisk net fejl", 0x0D, 0x0A, 0
+  db_dk "For lidt lager"
+  db 0x0D, 0x0A, 0
+  db_dk "PD tabel fuld"
+  db 0x0D, 0x0A, 0
+  db_dk "Program indlæsning"
+  db 0x0D, 0x0A, 0
+  db_dk "Kommando findes ikke"
+  db 0x0D, 0x0A, 0
+  db_dk "RSP kommando kø fuld"
+  db 0x0D, 0x0A, 0
+  db_dk "Kommando fortolkning afbrudt"
+  db 0x0D, 0x0A, 0
+  db 0
+  db_dk "Diskette fejl"
+  db 0x0D, 0x0A, 0
+  db_dk "Disketten skrive beskyttet"
+  db 0x0D, 0x0A, 0
+  db_dk "Filen er skrive beskyttet"
+  db 0x0D, 0x0A, 0
+  db_dk "Ulovlig diskbetegnelse"
+  db 0x0D, 0x0A, 0
+  db_dk "Filen er i brug"
+  db 0x0D, 0x0A, 0
+  db_dk "Lukke fejl"
+  db 0x0D, 0x0A, 0
+  db_dk "Løsen passer ikke"
+  db 0x0D, 0x0A, 0
+  db_dk "Filen findes"
+  db 0x0D, 0x0A, 0
+  db_dk "Ulovligt filnavn"
+  db 0x0D, 0x0A, 0
+  db_dk "Ingen plads i system listen"
+  db 0x0D, 0x0A, 0
+  db_dk "Vært fejl"
+  db 0x0D, 0x0A, 0
+  db_dk "Netbruger fejl"
+  db 0x0D, 0x0A, 0
+  db_dk "Fysisk net fejl"
+  db 0x0D, 0x0A, 0
 
 ; --- RC-Net Statusbesked Pointer-Tabel (0x10F87) ---
   dw 0x1142, 0x1143, 0x1153, 0x1170, 0x118C, 0x11A5, 0x11B7, 0x11C4
   dw 0x11D8, 0x11E7, 0x11FA, 0x11FA, 0x1218, 0x1224, 0x1235
 
 ; --- RC-Net Statusbeskeder & Terminalsekvenser (0x10FA5) ---
-  db "Tilmeldt nettet", 0x0D, 0x0A, 0
-  db "Kan ikke tilmeldes nettet", 0x0D, 0x0A, 0
-  db "Afmeldt nettet", 0x0D, 0x0A, 0
-  db "Ikke tilmeldt nettet", 0x0D, 0x0A, 0
-  db "Forbindelsen er oprettet", 0x0D, 0x0A, 0
-  db "Forbindelsen kan ikke oprettes", 0x0D, 0x0A, 0
-  db "Forbindelsen er nedlagt", 0x0D, 0x0A, 0
-  db "Forbindelsen kan ikke nedl", æ, "gges", 0x0D, 0x0A, 0
-  db ";", 0x13, Å, 0x13, "O", 0x13, "v", 0x13, "Ulovligt argument", 0x0D, 0x0A, 0
-  db "Navn ukendt", 0x0D, 0x0A, 0
-  db "Navnetabel findes ikke", 0x0D, 0x0A, 0
-  db "V", æ, "rten svarer ikke", 0x0D, 0x0A, 0
-  db "Kan ikke oprette til eget nummer", 0x0D, 0x0A, 0
-  db "Kan ikke afbryde fra eget nummer", 0x0D, 0x0A, 0
-  db "Mangler argument(er)", 0x0D, 0x0A, 0
-  db "Navngivning fejlet", 0x0D, 0x0A, 0
-  db "Fejlet", 0x0D, 0x0A, 0
-  db "Program l", ø, "sen: ", 0
-  db "  Kommando = ", 0
-  db "Ulovligt bruger nummer", 0x0D, 0x0A, 0
-  db "Bruger nummer er ", 0
-  db "Ulovligt skriver nummer", 0x0D, 0x0A, 0
-  db "Skriver nummer er ", 0
-  db 0x0D, 0x0A, "Menu k", ø, " kan ikke oprettes", 0x0D, 0x0A, 0
-  db 0x0D, 0x0A, "Menu k", ø, " kan ikke ", å, "bnes", 0x0D, 0x0A, 0
-  db "Ulovlig lagergr", æ, "nse, (16-768 K)", 0x0D, 0x0A, 0
-  db "Indbyggede kommandoer:", 0
+  db_dk "Tilmeldt nettet"
+  db 0x0D, 0x0A, 0
+  db_dk "Kan ikke tilmeldes nettet"
+  db 0x0D, 0x0A, 0
+  db_dk "Afmeldt nettet"
+  db 0x0D, 0x0A, 0
+  db_dk "Ikke tilmeldt nettet"
+  db 0x0D, 0x0A, 0
+  db_dk "Forbindelsen er oprettet"
+  db 0x0D, 0x0A, 0
+  db_dk "Forbindelsen kan ikke oprettes"
+  db 0x0D, 0x0A, 0
+  db_dk "Forbindelsen er nedlagt"
+  db 0x0D, 0x0A, 0
+  db_dk "Forbindelsen kan ikke nedlægges"
+  db 0x0D, 0x0A, 0
+  db ";", 0x13
+  db_dk "Å"
+  db 0x13, "O", 0x13, "v", 0x13
+  db_dk "Ulovligt argument"
+  db 0x0D, 0x0A, 0
+  db_dk "Navn ukendt"
+  db 0x0D, 0x0A, 0
+  db_dk "Navnetabel findes ikke"
+  db 0x0D, 0x0A, 0
+  db_dk "Værten svarer ikke"
+  db 0x0D, 0x0A, 0
+  db_dk "Kan ikke oprette til eget nummer"
+  db 0x0D, 0x0A, 0
+  db_dk "Kan ikke afbryde fra eget nummer"
+  db 0x0D, 0x0A, 0
+  db_dk "Mangler argument(er)"
+  db 0x0D, 0x0A, 0
+  db_dk "Navngivning fejlet"
+  db 0x0D, 0x0A, 0
+  db_dk "Fejlet"
+  db 0x0D, 0x0A, 0
+  db_dk "Program løsen: "
+  db 0
+  db_dk "  Kommando = "
+  db 0
+  db_dk "Ulovligt bruger nummer"
+  db 0x0D, 0x0A, 0
+  db_dk "Bruger nummer er "
+  db 0
+  db_dk "Ulovligt skriver nummer"
+  db 0x0D, 0x0A, 0
+  db_dk "Skriver nummer er "
+  db 0
+  db 0x0D, 0x0A
+  db_dk "Menu kø kan ikke oprettes"
+  db 0x0D, 0x0A, 0
+  db 0x0D, 0x0A
+  db_dk "Menu kø kan ikke åbnes"
+  db 0x0D, 0x0A, 0
+  db_dk "Ulovlig lagergrænse, (16-768 K)"
+  db 0x0D, 0x0A, 0
+  db_dk "Indbyggede kommandoer:"
+  db 0
   db "   ", 0
-  db "Ulovlig parameter", 0
-  db "Ingen fil(er)", 0
-  db "Katalog for ", 0
-  db "bruger nr. ", 0
-  db "System filer findes", 0
-  db 0x0D, 0x0A, "DIR Stoppet af brugeren", 0
-  db "Abort fejlet", 0x0D, 0x0A, 0
-  db "Aborteret", 0x0D, 0x0A, 0
-  db "Ulovligt konsol nr.", 0x0D, 0x0A, 0
+  db_dk "Ulovlig parameter"
+  db 0
+  db_dk "Ingen fil(er)"
+  db 0
+  db_dk "Katalog for "
+  db 0
+  db_dk "bruger nr. "
+  db 0
+  db_dk "System filer findes"
+  db 0
+  db 0x0D, 0x0A
+  db_dk "DIR Stoppet af brugeren"
+  db 0
+  db_dk "Abort fejlet"
+  db 0x0D, 0x0A, 0
+  db_dk "Aborteret"
+  db 0x0D, 0x0A, 0
+  db_dk "Ulovligt konsol nr."
+  db 0x0D, 0x0A, 0
   db 0x80, 0
   db 0
   db "Scroll", 0x1B, "M", 0

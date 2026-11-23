@@ -813,6 +813,12 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
      - `nasm -f bin ... xios4.asm` -> 100% byte-identisk mod `XIOS4.CON`.
      - `./tasks/rc759-xios/rebuild_and_verify.sh` -> 100% byte-identisk mod `ccpm.sys` (77.568 bytes).
 
+7. **Dansk Tegnsætskonvertering via `db_dk` (2026-11-23)**:
+   - Udviklet preprocessor-makroen `db_dk` i [hardware.inc](file:///Users/ravn/z80/tasks/rc759-xios/hardware.inc), som under assemblering oversætter UTF-8 kodede strenge til RC759 Piccolines 7-bit ISO-646-DK tegnsæt (`æ`->`{`, `ø`->`|`, `å`->`}`, `Æ`->`[`, `Ø`->`\`, `Å`->`]`).
+   - Tilføjet include-guards (`%ifndef _HARDWARE_INC_`) for sikker genbrug på tværs af moduler.
+   - Konverteret samtlige danske bruger- og systembeskeder i [xios_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios_code.asm), `mod4_xios.asm` og [rsp_tmp759.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_tmp759.asm) til `db_dk`.
+   - Alle 9 distributionsmoduler og den monolitiske `ccpm.sys` bygger fortsat 100% byte-identisk (0 bytes diff mod originalerne).
+
 
 
 
