@@ -829,12 +829,28 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
    - Gjort selve 4-byte fixup-posterne i `xios_fixups` fuldt dynamiske via `FIXUP_CODE` makro og labels (`xios_fixup_target_1`, `xios_fixup_target_2`) på de relokerede far pointers, så fixup-tabellen automatisk flytter sig ved kodeændringer.
    - 100% byte-identisk verificeret for `XIOS1.CON`, `XIOS4.CON` og `ccpm.sys`.
 
-
-
-
-
-
-
-
-
-
+9. **Forening af Sektion 1, 2 og 3A i Master XIOS (2026-11-23)**:
+   - Matematisk kortlægning af XIOS1 (22.320 B kode) vs XIOS4 (26.000 B kode): samlet forskel er præcis **3.680 bytes (0x0E60)** fordelt på 17 velafgrænsede strukturelle chunks.
+   - Indført parametriserede kumulative adresseforskydninger:
+     - `DELTA_VMENU = 74` (skærmtrimningsmenu og konsolvalidering)
+     - `DELTA_WINDOW = 451` (vinduesstyringssubsystem for 4 konsoller)
+     - `DELTA_TABLES = 909` (tastaturoversættelsestabeller og floppydriver)
+     - `DELTA_TAIL = 3668` (skærmbuffere og halestatistik)
+   - Forenet Sektion 1 (CS:0000..0D1F):
+     - Master entry points og `xios_config_table` parametriseret med `NUM_VIR_CONS`.
+     - `xios_function_table` med fælles DRI/CCP/M funktionslabels.
+     - `int28h_dispatcher` og `int28h_jump_table` (alle 54 BIOS/XIOS-systemkald).
+   - Forenet Sektion 2 (CS:0D20..0EF3):
+     - Fælles RTM-hjælpere (`rtm_call_helper`, `rtm_timer_wait`, `xios_rtm_svc_call`).
+     - Hele CCB-tabellen (alle 9 Console Control Blocks for fysisk + 4 virtuelle konsoller) og LCB-tabellen (3 List Control Blocks).
+   - Forenet Sektion 3A (CS:0EF4..118D, 666 bytes):
+     - `i_keyboard`: Tastatur ISR med rå scancode-læsning, modifier flags, Caps/NumLock og translation.
+     - `i_crt`: Intel 82730 VSYNC ISR og system tick.
+     - `io_const` og `io_conin`: Konsolstatus og tegnlæsning med funktionstastafkodning.
+     - Løst disassembler-fejl: `cmp byte [cs:0x2a60 + DELTA_WINDOW], 0xff` (var fejlagtigt afkodet som `pusha ; db 0x2A, 0xFF`) og `je loc_07D2F` med indlejret byte-displacement (`74 43` / `74 4B`).
+     - Forbundet 14 symbolske funktions- og rutinelabels mellem varianterne.
+   - Resultat: Over 530 redundante linjer rå disassembly elimineret fra XIOS4-blokken.
+   - Fuld verifikation:
+     - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+     - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+     - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
