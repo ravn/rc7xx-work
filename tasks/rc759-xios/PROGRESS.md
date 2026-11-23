@@ -870,3 +870,19 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
       - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+
+11. **Forening af Sektion 3B.3 & 3B.4: Terminalemulatoren (CS:1500..2497, 2026-11-23)**:
+    - Omfatter hele terminalemulatoren (`loc_080BE:` til `loc_08FDB:`), en massiv blok på over 3.800 bytes kode.
+    - Forskydning mellem XIOS1 og XIOS4 i denne blok er konstant `+74` (`DELTA_VMENU`).
+    - Rekonstrueret to centrale dispatch-tabeller, som i den oprindelige disassembly var fejlagtigt afkodet som tilfældige instruktioner:
+      - **Escape Sequence Dispatch Tabel (186 bytes)**: 62 word-pointere til ANSI/VT100 escape-handlers (`0x1942 + DELTA_VMENU`, `0x192a + DELTA_VMENU`, osv.) efterfulgt af 62 match-bytes (`=HCDBAEIJKLMNOPQYabcdefghijklmnopqstruvwxz:<>012367\xF1..\xFE`).
+      - **State Dispatch Tabel (24 bytes)**: 12 word-pointere (`0x1be9 + DELTA_VMENU`, `0x1cd3 + DELTA_VMENU`, osv.) for tilstandsmaskinen.
+    - Parametriseret konsolløkke i skærminitialisering (`loc_08D94:`): `mov cx, NUM_VIR_CONS` (1 konsol i XIOS1, 4 konsoller i XIOS4).
+    - Parametriseret 10 rå `db 0x2E`-instruktioner med hårdkodede adresser til ægte symbolske instruktioner (`mov word [cs:0x5fbe + DELTA_TAIL], 0xffff`, `mov word [cs:0x4884 + DELTA_TABLES], 0x2030`, osv.).
+    - Indført `DELTA_VIDTBL = 2907` (`0x4bc4`) og `DELTA_49FA = 859` (`0x49fa`).
+    - Håndteret Chunk 4 ved `08FBC`: `call sub_09079` (kopiering af 24 KB skærm-RAM, kun i XIOS1, omgået i XIOS4).
+    - Resultat: Yderligere **1.583 redundante linjer rå disassembly** elimineret fra XIOS4-blokken (i alt > 2.650 linjer fjernet på tværs af foreningen).
+    - Fuld verifikation:
+      - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
