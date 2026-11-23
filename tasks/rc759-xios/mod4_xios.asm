@@ -17683,7 +17683,7 @@ loc_0C496:                                     ; 0C496
   dec di                                       ; 0C4E2  0x4F
   cmp bx, [bx + di + 0x10]                     ; 0C4E3  0x3B, 0x59, 0x10
   db 0x27                                      ; 0C4E6  daa
-  call sub_128ED                               ; 0C4E7  0xE8, 0x03, 0x64
+  db 0xE8, 0x03, 0x64                          ; 0C4E7  MXsound queue table entry
   add [bp + si], cl                            ; 0C4EA  0x00, 0x0A
   add [bx + di], al                            ; 0C4EC  0x00, 0x01
   db 0x00, 0x00                                ; 0C4EE

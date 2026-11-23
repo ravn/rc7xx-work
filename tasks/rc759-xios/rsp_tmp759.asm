@@ -73,7 +73,7 @@ loc_0FD9D:                                     ; 0FD9D
   jmp short loc_0FDED                          ; 0FDC0  0xEB, 0x2B
 
 loc_0FDC2:                                     ; 0FDC2
-  call sub_10A2B                               ; 0FDC2  0xE8, 0x66, 0x0C
+  call clear_fcb_name_buffer                               ; 0FDC2  0xE8, 0x66, 0x0C
   mov al, [0x413]                              ; 0FDC5  0xA0, 0x13, 0x04
   mov [0x2af], al                              ; 0FDC8  0xA2, 0xAF, 0x02
   mov cx, 5                                    ; 0FDCB  0xB9, 0x05, 0x00
@@ -105,7 +105,7 @@ loc_0FDED:                                     ; 0FDED
   cmp byte [0x412], 0xff                       ; 0FDFD  0x80, 0x3E, 0x12, 0x04, 0xFF
   jne loc_0FE11                                ; 0FE02  0x75, 0x0D
   call bdos_get_disk                               ; 0FE04  0xE8, 0xE6, 0x0D
-  call sub_1035D                               ; 0FE07  0xE8, 0x53, 0x05
+  call with_selected_disk                               ; 0FE07  0xE8, 0x53, 0x05
   jae loc_0FE11                                ; 0FE0A  0x73, 0x05
   jne loc_0FE11                                ; 0FE0C  0x75, 0x03
   call print_crlf                               ; 0FE0E  0xE8, 0x92, 0x0D
@@ -164,7 +164,7 @@ loc_0FE71:                                     ; 0FE71
   call bdos_call                               ; 0FE7C  0xE8, 0xA4, 0x0D
 
 loc_0FE7F:                                     ; 0FE7F
-  call sub_10AE2                               ; 0FE7F  0xE8, 0x60, 0x0C
+  call set_raw_console_mode                               ; 0FE7F  0xE8, 0x60, 0x0C
   push bx                                      ; 0FE82  0x53
   mov bx, 0x28a                                ; 0FE83  0xBB, 0x8A, 0x02
   or byte [bx + 5], 0x80                       ; 0FE86  0x80, 0x4F, 0x05, 0x80
@@ -347,7 +347,7 @@ loc_0FFD3:                                     ; 0FFD3
   cmp byte [0x412], 0xff                       ; 0FFF8  0x80, 0x3E, 0x12, 0x04, 0xFF
   jne loc_1000C                                ; 0FFFD  0x75, 0x0D
   call bdos_get_disk                               ; 0FFFF  0xE8, 0xEB, 0x0B
-  call sub_1035D                               ; 10002  0xE8, 0x58, 0x03
+  call with_selected_disk                               ; 10002  0xE8, 0x58, 0x03
   jae loc_1000C                                ; 10005  0x73, 0x05
   jne loc_1000C                                ; 10007  0x75, 0x03
   call print_crlf                               ; 10009  0xE8, 0x97, 0x0B
@@ -458,7 +458,7 @@ loc_10083:                                     ; 10083
   jne loc_100FE                                ; 100A9  0x75, 0x53
   mov dx, 0x1406                               ; 100AB  0xBA, 0x06, 0x14
   call print_cs_string                               ; 100AE  0xE8, 0xF5, 0x0A
-  call sub_10D98                               ; 100B1  0xE8, 0xE4, 0x0C
+  call print_dir_stopped_by_user                               ; 100B1  0xE8, 0xE4, 0x0C
   mov ax, 0                                    ; 100B4  0xB8, 0x00, 0x00
   push ax                                      ; 100B7  0x50
 
@@ -514,7 +514,7 @@ loc_100FE:                                     ; 100FE
   push cx                                      ; 100FE  0x51
   push bx                                      ; 100FF  0x53
   push ax                                      ; 10100  0x50
-  call sub_10AE2                               ; 10101  0xE8, 0xDE, 0x09
+  call set_raw_console_mode                               ; 10101  0xE8, 0xDE, 0x09
   pop ax                                       ; 10104  0x58
   pop bx                                       ; 10105  0x5B
   pop cx                                       ; 10106  0x59
@@ -763,7 +763,7 @@ cmd_dir:
   mov di, [0x25a]                              ; 10265  kommandolinjepointer
   cmp di, 0                                    ; 10269  tjek om parameter er givet
   je loc_1028D                                 ; 1026C  hvis tom -> standard maske *.*
-  call sub_1043E                               ; 1026E  tjek drevangivelse
+  call dir_parse_options                               ; 1026E  tjek drevangivelse
   cmp byte [di], 0                             ; 10271  slut på linje?
   je loc_1028D                                 ; 10274  hvis ja -> standard maske
   call bdos_parse_filename                     ; 10276  parse filspecifikation til FCB
@@ -775,7 +775,7 @@ cmd_dir:
 loc_10284:                                     ; 10284
   je loc_102A7                                 ; 10284  hvis slut på linje -> start søgning
   db 0x8B, 0xF8                                ; 10286  mov di, ax
-  call sub_10446                               ; 10288  parse eventuelle ekstra switches
+  call dir_parse_single_option                               ; 10288  parse eventuelle ekstra switches
   jmp short loc_102A7                          ; 1028B  0xEB, 0x1A
 
 loc_1028D:                                     ; 1028D: Udfyld FCB med standardmaske (? ? ?)
@@ -826,7 +826,7 @@ loc_102E5:                                     ; 102E5
   call print_cs_string                               ; 102E8  0xE8, 0xBB, 0x08
   mov al, [0x2af]                              ; 102EB  0xA0, 0xAF, 0x02
   dec al                                       ; 102EE  0xFE, 0xC8
-  call sub_1035D                               ; 102F0  0xE8, 0x6A, 0x00
+  call with_selected_disk                               ; 102F0  0xE8, 0x6A, 0x00
   jae loc_10339                                ; 102F3  0x73, 0x44
   jne loc_102FC                                ; 102F5  0x75, 0x05
   mov dl, 0x20                                 ; 102F7  0xB2, 0x20
@@ -840,7 +840,7 @@ loc_102FC:                                     ; 102FC
   jmp short loc_10317                          ; 10307  0xEB, 0x0E
 
 loc_10309:                                     ; 10309
-  call sub_103CD                               ; 10309  0xE8, 0xC1, 0x00
+  call dir_print_entry                               ; 10309  0xE8, 0xC1, 0x00
   mov cl, 0xb                                  ; 1030C  0xB1, 0x0B
   call bdos_call                               ; 1030E  0xE8, 0x12, 0x09
   db 0x0A, 0xC0                                ; 10311  or al, al
@@ -884,7 +884,7 @@ loc_10358:                                     ; 10358
   call print_cs_string                               ; 10358  0xE8, 0x4B, 0x08
   jmp short loc_10336                          ; 1035B  0xEB, 0xD9
 
-sub_1035D:                                     ; 1035D
+with_selected_disk:                                     ; 1035D
   push ax                                      ; 1035D  0x50
   call bdos_get_disk                               ; 1035E  0xE8, 0x8C, 0x08
   pop dx                                       ; 10361  0x5A
@@ -902,7 +902,7 @@ loc_10376:                                     ; 10376
   int 0xe0                                     ; 10379  0xCD, 0xE0
   call rcnet_check_error                               ; 1037B  0xE8, 0x21, 0x0A
   jae loc_103A9                                ; 1037E  0x73, 0x29
-  call sub_103B0                               ; 10380  0xE8, 0x2D, 0x00
+  call dir_is_entry_valid                               ; 10380  0xE8, 0x2D, 0x00
   jb loc_103A5                                 ; 10383  0x72, 0x20
   je loc_1038B                                 ; 10385  0x74, 0x04
   mov cl, 0x12                                 ; 10387  0xB1, 0x12
@@ -919,7 +919,7 @@ loc_1038B:                                     ; 1038B
   je loc_103A5                                 ; 10399  0x74, 0x0A
   inc cx                                       ; 1039B  0x41
   inc si                                       ; 1039C  0x46
-  call sub_10491                               ; 1039D  0xE8, 0xF1, 0x00
+  call print_string_si_len_cx                               ; 1039D  0xE8, 0xF1, 0x00
   db 0x33, 0xC0                                ; 103A0  xor ax, ax
   stc                                          ; 103A2  0xF9
   jmp short loc_103A9                          ; 103A3  0xEB, 0x04
@@ -936,22 +936,22 @@ loc_103A9:                                     ; 103A9
   popf                                         ; 103AE  0x9D
   ret                                          ; 103AF  0xC3
 
-sub_103B0:                                     ; 103B0
+dir_is_entry_valid:                                     ; 103B0
   cmp al, 0xff                                 ; 103B0  0x3C, 0xFF
   stc                                          ; 103B2  0xF9
   je loc_103BC                                 ; 103B3  0x74, 0x07
-  call sub_103BD                               ; 103B5  0xE8, 0x05, 0x00
+  call dir_get_entry_0                               ; 103B5  0xE8, 0x05, 0x00
   cmp byte [di], 0x20                          ; 103B8  0x80, 0x3D, 0x20
   clc                                          ; 103BB  0xF8
 
 loc_103BC:                                     ; 103BC
   ret                                          ; 103BC  0xC3
 
-sub_103BD:                                     ; 103BD
+dir_get_entry_0:                                     ; 103BD
   mov di, 0x1d6                                ; 103BD  0xBF, 0xD6, 0x01
   jmp short loc_103C5                          ; 103C0  0xEB, 0x03
 
-sub_103C2:                                     ; 103C2
+dir_get_entry_di:                                     ; 103C2
   mov di, 0x1d6                                ; 103C2  0xBF, 0xD6, 0x01
 
 loc_103C5:                                     ; 103C5
@@ -961,8 +961,8 @@ loc_103C5:                                     ; 103C5
   db 0x03, 0xF8                                ; 103CA  add di, ax
   ret                                          ; 103CC  0xC3
 
-sub_103CD:                                     ; 103CD
-  call sub_103C2                               ; 103CD  0xE8, 0xF2, 0xFF
+dir_print_entry:                                     ; 103CD
+  call dir_get_entry_di                               ; 103CD  0xE8, 0xF2, 0xFF
   test byte [0x1ce], 1                         ; 103D0  0xF6, 0x06, 0xCE, 0x01, 0x01
   jne loc_103E3                                ; 103D5  0x75, 0x0C
   test byte [di + 0xa], 0x80                   ; 103D7  0xF6, 0x45, 0x0A, 0x80
@@ -974,7 +974,7 @@ loc_103E3:                                     ; 103E3
   push di                                      ; 103E3  0x57
   cmp byte [0x1cd], 5                          ; 103E4  0x80, 0x3E, 0xCD, 0x01, 0x05
   jb loc_103EE                                 ; 103E9  0x72, 0x03
-  call sub_1040D                               ; 103EB  0xE8, 0x1F, 0x00
+  call dir_print_drive_user_header                               ; 103EB  0xE8, 0x1F, 0x00
 
 loc_103EE:                                     ; 103EE
   mov dx, 0x14ee                               ; 103EE  0xBA, 0xEE, 0x14
@@ -983,15 +983,15 @@ loc_103EE:                                     ; 103EE
   inc byte [0x1cd]                             ; 103F5  0xFE, 0x06, 0xCD, 0x01
   inc si                                       ; 103F9  0x46
   mov cx, 8                                    ; 103FA  0xB9, 0x08, 0x00
-  call sub_10491                               ; 103FD  0xE8, 0x91, 0x00
+  call print_string_si_len_cx                               ; 103FD  0xE8, 0x91, 0x00
   push si                                      ; 10400  0x56
   mov al, 0x2e                                 ; 10401  0xB0, 0x2E
-  call sub_1049E                               ; 10403  0xE8, 0x98, 0x00
+  call print_char_al                               ; 10403  0xE8, 0x98, 0x00
   pop si                                       ; 10406  0x5E
   mov cx, 3                                    ; 10407  0xB9, 0x03, 0x00
-  jmp near sub_10491                           ; 1040A  0xE9, 0x84, 0x00
+  jmp near print_string_si_len_cx                           ; 1040A  0xE9, 0x84, 0x00
 
-sub_1040D:                                     ; 1040D
+dir_print_drive_user_header:                                     ; 1040D
   mov byte [0x1cd], 0                          ; 1040D  0xC6, 0x06, 0xCD, 0x01, 0x00
   call print_crlf                               ; 10412  0xE8, 0x8E, 0x07
   call bdos_get_user                               ; 10415  0xE8, 0x84, 0x07
@@ -1017,12 +1017,12 @@ loc_10438:                                     ; 10438
   mov dx, 0x14f2                               ; 10438  0xBA, 0xF2, 0x14
   jmp near loc_10358                           ; 1043B  0xE9, 0x1A, 0xFF
 
-sub_1043E:                                     ; 1043E
+dir_parse_options:                                     ; 1043E
   call skip_spaces                               ; 1043E  0xE8, 0xAA, 0x06
   cmp byte [di], 0x5b                          ; 10441  0x80, 0x3D, 0x5B
   jne loc_10458                                ; 10444  0x75, 0x12
 
-sub_10446:                                     ; 10446
+dir_parse_single_option:                                     ; 10446
   inc di                                       ; 10446  0x47
   call skip_spaces                               ; 10447  0xE8, 0xA1, 0x06
   mov al, [di]                                 ; 1044A  0x8A, 0x05
@@ -1041,7 +1041,7 @@ loc_10459:                                     ; 10459
   cmp al, 0x53                                 ; 1045B  0x3C, 0x53
   jne loc_10466                                ; 1045D  0x75, 0x07
   or byte [0x1ce], 1                           ; 1045F  0x80, 0x0E, 0xCE, 0x01, 0x01
-  jmp short sub_10446                          ; 10464  0xEB, 0xE0
+  jmp short dir_parse_single_option                          ; 10464  0xEB, 0xE0
 
 loc_10466:                                     ; 10466
   cmp al, 0x47                                 ; 10466  0x3C, 0x47
@@ -1066,20 +1066,20 @@ loc_10480:                                     ; 10480
   push di                                      ; 1048A  0x57
   call bdos_set_user                               ; 1048B  0xE8, 0x10, 0x07
   pop di                                       ; 1048E  0x5F
-  jmp short sub_10446                          ; 1048F  0xEB, 0xB5
+  jmp short dir_parse_single_option                          ; 1048F  0xEB, 0xB5
 
-sub_10491:                                     ; 10491
+print_string_si_len_cx:                                     ; 10491
   lodsb                                        ; 10491  0xAC
   push si                                      ; 10492  0x56
   push cx                                      ; 10493  0x51
   and al, 0x7f                                 ; 10494  0x24, 0x7F
-  call sub_1049E                               ; 10496  0xE8, 0x05, 0x00
+  call print_char_al                               ; 10496  0xE8, 0x05, 0x00
   pop cx                                       ; 10499  0x59
   pop si                                       ; 1049A  0x5E
-  loop sub_10491                               ; 1049B  0xE2, 0xF4
+  loop print_string_si_len_cx                               ; 1049B  0xE2, 0xF4
   ret                                          ; 1049D  0xC3
 
-sub_1049E:                                     ; 1049E
+print_char_al:                                     ; 1049E
   db 0x8A, 0xD0                                ; 1049E  mov dl, al
   jmp near bdos_con_out                           ; 104A0  0xE9, 0xF4, 0x06
 
@@ -1275,12 +1275,12 @@ loc_105A1:                                     ; 105A1
 loc_105A4:                                     ; 105A4
   jmp near loc_0FED9                           ; 105A4  retur til kommandoløkke
 
-sub_105A7:                                     ; 105A7: Sikrer netværk er klar
+rcnet_require_ready:                                     ; 105A7: Sikrer netværk er klar
   call rcnet_check_ready                       ; 105A7  tjek om netværkskort og driver er klar
   mov dx, 0x1277                               ; 105AA  "Kan ikke tilmeldes nettet\r\n"
   jmp short loc_105B5                          ; 105AD  0xEB, 0x06
 
-sub_105AF:                                     ; 105AF: Sikrer vi er logget på nettet
+rcnet_require_logged_on:                                     ; 105AF: Sikrer vi er logget på nettet
   call rcnet_check_logged_on                   ; 105AF  tjek logon-status
   mov dx, 0x12a4                               ; 105B2  "Ikke tilmeldt nettet\r\n"
 
@@ -1313,15 +1313,15 @@ loc_105BC:                                     ; 105BC
 ; ===========================================================================
 cmd_logon:
   cld                                          ; 105BD  0xFC
-  call sub_105A7                               ; 105BE  valider netværkstilstand
+  call rcnet_require_ready                               ; 105BE  valider netværkstilstand
   mov di, [0x25a]                              ; 105C1  hent parameterpointer
   cmp di, 0                                    ; 105C5  tjek om parameter er givet
   jne loc_105CF                                ; 105C8  hvis ja -> parse parameter
-  call sub_10868                               ; 105CA  ellers brug standard server
+  call rcnet_init_device_request                               ; 105CA  ellers brug standard server
   jmp short loc_105D2                          ; 105CD  0xEB, 0x03
 
 loc_105CF:                                     ; 105CF
-  call sub_10876                               ; 105CF  parse drev=server:sti
+  call rcnet_parse_device_request                               ; 105CF  parse drev=server:sti
 
 loc_105D2:                                     ; 105D2
   jb loc_10600                                 ; 105D2  hvis parse-fejl -> vis fejl
@@ -1361,15 +1361,15 @@ loc_10600:                                     ; 10600: Slå fejltekst op i inde
 ;   BDOS funktion 67 (0x43: Network Disconnect).
 ; ===========================================================================
 cmd_logoff:
-  call sub_105AF                               ; 1060C  sikrer vi er forbundet
+  call rcnet_require_logged_on                               ; 1060C  sikrer vi er forbundet
   mov di, [0x25a]                              ; 1060F  hent parameter
   cmp di, 0                                    ; 10613  parameter givet?
   jne loc_1061D                                ; 10616  hvis ja -> parse drev
-  call sub_10868                               ; 10618  ellers standard drev
+  call rcnet_init_device_request                               ; 10618  ellers standard drev
   jmp short loc_10620                          ; 1061B  0xEB, 0x03
 
 loc_1061D:                                     ; 1061D
-  call sub_10876                               ; 1061D  parse drevnavn
+  call rcnet_parse_device_request                               ; 1061D  parse drevnavn
 
 loc_10620:                                     ; 10620
   jb loc_10600                                 ; 10620  fejl ved parsing -> vis fejl
@@ -1411,12 +1411,12 @@ loc_10652:                                     ; 10652
   jmp near loc_10ADC                           ; 10655  udskriv fejl
 
 loc_10658:                                     ; 10658
-  call sub_105A7                               ; 10658  valider netværk
+  call rcnet_require_ready                               ; 10658  valider netværk
   mov di, [0x25a]                              ; 1065B  0x8B, 0x3E, 0x5A, 0x02
   cmp di, 0                                    ; 1065F  0x83, 0xFF, 0x00
   je loc_1064C                                 ; 10662  0x74, 0xE8
   mov si, 0x444                                ; 10664  arbejdsbuffer
-  call sub_107BB                               ; 10667  parse navnestruktur
+  call parse_device_spec                               ; 10667  parse navnestruktur
   cmp al, 0xff                                 ; 1066A  0x3C, 0xFF
   je loc_1064C                                 ; 1066C  0x74, 0xDE
   cmp al, 0xfe                                 ; 1066E  0x3C, 0xFE
@@ -1426,7 +1426,7 @@ loc_10658:                                     ; 10658
   jne loc_10652                                ; 10678  hvis ikke '=' -> ulovligt argument
   inc di                                       ; 1067A  spring '=' over
   mov si, 0x44d                                ; 1067B  buffer til tildelt værdi
-  call sub_107BB                               ; 1067E  parse værdi
+  call parse_device_spec                               ; 1067E  parse værdi
   cmp al, [0x444]                              ; 10681  sammenlign typer
   jne loc_10652                                ; 10685  uoverensstemmelse -> fejl
   mov al, [0x413]                              ; 10687  hent netværksattribut
@@ -1434,7 +1434,7 @@ loc_10658:                                     ; 10658
   call skip_spaces                             ; 1068D  0xE8, 0x5B, 0x04
   cmp byte [di], 0                             ; 10690  slut på linje?
   je loc_1069D                                 ; 10693  hvis ja -> udfør tildeling
-  call sub_10876                               ; 10695  parse ekstra parametre
+  call rcnet_parse_device_request                               ; 10695  parse ekstra parametre
   jae loc_1069D                                ; 10698  hvis OK -> udfør
   jmp near loc_10600                           ; 1069A  ellers fejl
 
@@ -1495,12 +1495,12 @@ loc_106F2:                                     ; 106F2
 ;   Nulstiller netværksomdirigering og genetablerer lokale drevforbindelser.
 ; ===========================================================================
 cmd_local:
-  call sub_105AF                               ; 106F8  sikrer netværksforbindelse
+  call rcnet_require_logged_on                               ; 106F8  sikrer netværksforbindelse
   mov di, [0x25a]                              ; 106FB  hent parameter
   cmp di, 0                                    ; 106FF  parameter givet?
   je loc_106EC                                 ; 10702  mangler parameter -> fejl
   mov si, 0x444                                ; 10704  arbejdsbuffer
-  call sub_107BB                               ; 10707  parse enhed
+  call parse_device_spec                               ; 10707  parse enhed
   cmp al, 0xff                                 ; 1070A  0x3C, 0xFF
   je loc_106EC                                 ; 1070C  0x74, 0xDE
   cmp al, 0xfe                                 ; 1070E  0x3C, 0xFE
@@ -1620,7 +1620,7 @@ loc_107AA:                                     ; 107AA
   loop loc_107AA                               ; 107B8  0xE2, 0xF0
   ret                                          ; 107BA  0xC3
 
-sub_107BB:                                     ; 107BB
+parse_device_spec:                                     ; 107BB
   call skip_spaces                               ; 107BB  0xE8, 0x2D, 0x03
   mov al, [di]                                 ; 107BE  0x8A, 0x05
   cmp al, 0                                    ; 107C0  0x3C, 0x00
@@ -1732,26 +1732,26 @@ loc_10866:                                     ; 10866
   stc                                          ; 10866  0xF9
   ret                                          ; 10867  0xC3
 
-sub_10868:                                     ; 10868
-  call sub_10A2B                               ; 10868  0xE8, 0xC0, 0x01
+rcnet_init_device_request:                                     ; 10868
+  call clear_fcb_name_buffer                               ; 10868  0xE8, 0xC0, 0x01
   mov al, [0x413]                              ; 1086B  0xA0, 0x13, 0x04
   mov [0x2af], al                              ; 1086E  0xA2, 0xAF, 0x02
   mov dx, 0x2af                                ; 10871  0xBA, 0xAF, 0x02
   clc                                          ; 10874  0xF8
   ret                                          ; 10875  0xC3
 
-sub_10876:                                     ; 10876
+rcnet_parse_device_request:                                     ; 10876
   push di                                      ; 10876  0x57
-  call sub_10A2B                               ; 10877  0xE8, 0xB1, 0x01
+  call clear_fcb_name_buffer                               ; 10877  0xE8, 0xB1, 0x01
   pop di                                       ; 1087A  0x5F
   call skip_spaces                               ; 1087B  0xE8, 0x6D, 0x02
   push di                                      ; 1087E  0x57
-  call sub_10ABC                               ; 1087F  0xE8, 0x3A, 0x02
+  call parse_hex_digit                               ; 1087F  0xE8, 0x3A, 0x02
   jb loc_108C4                                 ; 10882  0x72, 0x40
   inc di                                       ; 10884  0x47
   cmp byte [di + 1], 0                         ; 10885  0x80, 0x7D, 0x01, 0x00
   je loc_108C4                                 ; 10889  0x74, 0x39
-  call sub_10ABC                               ; 1088B  0xE8, 0x2E, 0x02
+  call parse_hex_digit                               ; 1088B  0xE8, 0x2E, 0x02
   jb loc_10891                                 ; 1088E  0x72, 0x01
   inc di                                       ; 10890  0x47
 
@@ -1796,7 +1796,7 @@ loc_108C4:                                     ; 108C4
   cmp byte [di], 0x3b                          ; 108C5  0x80, 0x3D, 0x3B
   je loc_108D0                                 ; 108C8  0x74, 0x06
   mov si, 0x2bf                                ; 108CA  0xBE, 0xBF, 0x02
-  call sub_10A52                               ; 108CD  0xE8, 0x82, 0x01
+  call parse_filename_anycase                               ; 108CD  0xE8, 0x82, 0x01
 
 loc_108D0:                                     ; 108D0
   call skip_spaces                               ; 108D0  0xE8, 0x18, 0x02
@@ -1806,7 +1806,7 @@ loc_108D0:                                     ; 108D0
   jne loc_108C0                                ; 108DB  0x75, 0xE3
   inc di                                       ; 108DD  0x47
   mov si, 0x2b0                                ; 108DE  0xBE, 0xB0, 0x02
-  call sub_10A4E                               ; 108E1  0xE8, 0x6A, 0x01
+  call parse_filename_upper                               ; 108E1  0xE8, 0x6A, 0x01
   call skip_spaces                               ; 108E4  0xE8, 0x04, 0x02
   cmp byte [di], 0                             ; 108E7  0x80, 0x3D, 0x00
   jne loc_108C0                                ; 108EA  0x75, 0xD4
@@ -1842,12 +1842,12 @@ loc_1090C:                                     ; 1090C
   pop ds                                       ; 1091D  0x1F
   inc al                                       ; 1091E  0xFE, 0xC0
   mov [0x420], al                              ; 10920  0xA2, 0x20, 0x04
-  call sub_10A08                               ; 10923  0xE8, 0xE2, 0x00
+  call rcnet_reset_request_fcb                               ; 10923  0xE8, 0xE2, 0x00
   je loc_1092A                                 ; 10926  0x74, 0x02
   jmp short loc_10933                          ; 10928  0xEB, 0x09
 
 loc_1092A:                                     ; 1092A
-  call sub_109B3                               ; 1092A  0xE8, 0x86, 0x00
+  call bdos_network_func_73                               ; 1092A  0xE8, 0x86, 0x00
   jne loc_10933                                ; 1092D  0x75, 0x04
 
 loc_1092F:                                     ; 1092F
@@ -1931,7 +1931,7 @@ loc_109A5:                                     ; 109A5
   popf                                         ; 109B1  0x9D
   ret                                          ; 109B2  0xC3
 
-sub_109B3:                                     ; 109B3
+bdos_network_func_73:                                     ; 109B3
   mov cl, 0x49                                 ; 109B3  0xB1, 0x49
   db 0x33, 0xD2                                ; 109B5  xor dx, dx
   int 0xe0                                     ; 109B7  0xCD, 0xE0
@@ -1965,13 +1965,13 @@ loc_109DE:                                     ; 109DE
   mov cl, 0x45                                 ; 109FD  0xB1, 0x45
   int 0xe0                                     ; 109FF  0xCD, 0xE0
   db 0x0B, 0xC0                                ; 10A01  or ax, ax
-  je sub_10A08                                 ; 10A03  0x74, 0x03
+  je rcnet_reset_request_fcb                                 ; 10A03  0x74, 0x03
 
 loc_10A05:                                     ; 10A05
   db 0x33, 0xC0                                ; 10A05  xor ax, ax
   ret                                          ; 10A07  0xC3
 
-sub_10A08:                                     ; 10A08
+rcnet_reset_request_fcb:                                     ; 10A08
   mov bx, 0x420                                ; 10A08  0xBB, 0x20, 0x04
   or byte [bx + 6], 0x80                       ; 10A0B  0x80, 0x4F, 0x06, 0x80
   mov word [bx + 0xc], 0                       ; 10A0F  0xC7, 0x47, 0x0C, 0x00, 0x00
@@ -1984,7 +1984,7 @@ sub_10A08:                                     ; 10A08
   inc al                                       ; 10A28  0xFE, 0xC0
   ret                                          ; 10A2A  0xC3
 
-sub_10A2B:                                     ; 10A2B
+clear_fcb_name_buffer:                                     ; 10A2B
   mov di, 0x2af                                ; 10A2B  0xBF, 0xAF, 0x02
   push di                                      ; 10A2E  0x57
   mov ax, ds                                   ; 10A2F  0x8C, 0xD8
@@ -2002,11 +2002,11 @@ sub_10A2B:                                     ; 10A2B
   stosw                                        ; 10A4C  0xAB
   ret                                          ; 10A4D  0xC3
 
-sub_10A4E:                                     ; 10A4E
+parse_filename_upper:                                     ; 10A4E
   mov ah, 0                                    ; 10A4E  0xB4, 0x00
   jmp short loc_10A54                          ; 10A50  0xEB, 0x02
 
-sub_10A52:                                     ; 10A52
+parse_filename_anycase:                                     ; 10A52
   mov ah, 0xff                                 ; 10A52  0xB4, 0xFF
 
 loc_10A54:                                     ; 10A54
@@ -2050,14 +2050,14 @@ loc_10A82:                                     ; 10A82
   jne loc_10AB3                                ; 10A8F  0x75, 0x22
   mov al, [0x2af]                              ; 10A91  0xA0, 0xAF, 0x02
 
-sub_10A94:                                     ; 10A94
+print_hex_byte:                                     ; 10A94
   push ax                                      ; 10A94  0x50
   mov cl, 4                                    ; 10A95  0xB1, 0x04
   shr al, cl                                   ; 10A97  0xD2, 0xE8
-  call sub_10A9D                               ; 10A99  0xE8, 0x01, 0x00
+  call print_hex_nibble                               ; 10A99  0xE8, 0x01, 0x00
   pop ax                                       ; 10A9C  0x58
 
-sub_10A9D:                                     ; 10A9D
+print_hex_nibble:                                     ; 10A9D
   and al, 0xf                                  ; 10A9D  0x24, 0x0F
   add al, 0x90                                 ; 10A9F  0x04, 0x90
   db 0x27                                      ; 10AA1  daa
@@ -2067,16 +2067,16 @@ sub_10A9D:                                     ; 10A9D
   jmp near bdos_con_out                           ; 10AA7  0xE9, 0xED, 0x00
   push ax                                      ; 10AAA  0x50
   db 0x8A, 0xC4                                ; 10AAB  mov al, ah
-  call sub_10A94                               ; 10AAD  0xE8, 0xE4, 0xFF
+  call print_hex_byte                               ; 10AAD  0xE8, 0xE4, 0xFF
   pop ax                                       ; 10AB0  0x58
-  jmp short sub_10A94                          ; 10AB1  0xEB, 0xE1
+  jmp short print_hex_byte                          ; 10AB1  0xEB, 0xE1
 
 loc_10AB3:                                     ; 10AB3
   mov byte [bx + 8], 0                         ; 10AB3  0xC6, 0x47, 0x08, 0x00
   db 0x8B, 0xD3                                ; 10AB7  mov dx, bx
   jmp near print_string                           ; 10AB9  0xE9, 0xF4, 0x00
 
-sub_10ABC:                                     ; 10ABC
+parse_hex_digit:                                     ; 10ABC
   mov al, [di]                                 ; 10ABC  0x8A, 0x05
   cmp al, 0x30                                 ; 10ABE  0x3C, 0x30
   jb loc_10AD8                                 ; 10AC0  0x72, 0x16
@@ -2104,7 +2104,7 @@ loc_10ADC:                                     ; 10ADC
   call print_cs_string                               ; 10ADC  0xE8, 0xC7, 0x00
   jmp near loc_0FED9                           ; 10ADF  0xE9, 0xF7, 0xF3
 
-sub_10AE2:                                     ; 10AE2
+set_raw_console_mode:                                     ; 10AE2
   mov cl, 0x6d                                 ; 10AE2  0xB1, 0x6D
   mov dx, 9                                    ; 10AE4  0xBA, 0x09, 0x00
   jmp near bdos_call                           ; 10AE7  0xE9, 0x39, 0x01
@@ -2521,7 +2521,7 @@ loc_10D86:                                     ; 10D86
   cmp byte [0x412], 0xff                       ; 10D91  0x80, 0x3E, 0x12, 0x04, 0xFF
   je loc_10D9E                                 ; 10D96  0x74, 0x06
 
-sub_10D98:                                     ; 10D98
+print_dir_stopped_by_user:                                     ; 10D98
   mov dx, 0x15cf                               ; 10D98  0xBA, 0xCF, 0x15
   call print_raw_mode109                               ; 10D9B  0xE8, 0x19, 0xFE
 

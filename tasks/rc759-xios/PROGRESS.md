@@ -746,6 +746,28 @@ Alle 9 moduler fra RC759 Piccoline SW1400 CCP/M-86 release 3.1 distributionen er
 ### Monolitisk CCPM.SYS Verifikation
 - Monolitisk `ccpm.sys` verificeret via `rebuild_and_verify.sh`: **PASS (77.568 bytes, 100% byte-identisk mod original ccpm.sys)**.
 
+## Fuld Subroutine-Symbolisering og Dokumentation (2026-11-23)
+
+Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identificeret, omdøbt til meningsfulde navne og forsynet med lagdelte kommentarer (WHAT/WHY):
+
+1. **VOUT.RSP (`rsp_vout_code.asm`, `rsp_vout.asm`)**:
+   - 1-til-1 afstemt mod Digital Research officielle kildeforlæg `VOUT.P86` og `RHVOUT.A86` i `scratch/ccpm31-src/D3/`.
+   - Copyright-banner ved kodesegment-start gendannet som ren ASCII-streng: `COPYRIGHT (C) 1983, DIGITAL RESEARCH ` (37 bytes).
+   - Omdøbt samtlige 22 procedurer: `vout_xdos`, `vout_intsys`, `vout_pxios1`, `vout_sleep`, `vout_wakeup`, `vout_read_change_mxq`, `vout_write_change_mxq`, `vout_delete_file`, `vout_make_file`, `vout_reset_file`, `vout_write_buf`, `vout_read_buf`, `vout_read_voutq`, `vout_drain_voutq`, `vout_put_char`, `vout_get_char`, `vout_full_disk`, `vout_buffer`, `vout_purge`, `vout_abort`, `vout_initq`, og entry point `vout_plmstart` (offset 0x0603).
+   - Rettet split-instruktion ved 0x128EA til `mov byte [0x349], 0` (`active$msg = false`) og fjernet den vildledende `sub_128ED`-label.
+
+2. **PIN.RSP (`rsp_pin_code.asm`, `rsp_pin.asm`)**:
+   - 1-til-1 afstemt mod Digital Research officielle kildeforlæg `PIN.P86` og `RHPIN.A86`.
+   - Omdøbt samtlige 23 procedurer: `pin_xdos`, `pin_intsys`, `pin_pxios1`, `pin_conin`, `pin_get_cons_mode`, `pin_read_change_mxq`, `pin_write_change_mxq`, `pin_sleep`, `pin_wake_up`, `pin_set_conout_flag`, `pin_reset_conout_flag`, `pin_wake_vout`, `pin_write_vinq`, `pin_set_ccb`, `pin_switch`, `pin_controlC`, `pin_controlO`, `pin_turn_off_ctrlO`, `pin_controlS`, `pin_controlQ`, `pin_controlP`, `pin_raw`, og event loop `pin_plmstart`.
+
+3. **TMP759.RSP (`rsp_tmp759.asm`)**:
+   - Omdøbt alle anonyme subrutiner til beskrivende funktionsnavne:
+     - Drev- og mappestyring: `with_selected_disk`.
+     - DIR-visning og formattering: `dir_is_entry_valid`, `dir_get_entry_0`, `dir_get_entry_di`, `dir_print_entry`, `dir_print_drive_user_header`, `dir_parse_options`, `dir_parse_single_option`, `print_dir_stopped_by_user`.
+     - Tekst- og hex-output: `print_string_si_len_cx`, `print_char_al`, `print_hex_byte`, `print_hex_nibble`, `parse_hex_digit`.
+     - RC-Net og netværksenheder: `rcnet_require_ready`, `rcnet_require_logged_on`, `parse_device_spec` (håndterer lokale drev `A:`, netværksprinter `LSTn:` og servernavne `"..."`), `rcnet_init_device_request`, `rcnet_parse_device_request`, `rcnet_reset_request_fcb`, `clear_fcb_name_buffer`, `parse_filename_upper`, `parse_filename_anycase`, `set_raw_console_mode`, `bdos_network_func_73`.
+
+
 
 
 

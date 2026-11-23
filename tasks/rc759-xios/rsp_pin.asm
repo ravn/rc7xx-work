@@ -326,7 +326,11 @@
 ; ===========================================================================
 ; DEL 2: PIN CODE SEGMENT — starter ved 0x117D0
 ; ===========================================================================
-sub_117D0:                                     ; 117D0
+; -----------------------------------------------------------------------------
+; pin_xdos (mon1..4) — BDOS / XDOS system call entry
+; Invokes INT 0xE0 with function in CX, parameter in DX.
+; -----------------------------------------------------------------------------
+pin_xdos:                                     ; 117D0
   push bp                                      ; 117D0  0x55
   db 0x8B, 0xEC                                ; 117D1  mov bp, sp (d=1)
   mov dx, [bp + 4]                             ; 117D3  0x8B, 0x56, 0x04
@@ -335,7 +339,11 @@ sub_117D0:                                     ; 117D0
   pop bp                                       ; 117DB  0x5D
   ret 4                                        ; 117DC  0xC2, 0x04, 0x00
 
-sub_117DF:                                     ; 117DF
+; -----------------------------------------------------------------------------
+; pin_intsys — Calls CCP/M-86 supervisor functions directly
+; Used for internal OS operations (sleep, wakeup) via SYSDAT:0x0000.
+; -----------------------------------------------------------------------------
+pin_intsys:                                     ; 117DF
   push bp                                      ; 117DF  0x55
   db 0x8B, 0xEC                                ; 117E0  mov bp, sp
   mov bx, [bp + 4]                             ; 117E2  0x8B, 0x5E, 0x04
@@ -350,7 +358,11 @@ sub_117DF:                                     ; 117DF
   pop bp                                       ; 117FC  0x5D
   ret 6                                        ; 117FD  0xC2, 0x06, 0x00
 
-sub_11800:                                     ; 11800
+; -----------------------------------------------------------------------------
+; pin_pxios1 — Physical XIOS call wrapper (CIO interface)
+; Invokes XIOS far call via SYSDAT:0x0028 (xiosmod).
+; -----------------------------------------------------------------------------
+pin_pxios1:                                     ; 11800
   push bp                                      ; 11800  0x55
   db 0x8B, 0xEC                                ; 11801  mov bp, sp
   mov ax, [bp + 8]                             ; 11803  0x8B, 0x46, 0x08
@@ -366,7 +378,11 @@ sub_11800:                                     ; 11800
   ret 6                                        ; 1181E  0xC2, 0x06, 0x00
   db 0x00                                      ; 11821  .
 
-sub_11822:                                     ; 11822
+; -----------------------------------------------------------------------------
+; pin_conin — Reads console input character/word from XIOS
+; Calls pxios3(mx, 0, ccb.pc). Result returned in cword.
+; -----------------------------------------------------------------------------
+pin_conin:                                     ; 11822
   push bp                                      ; 11822  0x55
   db 0x8B, 0xEC                                ; 11823  mov bp, sp
   mov ax, 1                                    ; 11825  0xB8, 0x01, 0x00
@@ -377,14 +393,18 @@ sub_11822:                                     ; 11822
   mov al, [es:bx + 0xa]                        ; 11831  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 11835  0xB4, 0x00
   push ax                                      ; 11837  0x50
-  call sub_11800                               ; 11838  0xE8, 0xC5, 0xFF
+  call pin_pxios1                               ; 11838  0xE8, 0xC5, 0xFF
 
 loc_1183B:                                     ; 1183B
   mov [0x17e], ax                              ; 1183B  0xA3, 0x7E, 0x01
   pop bp                                       ; 1183E  0x5D
   ret                                          ; 1183F  0xC3
 
-sub_11840:                                     ; 11840
+; -----------------------------------------------------------------------------
+; pin_get_cons_mode — Reads console mode from XIOS
+; Calls pxios3(mx, 0x100, ccb.vc). Result in cnmode.
+; -----------------------------------------------------------------------------
+pin_get_cons_mode:                                     ; 11840
   push bp                                      ; 11840  0x55
   db 0x8B, 0xEC                                ; 11841  mov bp, sp
   mov ax, 0x1e                                 ; 11843  0xB8, 0x1E, 0x00
@@ -395,12 +415,16 @@ sub_11840:                                     ; 11840
   mov al, [es:bx + 0xb]                        ; 1184F  0x26, 0x8A, 0x47, 0x0B
   mov ah, 0                                    ; 11853  0xB4, 0x00
   push ax                                      ; 11855  0x50
-  call sub_11800                               ; 11856  0xE8, 0xA7, 0xFF
+  call pin_pxios1                               ; 11856  0xE8, 0xA7, 0xFF
   mov [0x166], ax                              ; 11859  0xA3, 0x66, 0x01
   pop bp                                       ; 1185C  0x5D
   ret                                          ; 1185D  0xC3
 
-sub_1185E:                                     ; 1185E
+; -----------------------------------------------------------------------------
+; pin_read_change_mxq — Locks CCB mutex queue (VCMXQ)
+; Reads the mutex message from qaddr (BDOS 137: Q_READ).
+; -----------------------------------------------------------------------------
+pin_read_change_mxq:                                     ; 1185E
   push bp                                      ; 1185E  0x55
   db 0x8B, 0xEC                                ; 1185F  mov bp, sp
   mov byte [0x192], 0                          ; 11861  0xC6, 0x06, 0x92, 0x01, 0x00
@@ -438,7 +462,7 @@ loc_11886:                                     ; 11886
   mov al, [es:bx + 0xb]                        ; 1189B  0x26, 0x8A, 0x47, 0x0B
   mov ah, 0                                    ; 1189F  0xB4, 0x00
   push ax                                      ; 118A1  0x50
-  call sub_11800                               ; 118A2  0xE8, 0x5B, 0xFF
+  call pin_pxios1                               ; 118A2  0xE8, 0x5B, 0xFF
   inc byte [0x192]                             ; 118A5  0xFE, 0x06, 0x92, 0x01
   jmp short loc_11866                          ; 118A9  0xEB, 0xBB
 
@@ -446,7 +470,11 @@ loc_118AB:                                     ; 118AB
   pop bp                                       ; 118AB  0x5D
   ret 8                                        ; 118AC  0xC2, 0x08, 0x00
 
-sub_118AF:                                     ; 118AF
+; -----------------------------------------------------------------------------
+; pin_write_change_mxq — Unlocks CCB mutex queue (VCMXQ)
+; Writes the mutex message back to qaddr (BDOS 139: Q_WRITE).
+; -----------------------------------------------------------------------------
+pin_write_change_mxq:                                     ; 118AF
   push bp                                      ; 118AF  0x55
   db 0x8B, 0xEC                                ; 118B0  mov bp, sp
   mov ax, [bp + 4]                             ; 118B2  0x8B, 0x46, 0x04
@@ -459,7 +487,11 @@ sub_118AF:                                     ; 118AF
   pop bp                                       ; 118C2  0x5D
   ret 2                                        ; 118C3  0xC2, 0x02, 0x00
 
-sub_118C6:                                     ; 118C6
+; -----------------------------------------------------------------------------
+; pin_sleep — Puts process to sleep on list root
+; Calls intsys(mi, list_root, 0x212).
+; -----------------------------------------------------------------------------
+pin_sleep:                                     ; 118C6
   push bp                                      ; 118C6  0x55
   db 0x8B, 0xEC                                ; 118C7  mov bp, sp
   mov ax, [bp + 4]                             ; 118C9  0x8B, 0x46, 0x04
@@ -472,7 +504,11 @@ sub_118C6:                                     ; 118C6
   pop bp                                       ; 118D9  0x5D
   ret 2                                        ; 118DA  0xC2, 0x02, 0x00
 
-sub_118DD:                                     ; 118DD
+; -----------------------------------------------------------------------------
+; pin_wake_up — Wakes sleeping process on list root
+; Calls intsys(mi, list_root, 0).
+; -----------------------------------------------------------------------------
+pin_wake_up:                                     ; 118DD
   push bp                                      ; 118DD  0x55
   db 0x8B, 0xEC                                ; 118DE  mov bp, sp
   mov ax, 0x212                                ; 118E0  0xB8, 0x12, 0x02
@@ -480,11 +516,15 @@ sub_118DD:                                     ; 118DD
   push word [bp + 4]                           ; 118E4  0xFF, 0x76, 0x04
   mov ax, 9                                    ; 118E7  0xB8, 0x09, 0x00
   push ax                                      ; 118EA  0x50
-  call sub_117DF                               ; 118EB  0xE8, 0xF1, 0xFE
+  call pin_intsys                               ; 118EB  0xE8, 0xF1, 0xFE
   pop bp                                       ; 118EE  0x5D
   ret 2                                        ; 118EF  0xC2, 0x02, 0x00
 
-sub_118F2:                                     ; 118F2
+; -----------------------------------------------------------------------------
+; pin_set_conout_flag — Acquires console output flag (cf)
+; Ensures exclusive access before calling XIOS console output routines.
+; -----------------------------------------------------------------------------
+pin_set_conout_flag:                                     ; 118F2
   push bp                                      ; 118F2  0x55
   db 0x8B, 0xEC                                ; 118F3  mov bp, sp
   mov ax, 0x213                                ; 118F5  0xB8, 0x13, 0x02
@@ -492,11 +532,15 @@ sub_118F2:                                     ; 118F2
   push word [bp + 4]                           ; 118F9  0xFF, 0x76, 0x04
   mov ax, 0                                    ; 118FC  0xB8, 0x00, 0x00
   push ax                                      ; 118FF  0x50
-  call sub_117DF                               ; 11900  0xE8, 0xDC, 0xFE
+  call pin_intsys                               ; 11900  0xE8, 0xDC, 0xFE
   pop bp                                       ; 11903  0x5D
   ret 2                                        ; 11904  0xC2, 0x02, 0x00
 
-sub_11907:                                     ; 11907
+; -----------------------------------------------------------------------------
+; pin_reset_conout_flag — Releases console output flag (cf)
+; Clears flag and wakes any sleeping process on ccb.cosleep.
+; -----------------------------------------------------------------------------
+pin_reset_conout_flag:                                     ; 11907
   push bp                                      ; 11907  0x55
   db 0x8B, 0xEC                                ; 11908  mov bp, sp
   cli                                          ; 1190A  0xFA
@@ -509,7 +553,7 @@ loc_1190B:                                     ; 1190B
   je loc_11921                                 ; 11916  0x74, 0x09
   lea ax, [bx + 0x22]                          ; 11918  0x8D, 0x47, 0x22
   push ax                                      ; 1191B  0x50
-  call sub_118DD                               ; 1191C  0xE8, 0xBE, 0xFF
+  call pin_wake_up                               ; 1191C  0xE8, 0xBE, 0xFF
   jmp short loc_1190B                          ; 1191F  0xEB, 0xEA
 
 loc_11921:                                     ; 11921
@@ -519,18 +563,25 @@ loc_11921:                                     ; 11921
   pop bp                                       ; 1192A  0x5D
   ret 4                                        ; 1192B  0xC2, 0x04, 0x00
 
-sub_1192E:                                     ; 1192E
+; -----------------------------------------------------------------------------
+; pin_wake_vout — Wakes VOUT RSP by writing wake message to voutq
+; -----------------------------------------------------------------------------
+pin_wake_vout:                                     ; 1192E
   push bp                                      ; 1192E  0x55
   db 0x8B, 0xEC                                ; 1192F  mov bp, sp
   les bx, [bp + 4]                             ; 11931  0xC4, 0x5E, 0x04
   and byte [es:bx + 4], 0xf7                   ; 11934  0x26, 0x80, 0x67, 0x04, 0xF7
   lea ax, [bx + 0x22]                          ; 11939  0x8D, 0x47, 0x22
   push ax                                      ; 1193C  0x50
-  call sub_118F2                               ; 1193D  0xE8, 0xB2, 0xFF
+  call pin_set_conout_flag                               ; 1193D  0xE8, 0xB2, 0xFF
   pop bp                                       ; 11940  0x5D
   ret 4                                        ; 11941  0xC2, 0x04, 0x00
 
-sub_11944:                                     ; 11944
+; -----------------------------------------------------------------------------
+; pin_write_vinq — Writes character word to Virtual Input Queue (vinq)
+; If queue is full, rings console bell via set_conout_flag + pxios1(conout, BELL).
+; -----------------------------------------------------------------------------
+pin_write_vinq:                                     ; 11944
   push bp                                      ; 11944  0x55
   db 0x8B, 0xEC                                ; 11945  mov bp, sp
   les bx, [bp + 4]                             ; 11947  0xC4, 0x5E, 0x04
@@ -559,13 +610,17 @@ sub_11944:                                     ; 11944
   les bx, [bp + 4]                             ; 1198A  0xC4, 0x5E, 0x04
   lea ax, [bx + 0x26]                          ; 1198D  0x8D, 0x47, 0x26
   push ax                                      ; 11990  0x50
-  call sub_118F2                               ; 11991  0xE8, 0x5E, 0xFF
+  call pin_set_conout_flag                               ; 11991  0xE8, 0x5E, 0xFF
 
 loc_11994:                                     ; 11994
   pop bp                                       ; 11994  0x5D
   ret 4                                        ; 11995  0xC2, 0x04, 0x00
 
-sub_11998:                                     ; 11998
+; -----------------------------------------------------------------------------
+; pin_set_ccb — Switches active CCB pointer to target virtual console
+; Updates ccb to point to SYSDAT:ccb + vc * sizeof(ccb).
+; -----------------------------------------------------------------------------
+pin_set_ccb:                                     ; 11998
   push bp                                      ; 11998  0x55
   db 0x8B, 0xEC                                ; 11999  mov bp, sp
   les bx, [0x158]                              ; 1199B  0xC4, 0x1E, 0x58, 0x01
@@ -583,7 +638,7 @@ sub_11998:                                     ; 11998
   les bx, [0x158]                              ; 119BB  0xC4, 0x1E, 0x58, 0x01
   push es                                      ; 119BF  0x06
   push bx                                      ; 119C0  0x53
-  call sub_11907                               ; 119C1  0xE8, 0x43, 0xFF
+  call pin_reset_conout_flag                               ; 119C1  0xE8, 0x43, 0xFF
   mov ax, 2                                    ; 119C4  0xB8, 0x02, 0x00
   push ax                                      ; 119C7  0x50
   mov ax, 7                                    ; 119C8  0xB8, 0x07, 0x00
@@ -592,17 +647,21 @@ sub_11998:                                     ; 11998
   mov al, [es:bx + 0xb]                        ; 119D0  0x26, 0x8A, 0x47, 0x0B
   mov ah, 0                                    ; 119D4  0xB4, 0x00
   push ax                                      ; 119D6  0x50
-  call sub_11800                               ; 119D7  0xE8, 0x26, 0xFE
+  call pin_pxios1                               ; 119D7  0xE8, 0x26, 0xFE
   les bx, [0x158]                              ; 119DA  0xC4, 0x1E, 0x58, 0x01
   push es                                      ; 119DE  0x06
   push bx                                      ; 119DF  0x53
-  call sub_1192E                               ; 119E0  0xE8, 0x4B, 0xFF
+  call pin_wake_vout                               ; 119E0  0xE8, 0x4B, 0xFF
 
 loc_119E3:                                     ; 119E3
   pop bp                                       ; 119E3  0x5D
   ret 2                                        ; 119E4  0xC2, 0x02, 0x00
 
-sub_119E7:                                     ; 119E7
+; -----------------------------------------------------------------------------
+; pin_switch — Switches active virtual console
+; Handles screen switch requests from XIOS.
+; -----------------------------------------------------------------------------
+pin_switch:                                     ; 119E7
   push bp                                      ; 119E7  0x55
   db 0x8B, 0xEC                                ; 119E8  mov bp, sp
   les ax, [0x158]                              ; 119EA  0xC4, 0x06, 0x58, 0x01
@@ -618,7 +677,11 @@ sub_119E7:                                     ; 119E7
   pop bp                                       ; 11A0A  0x5D
   ret 2                                        ; 11A0B  0xC2, 0x02, 0x00
 
-sub_11A0E:                                     ; 11A0E
+; -----------------------------------------------------------------------------
+; pin_controlC — Processes Ctrl-C keyboard interrupt
+; If process has pcm set, passes through to vinq; otherwise aborts process.
+; -----------------------------------------------------------------------------
+pin_controlC:                                     ; 11A0E
   push bp                                      ; 11A0E  0x55
   db 0x8B, 0xEC                                ; 11A0F  mov bp, sp
   mov al, [0x17e]                              ; 11A11  0xA0, 0x7E, 0x01
@@ -637,7 +700,7 @@ loc_11A1C:                                     ; 11A1C
   ret                                          ; 11A2D  0xC3
 
 loc_11A2E:                                     ; 11A2E
-  call sub_11840                               ; 11A2E  0xE8, 0x0F, 0xFE
+  call pin_get_cons_mode                               ; 11A2E  0xE8, 0x0F, 0xFE
   mov ax, [0x166]                              ; 11A31  0xA1, 0x66, 0x01
   and ax, 0xff                                 ; 11A34  0x25, 0xFF, 0x00
   cmp ax, 0xf                                  ; 11A37  0x83, 0xF8, 0x0F
@@ -659,14 +722,14 @@ loc_11A54:                                     ; 11A54
   mov al, [0x17e]                              ; 11A54  0xA0, 0x7E, 0x01
   mov [0x191], al                              ; 11A57  0xA2, 0x91, 0x01
   push word [0x17e]                            ; 11A5A  0xFF, 0x36, 0x7E, 0x01
-  call sub_119E7                               ; 11A5E  0xE8, 0x86, 0xFF
+  call pin_switch                               ; 11A5E  0xE8, 0x86, 0xFF
   les bx, [0x15c]                              ; 11A61  0xC4, 0x1E, 0x5C, 0x01
   push word [es:bx + 0x16]                     ; 11A65  0x26, 0xFF, 0x77, 0x16
-  call sub_118AF                               ; 11A69  0xE8, 0x43, 0xFE
+  call pin_write_change_mxq                               ; 11A69  0xE8, 0x43, 0xFE
   les bx, [0x15c]                              ; 11A6C  0xC4, 0x1E, 0x5C, 0x01
   push es                                      ; 11A70  0x06
   push bx                                      ; 11A71  0x53
-  call sub_11907                               ; 11A72  0xE8, 0x92, 0xFE
+  call pin_reset_conout_flag                               ; 11A72  0xE8, 0x92, 0xFE
   les bx, [0x15c]                              ; 11A75  0xC4, 0x1E, 0x5C, 0x01
   mov ax, [es:bx]                              ; 11A79  0x26, 0x8B, 0x07
   mov [0x144], ax                              ; 11A7C  0xA3, 0x44, 0x01
@@ -701,11 +764,11 @@ loc_11AA5:                                     ; 11AA5
 loc_11AD4:                                     ; 11AD4
   les bx, [0x158]                              ; 11AD4  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11AD8  0x26, 0xFF, 0x77, 0x16
-  call sub_118AF                               ; 11ADC  0xE8, 0xD0, 0xFD
+  call pin_write_change_mxq                               ; 11ADC  0xE8, 0xD0, 0xFD
   les bx, [0x158]                              ; 11ADF  0xC4, 0x1E, 0x58, 0x01
   push es                                      ; 11AE3  0x06
   push bx                                      ; 11AE4  0x53
-  call sub_11907                               ; 11AE5  0xE8, 0x1F, 0xFE
+  call pin_reset_conout_flag                               ; 11AE5  0xE8, 0x1F, 0xFE
   les bx, [0x158]                              ; 11AE8  0xC4, 0x1E, 0x58, 0x01
   mov al, [es:bx + 0xa]                        ; 11AEC  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 11AF0  0xB4, 0x00
@@ -721,14 +784,14 @@ loc_11AD4:                                     ; 11AD4
   mov cx, 0                                    ; 11B08  0xB9, 0x00, 0x00
   push cx                                      ; 11B0B  0x51
   push ax                                      ; 11B0C  0x50
-  call sub_11800                               ; 11B0D  0xE8, 0xF0, 0xFC
+  call pin_pxios1                               ; 11B0D  0xE8, 0xF0, 0xFC
   les ax, [0x15c]                              ; 11B10  0xC4, 0x06, 0x5C, 0x01
   push es                                      ; 11B14  0x06
   push ax                                      ; 11B15  0x50
-  call sub_1192E                               ; 11B16  0xE8, 0x15, 0xFE
+  call pin_wake_vout                               ; 11B16  0xE8, 0x15, 0xFE
   les bx, [0x15c]                              ; 11B19  0xC4, 0x1E, 0x5C, 0x01
   push word [es:bx + 0x16]                     ; 11B1D  0x26, 0xFF, 0x77, 0x16
-  call sub_118C6                               ; 11B21  0xE8, 0xA2, 0xFD
+  call pin_sleep                               ; 11B21  0xE8, 0xA2, 0xFD
   les bx, [0x15c]                              ; 11B24  0xC4, 0x1E, 0x5C, 0x01
   mov ax, [es:bx + 0xe]                        ; 11B28  0x26, 0x8B, 0x47, 0x0E
   and ax, strict word 1                        ; 11B2C  25 01 00
@@ -736,7 +799,7 @@ loc_11AD4:                                     ; 11AD4
   je loc_11B39                                 ; 11B32  0x74, 0x05
   push es                                      ; 11B34  0x06
   push bx                                      ; 11B35  0x53
-  call sub_11944                               ; 11B36  0xE8, 0x0B, 0xFE
+  call pin_write_vinq                               ; 11B36  0xE8, 0x0B, 0xFE
 
 loc_11B39:                                     ; 11B39
   les bx, [0x158]                              ; 11B39  0xC4, 0x1E, 0x58, 0x01
@@ -812,16 +875,16 @@ loc_11BC1:                                     ; 11BC1
   mov [es:bx + 0xe], ax                        ; 11BE2  0x26, 0x89, 0x47, 0x0E
   push es                                      ; 11BE6  0x06
   push bx                                      ; 11BE7  0x53
-  call sub_11944                               ; 11BE8  0xE8, 0x59, 0xFD
+  call pin_write_vinq                               ; 11BE8  0xE8, 0x59, 0xFD
 
 loc_11BEB:                                     ; 11BEB
   les ax, [0x158]                              ; 11BEB  0xC4, 0x06, 0x58, 0x01
   push es                                      ; 11BEF  0x06
   push ax                                      ; 11BF0  0x50
-  call sub_1192E                               ; 11BF1  0xE8, 0x3A, 0xFD
+  call pin_wake_vout                               ; 11BF1  0xE8, 0x3A, 0xFD
   les bx, [0x158]                              ; 11BF4  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11BF8  0x26, 0xFF, 0x77, 0x16
-  call sub_118C6                               ; 11BFC  0xE8, 0xC7, 0xFC
+  call pin_sleep                               ; 11BFC  0xE8, 0xC7, 0xFC
   les bx, [0x158]                              ; 11BFF  0xC4, 0x1E, 0x58, 0x01
   mov ax, [es:bx + 0xe]                        ; 11C03  0x26, 0x8B, 0x47, 0x0E
   and ax, 0x80                                 ; 11C07  0x25, 0x80, 0x00
@@ -842,11 +905,14 @@ loc_11C1B:                                     ; 11C1B
   mov al, [es:bx + 0xa]                        ; 11C27  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 11C2B  0xB4, 0x00
   push ax                                      ; 11C2D  0x50
-  call sub_11800                               ; 11C2E  0xE8, 0xCF, 0xFB
+  call pin_pxios1                               ; 11C2E  0xE8, 0xCF, 0xFB
   pop bp                                       ; 11C31  0x5D
   ret                                          ; 11C32  0xC3
 
-sub_11C33:                                     ; 11C33
+; -----------------------------------------------------------------------------
+; pin_controlO — Toggles Ctrl-O console output suppression
+; -----------------------------------------------------------------------------
+pin_controlO:                                     ; 11C33
   push bp                                      ; 11C33  0x55
   db 0x8B, 0xEC                                ; 11C34  mov bp, sp
   les bx, [0x144]                              ; 11C36  0xC4, 0x1E, 0x44, 0x01
@@ -855,14 +921,14 @@ sub_11C33:                                     ; 11C33
   cmp ax, 0                                    ; 11C41  0x83, 0xF8, 0x00
   je loc_11C4F                                 ; 11C44  0x74, 0x09
   push word [0x17e]                            ; 11C46  0xFF, 0x36, 0x7E, 0x01
-  call sub_11998                               ; 11C4A  0xE8, 0x4B, 0xFD
+  call pin_set_ccb                               ; 11C4A  0xE8, 0x4B, 0xFD
   pop bp                                       ; 11C4D  0x5D
   ret                                          ; 11C4E  0xC3
 
 loc_11C4F:                                     ; 11C4F
   les bx, [0x158]                              ; 11C4F  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11C53  0x26, 0xFF, 0x77, 0x16
-  call sub_118AF                               ; 11C57  0xE8, 0x55, 0xFC
+  call pin_write_change_mxq                               ; 11C57  0xE8, 0x55, 0xFC
   les bx, [0x158]                              ; 11C5A  0xC4, 0x1E, 0x58, 0x01
   mov ax, [es:bx + 0xe]                        ; 11C5E  0x26, 0x8B, 0x47, 0x0E
   and ax, 0xfe7f                               ; 11C62  0x25, 0x7F, 0xFE
@@ -893,15 +959,15 @@ loc_11C95:                                     ; 11C95
   les bx, [0x158]                              ; 11CA3  0xC4, 0x1E, 0x58, 0x01
   mov byte [es:bx + 7], 0                      ; 11CA7  0x26, 0xC6, 0x47, 0x07, 0x00
   push word [es:bx + 0x16]                     ; 11CAC  0x26, 0xFF, 0x77, 0x16
-  call sub_118C6                               ; 11CB0  0xE8, 0x13, 0xFC
+  call pin_sleep                               ; 11CB0  0xE8, 0x13, 0xFC
   les bx, [0x158]                              ; 11CB3  0xC4, 0x1E, 0x58, 0x01
   push es                                      ; 11CB7  0x06
   push bx                                      ; 11CB8  0x53
-  call sub_11944                               ; 11CB9  0xE8, 0x88, 0xFC
+  call pin_write_vinq                               ; 11CB9  0xE8, 0x88, 0xFC
   les bx, [0x158]                              ; 11CBC  0xC4, 0x1E, 0x58, 0x01
   lea ax, [bx + 0x24]                          ; 11CC0  0x8D, 0x47, 0x24
   push ax                                      ; 11CC3  0x50
-  call sub_118F2                               ; 11CC4  0xE8, 0x2B, 0xFC
+  call pin_set_conout_flag                               ; 11CC4  0xE8, 0x2B, 0xFC
   les bx, [0x158]                              ; 11CC7  0xC4, 0x1E, 0x58, 0x01
   mov ax, [es:bx]                              ; 11CCB  0x26, 0x8B, 0x07
   mov [0x178], ax                              ; 11CCE  0xA3, 0x78, 0x01
@@ -954,7 +1020,7 @@ loc_11D43:                                     ; 11D43
   les bx, [0x158]                              ; 11D43  0xC4, 0x1E, 0x58, 0x01
   push es                                      ; 11D47  0x06
   push bx                                      ; 11D48  0x53
-  call sub_11907                               ; 11D49  0xE8, 0xBB, 0xFB
+  call pin_reset_conout_flag                               ; 11D49  0xE8, 0xBB, 0xFB
   mov al, 0xff                                 ; 11D4C  0xB0, 0xFF
   push ax                                      ; 11D4E  0x50
   mov al, 0                                    ; 11D4F  0xB0, 0x00
@@ -962,7 +1028,7 @@ loc_11D43:                                     ; 11D43
   lea ax, [0x1a8]                              ; 11D52  0x8D, 0x06, 0xA8, 0x01
   push ds                                      ; 11D56  0x1E
   push ax                                      ; 11D57  0x50
-  call sub_1185E                               ; 11D58  0xE8, 0x03, 0xFB
+  call pin_read_change_mxq                               ; 11D58  0xE8, 0x03, 0xFB
   mov al, 1                                    ; 11D5B  0xB0, 0x01
   push ax                                      ; 11D5D  0x50
   mov al, 0                                    ; 11D5E  0xB0, 0x00
@@ -970,7 +1036,7 @@ loc_11D43:                                     ; 11D43
   lea ax, [0x194]                              ; 11D61  0x8D, 0x06, 0x94, 0x01
   push ds                                      ; 11D65  0x1E
   push ax                                      ; 11D66  0x50
-  call sub_1185E                               ; 11D67  0xE8, 0xF4, 0xFA
+  call pin_read_change_mxq                               ; 11D67  0xE8, 0xF4, 0xFA
   mov word [0x188], 1                          ; 11D6A  0xC7, 0x06, 0x88, 0x01, 0x01, 0x00
 
 loc_11D70:                                     ; 11D70
@@ -986,7 +1052,7 @@ loc_11D70:                                     ; 11D70
   lea ax, [0x1c1]                              ; 11D83  0x8D, 0x06, 0xC1, 0x01
   push ds                                      ; 11D87  0x1E
   push ax                                      ; 11D88  0x50
-  call sub_1185E                               ; 11D89  0xE8, 0xD2, 0xFA
+  call pin_read_change_mxq                               ; 11D89  0xE8, 0xD2, 0xFA
   mov al, 1                                    ; 11D8C  0xB0, 0x01
   push ax                                      ; 11D8E  0x50
   mov al, 0                                    ; 11D8F  0xB0, 0x00
@@ -995,7 +1061,7 @@ loc_11D70:                                     ; 11D70
   lea ax, [bx + 0x194]                         ; 11D96  0x8D, 0x87, 0x94, 0x01
   push ds                                      ; 11D9A  0x1E
   push ax                                      ; 11D9B  0x50
-  call sub_1185E                               ; 11D9C  0xE8, 0xBF, 0xFA
+  call pin_read_change_mxq                               ; 11D9C  0xE8, 0xBF, 0xFA
   add word [0x188], 1                          ; 11D9F  0x83, 0x06, 0x88, 0x01, 0x01
   jae loc_11D70                                ; 11DA4  0x73, 0xCA
 
@@ -1007,19 +1073,22 @@ loc_11DA6:                                     ; 11DA6
   lea ax, [0x1c2]                              ; 11DAC  0x8D, 0x06, 0xC2, 0x01
   push ds                                      ; 11DB0  0x1E
   push ax                                      ; 11DB1  0x50
-  call sub_1185E                               ; 11DB2  0xE8, 0xA9, 0xFA
+  call pin_read_change_mxq                               ; 11DB2  0xE8, 0xA9, 0xFA
   les bx, [0x158]                              ; 11DB5  0xC4, 0x1E, 0x58, 0x01
   mov byte [es:bx + 5], 0                      ; 11DB9  0x26, 0xC6, 0x47, 0x05, 0x00
   mov byte [es:bx + 6], 0                      ; 11DBE  0x26, 0xC6, 0x47, 0x06, 0x00
   push es                                      ; 11DC3  0x06
   push bx                                      ; 11DC4  0x53
-  call sub_1192E                               ; 11DC5  0xE8, 0x66, 0xFB
+  call pin_wake_vout                               ; 11DC5  0xE8, 0x66, 0xFB
 
 loc_11DC8:                                     ; 11DC8
   pop bp                                       ; 11DC8  0x5D
   ret                                          ; 11DC9  0xC3
 
-sub_11DCA:                                     ; 11DCA
+; -----------------------------------------------------------------------------
+; pin_turn_off_ctrlO — Turns off Ctrl-O output suppression on any keystroke
+; -----------------------------------------------------------------------------
+pin_turn_off_ctrlO:                                     ; 11DCA
   push bp                                      ; 11DCA  0x55
   db 0x8B, 0xEC                                ; 11DCB  mov bp, sp
   les bx, [0x144]                              ; 11DCD  0xC4, 0x1E, 0x44, 0x01
@@ -1028,22 +1097,22 @@ sub_11DCA:                                     ; 11DCA
   cmp ax, 0                                    ; 11DD8  0x83, 0xF8, 0x00
   je loc_11DE6                                 ; 11DDB  0x74, 0x09
   push word [0x17e]                            ; 11DDD  0xFF, 0x36, 0x7E, 0x01
-  call sub_11998                               ; 11DE1  0xE8, 0xB4, 0xFB
+  call pin_set_ccb                               ; 11DE1  0xE8, 0xB4, 0xFB
   pop bp                                       ; 11DE4  0x5D
   ret                                          ; 11DE5  0xC3
 
 loc_11DE6:                                     ; 11DE6
   les bx, [0x158]                              ; 11DE6  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11DEA  0x26, 0xFF, 0x77, 0x16
-  call sub_118AF                               ; 11DEE  0xE8, 0xBE, 0xFA
+  call pin_write_change_mxq                               ; 11DEE  0xE8, 0xBE, 0xFA
   les bx, [0x158]                              ; 11DF1  0xC4, 0x1E, 0x58, 0x01
   xor word [es:bx + 0xe], 0x100                ; 11DF5  0x26, 0x81, 0x77, 0x0E, 0x00, 0x01
   push word [es:bx + 0x16]                     ; 11DFB  0x26, 0xFF, 0x77, 0x16
-  call sub_118C6                               ; 11DFF  0xE8, 0xC4, 0xFA
+  call pin_sleep                               ; 11DFF  0xE8, 0xC4, 0xFA
   les bx, [0x158]                              ; 11E02  0xC4, 0x1E, 0x58, 0x01
   push es                                      ; 11E06  0x06
   push bx                                      ; 11E07  0x53
-  call sub_11944                               ; 11E08  0xE8, 0x39, 0xFB
+  call pin_write_vinq                               ; 11E08  0xE8, 0x39, 0xFB
   mov ax, 8                                    ; 11E0B  0xB8, 0x08, 0x00
   push ax                                      ; 11E0E  0x50
   mov ax, 0                                    ; 11E0F  0xB8, 0x00, 0x00
@@ -1052,24 +1121,28 @@ loc_11DE6:                                     ; 11DE6
   mov al, [es:bx + 0xa]                        ; 11E17  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 11E1B  0xB4, 0x00
   push ax                                      ; 11E1D  0x50
-  call sub_11800                               ; 11E1E  0xE8, 0xDF, 0xF9
+  call pin_pxios1                               ; 11E1E  0xE8, 0xDF, 0xF9
   pop bp                                       ; 11E21  0x5D
   ret                                          ; 11E22  0xC3
 
-sub_11E23:                                     ; 11E23
+; -----------------------------------------------------------------------------
+; pin_controlS — Handles Ctrl-S screen freeze / pause
+; Suspends console output until Ctrl-Q or other resumption.
+; -----------------------------------------------------------------------------
+pin_controlS:                                     ; 11E23
   push bp                                      ; 11E23  0x55
   db 0x8B, 0xEC                                ; 11E24  mov bp, sp
   les bx, [0x158]                              ; 11E26  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11E2A  0x26, 0xFF, 0x77, 0x16
-  call sub_118AF                               ; 11E2E  0xE8, 0x7E, 0xFA
+  call pin_write_change_mxq                               ; 11E2E  0xE8, 0x7E, 0xFA
   les bx, [0x158]                              ; 11E31  0xC4, 0x1E, 0x58, 0x01
   and word [es:bx + 0xe], 0xfeff               ; 11E35  0x26, 0x81, 0x67, 0x0E, 0xFF, 0xFE
   push word [es:bx + 0x16]                     ; 11E3B  0x26, 0xFF, 0x77, 0x16
-  call sub_118C6                               ; 11E3F  0xE8, 0x84, 0xFA
+  call pin_sleep                               ; 11E3F  0xE8, 0x84, 0xFA
   les bx, [0x158]                              ; 11E42  0xC4, 0x1E, 0x58, 0x01
   push es                                      ; 11E46  0x06
   push bx                                      ; 11E47  0x53
-  call sub_11944                               ; 11E48  0xE8, 0xF9, 0xFA
+  call pin_write_vinq                               ; 11E48  0xE8, 0xF9, 0xFA
   mov ax, 8                                    ; 11E4B  0xB8, 0x08, 0x00
   push ax                                      ; 11E4E  0x50
   mov ax, 0                                    ; 11E4F  0xB8, 0x00, 0x00
@@ -1078,11 +1151,15 @@ sub_11E23:                                     ; 11E23
   mov al, [es:bx + 0xa]                        ; 11E57  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 11E5B  0xB4, 0x00
   push ax                                      ; 11E5D  0x50
-  call sub_11800                               ; 11E5E  0xE8, 0x9F, 0xF9
+  call pin_pxios1                               ; 11E5E  0xE8, 0x9F, 0xF9
   pop bp                                       ; 11E61  0x5D
   ret                                          ; 11E62  0xC3
 
-sub_11E63:                                     ; 11E63
+; -----------------------------------------------------------------------------
+; pin_controlQ — Handles Ctrl-Q resume screen output
+; Clears csm and wakes VOUT and user processes.
+; -----------------------------------------------------------------------------
+pin_controlQ:                                     ; 11E63
   push bp                                      ; 11E63  0x55
   db 0x8B, 0xEC                                ; 11E64  mov bp, sp
   les bx, [0x144]                              ; 11E66  0xC4, 0x1E, 0x44, 0x01
@@ -1100,14 +1177,14 @@ loc_11E78:                                     ; 11E78
   cmp ax, 0                                    ; 11E83  0x83, 0xF8, 0x00
   je loc_11E91                                 ; 11E86  0x74, 0x09
   push word [0x17e]                            ; 11E88  0xFF, 0x36, 0x7E, 0x01
-  call sub_11998                               ; 11E8C  0xE8, 0x09, 0xFB
+  call pin_set_ccb                               ; 11E8C  0xE8, 0x09, 0xFB
   pop bp                                       ; 11E8F  0x5D
   ret                                          ; 11E90  0xC3
 
 loc_11E91:                                     ; 11E91
   les bx, [0x158]                              ; 11E91  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11E95  0x26, 0xFF, 0x77, 0x16
-  call sub_118AF                               ; 11E99  0xE8, 0x13, 0xFA
+  call pin_write_change_mxq                               ; 11E99  0xE8, 0x13, 0xFA
   les bx, [0x158]                              ; 11E9C  0xC4, 0x1E, 0x58, 0x01
   mov ax, [es:bx + 0xe]                        ; 11EA0  0x26, 0x8B, 0x47, 0x0E
   and ax, 0xfeff                               ; 11EA4  0x25, 0xFF, 0xFE
@@ -1120,32 +1197,35 @@ loc_11E91:                                     ; 11E91
   mov al, [es:bx + 0xa]                        ; 11EB6  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 11EBA  0xB4, 0x00
   push ax                                      ; 11EBC  0x50
-  call sub_11800                               ; 11EBD  0xE8, 0x40, 0xF9
+  call pin_pxios1                               ; 11EBD  0xE8, 0x40, 0xF9
   les bx, [0x158]                              ; 11EC0  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11EC4  0x26, 0xFF, 0x77, 0x16
-  call sub_118C6                               ; 11EC8  0xE8, 0xFB, 0xF9
+  call pin_sleep                               ; 11EC8  0xE8, 0xFB, 0xF9
   mov byte [0x193], 0xff                       ; 11ECB  0xC6, 0x06, 0x93, 0x01, 0xFF
   pop bp                                       ; 11ED0  0x5D
   ret                                          ; 11ED1  0xC3
 
-sub_11ED2:                                     ; 11ED2
+; -----------------------------------------------------------------------------
+; pin_controlP — Toggles Ctrl-P printer echoing / mimic mode
+; -----------------------------------------------------------------------------
+pin_controlP:                                     ; 11ED2
   push bp                                      ; 11ED2  0x55
   db 0x8B, 0xEC                                ; 11ED3  mov bp, sp
   les bx, [0x158]                              ; 11ED5  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11ED9  0x26, 0xFF, 0x77, 0x16
-  call sub_118AF                               ; 11EDD  0xE8, 0xCF, 0xF9
+  call pin_write_change_mxq                               ; 11EDD  0xE8, 0xCF, 0xF9
   les bx, [0x158]                              ; 11EE0  0xC4, 0x1E, 0x58, 0x01
   and word [es:bx + 0xe], 0xff7f               ; 11EE4  0x26, 0x81, 0x67, 0x0E, 0x7F, 0xFF
   push word [es:bx + 0x16]                     ; 11EEA  0x26, 0xFF, 0x77, 0x16
-  call sub_118C6                               ; 11EEE  0xE8, 0xD5, 0xF9
+  call pin_sleep                               ; 11EEE  0xE8, 0xD5, 0xF9
   les bx, [0x158]                              ; 11EF1  0xC4, 0x1E, 0x58, 0x01
   push es                                      ; 11EF5  0x06
   push bx                                      ; 11EF6  0x53
-  call sub_11944                               ; 11EF7  0xE8, 0x4A, 0xFA
+  call pin_write_vinq                               ; 11EF7  0xE8, 0x4A, 0xFA
   les bx, [0x158]                              ; 11EFA  0xC4, 0x1E, 0x58, 0x01
   lea ax, [bx + 0x24]                          ; 11EFE  0x8D, 0x47, 0x24
   push ax                                      ; 11F01  0x50
-  call sub_118F2                               ; 11F02  0xE8, 0xED, 0xF9
+  call pin_set_conout_flag                               ; 11F02  0xE8, 0xED, 0xF9
   mov ax, 8                                    ; 11F05  0xB8, 0x08, 0x00
   push ax                                      ; 11F08  0x50
   mov ax, 0                                    ; 11F09  0xB8, 0x00, 0x00
@@ -1154,12 +1234,15 @@ sub_11ED2:                                     ; 11ED2
   mov al, [es:bx + 0xa]                        ; 11F11  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 11F15  0xB4, 0x00
   push ax                                      ; 11F17  0x50
-  call sub_11800                               ; 11F18  0xE8, 0xE5, 0xF8
+  call pin_pxios1                               ; 11F18  0xE8, 0xE5, 0xF8
   mov byte [0x193], 0                          ; 11F1B  0xC6, 0x06, 0x93, 0x01, 0x00
   pop bp                                       ; 11F20  0x5D
   ret                                          ; 11F21  0xC3
 
-sub_11F22:                                     ; 11F22
+; -----------------------------------------------------------------------------
+; pin_raw — Checks if attached process has raw mode enabled (pf)
+; -----------------------------------------------------------------------------
+pin_raw:                                     ; 11F22
   push bp                                      ; 11F22  0x55
   db 0x8B, 0xEC                                ; 11F23  mov bp, sp
   les bx, [0x144]                              ; 11F25  0xC4, 0x1E, 0x44, 0x01
@@ -1168,15 +1251,15 @@ sub_11F22:                                     ; 11F22
   cmp ax, 0                                    ; 11F30  0x83, 0xF8, 0x00
   je loc_11F3E                                 ; 11F33  0x74, 0x09
   push word [0x17e]                            ; 11F35  0xFF, 0x36, 0x7E, 0x01
-  call sub_11998                               ; 11F39  0xE8, 0x5C, 0xFA
+  call pin_set_ccb                               ; 11F39  0xE8, 0x5C, 0xFA
   pop bp                                       ; 11F3C  0x5D
   ret                                          ; 11F3D  0xC3
 
 loc_11F3E:                                     ; 11F3E
-  call sub_11E23                               ; 11F3E  0xE8, 0xE2, 0xFE
+  call pin_controlS                               ; 11F3E  0xE8, 0xE2, 0xFE
   les bx, [0x158]                              ; 11F41  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11F45  0x26, 0xFF, 0x77, 0x16
-  call sub_118AF                               ; 11F49  0xE8, 0x63, 0xF9
+  call pin_write_change_mxq                               ; 11F49  0xE8, 0x63, 0xF9
   les bx, [0x158]                              ; 11F4C  0xC4, 0x1E, 0x58, 0x01
   mov ax, [es:bx + 0xe]                        ; 11F50  0x26, 0x8B, 0x47, 0x0E
   and ax, 0x200                                ; 11F54  0x25, 0x00, 0x02
@@ -1245,7 +1328,7 @@ loc_12008:                                     ; 12008
   les bx, [0x158]                              ; 12009  0xC4, 0x1E, 0x58, 0x01
   push es                                      ; 1200D  0x06
   push bx                                      ; 1200E  0x53
-  call sub_11907                               ; 1200F  0xE8, 0xF5, 0xF8
+  call pin_reset_conout_flag                               ; 1200F  0xE8, 0xF5, 0xF8
   mov al, 0xff                                 ; 12012  0xB0, 0xFF
   push ax                                      ; 12014  0x50
   mov al, 0                                    ; 12015  0xB0, 0x00
@@ -1253,13 +1336,13 @@ loc_12008:                                     ; 12008
   lea ax, [0x1c4]                              ; 12018  0x8D, 0x06, 0xC4, 0x01
   push ds                                      ; 1201C  0x1E
   push ax                                      ; 1201D  0x50
-  call sub_1185E                               ; 1201E  0xE8, 0x3D, 0xF8
+  call pin_read_change_mxq                               ; 1201E  0xE8, 0x3D, 0xF8
   les bx, [0x158]                              ; 12021  0xC4, 0x1E, 0x58, 0x01
   mov byte [es:bx + 6], 0                      ; 12025  0x26, 0xC6, 0x47, 0x06, 0x00
   mov byte [es:bx + 5], 0                      ; 1202A  0x26, 0xC6, 0x47, 0x05, 0x00
   push es                                      ; 1202F  0x06
   push bx                                      ; 12030  0x53
-  call sub_1192E                               ; 12031  0xE8, 0xFA, 0xF8
+  call pin_wake_vout                               ; 12031  0xE8, 0xFA, 0xF8
   jmp short loc_12080                          ; 12034  0xEB, 0x4A
 
 loc_12036:                                     ; 12036
@@ -1282,7 +1365,7 @@ loc_12036:                                     ; 12036
   mov es, [0x162]                              ; 12074  0x8E, 0x06, 0x62, 0x01
   lea ax, [si + 2]                             ; 12078  0x8D, 0x44, 0x02
   push ax                                      ; 1207B  0x50
-  call sub_118F2                               ; 1207C  0xE8, 0x73, 0xF8
+  call pin_set_conout_flag                               ; 1207C  0xE8, 0x73, 0xF8
 
 loc_1207F:                                     ; 1207F
   sti                                          ; 1207F  0xFB
@@ -1290,7 +1373,7 @@ loc_1207F:                                     ; 1207F
 loc_12080:                                     ; 12080
   les bx, [0x158]                              ; 12080  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 12084  0x26, 0xFF, 0x77, 0x16
-  call sub_118C6                               ; 12088  0xE8, 0x3B, 0xF8
+  call pin_sleep                               ; 12088  0xE8, 0x3B, 0xF8
   mov ax, 8                                    ; 1208B  0xB8, 0x08, 0x00
   push ax                                      ; 1208E  0x50
   mov ax, 0                                    ; 1208F  0xB8, 0x00, 0x00
@@ -1299,11 +1382,15 @@ loc_12080:                                     ; 12080
   mov al, [es:bx + 0xa]                        ; 12097  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 1209B  0xB4, 0x00
   push ax                                      ; 1209D  0x50
-  call sub_11800                               ; 1209E  0xE8, 0x5F, 0xF7
+  call pin_pxios1                               ; 1209E  0xE8, 0x5F, 0xF7
   pop bp                                       ; 120A1  0x5D
   ret                                          ; 120A2  0xC3
 
-sub_120A3:                                     ; 120A3
+; -----------------------------------------------------------------------------
+; pin_plmstart — Main initialization and event loop for PIN RSP
+; Loops continuously reading keystrokes via pin_conin and routing them.
+; -----------------------------------------------------------------------------
+pin_plmstart:                                     ; 120A3
   push bp                                      ; 120A3  0x55
   db 0x8B, 0xEC                                ; 120A4  mov bp, sp
   les bx, [0x158]                              ; 120A6  0xC4, 0x1E, 0x58, 0x01
@@ -1321,7 +1408,7 @@ sub_120A3:                                     ; 120A3
   ret                                          ; 120C8  0xC3
 
 loc_120C9:                                     ; 120C9
-  call sub_11ED2                               ; 120C9  0xE8, 0x06, 0xFE
+  call pin_controlP                               ; 120C9  0xE8, 0x06, 0xFE
 
 loc_120CC:                                     ; 120CC
   mov al, 0xff                                 ; 120CC  0xB0, 0xFF
@@ -1392,10 +1479,10 @@ loc_12132:                                     ; 12132
   mov [0x164], ax                              ; 12178  0xA3, 0x64, 0x01
 
 loc_1217B:                                     ; 1217B
-  call sub_11822                               ; 1217B  0xE8, 0xA4, 0xF6
+  call pin_conin                               ; 1217B  0xE8, 0xA4, 0xF6
   cmp byte [0x17f], 0xff                       ; 1217E  0x80, 0x3E, 0x7F, 0x01, 0xFF
   jne loc_1218A                                ; 12183  0x75, 0x05
-  call sub_11A0E                               ; 12185  0xE8, 0x86, 0xF8
+  call pin_controlC                               ; 12185  0xE8, 0x86, 0xF8
   jmp short loc_1217B                          ; 12188  0xEB, 0xF1
 
 loc_1218A:                                     ; 1218A
@@ -1403,13 +1490,13 @@ loc_1218A:                                     ; 1218A
   and al, 1                                    ; 1218D  0x24, 0x01
   cmp al, 0                                    ; 1218F  0x3C, 0x00
   jne loc_1219A                                ; 12191  0x75, 0x07
-  call sub_120A3                               ; 12193  0xE8, 0x0D, 0xFF
+  call pin_plmstart                               ; 12193  0xE8, 0x0D, 0xFF
   rcr al, 1                                    ; 12196  0xD0, 0xD8
   jae loc_121A3                                ; 12198  0x73, 0x09
 
 loc_1219A:                                     ; 1219A
   push word [0x17e]                            ; 1219A  0xFF, 0x36, 0x7E, 0x01
-  call sub_11998                               ; 1219E  0xE8, 0xF7, 0xF7
+  call pin_set_ccb                               ; 1219E  0xE8, 0xF7, 0xF7
   jmp short loc_1217B                          ; 121A1  0xEB, 0xD8
 
 loc_121A3:                                     ; 121A3
@@ -1420,7 +1507,7 @@ loc_121A3:                                     ; 121A3
   je loc_121F5                                 ; 121AF  0x74, 0x44
   cmp byte [0x17e], 0x11                       ; 121B1  0x80, 0x3E, 0x7E, 0x01, 0x11
   jne loc_121BD                                ; 121B6  0x75, 0x05
-  call sub_11ED2                               ; 121B8  0xE8, 0x17, 0xFD
+  call pin_controlP                               ; 121B8  0xE8, 0x17, 0xFD
   jmp short loc_1217B                          ; 121BB  0xEB, 0xBE
 
 loc_121BD:                                     ; 121BD
@@ -1429,7 +1516,7 @@ loc_121BD:                                     ; 121BD
   les ax, [0x158]                              ; 121C4  0xC4, 0x06, 0x58, 0x01
   push es                                      ; 121C8  0x06
   push ax                                      ; 121C9  0x50
-  call sub_11907                               ; 121CA  0xE8, 0x3A, 0xF7
+  call pin_reset_conout_flag                               ; 121CA  0xE8, 0x3A, 0xF7
   mov ax, 2                                    ; 121CD  0xB8, 0x02, 0x00
   push ax                                      ; 121D0  0x50
   mov ax, 7                                    ; 121D1  0xB8, 0x07, 0x00
@@ -1438,11 +1525,11 @@ loc_121BD:                                     ; 121BD
   mov al, [es:bx + 0xb]                        ; 121D9  0x26, 0x8A, 0x47, 0x0B
   mov ah, 0                                    ; 121DD  0xB4, 0x00
   push ax                                      ; 121DF  0x50
-  call sub_11800                               ; 121E0  0xE8, 0x1D, 0xF6
+  call pin_pxios1                               ; 121E0  0xE8, 0x1D, 0xF6
   les ax, [0x158]                              ; 121E3  0xC4, 0x06, 0x58, 0x01
   push es                                      ; 121E7  0x06
   push ax                                      ; 121E8  0x50
-  call sub_1192E                               ; 121E9  0xE8, 0x42, 0xF7
+  call pin_wake_vout                               ; 121E9  0xE8, 0x42, 0xF7
   jmp short loc_1217B                          ; 121EC  0xEB, 0x8D
 
 loc_121EE:                                     ; 121EE
@@ -1450,7 +1537,7 @@ loc_121EE:                                     ; 121EE
   jne loc_121FA                                ; 121F3  0x75, 0x05
 
 loc_121F5:                                     ; 121F5
-  call sub_11C33                               ; 121F5  0xE8, 0x3B, 0xFA
+  call pin_controlO                               ; 121F5  0xE8, 0x3B, 0xFA
 
 loc_121F8:                                     ; 121F8
   jmp short loc_1217B                          ; 121F8  0xEB, 0x81
@@ -1458,13 +1545,13 @@ loc_121F8:                                     ; 121F8
 loc_121FA:                                     ; 121FA
   cmp byte [0x17e], 0x13                       ; 121FA  0x80, 0x3E, 0x7E, 0x01, 0x13
   jne loc_12206                                ; 121FF  0x75, 0x05
-  call sub_11E63                               ; 12201  0xE8, 0x5F, 0xFC
+  call pin_controlQ                               ; 12201  0xE8, 0x5F, 0xFC
   jmp short loc_121F8                          ; 12204  0xEB, 0xF2
 
 loc_12206:                                     ; 12206
   cmp byte [0x17e], 0xf                        ; 12206  0x80, 0x3E, 0x7E, 0x01, 0x0F
   jne loc_12212                                ; 1220B  0x75, 0x05
-  call sub_11DCA                               ; 1220D  0xE8, 0xBA, 0xFB
+  call pin_turn_off_ctrlO                               ; 1220D  0xE8, 0xBA, 0xFB
   jmp short loc_121F8                          ; 12210  0xEB, 0xE6
 
 loc_12212:                                     ; 12212
@@ -1472,7 +1559,7 @@ loc_12212:                                     ; 12212
   jne loc_1221E                                ; 12217  0x75, 0x05
 
 loc_12219:                                     ; 12219
-  call sub_11F22                               ; 12219  0xE8, 0x06, 0xFD
+  call pin_raw                               ; 12219  0xE8, 0x06, 0xFD
   jmp short loc_121F8                          ; 1221C  0xEB, 0xDA
 
 loc_1221E:                                     ; 1221E
@@ -1481,7 +1568,7 @@ loc_1221E:                                     ; 1221E
   and ax, 0x100                                ; 12226  0x25, 0x00, 0x01
   cmp ax, 0                                    ; 12229  0x83, 0xF8, 0x00
   je loc_12231                                 ; 1222C  0x74, 0x03
-  call sub_11E23                               ; 1222E  0xE8, 0xF2, 0xFB
+  call pin_controlS                               ; 1222E  0xE8, 0xF2, 0xFB
 
 loc_12231:                                     ; 12231
   jmp near loc_1219A                           ; 12231  0xE9, 0x66, 0xFF
