@@ -141,3 +141,51 @@ PORT_PCB_DMA1_DSTLO     equ 0xFFD4      ; DMA 1 Destination Address (low)
 PORT_PCB_DMA1_DSTHI     equ 0xFFD6      ; DMA 1 Destination Address (high)
 PORT_PCB_DMA1_CNT       equ 0xFFD8      ; DMA 1 Transfer Count register
 PORT_PCB_DMA1_CON       equ 0xFFDA      ; DMA 1 Control word register
+
+; -----------------------------------------------------------------------------
+; ISO-646-DK (Dansk 7-bit tegnsæt til RC759 Piccoline)
+; -----------------------------------------------------------------------------
+; Standard tegn-ækvivalenter:
+;   æ -> { (0x7B)
+;   ø -> | (0x7C)
+;   å -> } (0x7D)
+;   Æ -> [ (0x5B)
+;   Ø -> \ (0x5C)
+;   Å -> ] (0x5D)
+;
+; db_dk konverterer automatisk en UTF-8 streng til 7-bit ISO-646-DK koder:
+; Eksempel:
+;   db_dk 'Blåbærgrød på Rømø'
+; -----------------------------------------------------------------------------
+%macro db_dk 1
+  %strlen %%len %1
+  %assign %%i 1
+  %rep %%len
+    %if %%i <= %%len
+      %substr %%c %1 %%i
+      %if %%c == 0xC3
+        %assign %%i %%i + 1
+        %substr %%c2 %1 %%i
+        %if %%c2 == 0xA6
+          db 0x7B       ; æ -> {
+        %elif %%c2 == 0xB8
+          db 0x7C       ; ø -> |
+        %elif %%c2 == 0xA5
+          db 0x7D       ; å -> }
+        %elif %%c2 == 0x86
+          db 0x5B       ; Æ -> [
+        %elif %%c2 == 0x98
+          db 0x5C       ; Ø -> \
+        %elif %%c2 == 0x85
+          db 0x5D       ; Å -> ]
+        %else
+          db 0xC3, %%c2 ; Ukendt C3-sekvens bevares uændret
+        %endif
+      %else
+        db %%c          ; Standard ASCII
+      %endif
+      %assign %%i %%i + 1
+    %endif
+  %endrep
+%endmacro
+
