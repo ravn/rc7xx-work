@@ -56,3 +56,34 @@ Regnecentralen vedligeholdt ét samlet XIOS-binær (`XIOS1.CON` / `XIOS4.CON`), 
 * **Runtime kontrol via Escape-sekvenser**:
   - `ESC <244>` (`0x1B, 0xF4`): Aktiverer Soft Scroll.
   - `ESC <245>` (`0x1B, 0xF5`): Aktiverer Line Scroll.
+
+---
+
+## 4. Tekstattributter, Tegnbanker og Statuslinje (VMENU.CMD)
+
+### Displayord og attributter
+På Piccoline repræsenteres hver tegnposition i VRAM af et 16-bit displayord:
+* **Nedre byte (bit 0–7)**: ASCII / tegnkode (0–255).
+* **Øvre byte (bit 8–15)**: Attributter og tegnbank:
+  * **Bit 8 (`0x0100`)**: Tegnbank 1 (tegn 256–511) og/eller understregning (underline).
+  * **Bit 8, 10, 14**: Høj intensitet (fremhævet ravgul tekst / highlight).
+  * **Bit 9, 11, etc.**: Formatering, bl.a. inverteret visning (reverse video) via paletteregistre.
+
+### VMENU.CMD statuslinje og MAME-faldgrube
+I Concurrent CP/M-86 på RC759 skriver menusystemet `VMENU.CMD` direkte til displaybufferen for status-/menulinjen i bunden af skærmen:
+* **Uvalgte menupunkter**: Skrives med displayord `0x0800 | char` (normal intensitet, bank 0).
+* **Aktivt/valgt menupunkt**: Skrives med displayord `0x0900 | char` (bit 8 sat $\rightarrow$ bank 1 / fremhævet).
+
+**Opdagelse og rettelse i MAME (`src/mame/regnecentralen/rc75x.cpp`)**:
+1. Piccoline boot-ROM indlæser kun tegn 0–255 i VRAM ved boot; tegnbank 1 (256–511) efterlades uinitialiseret som lutter nuller (`0x00`).
+2. MAMEs tidligere gengivelse af tekstlinjer havde et guard-check:
+   ```cpp
+   if ((gfx & 0xff) == 0 && !cursor_here) continue;
+   ```
+   Da bank 1 var tom, blev `gfx == 0`, hvilket fik MAME til at springe tegnet over. Det aktive valg i `VMENU.CMD` blev derfor usynligt!
+3. Samtidig hardkodede MAME al tekst til standard ravgul og ignorerede alle attributter.
+4. **Løsning**:
+   - Falder tilbage til tegnbank 0 (`ch & 0xff`), hvis det opslåede tegn i bank 1 er tomt (`(gfx & 0xff) == 0`).
+   - Tegner understregning på scanline 9 (`lc == 9`), når bit 8 er sat.
+   - Forøger lysstyrken (lysende ravgul `rgb_t(0xff, 0xe0, 0x60)`) ved bit 8, 10 eller 14.
+   - Håndterer invers video via `m_palette` forgrund/baggrund.
