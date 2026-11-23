@@ -795,6 +795,14 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
      - `i_tick`: MM58167A RTC 1-sekunds system-tick ISR (IR3 / 0x8C, signalerer Flag 2)
    - Gennemført i både `XIOS1.CON` (`xios_code.asm`), `XIOS4.CON` (`xios4_code.asm`) og den monolitiske kerne `ccpm.sys` (`mod4_xios.asm`).
 
+5. **Fælles Master XIOS (`xios.asm`)**:
+   - Etableret en fælles parameteriseret masterkilde [xios.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios.asm) styret af `%define NUM_VIR_CONS`:
+     - `NUM_VIR_CONS = 1`: Bygger `XIOS1.CON` (25.728 bytes, 0x0633 paragraffer, checksum-byte 0xC8, 1 virtuel konsol).
+     - `NUM_VIR_CONS = 4`: Bygger `XIOS4.CON` (29.440 bytes, 0x0719 paragraffer, checksum-byte 0xE5, 4 virtuelle konsoller).
+   - [xios1.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios1.asm) og [xios4.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios4.asm) konverteret til tynde konfigurations-wrappers, der inkluderer `xios.asm`.
+   - Begge varianter kompileret og verificeret 100% byte-identiske mod originalerne.
+
+
 
 
 
