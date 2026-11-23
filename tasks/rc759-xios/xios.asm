@@ -69,14 +69,18 @@ xios_code_end:
 
 ; -----------------------------------------------------------------------------
 ; Fixup-tabel og padding (align til 128-byte disk records)
+; 4-byte poster genereres dynamisk fra adresserne på de relokerede far pointers.
 ; -----------------------------------------------------------------------------
+%macro FIXUP_CODE 1
+  db 0x11                                      ; Location group: Code, Target group: Code
+  dw ((%1) - xios_code_base) / 16             ; Paragraf-offset i kodesegmentet
+  db ((%1) - xios_code_base) % 16             ; Byte-offset i paragraffen
+%endmacro
+
 xios_tail:
   align 128, db 0
 xios_fixups:
-%if NUM_VIR_CONS == 1
-  db 0x11, 0x32, 0x04, 0x07, 0x11, 0x32, 0x04, 0x0b
-%else
-  db 0x11, 0x6b, 0x04, 0x04, 0x11, 0x6b, 0x04, 0x08
-%endif
+  FIXUP_CODE xios_fixup_target_1
+  FIXUP_CODE xios_fixup_target_2
   align 128, db 0
 

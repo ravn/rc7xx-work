@@ -7068,11 +7068,14 @@ xios_int28_fn_34_reserved:                   ; 0AEA6
   mov [cs:0x432b], cs                          ; 0AEBD  0x2E, 0x8C, 0x0E, 0x2B, 0x43
   popf                                         ; 0AEC2  0x9D
   ret                                          ; 0AEC3  0xC3
+dummy_far_hook_ret:
   retf                                         ; 0AEC4  0xCB
-  and al, 0x43                                 ; 0AEC5  0x24, 0x43
-  db 0x00, 0x00                                ; 0AEC7
-  and al, 0x43                                 ; 0AEC9  0x24, 0x43
-  db 0x00, 0x00                                ; 0AECB
+  dw dummy_far_hook_ret                        ; 0AEC5  0x24, 0x43
+xios_fixup_target_1:
+  dw 0x0000                                    ; 0AEC7  Segment (fixed up at load time)
+  dw dummy_far_hook_ret                        ; 0AEC9  0x24, 0x43
+xios_fixup_target_2:
+  dw 0x0000                                    ; 0AECB  Segment (fixed up at load time)
 i_tick:
   call xios_switch_to_priv_stack               ; 0AECD  0xE8, 0x4D, 0x00
   inc word [cs:0x4426]                         ; 0AED0  0x2E, 0xFF, 0x06, 0x26, 0x44
@@ -17112,12 +17115,15 @@ xios_function_table:
   db 0x2E, 0xA3, 0xB6, 0x46    ; 00003AA6  mov [cs:0x46b6],ax
   db 0x2E, 0x8C, 0x0E, 0xB8, 0x46 ; 00003AAA  mov [cs:0x46b8],cs
   db 0x9D                      ; 00003AAF  popf
-  db 0xC3                      ; 00003AB0  ret
-  db 0xCB                      ; 00003AB1  retf
-  db 0xB1, 0x46                ; 00003AB2  mov cl,0x46
-  db 0x00, 0x00                ; 00003AB4  add [bx+si],al
-  db 0xB1, 0x46                ; 00003AB6  mov cl,0x46
-  db 0x00, 0x00                ; 00003AB8  add [bx+si],al
+  ret                                          ; 00003AB0  ret
+dummy_far_hook_ret_x4:
+  retf                                         ; 00003AB1  retf
+  dw dummy_far_hook_ret_x4                     ; 00003AB2  0x46B1
+xios_fixup_target_1:
+  dw 0x0000                                    ; 00003AB4  Segment (fixed up at load time)
+  dw dummy_far_hook_ret_x4                     ; 00003AB6  0x46B1
+xios_fixup_target_2:
+  dw 0x0000                                    ; 00003AB8  Segment (fixed up at load time)
   db 0xE8, 0x4D, 0x00          ; 00003ABA  call 0x3b0a
   db 0x2E, 0xFF, 0x06, 0xB3, 0x47 ; 00003ABD  inc word [cs:0x47b3]
   db 0x75, 0x05                ; 00003AC2  jnz 0x3ac9

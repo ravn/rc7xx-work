@@ -826,7 +826,9 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
    - Gjort CMD-headerens paragrafstørrelser dynamisk beregnede: `(xios_code_end - xios_code_base) / 16` evaluerer automatisk til `0x0633` (XIOS1) og `0x0719` (XIOS4).
    - Gjort `ch_fixrec` dynamisk beregnet: `1 + (xios_fixups - xios_code_base) / 128` evaluerer automatisk til record `0xC8` (XIOS1) og `0xE5` (XIOS4).
    - Omlagt tail-padding til `align 128, db 0`.
+   - Gjort selve 4-byte fixup-posterne i `xios_fixups` fuldt dynamiske via `FIXUP_CODE` makro og labels (`xios_fixup_target_1`, `xios_fixup_target_2`) på de relokerede far pointers, så fixup-tabellen automatisk flytter sig ved kodeændringer.
    - 100% byte-identisk verificeret for `XIOS1.CON`, `XIOS4.CON` og `ccpm.sys`.
+
 
 
 
