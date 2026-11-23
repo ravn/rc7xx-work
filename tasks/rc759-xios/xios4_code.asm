@@ -37,35 +37,40 @@
   db 0x2E, 0xFF, 0x97, 0x47, 0x0C ; 0000003F  call [cs:bx+0xc47]
   db 0x8B, 0xD8                ; 00000044  mov bx,ax
   db 0xCB                      ; 00000046  retf
-  db 0x16                      ; 00000047  push ss
-  db 0x11, 0x19                ; 00000048  adc [bx+di],bx
-  db 0x11, 0x73, 0x14          ; 0000004A  adc [bp+di+0x14],si
-  db 0x1D, 0x45, 0x4C          ; 0000004D  sbb ax,0x4c45
-  db 0x44                      ; 00000050  inc sp
-  db 0xDA, 0x3F                ; 00000051  fidivr dword [bx]
-  db 0xDD, 0x3F                ; 00000053  fnstsw [bx]
-  db 0x32, 0x20                ; 00000055  xor ah,[bx+si]
-  db 0x0B, 0x21                ; 00000057  or sp,[bx+di]
-  db 0x08, 0x31                ; 00000059  or [bx+di],dh
-  db 0x66, 0x31, 0x26, 0x32, 0xE8 ; 0000005B  xor [0xe832],esp
-  db 0x32, 0x0E, 0x44, 0x18    ; 00000060  xor cl,[0x1844]
-  db 0x0D, 0x18, 0x0D          ; 00000064  or ax,0xd18
-  db 0x30, 0x26, 0x51, 0x14    ; 00000067  xor [0x1451],ah
-  db 0x79, 0x22                ; 0000006B  jns 0x8f
-  db 0x45                      ; 0000006D  inc bp
-  db 0x26, 0x76, 0x26          ; 0000006E  es jna 0x97
-  db 0xA6                      ; 00000071  cmpsb
-  db 0x26, 0xC0, 0x26, 0xC7, 0x26, 0xE9 ; 00000072  shl byte [es:0x26c7],byte 0xe9
-  db 0x26, 0x18, 0x0D          ; 00000078  sbb [es:di],cl
-  db 0x18, 0x0D                ; 0000007B  sbb [di],cl
-  db 0x18, 0x0D                ; 0000007D  sbb [di],cl
-  db 0x18, 0x0D                ; 0000007F  sbb [di],cl
-  db 0x18, 0x0D                ; 00000081  sbb [di],cl
-  db 0xEA, 0x26, 0x18, 0x0D, 0x18 ; 00000083  jmp 0x180d:0x1826
-  db 0x0D, 0x18, 0x0D          ; 00000088  or ax,0xd18
-  db 0x18, 0x0D                ; 0000008B  sbb [di],cl
-  db 0x18, 0x0D                ; 0000008D  sbb [di],cl
-  db 0x18, 0x0D                ; 0000008F  sbb [di],cl
+; =============================================================================
+; Digital Research CCP/M-86 XIOS Function Dispatch Table (CS:0C47h, 37 entries)
+; Reference: Digital Research CCP/M-86 XIOS-86 (xios.a86)
+; Indgang: AL = funktionsnummer (0..13 standard + udvidede funktioner)
+; =============================================================================
+xios_function_table:
+  dw 0x1116                                    ; Func  0: io_const (Console input status)
+  dw 0x1119                                    ; Func  1: io_conin (Console input character)
+  dw 0x1473                                    ; Func  2: io_conout (Console output character)
+  dw 0x451D                                    ; Func  3: io_listst (List/printer status)
+  dw 0x444C                                    ; Func  4: io_list (List/printer output)
+  dw 0x3FDA                                    ; Func  5: io_auxin (AUX/serial input)
+  dw 0x3FDD                                    ; Func  6: io_auxout (AUX/serial output)
+  dw 0x2032                                    ; Func  7: io_switch (Switch virtual console)
+  dw 0x210B                                    ; Func  8: io_statline (Update console status line)
+  dw 0x3108                                    ; Func  9: io_seldsk (Select disk drive)
+  dw 0x3166                                    ; Func 10: io_read (Read logical disk sector)
+  dw 0x3226                                    ; Func 11: io_write (Write logical disk sector)
+  dw 0x32E8                                    ; Func 12: io_flushbuf (Flush disk buffers)
+  dw 0x440E                                    ; Func 13: io_poll (Poll hardware device)
+  dw 0x0D18                                    ; Func 14: Reserveret stub
+  dw 0x0D18                                    ; Func 15: Reserveret stub
+  dw 0x2630                                    ; Func 16: Udvidet funktion (virtual console)
+  dw 0x1451                                    ; Func 17: Udvidet funktion
+  dw 0x2279                                    ; Func 18: Udvidet funktion
+  dw 0x2645                                    ; Func 19: io_auxist (AUX input status)
+  dw 0x2676                                    ; Func 20: Udvidet funktion
+  dw 0x26A6                                    ; Func 21: Udvidet funktion
+  dw 0x26C0                                    ; Func 22: Udvidet funktion
+  dw 0x26C7                                    ; Func 23: Udvidet funktion
+  dw 0x26E9                                    ; Func 24: Udvidet funktion
+  times 5 dw 0x0D18                            ; Func 25..29: Reserveret stubs
+  dw 0x26EA                                    ; Func 30: io_setblank (Screen blanking)
+  times 6 dw 0x0D18                            ; Func 31..36: Reserveret stubs
   db 0x1E                      ; 00000091  push ds
   db 0x2E, 0x8E, 0x1E, 0x06, 0x0C ; 00000092  mov ds,[cs:0xc06]
   db 0x2E, 0x8B, 0x1E, 0x68, 0x00 ; 00000097  mov bx,[cs:0x68]

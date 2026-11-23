@@ -2949,7 +2949,7 @@ loc_04F87:                                     ; 04F87
   call sub_042C1                               ; 04F87  0xE8, 0x37, 0xF3
   mov cl, 0                                    ; 04F8A  0xB1, 0x00
 
-io_conout:                                     ; 04F8C
+loc_04F8C:                                     ; 04F8C
   mov dx, 0x20                                 ; 04F8C  0xBA, 0x20, 0x00
   call sub_04DAF                               ; 04F8F  0xE8, 0x1D, 0xFE
   pop bx                                       ; 04F92  0x5B
@@ -8513,41 +8513,31 @@ loc_077DA:                                     ; 077DA
   call word [cs:bx + 0xc47]                    ; 077DF  0x2E, 0xFF, 0x97, 0x47, 0x0C
   db 0x8B, 0xD8                                ; 077E4  mov bx, ax (d=1)
   retf                                         ; 077E6  0xCB
-  push ss                                      ; 077E7  0x16
-  adc [bx + di], bx                            ; 077E8  0x11, 0x19
-  adc [si], bp                                 ; 077EA  0x11, 0x2C
-  adc al, 0x90                                 ; 077EC  0x14, 0x90
-  inc cx                                       ; 077EE  0x41
-  mov di, 0x4d40                               ; 077EF  0xBF, 0x40, 0x4D
-  cmp al, 0x50                                 ; 077F2  0x3C, 0x50
-  cmp al, 0xe8                                 ; 077F4  0x3C, 0xE8
-  pop ds                                       ; 077F6  0x1F
-  shl word [bx + si], 0x7b                     ; 077F7  0xC1, 0x20, 0x7B
-  sub ax, 0x2dd9                               ; 077FA  0x2D, 0xD9, 0x2D
-  db 0x99                                      ; 077FD  cdq
-  db 0x2E, 0x5B                                ; 077FE  pop bx
-  db 0x2F                                      ; 07800  das
-  add word [bx + si + 0x18], 0x180d            ; 07801  0x81, 0x40, 0x18, 0x0D, 0x18
-  or ax, 0xd18                                 ; 07806  0x0D, 0x18, 0x0D
-  sbb [di], cl                                 ; 07809  0x18, 0x0D
-  sbb [di], cl                                 ; 0780B  0x18, 0x0D
-  sbb sp, [0xd18]                              ; 0780D  0x1B, 0x26, 0x18, 0x0D
-  sbb [di], cl                                 ; 07811  0x18, 0x0D
-  sbb [di], cl                                 ; 07813  0x18, 0x0D
-  sbb [di], cl                                 ; 07815  0x18, 0x0D
-  sbb [di], cl                                 ; 07817  0x18, 0x0D
-  sbb [di], cl                                 ; 07819  0x18, 0x0D
-  sbb [di], cl                                 ; 0781B  0x18, 0x0D
-  sbb [di], cl                                 ; 0781D  0x18, 0x0D
-  sbb [di], cl                                 ; 0781F  0x18, 0x0D
-  sbb [di], cl                                 ; 07821  0x18, 0x0D
-  dec si                                       ; 07823  0x4E
-  sbb [es:di], cl                              ; 07824  0x26, 0x18, 0x0D
-  sbb [di], cl                                 ; 07827  0x18, 0x0D
-  sbb [di], cl                                 ; 07829  0x18, 0x0D
-  sbb [di], cl                                 ; 0782B  0x18, 0x0D
-  sbb [di], cl                                 ; 0782D  0x18, 0x0D
-  sbb [di], cl                                 ; 0782F  0x18, 0x0D
+; =============================================================================
+; Digital Research CCP/M-86 XIOS Function Dispatch Table (CS:0C47h, 37 entries)
+; Reference: Digital Research CCP/M-86 XIOS-86 (xios.a86)
+; Indgang: AL = funktionsnummer (0..13 standard + udvidede funktioner)
+; =============================================================================
+xios_function_table:
+  dw io_const - xios_code_base                 ; Func  0: Console input status (CS:1116h)
+  dw io_conin - xios_code_base                 ; Func  1: Console input character (CS:1119h)
+  dw io_conout - xios_code_base                ; Func  2: Console output character (CS:142Ch)
+  dw io_listst - xios_code_base                ; Func  3: List/printer status (CS:4190h)
+  dw io_list - xios_code_base                  ; Func  4: List/printer output (CS:40BFh)
+  dw io_auxin - xios_code_base                 ; Func  5: AUX/serial input (CS:3C4Dh)
+  dw io_auxout - xios_code_base                ; Func  6: AUX/serial output (CS:3C50h)
+  dw io_switch - xios_code_base                ; Func  7: Switch virtual console (CS:1FE8h)
+  dw io_statline - xios_code_base              ; Func  8: Update console status line (CS:20C1h)
+  dw io_seldsk - xios_code_base                ; Func  9: Select disk drive (CS:2D7Bh)
+  dw io_read - xios_code_base                  ; Func 10: Read logical disk sector (CS:2DD9h)
+  dw io_write - xios_code_base                 ; Func 11: Write logical disk sector (CS:2E99h)
+  dw io_flushbuf - xios_code_base              ; Func 12: Flush disk buffers (CS:2F5Bh)
+  dw io_poll - xios_code_base                  ; Func 13: Poll hardware device (CS:4081h)
+  times 5 dw xios_int28_stub_ret - xios_code_base ; Func 14..18: Uimplementerede funktioner (CS:0D18h)
+  dw io_auxist - xios_code_base                ; Func 19: AUX input status (CS:261Bh)
+  times 10 dw xios_int28_stub_ret - xios_code_base ; Func 20..29: Uimplementerede funktioner (CS:0D18h)
+  dw io_setblank - xios_code_base              ; Func 30: Screen blanking / skærmsluk (CS:264Eh)
+  times 6 dw xios_int28_stub_ret - xios_code_base ; Func 31..36: Uimplementerede funktioner (CS:0D18h)
 ; -----------------------------------------------------------------------------
 ; INT 28H Dispatcher (RC759 Udvidet Hardware/BIOS Funktioner)
 ; Reference: PICCOLINE Programmer's Guide v2, Appendix A (Funktioner 0-53)
@@ -8878,6 +8868,7 @@ loc_07A29:                                     ; 07A29
 ; oversætter scancode via XLATB-opslag ved 0x2C52 og signalerer konsol-driveren
 ; via CCP/M-86 flagmekanismen (rtm_call_helper).
 ; -----------------------------------------------------------------------------
+i_keyboard:
 kbd_handler:                                   ; 07A99
   pusha                                        ; 07A99  60
   db 0x2A, 0xFF                                ; 07A9A  sub bh, bh
@@ -9048,6 +9039,7 @@ loc_07BDC:                                     ; 07BDC
   call xios_switch_to_priv_stack               ; 07BFA  0xE8, 0x20, 0x33
   cld                                          ; 07BFD  0xFC
 
+i_crt:
 crt_init_irst_ca:                              ; 07BFE
   mov dx, PORT_CRT_RESET                       ; 07BFE  0xBA, 0x30, 0x02
   out dx, ax                                   ; 07C01  0xEF
@@ -9147,8 +9139,11 @@ xios_int28_fn_15_reserved:                   ; 07CAD
   push ds                                      ; 07CB3  0x1E
   pop es                                       ; 07CB4  0x07
   ret                                          ; 07CB5  0xC3
+io_const:
+loc_07CB6:
   jmp near sub_0A8A9                           ; 07CB6  0xE9, 0xF0, 0x2B
 
+io_conin:
 loc_07CB9:                                     ; 07CB9
   cmp dl, 1                                    ; 07CB9  0x80, 0xFA, 0x01
   jb loc_07CC1                                 ; 07CBC  0x72, 0x03
@@ -9583,6 +9578,7 @@ loc_07FBB:                                     ; 07FBB
 loc_07FCB:                                     ; 07FCB
   ret                                          ; 07FCB  0xC3
 
+io_conout:
 sub_07FCC:                                     ; 07FCC
   cmp dl, 1                                    ; 07FCC  0x80, 0xFA, 0x01
   jb loc_07FD4                                 ; 07FCF  0x72, 0x03
@@ -11033,6 +11029,8 @@ sub_08B79:                                     ; 08B79
   shl cx, 1                                    ; 08B82  0xD1, 0xE1
   db 0x03, 0xF1                                ; 08B84  add si, cx
   jmp word [si]                                ; 08B86  0xFF, 0x24
+
+io_switch:
   cmp dl, [cs:0x2b56]                          ; 08B88  0x2E, 0x3A, 0x16, 0x56, 0x2B
   jne loc_08B90                                ; 08B8D  0x75, 0x01
   ret                                          ; 08B8F  0xC3
@@ -11131,6 +11129,7 @@ sub_08C56:                                     ; 08C56
 sub_08C5F:                                     ; 08C5F
   db 0x33, 0xC9                                ; 08C5F  xor cx, cx
 
+io_statline:
 sub_08C61:                                     ; 08C61
   mov bx, 0x222b                               ; 08C61  0xBB, 0x2B, 0x22
 
@@ -11778,6 +11777,8 @@ loc_091B1:                                     ; 091B1
 
 loc_091BA:                                     ; 091BA
   ret                                          ; 091BA  0xC3
+
+io_auxist:
   push ds                                      ; 091BB  0x1E
   push es                                      ; 091BC  0x06
   push cx                                      ; 091BD  0x51
@@ -11805,6 +11806,8 @@ loc_091E7:                                     ; 091E7
   ret                                          ; 091E9  0xC3
   jmp near loc_091E7                           ; 091EA  0xE9, 0xFA, 0xFF
   ret                                          ; 091ED  0xC3
+
+io_setblank:
   mov ax, 0x5001                               ; 091EE  0xB8, 0x01, 0x50
   ret                                          ; 091F1  0xC3
 
@@ -12780,6 +12783,7 @@ loc_098E3:                                     ; 098E3
   db 0x8C, 0x98, 0xFF, 0xFF                    ; 09909  mov word [bx + si - 1], ds
   db 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x96, 0xF1, 0xF2, 0xF3, 0x91, 0xF0, 0xFF  ; 0990D  ..............
 
+io_seldsk:
 sub_0991B:                                     ; 0991B
   mov ax, 0                                    ; 0991B  0xB8, 0x00, 0x00
   db 0x8A, 0xC1                                ; 0991E  mov al, cl
@@ -12831,6 +12835,8 @@ loc_0995B:                                     ; 0995B
 loc_09976:                                     ; 09976
   db 0x8B, 0xD8                                ; 09976  mov bx, ax
   ret                                          ; 09978  0xC3
+
+io_read:
   db 0x8B, 0xEC                                ; 09979  mov bp, sp
   mov al, 1                                    ; 0997B  0xB0, 0x01
   cmp byte [bp + 0xf], 0                       ; 0997D  0x80, 0x7E, 0x0F, 0x00
@@ -12915,6 +12921,8 @@ loc_09A32:                                     ; 09A32
   mov al, [cs:0x3756]                          ; 09A32  0x2E, 0xA0, 0x56, 0x37
   db 0x8A, 0xD8                                ; 09A36  mov bl, al
   ret                                          ; 09A38  0xC3
+
+io_write:
   db 0x8B, 0xEC                                ; 09A39  mov bp, sp
   mov al, 1                                    ; 09A3B  0xB0, 0x01
   cmp byte [bp + 0xf], 0                       ; 09A3D  0x80, 0x7E, 0x0F, 0x00
@@ -13001,6 +13009,7 @@ loc_09AF2:                                     ; 09AF2
   ret                                          ; 09AF8  0xC3
   pop si                                       ; 09AF9  0x5E
   db 0x2F                                      ; 09AFA  das
+io_flushbuf:
   db 0x32, 0xC0                                ; 09AFB  xor al, al
   ret                                          ; 09AFD  0xC3
   inc word [bp + 0xa]                          ; 09AFE  0xFF, 0x46, 0x0A
@@ -13549,6 +13558,7 @@ fdc_wait:                                      ; 09F4D
 ; 4. Kvitterer med EOI via eoi_helper.
 ; 5. Vækker den ventende proces ved at signalere Flag 8 ("Floppy disk flag").
 ; -----------------------------------------------------------------------------
+i_disk:
 fdc_transfer_isr:
   call xios_switch_to_priv_stack               ; 09F5A  0xE8, 0xC0, 0x0F
   mov ds, [cs:0xc06]                           ; 09F5D  0x2E, 0x8E, 0x1E, 0x06, 0x0C
@@ -14668,8 +14678,11 @@ loc_0A79D:                                     ; 0A79D
   jmp near loc_0B24F                           ; 0A7E3  0xE9, 0x69, 0x0A
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00        ; 0A7E6  ......
   iret                                         ; 0A7EC  0xCF
+io_auxin:
   mov al, 0x1a                                 ; 0A7ED  0xB0, 0x1A
   ret                                          ; 0A7EF  0xC3
+
+io_auxout:
   ret                                          ; 0A7F0  0xC3
 
 loc_0A7F1:                                     ; 0A7F1
@@ -15152,7 +15165,9 @@ sub_0ABC4:                                     ; 0ABC4
   db 0x00, 0x00                                ; 0AC1A
   add ax, [bp + si]                            ; 0AC1C  0x03, 0x02
   add ax, [bp + si]                            ; 0AC1E  0x03, 0x02
-  add ax, [bx + si + 0x2fa]                    ; 0AC20  0x03, 0x80, 0xFA, 0x02
+  db 0x03
+io_poll:
+  cmp dl, 2                                    ; 0AC21  0x80, 0xFA, 0x02
   jne loc_0AC41                                ; 0AC24  0x75, 0x1B
   push dx                                      ; 0AC26  0x52
 
@@ -15195,6 +15210,7 @@ loc_0AC5A:                                     ; 0AC5A
 loc_0AC5E:                                     ; 0AC5E
   ret                                          ; 0AC5E  0xC3
 
+io_list:
 sub_0AC5F:                                     ; 0AC5F
   push cx                                      ; 0AC5F  0x51
   push dx                                      ; 0AC60  0x52
@@ -15324,6 +15340,7 @@ loc_0AD12:                                     ; 0AD12
 loc_0AD2F:                                     ; 0AD2F
   ret                                          ; 0AD2F  0xC3
 
+io_listst:
 sub_0AD30:                                     ; 0AD30
   cmp dl, 0                                    ; 0AD30  0x80, 0xFA, 0x00
   je loc_0AD7B                                 ; 0AD33  0x74, 0x46
@@ -15387,6 +15404,8 @@ con_status_poll:                               ; 0AD8E
 
 loc_0AD9A:                                     ; 0AD9A
   ret                                          ; 0AD9A  0xC3
+
+i_printer:
   call xios_switch_to_priv_stack               ; 0AD9B  0xE8, 0x7F, 0x01
   mov al, 0x80                                 ; 0AD9E  0xB0, 0x80
   mov dx, PORT_PRN_CTRL                        ; 0ADA0  0xBA, 0x60, 0x02
@@ -15536,6 +15555,8 @@ xios_int28_fn_34_reserved:                   ; 0AEA6
   db 0x00, 0x00                                ; 0AEC7
   and al, 0x43                                 ; 0AEC9  0x24, 0x43
   db 0x00, 0x00                                ; 0AECB
+
+i_tick:
   call xios_switch_to_priv_stack               ; 0AECD  0xE8, 0x4D, 0x00
   inc word [cs:0x4426]                         ; 0AED0  0x2E, 0xFF, 0x06, 0x26, 0x44
   jne loc_0AEDC                                ; 0AED5  0x75, 0x05

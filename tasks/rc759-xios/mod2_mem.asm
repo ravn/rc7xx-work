@@ -177,7 +177,7 @@ mem_fn03_cpmabsa:  ; 0281A
   pop ds                                       ; 02829  0x1F
   db 0x33, 0xC9                               ; 0282A  xor cx, cx
 
-io_const:  ; 0282C
+loc_0282C:  ; 0282C
   mov di, [0x68]                               ; 0282C  0x8B, 0x3E, 0x68, 0x00
   add di, 0x16                                 ; 02830  0x83, 0xC7, 0x16
 

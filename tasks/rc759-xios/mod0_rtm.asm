@@ -936,7 +936,7 @@ loc_00805:  ; 00805
   push es                                      ; 0087E  0x06
   db 0x8E, 0x06                                                   ; 0087F  ..
 
-io_switch:  ; 00881
+loc_00881:  ; 00881
   db 0x99                                     ; 00881  cdq
   add al, 0xbf                                 ; 00882  0x04, 0xBF
   db 0x6C                                     ; 00884  insb
@@ -1145,7 +1145,7 @@ cli_prfilnam:  ; 00A44
   jne loc_00A78                                ; 00A64  0x75, 0x12
   cmp byte [0x49d], 0                          ; 00A66  0x80, 0x3E, 0x9D, 0x04, 0x00
 
-io_write:  ; 00A6B
+loc_00A6B:  ; 00A6B
   je loc_00A77                                 ; 00A6B  0x74, 0x0A
   mov bx, [0x68]                               ; 00A6D  0x8B, 0x1E, 0x68, 0x00
   cmp byte [bx + 0x13], 0                      ; 00A71  0x80, 0x7F, 0x13, 0x00

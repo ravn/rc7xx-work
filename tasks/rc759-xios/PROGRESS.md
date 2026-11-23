@@ -767,6 +767,34 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
      - Tekst- og hex-output: `print_string_si_len_cx`, `print_char_al`, `print_hex_byte`, `print_hex_nibble`, `parse_hex_digit`.
      - RC-Net og netværksenheder: `rcnet_require_ready`, `rcnet_require_logged_on`, `parse_device_spec` (håndterer lokale drev `A:`, netværksprinter `LSTn:` og servernavne `"..."`), `rcnet_init_device_request`, `rcnet_parse_device_request`, `rcnet_reset_request_fcb`, `clear_fcb_name_buffer`, `parse_filename_upper`, `parse_filename_anycase`, `set_raw_console_mode`, `bdos_network_func_73`.
 
+4. **XIOS Dispatch-Tabel og DRI Rutiner (`xios_code.asm`, `mod4_xios.asm`, `xios4_code.asm`)**:
+   - 1-til-1 afstemt mod Digital Research officielle CCP/M-86 XIOS kildeforlæg `scratch/ccpm86-src/xios/xios.a86`.
+   - Erstattet disassemblerens falske instruktioner ved `CS:0C47h` med en struktureret, fuldt symboliseret `xios_function_table:` bestående af 37 opslagsposter (funktion 0..13 standard, udvidede funktioner 19 og 30, samt 0x0D18 stubs).
+   - Omdøbt de 14 standard destinationsrutiner samt udvidede rutiner til deres officielle DRI navne:
+     - `io_const`: Konsol-input status check (CS:1116h)
+     - `io_conin`: Konsol-input tegnhåndtering (CS:1119h)
+     - `io_conout`: Konsol-output tegnhåndtering (CS:142Ch)
+     - `io_listst`: Printer status check (CS:4190h)
+     - `io_list`: Printer output byte (CS:40BFh)
+     - `io_auxin`: Seriel/AUX input byte (CS:3C4Dh)
+     - `io_auxout`: Seriel/AUX output byte (CS:3C50h)
+     - `io_switch`: Virtuel konsol-omskifter (CS:1FE8h)
+     - `io_statline`: Opdatering af statuslinje (CS:20C1h)
+     - `io_seldsk`: Drev-valg og DPH-opslag (CS:2D7Bh)
+     - `io_read`: Læsning af logisk disksektor (CS:2DD9h)
+     - `io_write`: Skrivning af logisk disksektor (CS:2E99h)
+     - `io_flushbuf`: Tømning af diskcache/buffer (CS:2F5Bh)
+     - `io_poll`: Hardware device polling (CS:4081h, adskilt fra tabelfejl ved 0xAC20)
+     - `io_auxist`: Seriel/AUX input status (CS:261Bh)
+     - `io_setblank`: Skærmsluk / blanking (CS:264Eh)
+   - Navngivet de dertilhørende hardware afbrydelsesrutiner (Interrupt Service Routines):
+     - `i_keyboard`: Tastatur ISR (IR1 / 0x84, seriel scancode)
+     - `i_crt`: Intel 82730 VSYNC ISR
+     - `i_disk`: WD2797 / Intel 8272 Floppy transfer ISR (IR0 / 0x80)
+     - `i_printer`: Centronics parallel printer ACK ISR
+     - `i_tick`: MM58167A RTC 1-sekunds system-tick ISR (IR3 / 0x8C, signalerer Flag 2)
+   - Gennemført i både `XIOS1.CON` (`xios_code.asm`), `XIOS4.CON` (`xios4_code.asm`) og den monolitiske kerne `ccpm.sys` (`mod4_xios.asm`).
+
 
 
 
