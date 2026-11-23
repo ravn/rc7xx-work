@@ -802,6 +802,18 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
    - [xios1.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios1.asm) og [xios4.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios4.asm) konverteret til tynde konfigurations-wrappers, der inkluderer `xios.asm`.
    - Begge varianter kompileret og verificeret 100% byte-identiske mod originalerne.
 
+6. **Forening af XIOS-kilde og Udfasning af `xios4_code.asm` (2026-11-23)**:
+   - Fuldstændig eliminering og sletning af `xios4_code.asm`.
+   - Al driverkode for både 1 og 4 virtuelle konsoller er nu samlet i én fælles kilde: [xios_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios_code.asm).
+   - [xios.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios.asm) inkluderer udelukkende `xios_code.asm` samt det parameteriserede tail-padding (`xios_tail`, 208 bytes for XIOS1, 240 bytes for XIOS4).
+   - Fælles verifikation:
+     - `nasm -f bin -DNUM_VIR_CONS=1 ... xios.asm` -> 100% byte-identisk mod `XIOS1.CON` (25.728 bytes, `cmp` 0 diff).
+     - `nasm -f bin -DNUM_VIR_CONS=4 ... xios.asm` -> 100% byte-identisk mod `XIOS4.CON` (29.440 bytes, `cmp` 0 diff).
+     - `nasm -f bin ... xios1.asm` -> 100% byte-identisk mod `XIOS1.CON`.
+     - `nasm -f bin ... xios4.asm` -> 100% byte-identisk mod `XIOS4.CON`.
+     - `./tasks/rc759-xios/rebuild_and_verify.sh` -> 100% byte-identisk mod `ccpm.sys` (77.568 bytes).
+
+
 
 
 

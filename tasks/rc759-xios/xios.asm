@@ -70,13 +70,15 @@ xios_prefix:
 ; -----------------------------------------------------------------------------
 ; XIOS Driver Code
 ; -----------------------------------------------------------------------------
-%if NUM_VIR_CONS == 1
-  %include "xios_code.asm"
+%include "xios_code.asm"
 
 xios_tail:
+%if NUM_VIR_CONS == 1
   times 80 db 0
   db 0x11, 0x32, 0x04, 0x07, 0x11, 0x32, 0x04, 0x0b
   times 120 db 0
 %else
-  %include "xios4_code.asm"
+  times 112 db 0
+  db 0x11, 0x6b, 0x04, 0x04, 0x11, 0x6b, 0x04, 0x08
+  times 120 db 0
 %endif
