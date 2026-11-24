@@ -976,18 +976,15 @@ sub_7e11:                                      ; 07E11
   push bx                                      ; 07E23  0x53
   push cx                                      ; 07E24  0x51
   xor_ah_ah                                    ; 07E25  xor ah, ah
-%if NUM_VIR_CONS == 4
-  mov bx, 0x2d2e                               ; Konsol 0 CCB
+  mov bx, ccb_console_0                        ; Konsol 0 CCB
   mov [bx + 0x83], al
+%if NUM_VIR_CONS == 4
   mov bx, 0x2dc2                               ; Konsol 1 CCB
   mov [bx + 0x83], al
   mov bx, 0x2e56                               ; Konsol 2 CCB
   mov [bx + 0x83], al
   mov bx, 0x2eea                               ; Konsol 3 CCB
   mov [bx + 0x83], al
-%else
-  mov bx, 0x2b5d                               ; 07E27 (XIOS1 konsol 0 CCB)
-  mov [bx + 0x83], al                          ; 07E2A  0x88, 0x87, 0x83, 0x00
 %endif
   mov_bx_ax                                    ; 07E2E  mov bx, ax
   mov cl, 4                                    ; 07E30  0xB1, 0x04
@@ -3484,11 +3481,7 @@ loc_0922E:                                     ; 0922E
 sub_0922F:                                     ; 0922F
   push bx                                      ; 0922F  0x53
   push cx                                      ; 09230  0x51
-%if NUM_VIR_CONS == 4
-  mov bx, 0x2d2e                               ; Konsol 0 CCB
-%else
-  mov bx, 0x2b5d                               ; Konsol 0 CCB
-%endif
+  mov bx, ccb_console_0                        ; Konsol 0 CCB
   mov cx, NUM_VIR_CONS
 
 loc_09237:                                     ; 09237
@@ -3502,11 +3495,7 @@ loc_09237:                                     ; 09237
 sub_09243:                                     ; 09243
   push bx                                      ; 09243  0x53
   push cx                                      ; 09244  0x51
-%if NUM_VIR_CONS == 4
-  mov bx, 0x2d2e                               ; Konsol 0 CCB
-%else
-  mov bx, 0x2b5d                               ; Konsol 0 CCB
-%endif
+  mov bx, ccb_console_0                        ; Konsol 0 CCB
   mov cx, NUM_VIR_CONS
 
 loc_0924B:                                     ; 0924B
@@ -4335,6 +4324,7 @@ loc_096F0:                                     ; 096F0
   pop bp                                       ; 096F8  0x5D
   db 0x2B, 0xFF                                ; 096F9  sub di, di
   db 0x00, 0x00                                ; 096FB
+ccb_console_0:
   db 0x00, 0x00                                ; 096FD
   db 0x00, 0x00                                ; 096FF
   db 0x00, 0x00                                ; 09701
@@ -4618,6 +4608,7 @@ loc_098E3:                                     ; 098E3
   db 0x00, 0x00                ; 00002128  add [bx+si],al
   db 0x00, 0x00                ; 0000212A  add [bx+si],al
   db 0x00, 0x00                ; 0000212C  add [bx+si],al
+ccb_console_0:
   db 0x00, 0x00                ; 0000212E  add [bx+si],al
   db 0x00, 0x00                ; 00002130  add [bx+si],al
   db 0x00, 0x00                ; 00002132  add [bx+si],al
@@ -8537,11 +8528,7 @@ mov [cs:0x2c08 + DELTA_TABLES], al                          ; 0BAC6  0x2E, 0xA2,
 mov [cs:0x2bf1 + DELTA_TABLES], dx                          ; 0BACF  0x2E, 0x89, 0x16, 0xF1, 0x2B
   mov es, dx                                   ; 0BAD4  0x8E, 0xC2
 mov cx, NUM_VIR_CONS                                    ; 0BAD6  0xB9, 0x01, 0x00
-%if NUM_VIR_CONS == 4
-  mov bx, 0x2d2e                               ; Konsol 0 CCB
-%else
-  mov bx, 0x2b5d                               ; Konsol 0 CCB
-%endif
+  mov bx, ccb_console_0                        ; Konsol 0 CCB
   mov di, 0xf00                                ; 0BADC  0xBF, 0x00, 0x0F
 
 loc_0BADF:                                     ; 0BADF
@@ -8625,11 +8612,7 @@ cmp byte [cs:0x5fa4 + DELTA_TAIL], 1                      ; 0BB66  0x2E, 0x80, 0
   call xios_crt_trigger_ca                     ; 0BB70  0xE8, 0x8E, 0xDA
   mov ah, 6                                    ; 0BB73  0xB4, 0x06
   call xios_crt_trigger_ca                     ; 0BB75  0xE8, 0x89, 0xDA
-%if NUM_VIR_CONS == 4
-  mov bx, 0x2d2e                               ; Konsol 0 CCB
-%else
-  mov bx, 0x2b5d                               ; Konsol 0 CCB
-%endif
+  mov bx, ccb_console_0                        ; Konsol 0 CCB
   call sub_08BFB                               ; 0BB7B  0xE8, 0x7D, 0xD0
   call sub_08C5F                               ; 0BB7E  0xE8, 0xDE, 0xD0
   mov dx, PORT_PCB_T1_CON                      ; 0BB81  0xBA, 0x5E, 0xFF
