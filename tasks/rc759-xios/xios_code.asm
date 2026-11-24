@@ -60,6 +60,10 @@ CCB_LINE_TABLE      equ 0x62                   ; Line display table pointer
 CCB_COL             equ 0x64                   ; Current cursor column (0-based)
 CCB_ROW             equ 0x66                   ; Current cursor row (0-based)
 CCB_ATTR            equ 0x6a                   ; Cursor / display attribute byte
+CCB_ATTR_UNDERLINE   equ 0x01                   ; Bit 0: Understregning (ESC g / ESC h)
+CCB_ATTR_ALT_CHARSET equ 0x02                   ; Bit 1: Alternativt tegnsæt (ESC P / ESC Q)
+CCB_ATTR_BLINK       equ 0x04                   ; Bit 2: Blinkende tekst (ESC s / ESC t)
+CCB_ATTR_COLOR_MASK  equ 0xf8                   ; Bits 3-7: Farvepalet-indeks (indeks = attr >> 3)
 CCB_FLAGS           equ 0x6b                   ; Console control & mode flags
 CCB_SCROLL_MODE     equ 0x71                   ; Console scroll / line mode
 CCB_CURSOR_LINES    equ 0x72                   ; Cursor start scanline (word 0x72 = start/end scanlines)
@@ -68,6 +72,14 @@ CCB_BLINK_FLAG      equ 0x74                   ; Cursor blink enable flag
 CCB_VIDEO_MODE      equ 0x7f                   ; Background color / video mode
 CCB_CHAR_ATTR       equ 0x80                   ; Character attribute byte
 CCB_COLOR_MODE      equ 0x83                   ; Virtual console color/mode setting
+CCB_MAX_COL          equ 0x60                   ; Maksimal kolonne (f.eks. 79 i 80-kolonnetilstand)
+CCB_SAVED_COL        equ 0x68                   ; Gemt cursorposition ved ESC j / ESC k
+CCB_SAVED_FLAGS      equ 0x6d                   ; Gemte konsolflag ved ESC 2 / ESC 3
+CCB_SAVED_ATTR       equ 0x6f                   ; Gemt tegnattribut ved ESC 2 / ESC 3
+CCB_FKEY_TABLE       equ 0x76                   ; Funktionstast-tabel (pointer til fkey-definitioner)
+CCB_ESC_PARAM_FN     equ 0x7b                   ; Escape-sekvens parameter handler/funktion
+CCB_ESC_PARAM_BUF    equ 0x7d                   ; Escape-sekvens parameter-buffer
+CCB_PALETTE          equ 0x84                   ; Farvepalet / attribut-tabel for konsol
 
 ; =============================================================================
 ; RC759 Piccoline XIOS Driver (Master Source)
@@ -76,6 +88,7 @@ CCB_COLOR_MODE      equ 0x83                   ; Virtual console color/mode sett
 
   jmp near xios_init_entry                     ; 00000000 / 077A0
   jmp near loc_077DA                           ; 077A3
+
 xios_sysdat_segment_val:
   dw 0x0000                                    ; SYSDAT segment (unlinked, sat af CCP/M loader ved CS:0C06)
 xios_sysdat_entry_val:
@@ -576,7 +589,7 @@ key_scan_code_table:                           ; 07C55 (CS:10B5: 66 ASCII-tegn t
   db "{|}~T"
 
 sub_7c97:                                      ; 07C97
-  mov si, [bx + 0x76]                          ; 07C97
+  mov si, [bx + CCB_FKEY_TABLE]                          ; 07C97
   mov cl, 0x14                                 ; 07C9A
   cmp al, 0x0c                                 ; 07C9C
   jb loc_07CA8                                 ; 07C9E
@@ -591,7 +604,7 @@ loc_07CA8:
 
 int28_fn_15_reserved:                     ; 07CAD
   call get_cur_process_ccb                               ; 07CAD
-  mov bx, [bx + 0x76]                          ; 07CB0
+  mov bx, [bx + CCB_FKEY_TABLE]                          ; 07CB0
   push ds                                      ; 07CB3
   pop es                                       ; 07CB4
   ret                                          ; 07CB5
@@ -1108,10 +1121,10 @@ ww_key:
   xor_ah_ah                                    ; 07FAA
   mov al, [cs:kbd_event_flag]                          ; 07FAC  0x2E, 0xA0, 0x43, 0x10
   cmp cl, 0xfe                                 ; 07FB0  0x80, 0xF9, 0xFE
-  je loc_07FCB                                 ; 07FB3  0x74, 0x16
+  je ww_key_ret                                 ; 07FB3  0x74, 0x16
   jb loc_07FBB                                 ; 07FB5  0x72, 0x04
   test al, al                                  ; 07FB7  0x84, 0xC0
-  je loc_07FCB                                 ; 07FB9  0x74, 0x10
+  je ww_key_ret                                 ; 07FB9  0x74, 0x10
 
 loc_07FBB:                                     ; 07FBB
   mov dx, 0x18                                 ; 07FBB  0xBA, 0x18, 0x00
@@ -1119,7 +1132,7 @@ loc_07FBB:                                     ; 07FBB
   mov byte [cs:kbd_event_flag], 0                      ; 07FC1  0x2E, 0xC6, 0x06, 0x43, 0x10, 0x00
   mov ax, [cs:kbd_char_buffer]                          ; 07FC7  0x2E, 0xA1, 0x3E, 0x10
 
-loc_07FCB:                                     ; 07FCB
+ww_key_ret:                                     ; 07FCB
   ret                                          ; 07FCB  0xC3
 
 io_conout:
@@ -1171,7 +1184,7 @@ loc_0801C:                                     ; 0801C
   jne loc_08037                                ; 0801F  0x75, 0x16
   dec word [bx + CCB_ROW]                         ; 08021  0xFF, 0x4F, 0x66
   jns loc_08034                                ; 08024  0x79, 0x0E
-  mov ax, [bx + 0x60]                          ; 08026  0x8B, 0x47, 0x60
+  mov ax, [bx + CCB_MAX_COL]                          ; 08026  0x8B, 0x47, 0x60
   mov [bx + CCB_ROW], ax                          ; 08029  0x89, 0x47, 0x66
   dec word [bx + CCB_COL]                         ; 0802C  0xFF, 0x4F, 0x64
   jns loc_08034                                ; 0802F  0x79, 0x03
@@ -1282,60 +1295,73 @@ sub_080F0:                                     ; 080F0
 loc_080FC:                                     ; 080FC
   mov [bx + CCB_ROW], ax                          ; 080FC  0x89, 0x47, 0x66
   ret                                          ; 080FF  0xC3
-  crt_esc_dispatch_reset:
+
+crt_esc_dispatch_reset:
   call sub_095CB                               ; 08100  0xE8, 0xC8, 0x14
   mov word [bx + CCB_ESC_HANDLER], crt_char_handler                 ; 08103  0xC7, 0x47, 0x5E, 0x4F, 0x14
   jmp near crt_char_handler                           ; 08108  0xE9, 0xE4, 0xFE
-  crt_esc_dispatch_normal:
+
+crt_esc_dispatch_normal:
   mov word [bx + CCB_ESC_HANDLER], crt_char_handler                 ; 0810B  0xC7, 0x47, 0x5E, 0x4F, 0x14
   mov di, crt_esc_table                                    ; 08110  0xBF, 0xF4, 0x15
   mov_al_cl                                    ; 08113
   call sub_08B79                               ; 08115  0xE8, 0x61, 0x0A
-  crt_esc_jump_table:
+crt_esc_jump_table:
   ; --- Escape sequence jump table (62 word pointers) ---
-  dw crt_esc_equal_sub, crt_esc_H_sub, crt_esc_C_sub, crt_esc_D_sub, crt_esc_B_sub, crt_esc_A_sub, crt_esc_E_sub, crt_esc_I_sub
-  dw crt_esc_J_sub, crt_esc_K_sub, crt_esc_L_sub, crt_esc_M_sub, crt_esc_D_sub, crt_esc_B_sub, crt_esc_P_sub, crt_esc_Q_sub
-  dw crt_esc_Y_sub, crt_esc_a_sub, crt_esc_b_sub, crt_esc_c_sub, crt_esc_d_sub, crt_esc_e_sub, crt_esc_f_sub, crt_esc_g_sub
-  dw crt_esc_h_sub, crt_esc_i_sub, crt_esc_j_sub, crt_esc_k_sub, crt_esc_l_sub, crt_esc_m_sub, crt_esc_n_sub, crt_esc_o_sub
-  dw crt_esc_p_sub, crt_esc_q_sub, crt_esc_s_sub, crt_esc_t_sub, crt_esc_r_sub, crt_esc_u_sub, crt_esc_v_sub, crt_esc_w_sub
-  dw crt_esc_p_sub, crt_esc_q_sub, crt_esc_colon_pos, crt_esc_lt_sub, crt_esc_gt_sub, crt_esc_0_attr, crt_esc_1_sub, crt_esc_2_cur_off
-  dw crt_esc_3_cur_on, crt_esc_6_toggle, crt_esc_7_toggle, crt_esc_f1_func, crt_esc_f2_ins, crt_esc_f3_del, crt_esc_f4_tab, crt_esc_f5_fwd
-  dw crt_esc_f6_back, crt_esc_f7_home, crt_esc_fb_left, crt_esc_fc_right, crt_esc_fd_down, crt_esc_fe_up
-  crt_esc_table:
+  dw crt_esc_default_ret, crt_esc_254_rest_fkeys, crt_esc_253_save_fkeys, crt_esc_7_fkey_exp_on, crt_esc_6_fkey_exp_off, crt_esc_247_underl_on, crt_esc_246_underl_off, crt_esc_245_line_scroll
+  dw crt_esc_244_soft_scroll, crt_esc_243_cur_shape, crt_esc_242_cur_steady, crt_esc_241_cur_blink, crt_esc_7_fkey_exp_on, crt_esc_6_fkey_exp_off, crt_esc_3_restore_attrs, crt_esc_2_save_attrs
+  dw crt_esc_1_24_lines, crt_esc_0_25_lines, crt_esc_gt_scroll_dn, crt_esc_lt_scroll_up, crt_esc_colon_prog_fkeys, crt_esc_z_reset_attrs, crt_esc_x_nondisp_off, crt_esc_w_wrap_off
+  dw crt_esc_v_wrap_on, crt_esc_u_intensify_off, crt_esc_r_intensify_on, crt_esc_t_blink_off, crt_esc_s_blink_on, crt_esc_q_reverse_off, crt_esc_p_reverse_on, crt_esc_o_erase_bol
+  dw crt_esc_f_cur_off, crt_esc_e_cur_on, crt_esc_l_erase_line, crt_esc_k_restore_cursor, crt_esc_j_save_cursor, crt_esc_i_nondisp_on, crt_esc_h_underline_off, crt_esc_g_underline_on
+  dw crt_esc_f_cur_off, crt_esc_e_cur_on, crt_esc_d_erase_bos, crt_esc_c_bg_color, crt_esc_b_fg_color, crt_esc_a_ignored, crt_esc_Y_pos_cursor, crt_esc_Q_std_cset
+  dw crt_esc_P_alt_cset, crt_esc_O_ins_char, crt_esc_N_del_char, crt_esc_M_del_line, crt_esc_L_ins_line, crt_esc_K_erase_eol, crt_esc_J_erase_eos, crt_esc_I_rev_index
+  dw crt_esc_E_cls, crt_esc_A_up, crt_esc_B_down, crt_esc_D_back, crt_esc_C_fwd, crt_esc_H_home
+crt_esc_table:
   ; --- Escape sequence character table (62 bytes) ---
   db "=HCDBAEIJKLMNOPQYabcdefghijklmnopqstruvwxz:<>012367", 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xfb, 0xfc, 0xfd, 0xfe
-  crt_esc_fe_up:
+; ESC H - Cursor Home (s. 51 / App. F): Flyt cursor til øverste venstre hjørne
+crt_esc_H_home:
   jmp near crt_cursor_home                           ; 081D2  0xE9, 0xF4, 0x03
-  crt_esc_fd_down:
+
+; ESC C - Cursor Forward (s. 51 / App. F): Flyt cursor en kolonne frem (højre)
+crt_esc_C_fwd:
   mov dx, [bx + CCB_ROW]                          ; 081D5  0x8B, 0x57, 0x66
-  cmp dx, [bx + 0x60]                          ; 081D8  0x3B, 0x57, 0x60
+  cmp dx, [bx + CCB_MAX_COL]                          ; 081D8  0x3B, 0x57, 0x60
   je loc_08203                                 ; 081DB  0x74, 0x26
   inc dx                                       ; 081DD  0x42
   mov [bx + CCB_ROW], dx                          ; 081DE  0x89, 0x57, 0x66
   jmp near crt_update_cursor                            ; 081E1  0xE9, 0xEF, 0x03
-  crt_esc_fc_right:
+
+; ESC D - Cursor Backward (s. 51 / App. F): Flyt cursor en kolonne tilbage (venstre)
+crt_esc_D_back:
   dec word [bx + CCB_ROW]                         ; 081E4  0xFF, 0x4F, 0x66
   jns loc_08203                                ; 081E7  0x79, 0x1A
   inc word [bx + CCB_ROW]                         ; 081E9  0xFF, 0x47, 0x66
   ret                                          ; 081EC  0xC3
-  crt_esc_fb_left:
+
+; ESC B - Cursor Down (s. 51 / App. F): Flyt cursor en linje ned
+crt_esc_B_down:
   jmp near loc_085BA                           ; 081ED  0xE9, 0xCA, 0x03
 
-  crt_esc_f7_home:
+; ESC A - Cursor Up (s. 50 / App. F): Flyt cursor en linje op
+crt_esc_A_up:
   dec word [bx + CCB_COL]                         ; 081F0  0xFF, 0x4F, 0x64
   jns loc_08203                                ; 081F3  0x79, 0x0E
   inc word [bx + CCB_COL]                         ; 081F5  0xFF, 0x47, 0x64
   ret                                          ; 081F8  0xC3
-  crt_esc_f5_fwd:
+
+; ESC I - Reverse Index (s. 51 / App. F): Cursor op; ruller skærm ned ved øverste linje
+crt_esc_I_rev_index:
   mov si, [bx + CCB_COL]                          ; 081F9  0x8B, 0x77, 0x64
   test si, si                                  ; 081FC  0x85, 0xF6
-  jne crt_esc_f7_home                                ; 081FE  0x75, 0xF0
+  jne crt_esc_A_up                                ; 081FE  0x75, 0xF0
   call sub_086EF                               ; 08200  0xE8, 0xEC, 0x04
 
 loc_08203:                                     ; 08203
   jmp near crt_update_cursor                            ; 08203  0xE9, 0xCD, 0x03
 
-  crt_esc_f6_back:
+; ESC E - Clear Screen, Cursor Home (s. 51 / App. F): Ryd skærm og sæt cursor til (0,0)
+crt_esc_E_cls:
   test byte [bx + CCB_FLAGS], 4                     ; 08206  0xF6, 0x47, 0x6B, 0x04
   jne loc_08216                                ; 0820A  0x75, 0x0A
   call sub_09643                               ; 0820C  0xE8, 0x34, 0x14
@@ -1344,7 +1370,8 @@ loc_08203:                                     ; 08203
 
 loc_08216:                                     ; 08216
   call crt_cursor_home                               ; 08216  0xE8, 0xB0, 0x03
-  crt_esc_f4_tab:
+; ESC J - Erase to End of Screen (s. 51 / App. F): Slet fra cursor til skærmens slutning
+crt_esc_J_erase_eos:
   mov si, [bx + CCB_COL]                          ; 08219  0x8B, 0x77, 0x64
 .loc_1680:
   inc si
@@ -1353,29 +1380,36 @@ loc_08216:                                     ; 08216
   mov dx, [bx + CCB_SCROLL_BOTTOM]
   call sub_0865F                               ; call 0x1ABF / 0x1B09
 .loc_1688:
-crt_esc_f3_del:
-  mov cx, [bx + 0x60]
+; ESC K - Erase to End of Line (s. 51 / App. F): Slet fra cursor til linjens slutning
+crt_esc_K_erase_eol:
+  mov cx, [bx + CCB_MAX_COL]
   mov dx, [bx + CCB_ROW]
   jmp near loc_0862E                           ; jmp 0x1A8E / 0x1AD8
-crt_esc_f2_ins:
+
+; ESC L - Insert Line (s. 52 / App. F): Indsæt blank linje ved cursorposition
+crt_esc_L_ins_line:
   call sub_8a54                                ; call 0x1EB4 / 0x1EFE
   mov si, [bx + CCB_COL]
   call sub_086EF                               ; call 0x1B4F / 0x1B99
   call sub_080F0                               ; call 0x1550 / 0x159A
   jmp near sub_08625                           ; jmp 0x1A85 / 0x1ACF
-crt_esc_f1_func:
+
+; ESC M - Delete Line (s. 52 / App. F): Slet linjen ved cursorposition
+crt_esc_M_del_line:
   call sub_8a54                                ; call 0x1EB4 / 0x1EFE
   mov si, [bx + CCB_COL]
   call sub_086C6                               ; call 0x1B26 / 0x1B70
   call sub_080F0                               ; call 0x1550 / 0x159A
   jmp near sub_08625                           ; jmp 0x1A85 / 0x1ACF
-  crt_esc_6_toggle:
+
+; ESC O - Insert Character (s. 52 / App. F): Indsæt mellemrum ved cursor, skub linjen til højre
+crt_esc_O_ins_char:
   test byte [bx + CCB_FLAGS], 4                     ; 0824F  0xF6, 0x47, 0x6B, 0x04
   jne loc_08297                                ; 08253  0x75, 0x42
   mov si, [bx + CCB_COL]                          ; 08255  0x8B, 0x77, 0x64
   shl si, 1                                    ; 08258  0xD1, 0xE6
   mov si, [bx + si]                            ; 0825A  0x8B, 0x30
-  mov ax, [bx + 0x60]                          ; 0825C  0x8B, 0x47, 0x60
+  mov ax, [bx + CCB_MAX_COL]                          ; 0825C  0x8B, 0x47, 0x60
   shl ax, 1                                    ; 0825F  0xD1, 0xE0
   add_si_ax                                    ; 08261
   mov_di_si                                    ; 08263
@@ -1383,7 +1417,9 @@ crt_esc_f1_func:
   dec si                                       ; 08266  0x4E
   std                                          ; 08267  0xFD
   jmp short loc_08277                          ; 08268  0xEB, 0x0D
-  crt_esc_7_toggle:
+
+; ESC N - Delete Character (s. 52 / App. F): Slet tegn ved cursor, træk resten til venstre
+crt_esc_N_del_char:
   test byte [bx + CCB_FLAGS], 4                     ; 0826A  0xF6, 0x47, 0x6B, 0x04
   jne loc_08297                                ; 0826E  0x75, 0x27
   mov si, [bx + CCB_LINE_TABLE]                          ; 08270  0x8B, 0x77, 0x62
@@ -1392,7 +1428,7 @@ crt_esc_f1_func:
   inc si                                       ; 08276  0x46
 
 loc_08277:                                     ; 08277
-  mov cx, [bx + 0x60]                          ; 08277  0x8B, 0x4F, 0x60
+  mov cx, [bx + CCB_MAX_COL]                          ; 08277  0x8B, 0x4F, 0x60
   mov dx, [bx + CCB_ROW]                          ; 0827A  0x8B, 0x57, 0x66
   sub_cx_dx                                    ; 0827D
   push es                                      ; 0827F  0x06
@@ -1404,40 +1440,57 @@ loc_08277:                                     ; 08277
   pop es                                       ; 0828E  0x07
   cld                                          ; 0828F  0xFC
   jmp near sub_09334                           ; 08290  0xE9, 0xA1, 0x10
-  crt_esc_3_cur_on:
-  or byte [bx + CCB_ATTR], 2                       ; 08293  0x80, 0x4F, 0x6A, 0x02
+
+; ESC P - Select Alternative Character Set (s. 51 / App. F): Vælg alternativt tegnsæt
+crt_esc_P_alt_cset:
+  or byte [bx + CCB_ATTR], CCB_ATTR_ALT_CHARSET                       ; 08293  0x80, 0x4F, 0x6A, 0x02
 
 loc_08297:                                     ; 08297
   ret                                          ; 08297  0xC3
-  crt_esc_2_cur_off:
-  and byte [bx + CCB_ATTR], 0xfd                   ; 08298  0x80, 0x67, 0x6A, 0xFD
+
+; ESC Q - Select Standard Character Set (s. 52 / App. F): Vælg standard tegnsæt
+crt_esc_Q_std_cset:
+  and byte [bx + CCB_ATTR], ~CCB_ATTR_ALT_CHARSET & 0xff                   ; 08298  0x80, 0x67, 0x6A, 0xFD
   ret                                          ; 0829C  0xC3
-  crt_esc_0_attr:
+
+; ESC a - Ignored (s. 53 / App. F): Ingen funktion (ignoreres)
+crt_esc_a_ignored:
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_19f7                   ; 0829D  0xC7, 0x47, 0x5E, 0xF7, 0x19
   ret                                          ; 082A2  0xC3
-  crt_esc_gt_sub:
+
+; ESC b - Set Foreground Colour (s. 53 / App. F): Opsæt handler til modtagelse af forgrundsfarve
+crt_esc_b_fg_color:
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_1943                   ; 082A3  0xC7, 0x47, 0x5E, 0x43, 0x19
   ret                                          ; 082A8  0xC3
-  crt_esc_lt_sub:
+
+; ESC c - Set Background Colour (s. 54 / App. F): Opsæt handler til modtagelse af baggrundsfarve
+crt_esc_c_bg_color:
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_194c                   ; 082A9  0xC7, 0x47, 0x5E, 0x4C, 0x19
   ret                                          ; 082AE  0xC3
-  crt_esc_colon_pos:
+
+; ESC d - Erase Beginning of Screen (s. 54 / App. F): Slet fra skærmstart til cursor
+crt_esc_d_erase_bos:
   xor_si_si                                    ; 082AF
   mov dx, [bx + CCB_COL]                          ; 082B1  0x8B, 0x57, 0x64
   or_dx_dx                                     ; 082B4
-  je crt_esc_o_sub                                 ; 082B6  0x74, 0x03
+  je crt_esc_o_erase_bol                                 ; 082B6  0x74, 0x03
   call sub_0865F                               ; 082B8  0xE8, 0xA4, 0x03
 
-  crt_esc_o_sub:
+; ESC o - Erase Beginning of Line (s. 56 / App. F): Slet fra linjestart til cursor
+crt_esc_o_erase_bol:
   xor_dx_dx                                    ; 082BB
   mov cx, [bx + CCB_ROW]                          ; 082BD  0x8B, 0x4F, 0x66
   jmp near loc_0862E                           ; 082C0  0xE9, 0x6B, 0x03
-  crt_esc_q_sub:
+
+; ESC e / ESC m - Enable Cursor (s. 54, 55 / App. F): Gør tekstcursoren synlig
+crt_esc_e_cur_on:
   test word [bx + CCB_FLAGS], 0x200                 ; 082C3  0xF7, 0x47, 0x6B, 0x00, 0x02
   je loc_082EE                                 ; 082C8  0x74, 0x24
   and word [bx + CCB_FLAGS], 0xfdff                 ; 082CA  0x81, 0x67, 0x6B, 0xFF, 0xFD
   jmp near sub_08625                           ; 082CF  0xE9, 0x53, 0x03
-  crt_esc_p_sub:
+
+; ESC f / ESC n - Disable Cursor (s. 54, 56 / App. F): Skjul tekstcursoren
+crt_esc_f_cur_off:
   test word [bx + CCB_FLAGS], 0x200                 ; 082D2  0xF7, 0x47, 0x6B, 0x00, 0x02
   jne loc_082EE                                ; 082D7  0x75, 0x15
   call sub_8a54                                ; 082D9  0xE8, 0x78, 0x07
@@ -1448,60 +1501,88 @@ loc_08297:                                     ; 08297
 
 loc_082EE:                                     ; 082EE
   ret                                          ; 082EE  0xC3
-  crt_esc_r_sub:
+
+; ESC j - Save Cursor Position (s. 55 / App. F): Gem aktuel cursorposition i CCB
+crt_esc_j_save_cursor:
   mov al, [bx + CCB_ROW]                          ; 082EF  0x8A, 0x47, 0x66
   mov ah, [bx + CCB_COL]                          ; 082F2  0x8A, 0x67, 0x64
-  mov [bx + 0x68], ax                          ; 082F5  0x89, 0x47, 0x68
+  mov [bx + CCB_SAVED_COL], ax                          ; 082F5  0x89, 0x47, 0x68
   ret                                          ; 082F8  0xC3
-  crt_esc_t_sub:
+
+; ESC k - Restore Cursor Position (s. 55 / App. F): Gendan gemt cursorposition fra CCB
+crt_esc_k_restore_cursor:
   xor_ax_ax                                    ; 082F9
-  xchg [bx + 0x68], ax                         ; 082FB  0x87, 0x47, 0x68
+  xchg [bx + CCB_SAVED_COL], ax                         ; 082FB  0x87, 0x47, 0x68
   mov [bx + CCB_ROW], al                          ; 082FE  0x88, 0x47, 0x66
   mov [bx + CCB_COL], ah                          ; 08301  0x88, 0x67, 0x64
   jmp near crt_update_cursor                            ; 08304  0xE9, 0xCC, 0x02
-  crt_esc_s_sub:
+
+; ESC l - Erase Line (s. 55 / App. F): Slet hele den aktuelle linje
+crt_esc_l_erase_line:
   mov si, [bx + CCB_COL]                          ; 08307  0x8B, 0x77, 0x64
   jmp near sub_0865C                           ; 0830A  0xE9, 0x4F, 0x03
-  crt_esc_w_sub:
-  or byte [bx + CCB_ATTR], 1                       ; 0830D  0x80, 0x4F, 0x6A, 0x01
+
+; ESC g - Enter Underline Mode (s. 55 / App. F): Aktiver understregning
+crt_esc_g_underline_on:
+  or byte [bx + CCB_ATTR], CCB_ATTR_UNDERLINE                       ; 0830D  0x80, 0x4F, 0x6A, 0x01
   ret                                          ; 08311  0xC3
-  crt_esc_v_sub:
-  and byte [bx + CCB_ATTR], 0xfe                   ; 08312  0x80, 0x67, 0x6A, 0xFE
+
+; ESC h - Exit Underline Mode (s. 55 / App. F): Deaktiver understregning
+crt_esc_h_underline_off:
+  and byte [bx + CCB_ATTR], ~CCB_ATTR_UNDERLINE & 0xff                   ; 08312  0x80, 0x67, 0x6A, 0xFE
   ret                                          ; 08316  0xC3
-  crt_esc_n_sub:
+
+; ESC p - Enter Reverse Video Mode (s. 56 / App. F): Aktiver invers video
+crt_esc_p_reverse_on:
   or word [bx + CCB_FLAGS], 0x400                   ; 08317  0x81, 0x4F, 0x6B, 0x00, 0x04
   jmp short loc_08323                          ; 0831C  0xEB, 0x05
-  crt_esc_m_sub:
+
+; ESC q - Exit Reverse Video Mode (s. 56 / App. F): Deaktiver invers video
+crt_esc_q_reverse_off:
   and word [bx + CCB_FLAGS], 0xfbff                 ; 0831E  0x81, 0x67, 0x6B, 0xFF, 0xFB
 
 loc_08323:                                     ; 08323
   mov al, [bx + CCB_CHAR_ATTR]                          ; 08323  0x8A, 0x87, 0x80, 0x00
   jmp near crt_set_char_attr                           ; 08327  0xE9, 0x47, 0x00
-  crt_esc_l_sub:
-  or byte [bx + CCB_ATTR], 4                       ; 0832A  0x80, 0x4F, 0x6A, 0x04
+
+; ESC s - Enter Blink Mode (s. 57 / App. F): Aktiver blinkende tekst
+crt_esc_s_blink_on:
+  or byte [bx + CCB_ATTR], CCB_ATTR_BLINK                       ; 0832A  0x80, 0x4F, 0x6A, 0x04
   ret                                          ; 0832E  0xC3
-  crt_esc_k_sub:
-  and byte [bx + CCB_ATTR], 0xfb                   ; 0832F  0x80, 0x67, 0x6A, 0xFB
+
+; ESC t - Exit Blink Mode (s. 57 / App. F): Deaktiver blinkende tekst
+crt_esc_t_blink_off:
+  and byte [bx + CCB_ATTR], ~CCB_ATTR_BLINK & 0xff                   ; 0832F  0x80, 0x67, 0x6A, 0xFB
   ret                                          ; 08333  0xC3
-  crt_esc_u_sub:
+
+; ESC i - Enter Non-Displayed Mode (s. 55 / App. F): Skjul output (usynlig skrift)
+crt_esc_i_nondisp_on:
   or word [bx + CCB_FLAGS], CCB_FLG_AUTOWRAP                  ; 08334  0x81, 0x4F, 0x6B, 0x00, 0x10
   ret                                          ; 08339  0xC3
-  crt_esc_f_sub:
+
+; ESC x - Exit Non-Displayed Mode (s. 57 / App. F): Deaktiver usynlig skrift
+crt_esc_x_nondisp_off:
   and word [bx + CCB_FLAGS], ~CCB_FLG_AUTOWRAP & 0xffff                 ; 0833A  0x81, 0x67, 0x6B, 0xFF, 0xEF
   ret                                          ; 0833F  0xC3
-  crt_esc_e_sub:
+
+; ESC z - Reset Attributes (s. 57 / App. F): Nulstil alle visningsattributter til standard
+crt_esc_z_reset_attrs:
   and word [bx + CCB_FLAGS], 0xe0ff                 ; 08340  0x81, 0x67, 0x6B, 0xFF, 0xE0
-  and byte [bx + CCB_ATTR], 0xf8                   ; 08345  0x80, 0x67, 0x6A, 0xF8
+  and byte [bx + CCB_ATTR], ~(CCB_ATTR_UNDERLINE | CCB_ATTR_ALT_CHARSET | CCB_ATTR_BLINK) & 0xff ; 08345  0x80, 0x67, 0x6A, 0xF8
   mov byte [bx + 0x75], 0xf8                   ; 08349  0xC6, 0x47, 0x75, 0xF8
   mov al, [bx + 0x7f]                          ; 0834D  0x8A, 0x47, 0x7F
   ror al, 4                                    ; 08350  0xC0, 0xC8, 0x04
   call crt_set_char_attr                               ; 08353  0xE8, 0x1B, 0x00
   jmp near sub_08625                           ; 08356  0xE9, 0xCC, 0x02
-  crt_esc_j_sub:
+
+; ESC r - Enter Intensify Mode (s. 56 / App. F): Aktiver fremhævet / høj intensitet
+crt_esc_r_intensify_on:
   mov al, [bx + CCB_CHAR_ATTR]                          ; 08359  0x8A, 0x87, 0x80, 0x00
   or al, 0x80                                  ; 0835D  0x0C, 0x80
   jmp short crt_set_char_attr                          ; 0835F  0xEB, 0x10
-  crt_esc_i_sub:
+
+; ESC u - Exit Intensify Mode (s. 57 / App. F): Deaktiver fremhævet / høj intensitet
+crt_esc_u_intensify_off:
   mov al, [bx + CCB_CHAR_ATTR]                          ; 08361  0x8A, 0x87, 0x80, 0x00
   and al, 0x7f                                 ; 08365  0x24, 0x7F
   jmp short crt_set_char_attr                          ; 08367  0xEB, 0x08
@@ -1526,7 +1607,7 @@ crt_get_char_attr:                                     ; 0837A
 loc_0838C:                                     ; 0838C
   push cx                                      ; 0838C  0x51
   push di                                      ; 0838D  0x57
-  lea di, [bx + 0x84]                          ; 0838E  0x8D, 0xBF, 0x84, 0x00
+  lea di, [bx + CCB_PALETTE]                          ; 0838E  0x8D, 0xBF, 0x84, 0x00
   mov cx, [bx + 0x81]                          ; 08392  0x8B, 0x8F, 0x81, 0x00
   mov_dx_cx                                    ; 08396
   repne scasb                                  ; 08398  0xF2, 0xAE
@@ -1541,7 +1622,7 @@ loc_0838C:                                     ; 0838C
   cbw                                          ; 083AB
   shr ax, 3                                    ; 083AC  0xC1, 0xE8, 0x03
   xchg si, ax                                  ; 083AF  0x96
-  mov al, [bx + si + 0x84]                     ; 083B0  0x8A, 0x80, 0x84, 0x00
+  mov al, [bx + si + CCB_PALETTE]                     ; 083B0  0x8A, 0x80, 0x84, 0x00
   mov [bx + CCB_CHAR_ATTR], al                          ; 083B4  0x88, 0x87, 0x80, 0x00
   and word [bx + CCB_FLAGS], 0xfbff                 ; 083B8  0x81, 0x67, 0x6B, 0xFF, 0xFB
   jmp short loc_083EB                          ; 083BD  0xEB, 0x2C
@@ -1573,22 +1654,32 @@ loc_083EB:                                     ; 083EB
   pop di                                       ; 083EB  0x5F
   pop cx                                       ; 083EC  0x59
   ret                                          ; 083ED  0xC3
-  crt_esc_h_sub:
+
+; ESC v - Wrap at End of Line (s. 57 / App. F): Aktiver automatisk linjeskift ved kant
+crt_esc_v_wrap_on:
   and word [bx + CCB_FLAGS], 0xfeff                 ; 083EE  0x81, 0x67, 0x6B, 0xFF, 0xFE
   ret                                          ; 083F3  0xC3
-  crt_esc_g_sub:
+
+; ESC w - Discard at End of Line (s. 57 / App. F): Kassér tegn ud over højre margin
+crt_esc_w_wrap_off:
   or word [bx + CCB_FLAGS], 0x100                   ; 083F4  0x81, 0x4F, 0x6B, 0x00, 0x01
   ret                                          ; 083F9  0xC3
-  crt_esc_c_sub:
-  mov word [bx + 0x7b], crt_esc_sub_1b2a                   ; 083FA  0xC7, 0x47, 0x7B, 0x2A, 0x1B
+
+; ESC < - Scroll Window Up (s. 61 / App. F): Rul angivet vinduesudsnit op
+crt_esc_lt_scroll_up:
+  mov word [bx + CCB_ESC_PARAM_FN], crt_esc_sub_1b2a                   ; 083FA  0xC7, 0x47, 0x7B, 0x2A, 0x1B
   jmp short loc_08406                          ; 083FF  0xEB, 0x05
-  crt_esc_b_sub:
-  mov word [bx + 0x7b], crt_esc_sub_1b53                   ; 08401  0xC7, 0x47, 0x7B, 0x53, 0x1B
+
+; ESC > - Scroll Window Down (s. 61 / App. F): Rul angivet vinduesudsnit ned
+crt_esc_gt_scroll_dn:
+  mov word [bx + CCB_ESC_PARAM_FN], crt_esc_sub_1b53                   ; 08401  0xC7, 0x47, 0x7B, 0x53, 0x1B
 
 loc_08406:                                     ; 08406
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_195d                   ; 08406  0xC7, 0x47, 0x5E, 0x5D, 0x19
   ret                                          ; 0840B  0xC3
-  crt_esc_a_sub:
+
+; ESC 0 - Status Line Off / 25 Line Mode (s. 58 / App. F): 25-linjers skærmtilstand
+crt_esc_0_25_lines:
   mov si, 0x18                                 ; 0840C  0xBE, 0x18, 0x00
   call sub_0865C                               ; 0840F  0xE8, 0x4A, 0x02
   call sub_09220                               ; 08412  0xE8, 0x0B, 0x0E
@@ -1597,7 +1688,9 @@ loc_08406:                                     ; 08406
   call sub_08444                               ; 0841B  0xE8, 0x26, 0x00
   mov byte [bx + CCB_ACTIVE], 0                      ; 0841E  0xC6, 0x47, 0x35, 0x00
   ret                                          ; 08422  0xC3
-  crt_esc_Y_sub:
+
+; ESC 1 - Status Line On / 24 Line Mode (s. 58 / App. F): 24-linjers skærmtilstand
+crt_esc_1_24_lines:
   call sub_09220                               ; 08423  0xE8, 0xFA, 0x0D
   call rtm_delay_1_tick                               ; 08426  0xE8, 0xE9, 0x0E
   cmp word [bx + CCB_COL], 0x18                   ; 08429  0x83, 0x7F, 0x64, 0x18
@@ -1622,19 +1715,23 @@ sub_08444:                                     ; 08444
 
 loc_08459:                                     ; 08459
   ret                                          ; 08459  0xC3
-  crt_esc_Q_sub:
+
+; ESC 2 - Save Current Attributes (s. 58 / App. F): Gem aktuelle attributter i CCB
+crt_esc_2_save_attrs:
   mov ax, [bx + CCB_FLAGS]                          ; 0845A  0x8B, 0x47, 0x6B
   mov al, [bx + CCB_ATTR]                          ; 0845D  0x8A, 0x47, 0x6A
-  mov [bx + 0x6d], ax                          ; 08460  0x89, 0x47, 0x6D
+  mov [bx + CCB_SAVED_FLAGS], ax                          ; 08460  0x89, 0x47, 0x6D
   mov al, [bx + CCB_CHAR_ATTR]                          ; 08463  0x8A, 0x87, 0x80, 0x00
-  mov [bx + 0x6f], al                          ; 08467  0x88, 0x47, 0x6F
+  mov [bx + CCB_SAVED_ATTR], al                          ; 08467  0x88, 0x47, 0x6F
   ret                                          ; 0846A  0xC3
-  crt_esc_P_sub:
-  mov ax, [bx + 0x6d]                          ; 0846B  0x8B, 0x47, 0x6D
+
+; ESC 3 - Restore Attributes (s. 58 / App. F): Gendan gemte attributter fra CCB
+crt_esc_3_restore_attrs:
+  mov ax, [bx + CCB_SAVED_FLAGS]                          ; 0846B  0x8B, 0x47, 0x6D
   mov [bx + CCB_ATTR], al                          ; 0846E  0x88, 0x47, 0x6A
   mov al, [bx + CCB_FLAGS]                          ; 08471  0x8A, 0x47, 0x6B
   mov [bx + CCB_FLAGS], ax                          ; 08474  0x89, 0x47, 0x6B
-  mov al, [bx + 0x6f]                          ; 08477  0x8A, 0x47, 0x6F
+  mov al, [bx + CCB_SAVED_ATTR]                          ; 08477  0x8A, 0x47, 0x6F
   call crt_set_char_attr                               ; 0847A  0xE8, 0xF4, 0xFE
   test byte [bx + CCB_FLAGS], 2                     ; 0847D  0xF6, 0x47, 0x6B, 0x02
   je loc_08484                                 ; 08481  0x74, 0x01
@@ -1643,71 +1740,107 @@ loc_08459:                                     ; 08459
 loc_08484:                                     ; 08484
   mov word [cs:fdc_drive_cyl_0], 0xffff
   jmp near sub_08625                           ; 0848B  0xE9, 0x97, 0x01
-  crt_esc_M_sub:
+
+; ESC 241 (0xF1) - Set Blinking Cursor (s. 62 / App. F): Sæt cursoren til at blinke
+crt_esc_241_cur_blink:
   mov al, 1                                    ; 0848E  0xB0, 0x01
   jmp near vmenu_action_item_1                           ; 08490  0xE9, 0x74, 0xF9
-  crt_esc_L_sub:
+
+; ESC 242 (0xF2) - Set Non-Blinking Cursor (s. 62 / App. F): Sæt cursoren til fast lys
+crt_esc_242_cur_steady:
   xor_al_al                                    ; 08493
   jmp near vmenu_action_item_1                           ; 08495  0xE9, 0x6F, 0xF9
-  crt_esc_K_sub:
+
+; ESC 243 (0xF3) - Set Cursor Representation (s. 62 / App. F): Sæt cursorens scanlinjer
+crt_esc_243_cur_shape:
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_1991                   ; 08498  0xC7, 0x47, 0x5E, 0x91, 0x19
   ret                                          ; 0849D  0xC3
-  crt_esc_J_sub:
-  mov byte [bx + 0x71], 1                      ; 0849E  0xC6, 0x47, 0x71, 0x01
+
+; ESC 244 (0xF4) - Set Soft Scroll (s. 63 / App. F): Aktiver blød rulning
+crt_esc_244_soft_scroll:
+  mov byte [bx + CCB_SCROLL_MODE], 1                      ; 0849E  0xC6, 0x47, 0x71, 0x01
   ret                                          ; 084A2  0xC3
-  crt_esc_I_sub:
-  mov byte [bx + 0x71], 0                      ; 084A3  0xC6, 0x47, 0x71, 0x00
+
+; ESC 245 (0xF5) - Set Line Scroll (s. 63 / App. F): Aktiver linje-rulning
+crt_esc_245_line_scroll:
+  mov byte [bx + CCB_SCROLL_MODE], 0                      ; 084A3  0xC6, 0x47, 0x71, 0x00
   ret                                          ; 084A7  0xC3
-  crt_esc_E_sub:
+
+; ESC 246 (0xF6) - Disable Underline Attribute (s. 63 / App. F): Slå understregning fra
+crt_esc_246_underl_off:
   mov byte [bx + 0x75], 0xff                   ; 084A8  0xC6, 0x47, 0x75, 0xFF
   jmp near sub_096CF                           ; 084AC  0xE9, 0x20, 0x12
-  crt_esc_A_sub:
+
+; ESC 247 (0xF7) - Enable Underline Attribute (s. 63 / App. F): Slå understregning til
+crt_esc_247_underl_on:
   mov byte [bx + 0x75], 0xf8                   ; 084AF  0xC6, 0x47, 0x75, 0xF8
   jmp near sub_096CF                           ; 084B3  0xE9, 0x19, 0x12
-  crt_esc_B_sub:
+
+; ESC 6 / ESC 0xFB (251) - Function Key Expansion Off / Cursor Left (s. 58 / App. F)
+crt_esc_6_fkey_exp_off:
   or word [bx + CCB_FLAGS], CCB_FLG_CHARCONV                   ; 084B6  0x81, 0x4F, 0x6B, 0x00, 0x08
   ret                                          ; 084BB  0xC3
-  crt_esc_D_sub:
+
+; ESC 7 / ESC 0xFC (252) - Function Key Expansion On / Cursor Right (s. 58 / App. F)
+crt_esc_7_fkey_exp_on:
   and word [bx + CCB_FLAGS], ~CCB_FLG_CHARCONV & 0xffff                 ; 084BC  0x81, 0x67, 0x6B, 0xFF, 0xF7
   ret                                          ; 084C1  0xC3
-  crt_esc_C_sub:
-  mov si, [bx + 0x76]                          ; 084C2  0x8B, 0x77, 0x76
+
+; ESC 253 (0xFD) - Save Function Keys (s. 63 / App. F): Gem funktionstaster i buffer (456 bytes)
+crt_esc_253_save_fkeys:
+  mov si, [bx + CCB_FKEY_TABLE]                          ; 084C2  0x8B, 0x77, 0x76
   mov di, xios_screen_state_buf                             ; 084C5  0xBF, 0xC4, 0x4B
   jmp short loc_084D0                          ; 084C8  0xEB, 0x06
-  crt_esc_H_sub:
-  mov di, [bx + 0x76]                          ; 084CA  0x8B, 0x7F, 0x76
+
+; ESC 254 (0xFE) - Restore Function Keys (s. 64 / App. F): Gendan funktionstaster fra buffer (456 bytes)
+crt_esc_254_rest_fkeys:
+  mov di, [bx + CCB_FKEY_TABLE]                          ; 084CA  0x8B, 0x7F, 0x76
   mov si, xios_screen_state_buf                             ; 084CD  0xBE, 0xC4, 0x4B
 
 loc_084D0:                                     ; 084D0
   mov cx, 0x1c8                                ; 084D0  0xB9, 0xC8, 0x01
   rep movsb                                    ; 084D3  0xF3, 0xA4
   ret                                          ; 084D5  0xC3
-  crt_esc_1_sub:
+
+; ESC Y - Position Cursor (s. 52 / App. F): Opsæt 2-trins modtagelse af række og kolonne
+crt_esc_Y_pos_cursor:
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_199d                   ; 084D6  0xC7, 0x47, 0x5E, 0x9D, 0x19
   ret                                          ; 084DB  0xC3
-  crt_esc_d_sub:
+
+; ESC : - Program Function Keys (s. 58 / App. F): Programmer funktionstast-streng
+crt_esc_colon_prog_fkeys:
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_19c3                   ; 084DC  0xC7, 0x47, 0x5E, 0xC3, 0x19
   ret                                          ; 084E1  0xC3
-  crt_esc_equal_sub:
+
+; Standard-retur / ukendt escape-sekvens (App. F): Afslut uden handling (ret)
+crt_esc_default_ret:
   ret                                          ; 084E2  0xC3
-  crt_esc_sub_1943:
+
+; Underhandler for ESC > (Scroll Window Down): Modtager start- og slutrække
+crt_esc_sub_1943:
   shl cl, 4                                    ; 084E3  0xC0, 0xE1, 0x04
   call sub_08369                               ; 084E6  0xE8, 0x80, 0xFE
   jmp near crt_esc_sub_19f7                           ; 084E9  0xE9, 0xAB, 0x00
-  crt_esc_sub_194c:
+
+; Underhandler for ESC < (Scroll Window Up): Modtager start- og slutrække
+crt_esc_sub_194c:
   and cl, 0xf                                  ; 084EC  0x80, 0xE1, 0x0F
   mov al, [bx + CCB_CHAR_ATTR]                          ; 084EF  0x8A, 0x87, 0x80, 0x00
   and al, 0xf0                                 ; 084F3  0x24, 0xF0
   or_al_cl                                     ; 084F5
   call crt_set_char_attr                               ; 084F7  0xE8, 0x77, 0xFE
   jmp near crt_esc_sub_19f7                           ; 084FA  0xE9, 0x9A, 0x00
-  crt_esc_sub_195d:
+
+; Underhandler for ESC b / ESC c: Modtager farveværdi og gemmer i CCB
+crt_esc_sub_195d:
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_196b                   ; 084FD  0xC7, 0x47, 0x5E, 0x6B, 0x19
   sub cl, 0x20                                 ; 08502  0x80, 0xE9, 0x20
   xor_ch_ch                                    ; 08505
-  mov [bx + 0x7d], cx                          ; 08507  0x89, 0x4F, 0x7D
+  mov [bx + CCB_ESC_PARAM_BUF], cx                          ; 08507  0x89, 0x4F, 0x7D
   ret                                          ; 0850A  0xC3
-  crt_esc_sub_196b:
+
+; Underhandler for ESC 243 (Set Cursor Representation): Modtager rasterlinjer
+crt_esc_sub_196b:
   sub cl, 0x20                                 ; 0850B  0x80, 0xE9, 0x20
   cmp cl, [bx + CCB_SCROLL_BOTTOM]                          ; 0850E  0x3A, 0x4F, 0x48
   jae loc_0854D                                ; 08511  0x73, 0x3A
@@ -1715,7 +1848,7 @@ loc_084D0:                                     ; 084D0
   mov_di_cx                                    ; 08515
 
 rtm_al80_poll_console:                         ; 08517
-  mov si, [bx + 0x7d]                          ; 08517  0x8B, 0x77, 0x7D
+  mov si, [bx + CCB_ESC_PARAM_BUF]                          ; 08517  0x8B, 0x77, 0x7D
   cmp_di_si                                    ; 0851A
   jb loc_0854D                                 ; 0851C  0x72, 0x2F
 
@@ -1725,16 +1858,20 @@ rtm_al87_blocking_read:                        ; 0851E
   call sub_8a54                                ; 08520  0xE8, 0x31, 0x05
   pop di                                       ; 08523  0x5F
   pop si                                       ; 08524  0x5E
-  call word [bx + 0x7b]                        ; 08525  0xFF, 0x57, 0x7B
+  call word [bx + CCB_ESC_PARAM_FN]                        ; 08525  0xFF, 0x57, 0x7B
   call sub_8a95                                ; 08528  0xE8, 0x6A, 0x05
   call crt_update_cursor                                ; 0852B  0xE8, 0xA5, 0x00
   jmp near crt_esc_sub_19f7                           ; 0852E  0xE9, 0x66, 0x00
-  crt_esc_sub_1991:
+
+; Underhandler for ESC : (Program Function Keys) trin 1: Modtager tast-id
+crt_esc_sub_1991:
   ror cx, 4                                    ; 08531  0xC1, 0xC9, 0x04
   ror ch, 4                                    ; 08534  0xC0, 0xCD, 0x04
   call sub_7e11                                ; 08537  0xE8, 0xD7, 0xF8
   jmp near crt_esc_sub_19f7                           ; 0853A  0xE9, 0x5A, 0x00
-  crt_esc_sub_199d:
+
+; Underhandler for ESC Y (Position Cursor) trin 1: Modtager række (row + 32)
+crt_esc_sub_199d:
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_19ae                   ; 0853D  0xC7, 0x47, 0x5E, 0xAE, 0x19
   sub cl, 0x20                                 ; 08542  0x80, 0xE9, 0x20
   cmp cl, [bx + CCB_SCROLL_BOTTOM]                          ; 08545  0x3A, 0x4F, 0x48
@@ -1743,15 +1880,19 @@ rtm_al87_blocking_read:                        ; 0851E
 
 loc_0854D:                                     ; 0854D
   ret                                          ; 0854D  0xC3
-  crt_esc_sub_19ae:
+
+; Underhandler for ESC Y (Position Cursor) trin 2: Modtager kolonne (col + 32) og flytter cursor
+crt_esc_sub_19ae:
   mov word [bx + CCB_ESC_HANDLER], crt_char_handler                 ; 0854E  0xC7, 0x47, 0x5E, 0x4F, 0x14
   sub cl, 0x20                                 ; 08553  0x80, 0xE9, 0x20
-  cmp cl, [bx + 0x60]                          ; 08556  0x3A, 0x4F, 0x60
+  cmp cl, [bx + CCB_MAX_COL]                          ; 08556  0x3A, 0x4F, 0x60
   ja crt_esc_sub_19f7                                 ; 08559  0x77, 0x3C
   mov [bx + CCB_ROW], cl                          ; 0855B  0x88, 0x4F, 0x66
   call crt_update_cursor                                ; 0855E  0xE8, 0x72, 0x00
   jmp short crt_esc_sub_19f7                          ; 08561  0xEB, 0x34
-  crt_esc_sub_19c3:
+
+; Underhandler for ESC : (Program Function Keys) trin 2: Indlæser definition indtil NULL
+crt_esc_sub_19c3:
   xchg al, cl                                  ; 08563  86 C1
   mov di, key_scan_code_table                  ; CS:10B5 (start af funktionstast-tabel, 66 bytes)
   mov_dx_di                                    ; 08568
@@ -1762,22 +1903,25 @@ loc_0854D:                                     ; 0854D
   sub_di_dx                                    ; 08572
   xchg di, ax                                  ; 08574  0x97
   call sub_7c97                                ; 08575  0xE8, 0x1F, 0xF7
-  mov [bx + 0x7b], si                          ; 08578  0x89, 0x77, 0x7B
-  mov [bx + 0x7d], cl                          ; 0857B  0x88, 0x4F, 0x7D
+  mov [bx + CCB_ESC_PARAM_FN], si                          ; 08578  0x89, 0x77, 0x7B
+  mov [bx + CCB_ESC_PARAM_BUF], cl                          ; 0857B  0x88, 0x4F, 0x7D
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_19e4                   ; 0857E  0xC7, 0x47, 0x5E, 0xE4, 0x19
   ret                                          ; 08583  0xC3
-  crt_esc_sub_19e4:
-  mov si, [bx + 0x7b]                          ; 08584  0x8B, 0x77, 0x7B
+
+; Underhandler for funktionstast-definition: Gemmer tegn i funktionstast-buffer
+crt_esc_sub_19e4:
+  mov si, [bx + CCB_ESC_PARAM_FN]                          ; 08584  0x8B, 0x77, 0x7B
   mov [si], cl                                 ; 08587  0x88, 0x0C
   inc si                                       ; 08589  0x46
-  mov [bx + 0x7b], si                          ; 0858A  0x89, 0x77, 0x7B
+  mov [bx + CCB_ESC_PARAM_FN], si                          ; 0858A  0x89, 0x77, 0x7B
   or_cl_cl                                     ; 0858D
   je crt_esc_sub_19f7                                 ; 0858F  0x74, 0x06
-  dec byte [bx + 0x7d]                         ; 08591  0xFE, 0x4F, 0x7D
+  dec byte [bx + CCB_ESC_PARAM_BUF]                         ; 08591  0xFE, 0x4F, 0x7D
   je crt_esc_sub_19f7                                 ; 08594  0x74, 0x01
   ret                                          ; 08596  0xC3
 
-  crt_esc_sub_19f7:
+; Afslut flertrins escape-sekvens og gendan normal tegn-handler (crt_char_handler)
+crt_esc_sub_19f7:
   mov word [bx + CCB_ESC_HANDLER], crt_char_handler                 ; 08597  0xC7, 0x47, 0x5E, 0x4F, 0x14
   ret                                          ; 0859C  0xC3
 
@@ -1961,7 +2105,8 @@ loc_086B3:                                     ; 086B3
 sub_086C6:                                     ; 086C6
   mov di, [bx + CCB_SCROLL_BOTTOM]                          ; 086C6  0x8B, 0x7F, 0x48
   dec di                                       ; 086C9  0x4F
-  crt_esc_sub_1b2a:
+; Hjælperutine for vinduesrulning (ESC < og ESC >)
+crt_esc_sub_1b2a:
   test byte [bx + CCB_FLAGS], 4                     ; 086CA  0xF6, 0x47, 0x6B, 0x04
   je loc_086D3                                 ; 086CE  0x74, 0x03
   jmp near loc_08AEE                           ; 086D0  0xE9, 0x1B, 0x04
@@ -1987,7 +2132,8 @@ loc_086D3:                                     ; 086D3
 sub_086EF:                                     ; 086EF
   mov di, [bx + CCB_SCROLL_BOTTOM]                          ; 086EF  0x8B, 0x7F, 0x48
   dec di                                       ; 086F2  0x4F
-  crt_esc_sub_1b53:
+; Hjælperutine for farveberegning (ESC b forgrund / ESC c baggrund)
+crt_esc_sub_1b53:
   test byte [bx + CCB_FLAGS], 4                     ; 086F3  0xF6, 0x47, 0x6B, 0x04
   je loc_086FA                                 ; 086F7  0x74, 0x01
   ret                                          ; 086F9  0xC3
@@ -2017,7 +2163,7 @@ loc_08716:                                     ; 08716
   pop ax                                       ; 0871A  0x58
   test byte [bx + CCB_FLAGS], 0x12                  ; 0871B  0xF6, 0x47, 0x6B, 0x12
   jne loc_0873E                                ; 0871F  0x75, 0x1D
-  cmp byte [bx + 0x71], 0                      ; 08721  0x80, 0x7F, 0x71, 0x00
+  cmp byte [bx + CCB_SCROLL_MODE], 0                      ; 08721  0x80, 0x7F, 0x71, 0x00
   je loc_08743                                 ; 08725  0x74, 0x1C
   cmp_cx_dx                                    ; 08727
   jne loc_08754                                ; 08729  0x75, 0x29
@@ -2060,7 +2206,8 @@ loc_08754:                                     ; 08754
   call rtm_timer_wait                          ; 08784  0xE8, 0x4A, 0xF1
   pop bx                                       ; 08787  0x5B
   ret                                          ; 08788  0xC3
-  crt_scroll_sub_1be9:
+
+crt_scroll_sub_1be9:
   call sub_0880E                               ; 08789  0xE8, 0x82, 0x00
   inc word [cs:xios_con_var_2c04]                         ; 0878C  0x2E, 0xFF, 0x06, 0x04, 0x2C
   push ax                                      ; 08791  0x50
@@ -2075,7 +2222,8 @@ loc_08754:                                     ; 08754
   add di, 3                                    ; 087A8  0x83, 0xC7, 0x03
   mov cl, 1                                    ; 087AB  0xB1, 0x01
   jmp near loc_087CD                           ; 087AD  0xE9, 0x1D, 0x00
-  crt_scroll_sub_1c10:
+
+crt_scroll_sub_1c10:
   call sub_0880E                               ; 087B0  0xE8, 0x5B, 0x00
   push ax                                      ; 087B3  0x50
   call sub_0865C                               ; 087B4  0xE8, 0xA5, 0xFE
@@ -2164,10 +2312,12 @@ sub_08825:                                     ; 08825
   mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 08868  0x8B, 0x4F, 0x48
   pop bx                                       ; 0886B  0x5B
   jmp near loc_08960                           ; 0886C  0xE9, 0xF1, 0x00
-  crt_scroll_sub_1ccf:
+
+crt_scroll_sub_1ccf:
   mov al, 5                                    ; 0886F  0xB0, 0x05
   jmp short loc_08875                          ; 08871  0xEB, 0x02
-  crt_scroll_sub_1cd3:
+
+crt_scroll_sub_1cd3:
   mov al, 3                                    ; 08873  0xB0, 0x03
 
 loc_08875:                                     ; 08875
@@ -2193,19 +2343,22 @@ loc_08875:                                     ; 08875
   call sub_09621                               ; 088AA  0xE8, 0x74, 0x0D
   xor byte [cs:fdc_drive_flags_0], 0x80                   ; 088AD  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 088B3  0xC3
-  crt_scroll_sub_1d14:
+
+crt_scroll_sub_1d14:
   call sub_08972                               ; 088B4  0xE8, 0xBB, 0x00
   add byte [cs:bx + 0x7c], 4                   ; 088B7  0x2E, 0x80, 0x47, 0x7C, 0x04
   add byte [cs:bx + 0x80], 4                   ; 088BC  0x2E, 0x80, 0x87, 0x80, 0x00, 0x04
   xor byte [cs:fdc_drive_flags_0], 0x80                   ; 088C2  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 088C8  0xC3
-  crt_scroll_sub_1d29:
+
+crt_scroll_sub_1d29:
   call sub_08972                               ; 088C9  0xE8, 0xA6, 0x00
   sub byte [cs:bx + 0x7c], 4                   ; 088CC  0x2E, 0x80, 0x6F, 0x7C, 0x04
   sub byte [cs:bx + 0x80], 4                   ; 088D1  0x2E, 0x80, 0xAF, 0x80, 0x00, 0x04
   xor byte [cs:fdc_drive_flags_0], 0x80                   ; 088D7  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 088DD  0xC3
-  crt_scroll_sub_1d3e:
+
+crt_scroll_sub_1d3e:
   mov bx, [cs:xios_con_var_2c00]                          ; 088DE  0x2E, 0x8B, 0x1E, 0x00, 0x2C
   mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 088E3  0x8B, 0x4F, 0x48
   push bx                                      ; 088E6  0x53
@@ -2215,7 +2368,8 @@ loc_08875:                                     ; 08875
   pop bx                                       ; 088F3  0x5B
   mov byte [bx + CCB_ACTIVE], 0                      ; 088F4  0xC6, 0x47, 0x35, 0x00
   ret                                          ; 088F8  0xC3
-  crt_scroll_sub_1d59:
+
+crt_scroll_sub_1d59:
   mov bx, [cs:xios_con_var_2c00]                          ; 088F9  0x2E, 0x8B, 0x1E, 0x00, 0x2C
   mov al, [cs:xios_con_var_2c06]                          ; 088FE  0x2E, 0xA0, 0x06, 0x2C
   or_al_al                                     ; 08902
@@ -2226,6 +2380,7 @@ loc_08875:                                     ; 08875
 
 loc_0890F:                                     ; 0890F
   ret                                          ; 0890F  0xC3
+
 int28_fn_02_scroll_step:                ; 08910
   push ds                                      ; 08910  0x1E
   pop es                                       ; 08911  0x07
@@ -2235,7 +2390,8 @@ int28_fn_02_scroll_step:                ; 08910
   call word [cs:bx + crt_state_jump_table]                 ; 0891B  0x2E, 0xFF, 0x97, 0x86, 0x1D
   inc byte [cs:xios_con_var_2c07]                         ; 08920  0x2E, 0xFE, 0x06, 0x07, 0x2C
   ret                                          ; 08925  0xC3
-  crt_state_jump_table:
+
+crt_state_jump_table:
   ; --- State jump table (12 word pointers) ---
   dw crt_scroll_sub_1be9, crt_scroll_sub_1cd3, crt_scroll_sub_1d14, crt_scroll_sub_1d14, crt_scroll_sub_1d3e, crt_scroll_sub_1d59
   dw crt_scroll_sub_1c10, crt_scroll_sub_1ccf, crt_scroll_sub_1d29, crt_scroll_sub_1d29, crt_scroll_sub_1d3e, crt_scroll_sub_1d59
@@ -2528,6 +2684,7 @@ sub_08B5E:                                     ; 08B5E
   mov es, [cs:xios_video_seg_2c4e]                          ; 08B63  0x2E, 0x8E, 0x06, 0x4E, 0x2C
   mov ds, [cs:xios_video_offset_2c50]                          ; 08B68  0x2E, 0x8E, 0x1E, 0x50, 0x2C
   ret                                          ; 08B6D  0xC3
+
 crt_state_flags:
   dw 0x0000
 crt_cursor_dx:
@@ -2553,6 +2710,7 @@ sub_08B79:                                     ; 08B79
   shl cx, 1                                    ; 08B82  0xD1, 0xE1
   add_si_cx                                    ; 08B84
   jmp word [si]                                ; 08B86  0xFF, 0x24
+
 io_switch:
   cmp dl, [cs:xios4_active_vir_con]                        ; 08B88  0x2E, 0x3A, 0x16, 0x56, 0x2B
   jne loc_08B90                                ; 08B8D  0x75, 0x01
@@ -2832,9 +2990,11 @@ loc_08DC2:                                     ; 08DC2
   pop ds                                       ; 08DC8  0x1F
   pop es                                       ; 08DC9  0x07
   ret                                          ; 08DCA  0xC3
+
 vmenu_screen_buffer_b:
   lodsb                                        ; 08DCB  0xAC
   ret                                          ; 08DCC  0xC3
+
 vmenu_screen_buffer_d:
   lodsw                                        ; 08DCD  0xAD
   ret                                          ; 08DCE  0xC3
@@ -2860,6 +3020,7 @@ sub_08DDE:                                     ; 08DDE
 
 loc_08DED:                                     ; 08DED
   ret                                          ; 08DED  0xC3
+
 vmenu_active_flag:
   db 0x00
 vmenu_saved_bx:
@@ -2908,6 +3069,7 @@ con_puts:                                     ; 08DF1
   pop es                                       ; 08E4F  0x07
   mov al, [cs:kbd_prefix_char]                          ; 08E50  0x2E, 0xA0, 0x40, 0x10
   ret                                          ; 08E54  0xC3
+
 int28_fn_00_graphics_mode:              ; 08E55
   mov es, dx                                   ; 08E55  0x8E, 0xC2
   xchg si, cx                                  ; 08E57  87 F1
@@ -2943,7 +3105,7 @@ loc_08E8B:                                     ; 08E8B
   mov dx, 0x27                                 ; 08EB0  0xBA, 0x27, 0x00
 
 loc_08EB3:                                     ; 08EB3
-  mov [bx + 0x60], dx                          ; 08EB3  0x89, 0x57, 0x60
+  mov [bx + CCB_MAX_COL], dx                          ; 08EB3  0x89, 0x57, 0x60
   inc dx                                       ; 08EB6  0x42
   mov [bx + CCB_WRAP_COL], dl                          ; 08EB7  0x88, 0x57, 0x4D
   call sub_0922F                               ; 08EBA  0xE8, 0x72, 0x03
@@ -2994,7 +3156,7 @@ loc_08F22:                                     ; 08F22
   ror al, 4                                    ; 08F2D  0xC0, 0xC8, 0x04
 
 loc_08F30:                                     ; 08F30
-  lea si, [bx + 0x84]                          ; 08F30  0x8D, 0xB7, 0x84, 0x00
+  lea si, [bx + CCB_PALETTE]                          ; 08F30  0x8D, 0xB7, 0x84, 0x00
   mov [si], al                                 ; 08F34  0x88, 0x04
   mov [si + 8], ah                             ; 08F36  0x88, 0x64, 0x08
   mov ax, [cs:xios_video_offset_2c50]                          ; 08F39  0x2E, 0xA1, 0x50, 0x2C
@@ -3013,6 +3175,7 @@ loc_08F5E:                                     ; 08F5E
   lea bx, [bx + CCB_ACTIVE]                          ; 08F5E  0x8D, 0x5F, 0x35
   mov dx, [cs:xios_sysdat_segment_val]                           ; 08F61  0x2E, 0x8B, 0x16, 0x06, 0x0C
   ret                                          ; 08F66  0xC3
+
 int28_fn_01_char_mode:                  ; 08F67
   cmp word [cs:xios_video_offset_2c4b], 0                      ; 08F67  0x2E, 0x83, 0x3E, 0x4B, 0x2C, 0x00
   je loc_08FDB                                 ; 08F6D  0x74, 0x6C
@@ -3029,7 +3192,7 @@ int28_fn_01_char_mode:                  ; 08F67
   and byte [bx + CCB_FLAGS], 0xfb                   ; 08F97  0x80, 0x67, 0x6B, 0xFB
   mov byte [bx + 0x70], 0xd                    ; 08F9B  0xC6, 0x47, 0x70, 0x0D
   call sub_09643                               ; 08F9F  0xE8, 0xA1, 0x06
-  mov ax, [bx + 0x84]                          ; 08FA2  0x8B, 0x87, 0x84, 0x00
+  mov ax, [bx + CCB_PALETTE]                          ; 08FA2  0x8B, 0x87, 0x84, 0x00
   mov [bx + CCB_CHAR_ATTR], ah                          ; 08FA6  0x88, 0xA7, 0x80, 0x00
   mov byte [bx + CCB_ATTR], 8                      ; 08FAA  0xC6, 0x47, 0x6A, 0x08
   test byte [bx + CCB_FLAGS], 2                     ; 08FAE  0xF6, 0x47, 0x6B, 0x02
@@ -3043,8 +3206,8 @@ int28_fn_01_char_mode:                  ; 08F67
 
 loc_08FBF:                                     ; 08FBF
   mov byte [bx + CCB_WRAP_COL], 0x50                   ; 08FBF  0xC6, 0x47, 0x4D, 0x50
-  mov word [bx + 0x60], 0x4f                   ; 08FC3  0xC7, 0x47, 0x60, 0x4F, 0x00
-  call crt_esc_f6_back                               ; 08FC8  0xE8, 0x3B, 0xF2
+  mov word [bx + CCB_MAX_COL], 0x4f                   ; 08FC3  0xC7, 0x47, 0x60, 0x4F, 0x00
+  call crt_esc_E_cls                               ; 08FC8  0xE8, 0x3B, 0xF2
   and word [bx + CCB_FLAGS], 0xfdff                 ; 08FCB  0x81, 0x67, 0x6B, 0xFF, 0xFD
   call sub_0922F                               ; 08FD0  0xE8, 0x5C, 0x02
   mov bx, [cs:xios4_cur_window_ptr]                          ; 08FD3  0x2E, 0x8B, 0x1E, 0x58, 0x2B
@@ -3188,9 +3351,11 @@ loc_090CE:                                     ; 090CE
   loop loc_090CE                               ; 090D6  0xE2, 0xF6
   pop ds                                       ; 090D8  0x1F
   jmp near sub_09334                           ; 090D9  0xE9, 0x58, 0x02
+
 int28_fn_39_update_screen:              ; 090DC
   call get_cur_process_ccb                               ; 090DC  0xE8, 0xFD, 0xFE
   jmp near sub_09334                           ; 090DF  0xE9, 0x52, 0x02
+
 int28_fn_20_def_alt_char:               ; 090E2
   mov_bp_sp                                    ; 090E2
   mov bp, [bp + 2]                             ; 090E4  0x8B, 0x6E, 0x02
@@ -3213,6 +3378,7 @@ sub_090F8:                                     ; 090F8
   call sub_09131                               ; 09102  0xE8, 0x2C, 0x00
   mov byte [bx + CCB_ACTIVE], 0                      ; 09105  0xC6, 0x47, 0x35, 0x00
   ret                                          ; 09109  0xC3
+
 int28_fn_51_get_font:                   ; 0910A
   mov_bp_sp                                    ; 0910A
   mov bp, [bp + 2]                             ; 0910C  0x8B, 0x6E, 0x02
@@ -3245,16 +3411,19 @@ sub_09131:                                     ; 09131
   pop di                                       ; 0913E  0x5F
   pop ds                                       ; 0913F  0x1F
   ret                                          ; 09140  0xC3
+
 int28_fn_21_get_disp_list:              ; 09141
   call get_cur_process_ccb                               ; 09141  0xE8, 0x98, 0xFE
   mov si, fdc_drive_type_0                               ; 09144  0xBE, 0xA4, 0x5F
   jmp near loc_091B1                           ; 09147  0xE9, 0x67, 0x00
+
 int28_fn_22_set_disp_list:              ; 0914A
   call get_cur_process_ccb                               ; 0914A  0xE8, 0x8F, 0xFE
   mov dh, [bx + CCB_COL]                          ; 0914D  0x8A, 0x77, 0x64
   mov dl, [bx + CCB_ROW]                          ; 09150  0x8A, 0x57, 0x66
   xchg bx, dx                                  ; 09153  87 DA
   ret                                          ; 09155  0xC3
+
 int28_fn_36_cursor_pos:                 ; 09156
   push bx                                      ; 09156  0x53
   call get_cur_process_ccb                               ; 09157  0xE8, 0x82, 0xFE
@@ -3262,18 +3431,21 @@ int28_fn_36_cursor_pos:                 ; 09156
   mov [bx + CCB_COL], dh                          ; 0915B  0x88, 0x77, 0x64
   mov [bx + CCB_ROW], dl                          ; 0915E  0x88, 0x57, 0x66
   jmp near crt_update_cursor                            ; 09161  0xE9, 0x6F, 0xF4
+
 int28_fn_37_get_attr:                   ; 09164
   call get_cur_process_ccb                               ; 09164  0xE8, 0x75, 0xFE
   mov ah, [bx + CCB_ATTR]                          ; 09167  0x8A, 0x67, 0x6A
   ret                                          ; 0916A  0xC3
+
 int28_fn_38_set_attr:                   ; 0916B
   call get_cur_process_ccb                               ; 0916B  0xE8, 0x6E, 0xFE
   mov [bx + CCB_ATTR], ah                          ; 0916E  0x88, 0x67, 0x6A
   ret                                          ; 09171  0xC3
+
 int28_fn_31_palette:                    ; 09172
   xchg si, dx                                  ; 09172  87 F2
   call get_cur_process_ccb                               ; 09174  0xE8, 0x65, 0xFE
-  lea di, [bx + 0x84]                          ; 09177  0x8D, 0xBF, 0x84, 0x00
+  lea di, [bx + CCB_PALETTE]                          ; 09177  0x8D, 0xBF, 0x84, 0x00
   mov_bp_sp                                    ; 0917B
   mov cx, 8                                    ; 0917D  0xB9, 0x08, 0x00
   push ds                                      ; 09180  0x1E
@@ -3432,6 +3604,7 @@ ww_switch_display:
 io_setblank:
   mov ax, 0x5001                               ; 00001AEA / 091EE
   ret                                          ; 00001AED / 091F1
+
 sub_091F2:                                     ; 091F2
   mov ax, [bx + 0x4a]                          ; 091F2  0x8B, 0x47, 0x4A
   cmp_dl_al                                    ; 091F5
@@ -3730,6 +3903,7 @@ sub_x4_clip_repaint_entry:
   inc si
   inc si
   jmp short .loc_28e3
+
 .loc_28e0:
   add [si - 3], bl
 .loc_28e3:
@@ -3751,6 +3925,7 @@ sub_x4_clip_repaint_entry:
   jns .loc_288f
   pop bx
   ret
+
 .xios4_clip_v1:
   dw 0
 .xios4_clip_v2:
@@ -3859,6 +4034,7 @@ loc_093A0:                                     ; 093A0
 
 loc_093A2:                                     ; 093A2
   ret                                          ; 093A2  0xC3
+
 sub_093A3:
   mov word [bx + 0x5a], 0xffff                 ; 093A3  0xC7, 0x47, 0x5A, 0xFF, 0xFF
   mov dx, [bx + CCB_WIN_LEFT]                          ; 093A8  0x8B, 0x57, 0x36
@@ -3972,6 +4148,7 @@ loc_09460:                                     ; 09460
   loop loc_09460                               ; 0946A  0xE2, 0xF4
   pop cx                                       ; 0946C  0x59
   ret                                          ; 0946D  0xC3
+
 xios_char_mode_byte:
   db 0
 xios_clip_draw_char:
@@ -3985,6 +4162,7 @@ xios_clip_draw_char:
   jnz .loc_2a93
   stosw
   ret
+
 .loc_2a93:
   inc di
   inc di
@@ -4034,6 +4212,7 @@ loc_094A8:                                     ; 094A8
   xor_bh_bh                                    ; 094AA
   shl bx, 1                                    ; 094AC  0xD1, 0xE3
   jmp word [cs:bx + mouse_jump_table]
+
 mouse_jump_table:
   dw mouse_fn_reset
   dw mouse_fn_init
@@ -4056,11 +4235,13 @@ mouse_step_y:
 mouse_fn_reset:
   mov al, 0xff                                 ; 094C8  0xB0, 0xFF
   ret                                          ; 094CA  0xC3
+
 mouse_fn_nop:
   ret                                          ; 094CB  0xC3
+
 mouse_fn_init:
   mov byte [cs:mouse_counter], 5
-  mouse_fn_read:
+mouse_fn_read:
   pushf                                        ; 094D2  0x9C
   cli                                          ; 094D3  0xFA
   xor_ax_ax                                    ; 094D4
@@ -4184,6 +4365,7 @@ loc_095DA:                                     ; 095DA
   pop bx                                       ; 095F4  0x5B
   mov byte [cs:kbd_disabled_flag], 0                       ; 095F5  0x2E, 0xC6, 0x06, 0x60, 0x2A, 0x00
   ret                                          ; 095FB  0xC3
+
 kbd_buf_head:
   dw 0x0384
 kbd_buf_tail:
@@ -4236,7 +4418,7 @@ sub_09643:                                     ; 09643
   push es                                      ; 0964B  0x06
   push ds                                      ; 0964C  0x1E
   pop es                                       ; 0964D  0x07
-  lea di, [bx + 0x84]                          ; 0964E  0x8D, 0xBF, 0x84, 0x00
+  lea di, [bx + CCB_PALETTE]                          ; 0964E  0x8D, 0xBF, 0x84, 0x00
   mov si, mouse_cursor_char_table                               ; 09652  0xBE, 0xD4, 0x2A
   mov cx, 0x10                                 ; 09655  0xB9, 0x10, 0x00
   mov [bx + 0x81], cx                          ; 09658  0x89, 0x8F, 0x81, 0x00
@@ -4247,7 +4429,7 @@ sub_09643:                                     ; 09643
 loc_09660:                                     ; 09660
   mov al, [cs:xios_con_var_2bfe]                          ; 09660  0x2E, 0xA0, 0xFE, 0x2B
   mov ah, [cs:xios_con_var_2bff]                          ; 09664  0x2E, 0x8A, 0x26, 0xFF, 0x2B
-  mov [bx + 0x84], ax                          ; 09669  0x89, 0x87, 0x84, 0x00
+  mov [bx + CCB_PALETTE], ax                          ; 09669  0x89, 0x87, 0x84, 0x00
   mov word [bx + 0x81], 2                      ; 0966D  0xC7, 0x87, 0x81, 0x00, 0x02, 0x00
   ret                                          ; 09673  0xC3
 
@@ -4278,7 +4460,7 @@ loc_096B7:                                     ; 096B7
   ret                                          ; 096B7  0xC3
 
 sub_096B8:                                     ; 096B8
-  lea si, [bx + 0x84]                          ; 096B8  0x8D, 0xB7, 0x84, 0x00
+  lea si, [bx + CCB_PALETTE]                          ; 096B8  0x8D, 0xB7, 0x84, 0x00
   mov dx, PORT_PALETTE_BASE                    ; 096BC  0xBA, 0x80, 0x01
   mov cx, 0x10                                 ; 096BF  0xB9, 0x10, 0x00
 
@@ -4497,6 +4679,7 @@ loc_0995B:                                     ; 0995B
 loc_09976:                                     ; 09976
   mov_bx_ax                                    ; 09976
   ret                                          ; 09978  0xC3
+
 io_read:
   mov_bp_sp                                    ; 09979
   mov al, 1                                    ; 0997B  0xB0, 0x01
@@ -4582,6 +4765,7 @@ loc_09A32:                                     ; 09A32
   mov al, [cs:fdc_param_3756]                          ; 09A32  0x2E, 0xA0, 0x56, 0x37
   mov_bl_al                                    ; 09A36
   ret                                          ; 09A38  0xC3
+
 io_write:
   mov_bp_sp                                    ; 09A39
   mov al, 1                                    ; 09A3B  0xB0, 0x01
@@ -4667,11 +4851,13 @@ loc_09AF2:                                     ; 09AF2
   mov al, [cs:fdc_param_3757]                          ; 09AF2  0x2E, 0xA0, 0x57, 0x37
   mov_bl_al                                    ; 09AF6
   ret                                          ; 09AF8  0xC3
+
 fdc_jump_table_2f59:
   dw fdc_op_2f5e
 io_flushbuf:
   xor_al_al                                    ; 09AFB
   ret                                          ; 09AFD  0xC3
+
 fdc_op_2f5e:
   inc word [bp + 0xa]                          ; 09AFE  0xFF, 0x46, 0x0A
   mov byte [cs:fdc_param_3781], 1                      ; 09B01  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x01
@@ -4912,7 +5098,7 @@ loc_09D1A:                                     ; 09D1A
 sub_09D1B:                                     ; 09D1B
   cli                                          ; 09D1B  0xFA
   push ax                                      ; 09D1C  0x50
-  call net_reserve_fdc                               ; 09D1D  0xE8, 0xB1, 0x2D
+  call dpc_reserve_fdc                               ; 09D1D  0xE8, 0xB1, 0x2D
   pop ax                                       ; 09D20  0x58
   sti                                          ; 09D21  0xFB
   mov_cl_ah                                    ; 09D22
@@ -5294,6 +5480,7 @@ loc_09FDD:                                     ; 09FDD
 loc_09FF7:                                     ; 09FF7
   stc                                          ; 09FF7  0xF9
   ret                                          ; 09FF8  0xC3
+
 int28_fn_05_recalibrate:                ; 09FF9
   mov byte [cs:fdc_param_3781], 1                      ; 09FF9  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x01
   mov_bp_sp                                    ; 09FFF
@@ -5307,11 +5494,13 @@ fdc_read_path:                                 ; 0A00B
   out dx, al                                   ; 0A00E  0xEE
   call fdc_wait                                ; 0A00F  0xE8, 0x3B, 0xFF
   jmp near loc_0A13C                           ; 0A012  0xE9, 0x27, 0x01
+
 int28_fn_06_reserved:                   ; 0A015
   ret                                          ; 0A015  0xC3
 
 int28_fn_07_reserved:                   ; 0A016
   ret                                          ; 0A016  0xC3
+
 int28_fn_08_step_in:                    ; 0A017
   mov byte [cs:fdc_param_3781], 1                      ; 0A017  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x01
   mov_bp_sp                                    ; 0A01D
@@ -5323,6 +5512,7 @@ int28_fn_08_step_in:                    ; 0A017
   out dx, al                                   ; 0A02C  0xEE
   call fdc_wait                                ; 0A02D  0xE8, 0x1D, 0xFF
   jmp near loc_0A13C                           ; 0A030  0xE9, 0x09, 0x01
+
 int28_fn_09_step_out:                   ; 0A033
   ret                                          ; 0A033  0xC3
 
@@ -5379,6 +5569,7 @@ xios_fdc_send_cmd_wait:                        ; 0A0B0
   out dx, al                                   ; 0A0BA  0xEE
   call fdc_wait                                ; 0A0BB  0xE8, 0x8F, 0xFE
   ret                                          ; 0A0BE  0xC3
+
 int28_fn_11_read_track:                 ; 0A0BF
   mov byte [cs:fdc_param_3781], 1                      ; 0A0BF  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x01
   mov_bp_sp                                    ; 0A0C5
@@ -5431,12 +5622,15 @@ loc_0A13C:                                     ; 0A13C
   mov al, [cs:fdc_param_3782]                          ; 0A142  0x2E, 0xA0, 0x82, 0x37
   mov byte [cs:fdc_param_3781], 0                      ; 0A146  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x00
   ret                                          ; 0A14C  0xC3
+
 int28_fn_13_disk_stats:                 ; 0A14D
   mov es, [cs:xios_sysdat_segment_val]                           ; 0A14D  0x2E, 0x8E, 0x06, 0x06, 0x0C
   mov ax, fdc_param_3785                               ; 0A152  0xB8, 0x85, 0x37
   ret                                          ; 0A155  0xC3
+
 int28_fn_14_reserved:                   ; 0A156
   ret                                          ; 0A156  0xC3
+
 fdc_dma_buffer_ptr_35b7:
   db 0x00, 0x00                                ; 0A157  ..
 
@@ -5482,6 +5676,7 @@ sub_0A17F:                                     ; 0A17F
   mov_cx_ax                                    ; 0A19E
   cld                                          ; 0A1A0  0xFC
   ret                                          ; 0A1A1  0xC3
+
 fdc_dma_buffer_ptr_3602:
   db 0x00                                      ; 0A1A2  .
   inc ax                                       ; 0A1A3  0x40
@@ -5645,6 +5840,7 @@ loc_0A2A7:                                     ; 0A2A7
   out PORT_PPI_PORTC, al                       ; 0A2AD  0xE6, 0x74
   sti                                          ; 0A2AF  0xFB
   ret                                          ; 0A2B0  0xC3
+
 fdc_int10_handler:
   push dx                                      ; 0A2B1  0x52
   mov [cs:fdc_scratch_392f], ax                          ; 0A2B2  0x2E, 0xA3, 0x2F, 0x39
@@ -5884,6 +6080,7 @@ loc_0A79D:                                     ; 0A79D
   mov es, [cs:xios_sysdat_segment_val]                           ; 0A7DB  0x2E, 0x8E, 0x06, 0x06, 0x0C
   mov bx, fdc_drive_type_0                               ; 0A7E0  0xBB, 0xA4, 0x5F
   jmp near loc_0B24F                           ; 0A7E3  0xE9, 0x69, 0x0A
+
 xios_auxin_ds:
   dw 0x0000
 xios_auxin_bx:
@@ -5892,9 +6089,11 @@ xios_auxin_es:
   dw 0x0000
 xios_auxin_handler:
   iret                                         ; 0A7EC  0xCF
+
 io_auxin:
   mov al, 0x1a                                 ; 0A7ED  0xB0, 0x1A
   ret                                          ; 0A7EF  0xC3
+
 io_auxout:
   ret                                          ; 0A7F0  0xC3
 
@@ -5911,6 +6110,7 @@ loc_0A7FB:                                     ; 0A7FB
   shl bx, 1                                    ; 0A802  0xD1, 0xE3
   call word [cs:bx + xios_aux_jump_table]                   ; 0A804  0x2E, 0xFF, 0x97, 0x6A, 0x3C
   ret                                          ; 0A809  0xC3
+
 xios_aux_jump_table:
     dw xios_aux_ret_3cbe
     dw xios_aux_ret_3cbe
@@ -5944,6 +6144,7 @@ loc_0A83E:                                     ; 0A83E
   call rtm_timer_wait2                         ; 0A843  0xE8, 0x8D, 0xD0
   mov al, [cs:xios_aux_data_3cab]                          ; 0A846  0x2E, 0xA0, 0xAB, 0x3C
   ret                                          ; 0A84A  0xC3
+
 xios_aux_data_3cab:
   dw 0x0000
 xios_aux_buf_3cad:
@@ -5952,6 +6153,7 @@ xios_aux_buf_3cad:
     db "NetConI "
 xios_aux_ret_3cbd:
     ret
+
 xios_aux_ret_3cbe:
   cli                                          ; 0A85E  0xFA
   call sub_0A8A9                               ; 0A85F  0xE8, 0x47, 0x00
@@ -6020,6 +6222,7 @@ loc_0A8CD:                                     ; 0A8CD
   shl bx, 1                                    ; 0A8D4  0xD1, 0xE3
   call word [cs:bx + xios_prn_table_3d3c]                   ; 0A8D6  0x2E, 0xFF, 0x97, 0x3C, 0x3D
   ret                                          ; 0A8DB  0xC3
+
 xios_prn_table_3d3c:
     dw xios_prn_isr
     dw xios_prn_isr
@@ -6029,6 +6232,7 @@ xios_prn_state_word:
     dw xios_prn_fn_3d47
 xios_prn_ret_3d46:
     ret
+
 xios_prn_fn_3d47:
     push bx
     push cx
@@ -6062,6 +6266,7 @@ sub_0A923:                                     ; 0A923
   call rtm_timer_wait2                         ; 0A928  0xE8, 0xA8, 0xCF
   mov byte [cs:xios_prn_flag_3d92], 0                      ; 0A92B  0x2E, 0xC6, 0x06, 0x92, 0x3D, 0x00
   ret                                          ; 0A931  0xC3
+
 xios_prn_flag_3d92:
   db 0x00
 xios_prn_buf_3d93:
@@ -6103,6 +6308,7 @@ loc_0A9DB:                                     ; 0A9DB
 loc_0A9FC:                                     ; 0A9FC
   popf                                         ; 0A9FC  0x9D
   ret                                          ; 0A9FD  0xC3
+
 int28_fn_25_reserved:                   ; 0A9FE
   db 0x2E, 0x3A, 0x16                          ; 0A9FE  .:.
 
@@ -6136,6 +6342,7 @@ loc_0AA27:                                     ; 0AA27
   call xios_switch_to_priv_stack               ; 0AA2F  0xE8, 0xEB, 0x04
   mov bx, xios_crt_buf_402f                               ; 0AA32  0xBB, 0x2F, 0x40
   jmp short loc_0AA3D                          ; 0AA35  0xEB, 0x06
+
 xios_timer_isr:
   call xios_switch_to_priv_stack               ; 0AA37  0xE8, 0xE3, 0x04
   mov bx, xios_crt_param_4058                               ; 0AA3A  0xBB, 0x58, 0x40
@@ -6235,6 +6442,7 @@ loc_0AAF1:                                     ; 0AAF1
   call xios_switch_to_priv_stack               ; 0AAF7  0xE8, 0x23, 0x04
   mov bx, xios_crt_buf_402f                               ; 0AAFA  0xBB, 0x2F, 0x40
   jmp near loc_0AB06                           ; 0AAFD  0xE9, 0x06, 0x00
+
 xios_serial_isr:
   call xios_switch_to_priv_stack               ; 0AB00  0xE8, 0x1A, 0x04
   mov bx, xios_crt_param_4058                               ; 0AB03  0xBB, 0x58, 0x40
@@ -6475,7 +6683,7 @@ loc_0ACA4:                                     ; 0ACA4
   sti                                          ; 0ACBB  0xFB
   je prn_dpc_out                                 ; 0ACBC  0x74, 0x05
   push cx                                      ; 0ACBE  0x51
-  call net_reserve_printer                               ; 0ACBF  0xE8, 0x5C, 0x1D
+  call dpc_reserve_printer                               ; 0ACBF  0xE8, 0x5C, 0x1D
   pop cx                                       ; 0ACC2  0x59
 
 ; -----------------------------------------------------------------------------
@@ -6556,7 +6764,7 @@ io_listst:
   cmp byte [cs:xios_prn_reserve_flag], 0xff                   ; 0AD3A  0x2E, 0x80, 0x3E, 0x40, 0x5E, 0xFF
   je floppy_status_check                       ; 0AD40  0x74, 0x22
   mov byte [cs:xios_prn_pending_flag], 0xff                   ; 0AD42  0x2E, 0xC6, 0x06, 0x45, 0x5E, 0xFF
-  call net_reserve_printer                               ; 0AD48  0xE8, 0xD3, 0x1C
+  call dpc_reserve_printer                               ; 0AD48  0xE8, 0xD3, 0x1C
   cli                                          ; 0AD4B  0xFA
   push ds                                      ; 0AD4C  0x1E
   mov ds, [cs:xios_sysdat_segment_val]                           ; 0AD4D  0x2E, 0x8E, 0x1E, 0x06, 0x0C
@@ -6611,6 +6819,7 @@ con_status_poll:                               ; 0AD8E
 
 loc_0AD9A:                                     ; 0AD9A
   ret                                          ; 0AD9A  0xC3
+
 i_printer:
 xios_crt_isr_41fb:
   call xios_switch_to_priv_stack               ; 0AD9B  0xE8, 0x7F, 0x01
@@ -6621,6 +6830,7 @@ xios_crt_isr_41fb:
   mov dx, 0xc                                  ; 0ADA7  0xBA, 0x0C, 0x00
   call rtm_call_helper                         ; 0ADAA  0xE8, 0x13, 0xCB
   jmp near loc_0AF3E                           ; 0ADAD  0xE9, 0x8E, 0x01
+
 xios_crt_isr:
   call xios_switch_to_priv_stack               ; 0ADB0  0xE8, 0x6A, 0x01
   mov al, 0x80                                 ; 0ADB3  0xB0, 0x80
@@ -6630,6 +6840,7 @@ xios_crt_isr:
   mov dx, 0x19                                 ; 0ADBC  0xBA, 0x19, 0x00
   call rtm_call_helper                         ; 0ADBF  0xE8, 0xFE, 0xCA
   jmp near loc_0AF3E                           ; 0ADC2  0xE9, 0x79, 0x01
+
 xios_crt_table_4225:
   db 0x00, 0x00, 0x04, 0x00, 0x00, 0x80, 0x04, 0x00
   times 10 db 0
@@ -6659,6 +6870,7 @@ int28_fn_04_get_autoconfig:             ; 0AE7F
   mov es, [cs:xios_sysdat_segment_val]                           ; 0AE7F  0x2E, 0x8E, 0x06, 0x06, 0x0C
   mov si, xios_crt_table_4225                               ; 0AE84  0xBE, 0x25, 0x42
   ret                                          ; 0AE87  0xC3
+
 int28_fn_32_reserved:                   ; 0AE88
   pushf                                        ; 0AE88  0x9C
   cli                                          ; 0AE89  0xFA
@@ -6666,6 +6878,7 @@ int28_fn_32_reserved:                   ; 0AE88
   mov [cs:xios_hook_timer_seg], cx                          ; 0AE8F  0x2E, 0x89, 0x0E, 0x27, 0x43
   popf                                         ; 0AE94  0x9D
   ret                                          ; 0AE95  0xC3
+
 int28_fn_33_reserved:                   ; 0AE96
   pushf                                        ; 0AE96  0x9C
   cli                                          ; 0AE97  0xFA
@@ -6674,6 +6887,7 @@ int28_fn_33_reserved:                   ; 0AE96
   mov [cs:xios_hook_timer_seg], cs                          ; 0AE9F  0x2E, 0x8C, 0x0E, 0x27, 0x43
   popf                                         ; 0AEA4  0x9D
   ret                                          ; 0AEA5  0xC3
+
 int28_fn_34_reserved:                   ; 0AEA6
   pushf                                        ; 0AEA6  0x9C
   cli                                          ; 0AEA7  0xFA
@@ -6688,8 +6902,10 @@ int28_fn_34_reserved:                   ; 0AEA6
   mov [cs:xios_hook_sec_seg], cs                          ; 0AEBD  0x2E, 0x8C, 0x0E, 0x2B, 0x43
   popf                                         ; 0AEC2  0x9D
   ret                                          ; 0AEC3  0xC3
+
 dummy_far_hook_ret:
   retf                                         ; 0AEC4  0xCB
+
 xios_hook_timer_off:
   dw dummy_far_hook_ret                        ; 0AEC5  0x24, 0x43
 xios_fixup_target_1:
@@ -6718,7 +6934,7 @@ rtc_1sec_isr:
   call sub_09588                               ; 0AEE2  0xE8, 0xA3, 0xE6
   call fdc_motor_timeout_tick                               ; 0AEE5  0xE8, 0x7A, 0xEE
   call sub_09DC8                               ; 0AEE8  0xE8, 0xDD, 0xEE
-  call net_release_shared_devices                               ; 0AEEB  0xE8, 0x4E, 0x1C
+  call dpc_release_shared_devices                               ; 0AEEB  0xE8, 0x4E, 0x1C
   mov bx, xios_crt_table_4225                               ; 0AEEE  0xBB, 0x25, 0x42
   cmp byte [bx + 0xc], 0xff                    ; 0AEF1  0x80, 0x7F, 0x0C, 0xFF
   je loc_0AEFE                                 ; 0AEF5  0x74, 0x07
@@ -6833,6 +7049,7 @@ rtc_write_reg:                                     ; 0AFE6
   out dx, al                                   ; 0AFFA  0xEE
   xchg ah, al                                  ; 0AFFB  86 E0
   ret                                          ; 0AFFD  0xC3
+
 int28_fn_12_sound:                      ; 0AFFE
   mov_ah_dl                                    ; 0AFFE
   in al, PORT_SOUND                            ; 0B000  0xE4, 0x56
@@ -6857,6 +7074,7 @@ io_bus_delay:                                     ; 0B019
 .delay_loop:                                     ; 0B01C
   loop .delay_loop                               ; 0B01C  0xE2, 0xFE
   ret                                          ; 0B01E  0xC3
+
 int28_fn_19_timer:                      ; 0B01F
   mov dx, [cs:xios_tick_high]                          ; 0B01F  0x2E, 0x8B, 0x16, 0x28, 0x44
   mov ax, [cs:xios_tick_low]                          ; 0B024  0x2E, 0xA1, 0x26, 0x44
@@ -6964,6 +7182,7 @@ loc_0B0C3:                                     ; 0B0C3
   mov al, [bx + 0x11]                          ; 0B10C  0x8A, 0x47, 0x11
   mov [di + 0xf], al                           ; 0B10F  0x88, 0x45, 0x0F
   ret                                          ; 0B112  0xC3
+
 xios_diag_buf_4573:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 0B113  ................
 int28_fn_24_isbx_init:                  ; 0B123
@@ -7139,6 +7358,7 @@ xios_diag_fn_46a9:
   db 0xF3                                      ; 0B249 (add bl, dh opcode 00 F3)
   movsb                                        ; 0B24A  0xA4
   iret                                         ; 0B24B  0xCF
+
 xios_diag_fn_46ac:
   rep movsw                                    ; 0B24C  0xF3, 0xA5
   iret                                         ; 0B24E  0xCF
@@ -7149,6 +7369,7 @@ loc_0B24F:                                     ; 0B24F
   pop bx                                       ; 0B255  0x5B
   stc                                          ; 0B256  0xF9
   jmp far [cs:xios_diag_hook_46bc]                          ; 0B257  0x2E, 0xFF, 0x2E, 0xBC, 0x46
+
 xios_diag_hook_46bc:
   db 0x00, 0x00, 0xFF                          ; 0B25C  ...
   db 0xFF                                      ; 0B25F (call far [0x8e2e] opcode FF 1E 2E 8E)
@@ -7185,6 +7406,7 @@ loc_0B29D:                                     ; 0B29D
   mov sp, [cs:xios_saved_sp]                          ; 0B2A9  0x2E, 0x8B, 0x26, 0x22, 0x44
   pop ds                                       ; 0B2AE  0x1F
   iret                                         ; 0B2AF  0xCF
+
 xios_diag_buf_4710:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 0B2B0  ..............
 xios_int3_handler:
@@ -7218,6 +7440,7 @@ xios_int3_handler:
   mov cx, 0x8f                                 ; 0B304  0xB9, 0x8F, 0x00
   mov dx, 0xffff                               ; 0B307  0xBA, 0xFF, 0xFF
   jmp near rtm_timer_wait2                     ; 0B30A  0xE9, 0xC6, 0xC5
+
 xios_diag_str_interrupt:
   db 0x22, "Interrupt="
 xios_diag_slot_int_num:
@@ -7653,6 +7876,7 @@ cmp byte [cs:fdc_drive_type_0], 1                      ; 0BB66  0x2E, 0x80, 0x3E
   sub dx, 2                                    ; 0BB8B  0x83, 0xEA, 0x02
   out dx, ax                                   ; 0BB8E  0xEF
   ret                                          ; 0BB8F  0xC3
+
 kbd_init_seq:
   db 0x1B, 0x48, 0x00                          ; 0BB90  sbb cx, word [bx + si]
   add [bp + di], bl                            ; 0BB93  0x00, 0x1B
@@ -8624,6 +8848,7 @@ loc_0C430:                                     ; 0C430
   mov dx, 2                                    ; 0C438  0xBA, 0x02, 0x00
   out dx, ax                                   ; 0C43B  0xEF
   retf                                         ; 0C43C  0xCB
+
 xios_boot_fpu_lan_flag:
   dw 0x0000                                    ; 0C43D  FPU / LAN boot-flag (CS:589D)
 
@@ -8785,6 +9010,7 @@ mov [cs:xios_cas_byte_count], cx                          ; 0C6C8  0x2E, 0x89, 0
   xchg bx, dx                                  ; 0C6D0  87 DA
   xchg bx, cx                                  ; 0C6D2  87 D9
   ret                                          ; 0C6D4  0xC3
+
 int28_fn_27_cas_write_hdr:                ; 0C6D5 (Båndoptager skriv filhoved)
   call sub_0C9D9                               ; 0C6D5  0xE8, 0x01, 0x03
   mov_bx_dx                                    ; 0C6D8
@@ -8794,6 +9020,7 @@ mov byte [cs:xios_cas_state], 1                      ; 0C6E6  0x2E, 0xC6, 0x06, 
   call cas_write_leader_and_header                               ; 0C6EC  0xE8, 0xA9, 0x01
   mov_dx_bx                                    ; 0C6EF
   ret                                          ; 0C6F1  0xC3
+
 int28_fn_28_cas_read_data:               ; 0C6F2 (Båndoptager læs datablok)
   call sub_0C9D9                               ; 0C6F2  0xE8, 0xE4, 0x02
   mov_bx_dx                                    ; 0C6F5
@@ -8804,6 +9031,7 @@ mov [cs:xios_cas_byte_count], cx                          ; 0C702  0x2E, 0x89, 0
   xchg bx, dx                                  ; 0C70A  87 DA
   xchg bx, cx                                  ; 0C70C  87 D9
   ret                                          ; 0C70E  0xC3
+
 int28_fn_29_cas_write_data:              ; 0C70F (Båndoptager skriv datablok)
   call sub_0C9D9                               ; 0C70F  0xE8, 0xC7, 0x02
   mov_bx_dx                                    ; 0C712
@@ -8813,6 +9041,7 @@ inc word [cs:xios_cas_block_num]                         ; 0C71F  0x2E, 0xFF, 0x
   call cas_write_leader_and_header                               ; 0C724  0xE8, 0x71, 0x01
   mov_dx_bx                                    ; 0C727
   ret                                          ; 0C729  0xC3
+
 int28_fn_40_cas_write_eof:               ; 0C72A (Båndoptager skriv EOF-blok)
   call sub_0C9D9                               ; 0C72A  0xE8, 0xAC, 0x02
   mov_bx_dx                                    ; 0C72D
@@ -9233,6 +9462,7 @@ sub_0C9D9:                                     ; 0C9D9
   push bx                                      ; 0C9DD  0x53
   push ax                                      ; 0C9DE  0x50
   ret                                          ; 0C9DF  0xC3
+
 xios_prn_reserve_flag:
   db 0x00                                      ; 0C9E0 (CS:5E40)
 xios_prn_reserve_timer:
@@ -9265,6 +9495,7 @@ mov di, xios_vmenu_line_buf_4909                               ; 0C9E7  0xBF, 0x
   pop es                                       ; 0C9FE  0x07
   call io_statline                               ; 0C9FF  0xE8, 0x5F, 0xC2
   ret                                          ; 0CA02  0xC3
+
 int28_fn_41_dpc_parallel:               ; 0CA03 (Reserver/frigiv DPC interface)
   push ax                                      ; 0CA03  0x50
   push es                                      ; 0CA04  0x06
@@ -9279,7 +9510,7 @@ int28_fn_41_dpc_parallel:               ; 0CA03 (Reserver/frigiv DPC interface)
   jne loc_0CA72                                ; 0CA16  0x75, 0x5A
 mov byte [cs:xios_prn_client_mode], 0xff                   ; 0CA18  0x2E, 0xC6, 0x06, 0x43, 0x5E, 0xFF
 
-net_reserve_printer:                                     ; 0CA1E
+dpc_reserve_printer:                                     ; 0CA1E
   mov dx, PORT_PRN_RESERVE                     ; 0CA1E  0xBA, 0x92, 0x02
   mov al, 0xff                                 ; 0CA21  0xB0, 0xFF
   out dx, al                                   ; 0CA23  0xEE
@@ -9329,7 +9560,7 @@ loc_0CA7E:                                     ; 0CA7E
   mov ax, 0xffff                               ; 0CA7E  0xB8, 0xFF, 0xFF
   ret                                          ; 0CA81  0xC3
 
-net_release_printer:                                     ; 0CA82
+dpc_release_printer:                                     ; 0CA82
 cmp byte [cs:xios_prn_reserve_flag], 0xff                   ; 0CA82  0x2E, 0x80, 0x3E, 0x40, 0x5E, 0xFF
   jne loc_0CAB4                                ; 0CA88  0x75, 0x2A
 cmp byte [cs:xios_prn_reserve_timer], 0                      ; 0CA8A  0x2E, 0x80, 0x3E, 0x41, 0x5E, 0x00
@@ -9348,6 +9579,7 @@ mov byte [cs:xios_prn_reserve_timer], 0                      ; 0CAAE  0x2E, 0xC6
 
 loc_0CAB4:                                     ; 0CAB4
   ret                                          ; 0CAB4  0xC3
+
 int28_fn_42_shared_disk:                ; 0CAB5 (Reserver/frigiv delt disk)
   push ax                                      ; 0CAB5  0x50
   push es                                      ; 0CAB6  0x06
@@ -9362,7 +9594,7 @@ int28_fn_42_shared_disk:                ; 0CAB5 (Reserver/frigiv delt disk)
   jne loc_0CB08                                ; 0CAC9  0x75, 0x3D
 mov byte [cs:xios_fdc_client_mode], 0xff                   ; 0CACB  0x2E, 0xC6, 0x06, 0x44, 0x5E, 0xFF
 
-net_reserve_fdc:                                     ; 0CAD1
+dpc_reserve_fdc:                                     ; 0CAD1
 mov byte [cs:xios_fdc_reserve_flag], 0                      ; 0CAD1  0x2E, 0xC6, 0x06, 0x42, 0x5E, 0x00
   mov dx, PORT_FDC_RESERVE                     ; 0CAD7  0xBA, 0x8E, 0x02
   mov al, 0xff                                 ; 0CADA  0xB0, 0xFF
@@ -9403,7 +9635,7 @@ loc_0CB14:                                     ; 0CB14
   mov ax, 0xffff                               ; 0CB14  0xB8, 0xFF, 0xFF
   ret                                          ; 0CB17  0xC3
 
-net_check_fdc_release:                                     ; 0CB18
+dpc_check_fdc_release:                                     ; 0CB18
 cmp byte [cs:xios_fdc_reserve_flag], 0xff                   ; 0CB18  0x2E, 0x80, 0x3E, 0x42, 0x5E, 0xFF
   jne loc_0CB3B                                ; 0CB1E  0x75, 0x1B
 cmp byte [cs:xios_fdc_client_mode], 0xff                   ; 0CB20  0x2E, 0x80, 0x3E, 0x44, 0x5E, 0xFF
@@ -9420,9 +9652,9 @@ mov byte [cs:xios_fdc_reserve_flag], 0                      ; 0CB35  0x2E, 0xC6,
 loc_0CB3B:                                     ; 0CB3B
   ret                                          ; 0CB3B  0xC3
 
-net_release_shared_devices:                                     ; 0CB3C
-  call net_check_fdc_release                               ; 0CB3C  0xE8, 0xD9, 0xFF
-  call net_release_printer                               ; 0CB3F  0xE8, 0x40, 0xFF
+dpc_release_shared_devices:                                     ; 0CB3C
+  call dpc_check_fdc_release                               ; 0CB3C  0xE8, 0xD9, 0xFF
+  call dpc_release_printer                               ; 0CB3F  0xE8, 0x40, 0xFF
   ret                                          ; 0CB42  0xC3
   align 2, db 0
 fdc_drive_type_0:
