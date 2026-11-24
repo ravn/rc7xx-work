@@ -896,6 +896,15 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
       - Konsolvalidering (`091A9:`): `cmp dl, NUM_VIR_CONS` (afviser konsoller >= 1 i XIOS1 hhv. >= 4 i XIOS4).
       - Omskrevet 4 rå `db 0x2E`-instruktioner til ægte `mov word [cs:0x613c + DELTA_TAIL], 0x000f` osv.
       - Parametriseret med `DELTA_VMENU`, `DELTA_WINDOW`, `DELTA_TABLES` og `DELTA_TAIL`.
+    - **Arkitektur: Mus via tastaturcontroller**:
+      - Musen er fysisk tilkoblet via tastaturet (ingen separat seriel museport/ISR i Piccoline-bundkortet).
+      - Tastaturets microcontroller multiplexer musedata ind i tastaturets scancode-strøm via prefix-byten `0xE3`.
+      - `i_keyboard` fanger `0xE3` ved `loc_07AE3:` og sætter flaget `[cs:0x1048] = 0xFF`.
+      - Den efterfølgende byte udløser kald til `sub_094EB`, en 5-byte tilstandsmaskine (`[cs:0x291b]` tæller ned fra 5):
+        - Byte 5: Knapstatus (`not al; and al, 7` for venstre, midterste, højre knap).
+        - Byte 4 & 2: Delta X bevægelse (akkumuleres i `[cs:0x291e]`).
+        - Byte 3 & 1: Delta Y bevægelse (akkumuleres i `[cs:0x2920]`).
+      - BIOS INT 28h funktion 30 (`xios_int28_fn_30_mouse` ved CS:094A0) udlæser musens X/Y-delta og knapstatus atomisk med `cli` og `xchg`.
     - Resultat: Yderligere **189 redundante linjer rå disassembly** elimineret fra XIOS4-blokken (i alt > 2.840 linjer fjernet på tværs af foreningen).
     - Fuld verifikation:
       - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
