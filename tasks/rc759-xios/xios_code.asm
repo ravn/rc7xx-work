@@ -39,13 +39,22 @@ CCB_FLG_CHARCONV    equ 0x0800                 ; Character translation active (E
 CCB_FLG_AUTOWRAP    equ 0x1000                 ; Auto-wrap at end of line (ESC u / ESC f)
 
 ; =============================================================================
-; Digital Research CCP/M-86 Console Control Block (CCB) Offsets
+; Digital Research CCP/M-86 & RC759 Console Control Block (CCB / vc structure)
+; Reference: PICCOLINE Programmer's Guide v2, Section 4.6 (Window Handling), p. 61-63
 ; =============================================================================
-CCB_CON_IDX         equ 0x34                   ; Console index (0..3)
-CCB_ACTIVE          equ 0x35                   ; Console active / visible flag
-CCB_ROWS            equ 0x42                   ; Window row count (e.g. 24)
-CCB_COLS            equ 0x44                   ; Window column count (e.g. 80)
+CCB_EXTRA_LINE      equ 0x34                   ; rw 1: Extra display line used when scrolling
+CCB_CON_IDX         equ 0x36                   ; rb 1: Virtual console number (0..3)
+CCB_ACTIVE          equ 0x37                   ; rb 1: Internal XIOS semaphore / active flag
+CCB_WIN_LEFT        equ 0x36                   ; rb 1: Left column of window (XIOS 16-bit word at 0x36)
+CCB_WIN_TOP         equ 0x38                   ; rb 1: Top row of window
+CCB_LAST_TOP_LEFT   equ 0x3a                   ; rw 1: Last top-left corner
+CCB_LAST_BOT_RIGHT  equ 0x3c                   ; rw 1: Last bottom-right corner
+CCB_COLS            equ 0x42                   ; rb 1: Actual number of columns (f.eks. 80)
+CCB_ROWS            equ 0x44                   ; rb 1: Actual number of rows (f.eks. 24)
+CCB_SCROLL_BOTTOM   equ 0x48                   ; Window scroll bottom row limit
 CCB_MASK            equ 0x4b                   ; Console bitmask (1 << con_index)
+CCB_TRACKING_MODE   equ 0x4c                   ; Window cursor tracking mode (0=fixed, non-zero=tracking)
+CCB_WRAP_COL        equ 0x4d                   ; Window wrap-around column (WW_WRAP_COLUMN)
 CCB_ESC_HANDLER     equ 0x5e                   ; Escape sequence dispatch vector
 CCB_LINE_TABLE      equ 0x62                   ; Line display table pointer
 CCB_COL             equ 0x64                   ; Current cursor column (0-based)
@@ -67,25 +76,39 @@ CCB_COLOR_MODE      equ 0x83                   ; Virtual console color/mode sett
 
   jmp near xios_init_entry                     ; 00000000 / 077A0
   jmp near loc_077DA                           ; 077A3
-  dw 0x0000                                    ; SYSDAT segment (unlinked)
-  dw 0x0000                                    ; SYSDAT entry offset (unlinked)
-  dw 0x0000                                    ; Supervisor paragraph base (unlinked)
+xios_sysdat_segment_val:
+  dw 0x0000                                    ; SYSDAT segment (unlinked, sat af CCP/M loader ved CS:0C06)
+xios_sysdat_entry_val:
+  dw 0x0000                                    ; SYSDAT entry offset (unlinked, sat af loader ved CS:0C08)
+xios_sup_para_base_val:
+  dw 0x0000                                    ; Supervisor paragraph base (unlinked, ved CS:0C0A)
 
 ; ===========================================================================
 ; SYSDAT:0x0C0C — DRI struct xios_table
 ; ===========================================================================
 xios_config_table:
+xt_tick:
   db 0x00                                      ; xt_tick (system tick flag)
+xt_ticks_sec:
   db 0x3C                                      ; xt_ticks_sec (60 Hz VSYNC ticks/sekund)
+xt_door:
   db 0x00                                      ; xt_door (reserveret)
+xt_rsvd:
   db 0x00                                      ; xt_rsvd (reserveret)
+xt_xpcns:
   db 0x01                                      ; xt_xpcns (antal fysiske konsoller = 1)
+xt_nvcns:
   db NUM_VIR_CONS                              ; xt_nvcns (antal virtuelle konsoller: 1 eller 4)
+xt_nccbs:
   db 0x09                                      ; xt_nccbs (antal Console Control Blocks = 9)
+xt_nlcbs:
   db 0x03                                      ; xt_nlcbs (antal List Control Blocks = 3)
+xt_ccb:
   dw 0x0D49                                    ; xt_ccb (offset til CCB-array i SYSDAT)
+xt_lcb:
   dw 0x0ED5                                    ; xt_lcb (offset til LCB-array i SYSDAT)
   ; xt_dphtab: Disk Parameter Header pointere for drev A..P
+xt_dphtab:
   dw dph_drive_a                               ; Drev A (Floppy 0 DPH)
   dw dph_drive_b                               ; Drev B (Floppy 1 DPH)
   dw 0x0000, 0x0000, 0x0000, 0x0000            ; Drev C, D, E, F
@@ -93,6 +116,7 @@ xios_config_table:
   dw 0x0000, 0x0000                            ; Drev K, L
   dw dph_drive_m                               ; Drev M (Memory Disk / M-Disk DPH)
   dw 0x0000, 0x0000, 0x0000                    ; Drev N, O, P
+xt_alloc:
   dw XT_ALLOC_PARAS                            ; xt_alloc (unlinked bufferplads: 500 paras i XIOS1, 1280 paras i XIOS4)
 
 loc_077DA:
@@ -124,26 +148,26 @@ xios_function_table:
   dw io_write                                  ; Func 11: Write logical disk sector
   dw io_flushbuf                               ; Func 12: Flush disk buffers
   dw io_poll                                   ; Func 13: Poll hardware device
-  dw xios_int28_stub_ret                       ; Func 14: Uimplementeret
-  dw xios_int28_stub_ret                       ; Func 15: Uimplementeret
+  dw int28_stub_ret                       ; Func 14: Uimplementeret
+  dw int28_stub_ret                       ; Func 15: Uimplementeret
 %if NUM_VIR_CONS == 4
-  dw xios_fn_16_get_window_ccb                 ; Func 16: Hent vindues-CCB
-  dw xios_fn_17_check_console_event            ; Func 17: Tjek konsol-hændelse
-  dw xios_fn_18_vmenu_cmd                      ; Func 18: Menukommando
+  dw ww_pointer                 ; Func 16: Hent vindues-CCB
+  dw ww_key            ; Func 17: Tjek konsol-hændelse
+  dw ww_statline                      ; Func 18: Menukommando
   dw io_auxist                                 ; Func 19: AUX/konsol status
-  dw xios4_fn_20_window_set                    ; Func 20: Vinduesopsætning
-  dw xios4_fn_21_window_config                 ; Func 21: Vindueskonfiguration
-  dw xios4_fn_22_window_mode                   ; Func 22: Vinduestilstand
-  dw xios4_fn_23_window_select                 ; Func 23: Vælg vindue
-  dw xios4_fn_24_window_ret                    ; Func 24: Vindue retur
+  dw ww_new_window                    ; Func 20: Vinduesopsætning
+  dw ww_cursor_view                 ; Func 21: Vindueskonfiguration
+  dw ww_wrap_column                   ; Func 22: Vinduestilstand
+  dw ww_full_window                 ; Func 23: Vælg vindue
+  dw ww_switch_display                    ; Func 24: Vindue retur
 %else
-  times 3 dw xios_int28_stub_ret               ; Func 16..18: Uimplementeret i XIOS1
+  times 3 dw int28_stub_ret               ; Func 16..18: Uimplementeret i XIOS1
   dw io_auxist                                 ; Func 19: AUX input status
-  times 5 dw xios_int28_stub_ret               ; Func 20..24: Uimplementeret i XIOS1
+  times 5 dw int28_stub_ret               ; Func 20..24: Uimplementeret i XIOS1
 %endif
-  times 5 dw xios_int28_stub_ret               ; Func 25..29: Reserveret
+  times 5 dw int28_stub_ret               ; Func 25..29: Reserveret
   dw io_setblank                               ; Func 30: Skærmblanking / skærmsluk
-  times 6 dw xios_int28_stub_ret               ; Func 31..36: Reserveret
+  times 6 dw int28_stub_ret               ; Func 31..36: Reserveret
 
 ; -----------------------------------------------------------------------------
 ; INT 28H Dispatcher (RC759 Udvidet Hardware/BIOS Funktioner)
@@ -153,7 +177,7 @@ xios_function_table:
 ; -----------------------------------------------------------------------------
 int28h_dispatcher:
   push ds                                      ; 07831  0x1E
-  mov ds, [cs:0xc06]                           ; 07832  0x2E, 0x8E, 0x1E, 0x06, 0x0C
+  mov ds, [cs:xios_sysdat_segment_val]                           ; 07832  0x2E, 0x8E, 0x1E, 0x06, 0x0C
   mov bx, [cs:sysdat_rlr]                            ; 07837  0x2E, 0x8B, 0x1E, 0x68, 0x00
   mov es, [bx + PD_UDA]                          ; 0783C  0x8E, 0x47, 0x10
   xor_bx_bx                                    ; 0783F
@@ -169,65 +193,65 @@ int28h_dispatcher:
 ; Reference: PICCOLINE Programmer's Guide v2, Appendix A
 ; =============================================================================
 int28h_jump_table:
-  dw xios_int28_fn_00_graphics_mode            ; Func  0: Skift til grafik-tilstand (CS:22B5 / CS:22FF)
-  dw xios_int28_fn_01_char_mode                ; Func  1: Skift til tekst/tegn-tilstand (CS:23C7 / CS:2411)
-  dw xios_int28_fn_02_scroll_step              ; Func  2: Blød rulning scanline-step (CS:1D70 / CS:1DBA)
-  dw xios_int28_fn_03_get_nvram                ; Func  3: Hent kopi af NVRAM (CS:42D6 / CS:4663)
-  dw xios_int28_fn_04_get_autoconfig           ; Func  4: Hent autokonfiguration / maskin-ID (CS:42DF / CS:466C)
-  dw xios_int28_fn_05_recalibrate              ; Func  5: Floppy drev rekalibrering (CS:3459 / CS:37E6)
-  dw xios_int28_fn_06_reserved                 ; Func  6: Reserveret (CS:3475 / CS:3802)
-  dw xios_int28_fn_07_reserved                 ; Func  7: Reserveret (CS:3476 / CS:3803)
-  dw xios_int28_fn_08_step_in                  ; Func  8: Floppy step et spor ind (CS:3477 / CS:3804)
-  dw xios_int28_fn_09_step_out                 ; Func  9: Floppy step et spor ud (CS:3493 / CS:3820)
-  dw xios_int28_fn_10_write_track              ; Func 10: Floppy skriv helt spor (CS:3494 / CS:3821)
-  dw xios_int28_fn_11_read_track               ; Func 11: Floppy læs helt spor (CS:351F / CS:38AC)
-  dw xios_int28_fn_12_sound                    ; Func 12: Lydgenerator skriv data-byte (CS:445E / CS:47EB)
-  dw xios_int28_fn_13_disk_stats               ; Func 13: Hent diskdriver-statistikker (CS:35AD / CS:393A)
-  dw xios_int28_fn_14_reserved                 ; Func 14: Reserveret (CS:35B6 / CS:3943)
-  dw xios_int28_fn_15_reserved                 ; Func 15: Reserveret (CS:110D)
-  dw xios_int28_stub_ret                       ; Func 16: Reserveret stub (CS:0D18)
-  dw xios_int28_stub_ret                       ; Func 17: Reserveret stub (CS:0D18)
-  dw xios_int28_fn_18_reserved                 ; Func 18: Reserveret (CS:4024 / CS:43B1)
-  dw xios_int28_fn_19_timer                    ; Func 19: Hent 16 ms timer-tæller (CS:447F / CS:480C)
-  dw xios_int28_fn_20_def_alt_char             ; Func 20: Definer tegn i alternativt tegnsæt (CS:2542 / CS:256C)
-  dw xios_int28_fn_21_get_disp_list            ; Func 21: Hent pointer til display list (CS:25A1 / CS:25CB)
-  dw xios_int28_fn_22_set_disp_list            ; Func 22: Sæt display list tabel-pointer (CS:25AA / CS:25D4)
-  dw xios_int28_fn_23_isbx_status              ; Func 23: Hent iSBX351 seriel status (CS:4492 / CS:481F)
-  dw xios_int28_fn_24_isbx_init                ; Func 24: Initialiser iSBX351 controller (CS:4583 / CS:4910)
-  dw xios_int28_fn_25_reserved                 ; Func 25: Reserveret (CS:3E5E / CS:41EB)
-  dw xios_int28_fn_26_cas_read_hdr             ; Func 26: Båndoptager læs filhoved (CS:5B16 / CS:696B)
-  dw xios_int28_fn_27_cas_write_hdr            ; Func 27: Båndoptager skriv filhoved (CS:5B35 / CS:698A)
-  dw xios_int28_fn_28_cas_read_data            ; Func 28: Båndoptager læs datablok (CS:5B52 / CS:69A7)
-  dw xios_int28_fn_29_cas_write_data           ; Func 29: Båndoptager skriv datablok (CS:5B6F / CS:69C4)
-  dw xios_int28_fn_30_mouse                    ; Func 30: Mus styring/status (CS:2900 / CS:2AC3)
-  dw xios_int28_fn_31_palette                  ; Func 31: Definer farvepalette (CS:25D2 / CS:25FC)
-  dw xios_int28_fn_32_reserved                 ; Func 32: Reserveret (CS:42E8 / CS:4675)
-  dw xios_int28_fn_33_reserved                 ; Func 33: Reserveret (CS:42F6 / CS:4683)
-  dw xios_int28_fn_34_reserved                 ; Func 34: Reserveret (CS:4306 / CS:4693)
-  dw xios_int28_fn_35_write_str                ; Func 35: Skriv streng direkte til konsolbuffer (CS:24F6 / CS:2520)
-  dw xios_int28_fn_36_cursor_pos               ; Func 36: Sæt cursorposition (CS:25B6 / CS:25E0)
-  dw xios_int28_fn_37_get_attr                 ; Func 37: Hent aktuelle skærmattributter (CS:25C4 / CS:25EE)
-  dw xios_int28_fn_38_set_attr                 ; Func 38: Sæt skærmattributter (CS:25CB / CS:25F5)
-  dw xios_int28_fn_39_update_screen            ; Func 39: Opdater fysisk skærm (CS:253C / CS:2566)
-  dw xios_int28_fn_40_cas_write_eof            ; Func 40: Båndoptager skriv EOF-blok (CS:5B8A / CS:69DF)
-  dw xios_int28_fn_41_dpc_parallel             ; Func 41: Reserver/frigiv DPC interface (CS:5E63 / CS:6CB8)
-  dw xios_int28_fn_42_shared_disk              ; Func 42: Reserver/frigiv delt disk (CS:5F15 / CS:6D6A)
-  dw xios_int28_stub_ret                       ; Func 43: Reserveret stub (CS:0D18)
-  dw xios_int28_stub_ret                       ; Func 44: Reserveret stub (CS:0D18)
-  dw xios_int28_stub_ret                       ; Func 45: Reserveret stub (CS:0D18)
-  dw xios_int28_stub_ret                       ; Func 46: Reserveret stub (CS:0D18)
-  dw xios_int28_stub_ret                       ; Func 47: Reserveret stub (CS:0D18)
-  dw xios_int28_stub_ret                       ; Func 48: Reserveret stub (CS:0D18)
-  dw xios_int28_stub_ret                       ; Func 49: Reserveret stub (CS:0D18)
-  dw xios_int28_fn_50_isbx_reset               ; Func 50: Reset iSBX351 controller (CS:44BE / CS:484B)
-  dw xios_int28_fn_51_get_font                 ; Func 51: Hent tegndefinition fra font-RAM (CS:256A / CS:2594)
-  dw xios_int28_fn_52_def_font                 ; Func 52: Definer tegn i font-RAM (CS:2553 / CS:257D)
-  dw xios_int28_fn_53_version                  ; Func 53: Hent XIOS version (CS:0D19)
+  dw int28_fn_00_graphics_mode            ; Func  0: Changes console to graphics mode (Manual p. 193)
+  dw int28_fn_01_char_mode                ; Func  1: Changes console to character mode (Manual p. 193)
+  dw int28_fn_02_scroll_step              ; Func  2: Reserved / Soft scroll step (Manual p. 193)
+  dw int28_fn_03_get_nvram                ; Func  3: Returns address of NVRAM copy (Manual p. 194)
+  dw int28_fn_04_get_autoconfig           ; Func  4: Returns address of configuration description (Manual p. 194)
+  dw int28_fn_05_recalibrate              ; Func  5: Recalibrate floppy disk drive (Manual p. 195)
+  dw int28_fn_06_reserved                 ; Func  6: Reserved (Floppy seek)
+  dw int28_fn_07_reserved                 ; Func  7: Reserved (Floppy format)
+  dw int28_fn_08_step_in                  ; Func  8: Step floppy drive head one track in (Manual p. 195)
+  dw int28_fn_09_step_out                 ; Func  9: Step floppy drive head one track out (Manual p. 196)
+  dw int28_fn_10_write_track              ; Func 10: Write a track to floppy disk (Manual p. 196)
+  dw int28_fn_11_read_track               ; Func 11: Read a track from floppy disk (Manual p. 197)
+  dw int28_fn_12_sound                    ; Func 12: Write a byte to the sound generator (Manual p. 197)
+  dw int28_fn_13_disk_stats               ; Func 13: Get address of disk driver statistics (Manual p. 197)
+  dw int28_fn_14_reserved                 ; Func 14: Reserved
+  dw int28_fn_15_reserved                 ; Func 15: Reserved
+  dw int28_stub_ret                       ; Func 16: Reserved stub
+  dw int28_stub_ret                       ; Func 17: Reserved stub
+  dw int28_fn_18_reserved                 ; Func 18: Reserved
+  dw int28_fn_19_timer                    ; Func 19: Returns 16 ms counter (Manual p. 199)
+  dw int28_fn_20_def_alt_char             ; Func 20: Defines a character in alternative character set (Manual p. 200)
+  dw int28_fn_21_get_disp_list            ; Func 21: Returns pointer to console display list (Manual p. 200)
+  dw int28_fn_22_set_disp_list            ; Func 22: Returns current cursor position (Manual p. 200)
+  dw int28_fn_23_isbx_status              ; Func 23: Returns status of iSBX351 controller (Manual p. 201)
+  dw int28_fn_24_isbx_init                ; Func 24: Initializes iSBX351 controller (Manual p. 201)
+  dw int28_fn_25_reserved                 ; Func 25: Reserved
+  dw int28_fn_26_cas_read_hdr             ; Func 26: Read file header record from cassette tape (Manual p. 202)
+  dw int28_fn_27_cas_write_hdr            ; Func 27: Write file header on cassette tape (Manual p. 202)
+  dw int28_fn_28_cas_read_data            ; Func 28: Read next data record from cassette tape (Manual p. 203)
+  dw int28_fn_29_cas_write_data           ; Func 29: Write next data record on cassette tape (Manual p. 204)
+  dw int28_fn_30_mouse                    ; Func 30: Optical mouse driver interface (Manual p. 205)
+  dw int28_fn_31_palette                  ; Func 31: Defines palette contents (Manual p. 206)
+  dw int28_fn_32_reserved                 ; Func 32: Reserved
+  dw int28_fn_33_reserved                 ; Func 33: Reserved
+  dw int28_fn_34_reserved                 ; Func 34: Reserved
+  dw int28_fn_35_write_str                ; Func 35: Write string direct to console buffer (Manual p. 207)
+  dw int28_fn_36_cursor_pos               ; Func 36: Set cursor position (Manual p. 207)
+  dw int28_fn_37_get_attr                 ; Func 37: Returns current attributes (Manual p. 207)
+  dw int28_fn_38_set_attr                 ; Func 38: Set attributes (Manual p. 208)
+  dw int28_fn_39_update_screen            ; Func 39: Update physical screen (Manual p. 208)
+  dw int28_fn_40_cas_write_eof            ; Func 40: Write end of file record on cassette tape (Manual p. 208)
+  dw int28_fn_41_dpc_parallel             ; Func 41: Reserve/release DPC parallel interface (Manual p. 209)
+  dw int28_fn_42_shared_disk              ; Func 42: Reserve/release shared disk (Manual p. 209)
+  dw int28_stub_ret                       ; Func 43: Reserved stub
+  dw int28_stub_ret                       ; Func 44: Reserved stub
+  dw int28_stub_ret                       ; Func 45: Reserved stub
+  dw int28_stub_ret                       ; Func 46: Reserved stub
+  dw int28_stub_ret                       ; Func 47: Reserved stub
+  dw int28_stub_ret                       ; Func 48: Reserved stub
+  dw int28_stub_ret                       ; Func 49: Reserved stub
+  dw int28_fn_50_isbx_reset               ; Func 50: Reset iSBX351 controller (Manual p. 210)
+  dw int28_fn_51_get_font                 ; Func 51: Get font from font RAM (Manual p. 211)
+  dw int28_fn_52_def_font                 ; Func 52: Define font in font RAM (Manual p. 211)
+  dw int28_fn_53_version                  ; Func 53: Get XIOS version (Manual p. 212)
 
-xios_int28_stub_ret:                            ; 078B8
+int28_stub_ret:                            ; 078B8
   ret                                          ; 078B8  0xC3
 
-xios_int28_fn_53_version:                     ; 078B9
+int28_fn_53_version:                     ; 078B9
   mov ax, 0x8523                               ; 078B9  0xB8, 0x23, 0x85
   mov bx, 0x206                                ; 078BC  0xBB, 0x06, 0x02
   ret                                          ; 078BF  0xC3
@@ -254,8 +278,8 @@ rtm_timer_wait2:                               ; 078D3
 
 xios_rtm_svc_call:                             ; 078DC
   xor_ch_ch                                    ; 078DC
-  mov ds, [cs:0xc06]                           ; 078DE  0x2E, 0x8E, 0x1E, 0x06, 0x0C
-  call far [cs:0xc08]                          ; 078E3  0x2E, 0xFF, 0x1E, 0x08, 0x0C
+  mov ds, [cs:xios_sysdat_segment_val]                           ; 078DE  0x2E, 0x8E, 0x1E, 0x06, 0x0C
+  call far [cs:xios_sysdat_entry_val]                          ; 078E3  0x2E, 0xFF, 0x1E, 0x08, 0x0C
   ret                                          ; 078E8  0xC3
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF  ; 078E9  .........
   inc word [bx + si]                           ; 078F2  0xFF, 0x00
@@ -525,7 +549,7 @@ loc_07C28:
   dec byte [cs:crt_timer_flag]                         ; 07C33
 
 loc_07C38:
-  cmp byte [cs:0xc0c], 0                       ; 07C38
+  cmp byte [cs:xt_tick], 0                       ; 07C38
   je loc_07C46                                 ; 07C3E
   mov dx, 1                                    ; 07C40
   call rtm_call_helper                         ; 07C43
@@ -565,7 +589,7 @@ loc_07CA8:
   add_si_ax                                    ; 07CAA
   ret                                          ; 07CAC
 
-xios_int28_fn_15_reserved:                     ; 07CAD
+int28_fn_15_reserved:                     ; 07CAD
   call get_cur_process_ccb                               ; 07CAD
   mov bx, [bx + 0x76]                          ; 07CB0
   push ds                                      ; 07CB3
@@ -648,7 +672,7 @@ loc_07D18:
 %if NUM_VIR_CONS == 4
 xios_handle_con_switch_key:                                     ; 0000058D (XIOS4 konsol switch-tast)
   mov dl, [cs:xios4_active_vir_con]
-  call xios4_fn_23_window_select
+  call ww_full_window
   jmp short conin_wait_key
 
 xios_handle_vir_con_switch:                                     ; 00000597 (XIOS4 virtuel konsol omskifter)
@@ -998,7 +1022,7 @@ loc_07EF5:                                     ; 07EF5
   mov cl, 0xc                                  ; 07F1C  0xB1, 0x0C
   call sub_07F88                               ; 07F1E  0xE8, 0x67, 0x00
   mov bx, [cs:xios4_cur_window_ptr]                          ; 07F21  0x2E, 0x8B, 0x1E, 0x58, 0x2B
-  mov cx, [bx + 0x48]                          ; 07F26  0x8B, 0x4F, 0x48
+  mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 07F26  0x8B, 0x4F, 0x48
   test byte [cs:xios4_window_clip_flag], 0xff                  ; 07F29  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
   jne loc_07F37                                ; 07F2F  0x75, 0x06
   mov bx, xios_vmenu_line_offsets                               ; 07F31  0xBB, 0xF6, 0x61
@@ -1074,13 +1098,13 @@ loc_07F9B:                                     ; 07F9B
 loc_07F9D:                                     ; 07F9D
   push dx                                      ; 07F9D  0x52
   push ds                                      ; 07F9E  0x1E
-  mov ds, [cs:0xc06]                           ; 07F9F  0x2E, 0x8E, 0x1E, 0x06, 0x0C
+  mov ds, [cs:xios_sysdat_segment_val]                           ; 07F9F  0x2E, 0x8E, 0x1E, 0x06, 0x0C
   call io_list                               ; 07FA4  0xE8, 0xB8, 0x2C
   pop ds                                       ; 07FA7  0x1F
   pop dx                                       ; 07FA8  0x5A
   ret                                          ; 07FA9  0xC3
 
-xios_fn_17_check_console_event:
+ww_key:
   xor_ah_ah                                    ; 07FAA
   mov al, [cs:kbd_event_flag]                          ; 07FAC  0x2E, 0xA0, 0x43, 0x10
   cmp cl, 0xfe                                 ; 07FB0  0x80, 0xF9, 0xFE
@@ -1240,7 +1264,7 @@ sub_080D4:                                     ; 080D4
   add word [bx + CCB_LINE_TABLE], 2                      ; 080D4  0x83, 0x47, 0x62, 0x02
   mov ax, [bx + CCB_ROW]                          ; 080D8  0x8B, 0x47, 0x66
   inc ax                                       ; 080DB  0x40
-  cmp al, [bx + 0x4d]                          ; 080DC  0x3A, 0x47, 0x4D
+  cmp al, [bx + CCB_WRAP_COL]                          ; 080DC  0x3A, 0x47, 0x4D
   jb loc_080FC                                 ; 080DF  0x72, 0x1B
   sub word [bx + CCB_LINE_TABLE], 2                      ; 080E1  0x83, 0x6F, 0x62, 0x02
   dec ax                                       ; 080E5  0x48
@@ -1324,9 +1348,9 @@ loc_08216:                                     ; 08216
   mov si, [bx + CCB_COL]                          ; 08219  0x8B, 0x77, 0x64
 .loc_1680:
   inc si
-  cmp si, [bx + 0x48]
+  cmp si, [bx + CCB_SCROLL_BOTTOM]
   je .loc_1688
-  mov dx, [bx + 0x48]
+  mov dx, [bx + CCB_SCROLL_BOTTOM]
   call sub_0865F                               ; call 0x1ABF / 0x1B09
 .loc_1688:
 crt_esc_f3_del:
@@ -1589,7 +1613,7 @@ loc_08439:                                     ; 08439
   ret                                          ; 08443  0xC3
 
 sub_08444:                                     ; 08444
-  mov [bx + 0x48], ax                          ; 08444  0x89, 0x47, 0x48
+  mov [bx + CCB_SCROLL_BOTTOM], ax                          ; 08444  0x89, 0x47, 0x48
   test byte [bx + CCB_FLAGS], 0x16                  ; 08447  0xF6, 0x47, 0x6B, 0x16
   jne loc_08459                                ; 0844B  0x75, 0x0C
   call sub_0893E                               ; 0844D  0xE8, 0xEE, 0x04
@@ -1685,7 +1709,7 @@ loc_084D0:                                     ; 084D0
   ret                                          ; 0850A  0xC3
   crt_esc_sub_196b:
   sub cl, 0x20                                 ; 0850B  0x80, 0xE9, 0x20
-  cmp cl, [bx + 0x48]                          ; 0850E  0x3A, 0x4F, 0x48
+  cmp cl, [bx + CCB_SCROLL_BOTTOM]                          ; 0850E  0x3A, 0x4F, 0x48
   jae loc_0854D                                ; 08511  0x73, 0x3A
   xor_ch_ch                                    ; 08513
   mov_di_cx                                    ; 08515
@@ -1713,7 +1737,7 @@ rtm_al87_blocking_read:                        ; 0851E
   crt_esc_sub_199d:
   mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_19ae                   ; 0853D  0xC7, 0x47, 0x5E, 0xAE, 0x19
   sub cl, 0x20                                 ; 08542  0x80, 0xE9, 0x20
-  cmp cl, [bx + 0x48]                          ; 08545  0x3A, 0x4F, 0x48
+  cmp cl, [bx + CCB_SCROLL_BOTTOM]                          ; 08545  0x3A, 0x4F, 0x48
   jae loc_0854D                                ; 08548  0x73, 0x03
   mov [bx + CCB_COL], cl                          ; 0854A  0x88, 0x4F, 0x64
 
@@ -1760,7 +1784,7 @@ loc_0854D:                                     ; 0854D
 crt_cursor_down:                                     ; 0859D
   mov si, [bx + CCB_COL]                          ; 0859D  0x8B, 0x77, 0x64
   inc si                                       ; 085A0  0x46
-  cmp si, [bx + 0x48]                          ; 085A1  0x3B, 0x77, 0x48
+  cmp si, [bx + CCB_SCROLL_BOTTOM]                          ; 085A1  0x3B, 0x77, 0x48
   jne loc_085AD                                ; 085A4  0x75, 0x07
   mov si, 0                                    ; 085A6  0xBE, 0x00, 0x00
   call sub_086C6                               ; 085A9  0xE8, 0x1A, 0x01
@@ -1768,7 +1792,7 @@ crt_cursor_down:                                     ; 0859D
 
 loc_085AD:                                     ; 085AD
   mov [bx + CCB_COL], si                          ; 085AD  0x89, 0x77, 0x64
-  cmp byte [bx + 0x4c], 0                      ; 085B0  0x80, 0x7F, 0x4C, 0x00
+  cmp byte [bx + CCB_TRACKING_MODE], 0                      ; 085B0  0x80, 0x7F, 0x4C, 0x00
   je loc_085B9                                 ; 085B4  0x74, 0x03
   call sub_09334                               ; 085B6  0xE8, 0x7B, 0x0D
 
@@ -1778,7 +1802,7 @@ loc_085B9:                                     ; 085B9
 loc_085BA:                                     ; 085BA
   mov dx, [bx + CCB_COL]                          ; 085BA  0x8B, 0x57, 0x64
   inc dx                                       ; 085BD  0x42
-  cmp dx, [bx + 0x48]                          ; 085BE  0x3B, 0x57, 0x48
+  cmp dx, [bx + CCB_SCROLL_BOTTOM]                          ; 085BE  0x3B, 0x57, 0x48
   je loc_085C8                                 ; 085C1  0x74, 0x05
   mov [bx + CCB_COL], dx                          ; 085C3  0x89, 0x57, 0x64
   jmp short crt_update_cursor                           ; 085C6  0xEB, 0x0B
@@ -1819,7 +1843,7 @@ sub_085ED:                                     ; 085ED
   jae loc_0861D                                ; 0860D  0x73, 0x0E
   cmp dl, [bx + CCB_COLS]                          ; 0860F  0x3A, 0x57, 0x44
   jae loc_0861D                                ; 08612  0x73, 0x09
-  add dx, [bx + 0x36]                          ; 08614  0x03, 0x57, 0x36
+  add dx, [bx + CCB_WIN_LEFT]                          ; 08614  0x03, 0x57, 0x36
 
 loc_08617:                                     ; 08617
   mov [cs:fdc_drive_cyl_0], dx                          ; 08617  0x2E, 0x89, 0x16, 0xBE, 0x5F
@@ -1935,7 +1959,7 @@ loc_086B3:                                     ; 086B3
   ret                                          ; 086C5  0xC3
 
 sub_086C6:                                     ; 086C6
-  mov di, [bx + 0x48]                          ; 086C6  0x8B, 0x7F, 0x48
+  mov di, [bx + CCB_SCROLL_BOTTOM]                          ; 086C6  0x8B, 0x7F, 0x48
   dec di                                       ; 086C9  0x4F
   crt_esc_sub_1b2a:
   test byte [bx + CCB_FLAGS], 4                     ; 086CA  0xF6, 0x47, 0x6B, 0x04
@@ -1961,7 +1985,7 @@ loc_086D3:                                     ; 086D3
   jmp short loc_08716                          ; 086ED  0xEB, 0x27
 
 sub_086EF:                                     ; 086EF
-  mov di, [bx + 0x48]                          ; 086EF  0x8B, 0x7F, 0x48
+  mov di, [bx + CCB_SCROLL_BOTTOM]                          ; 086EF  0x8B, 0x7F, 0x48
   dec di                                       ; 086F2  0x4F
   crt_esc_sub_1b53:
   test byte [bx + CCB_FLAGS], 4                     ; 086F3  0xF6, 0x47, 0x6B, 0x04
@@ -2043,7 +2067,7 @@ loc_08754:                                     ; 08754
   call sub_0865C                               ; 08792  0xE8, 0xC7, 0xFE
   mov_si_bx                                    ; 08795
   mov di, xios_con_buf_2c13                               ; 08797  0xBF, 0x13, 0x2C
-  mov cx, [bx + 0x48]                          ; 0879A  0x8B, 0x4F, 0x48
+  mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 0879A  0x8B, 0x4F, 0x48
   rep movsw                                    ; 0879D  0xF3, 0xA5
   call sub_08825                               ; 0879F  0xE8, 0x83, 0x00
   pop ax                                       ; 087A2  0x58
@@ -2057,7 +2081,7 @@ loc_08754:                                     ; 08754
   call sub_0865C                               ; 087B4  0xE8, 0xA5, 0xFE
   mov_si_bx                                    ; 087B7
   mov di, xios_con_buf_2c13                               ; 087B9  0xBF, 0x13, 0x2C
-  mov cx, [bx + 0x48]                          ; 087BC  0x8B, 0x4F, 0x48
+  mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 087BC  0x8B, 0x4F, 0x48
   rep movsw                                    ; 087BF  0xF3, 0xA5
   call sub_08825                               ; 087C1  0xE8, 0x61, 0x00
   pop ax                                       ; 087C4  0x58
@@ -2111,7 +2135,7 @@ sub_0880E:                                     ; 0880E
   ret                                          ; 08824  0xC3
 
 sub_08825:                                     ; 08825
-  mov cx, [bx + 0x48]                          ; 08825  0x8B, 0x4F, 0x48
+  mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 08825  0x8B, 0x4F, 0x48
   mov dx, [cs:xios_con_var_2c04]                          ; 08828  0x2E, 0x8B, 0x16, 0x04, 0x2C
   sub_cx_dx                                    ; 0882D
   shl cx, 1                                    ; 0882F  0xD1, 0xE1
@@ -2137,7 +2161,7 @@ sub_08825:                                     ; 08825
   rep movsw                                    ; 08860  0xF3, 0xA5
   push bx                                      ; 08862  0x53
   mov bx, [cs:xios_con_var_2c00]                          ; 08863  0x2E, 0x8B, 0x1E, 0x00, 0x2C
-  mov cx, [bx + 0x48]                          ; 08868  0x8B, 0x4F, 0x48
+  mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 08868  0x8B, 0x4F, 0x48
   pop bx                                       ; 0886B  0x5B
   jmp near loc_08960                           ; 0886C  0xE9, 0xF1, 0x00
   crt_scroll_sub_1ccf:
@@ -2183,7 +2207,7 @@ loc_08875:                                     ; 08875
   ret                                          ; 088DD  0xC3
   crt_scroll_sub_1d3e:
   mov bx, [cs:xios_con_var_2c00]                          ; 088DE  0x2E, 0x8B, 0x1E, 0x00, 0x2C
-  mov cx, [bx + 0x48]                          ; 088E3  0x8B, 0x4F, 0x48
+  mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 088E3  0x8B, 0x4F, 0x48
   push bx                                      ; 088E6  0x53
   mov bx, xios_con_buf_2c13                               ; 088E7  0xBB, 0x13, 0x2C
   call sub_08941                               ; 088EA  0xE8, 0x54, 0x00
@@ -2202,7 +2226,7 @@ loc_08875:                                     ; 08875
 
 loc_0890F:                                     ; 0890F
   ret                                          ; 0890F  0xC3
-xios_int28_fn_02_scroll_step:                ; 08910
+int28_fn_02_scroll_step:                ; 08910
   push ds                                      ; 08910  0x1E
   pop es                                       ; 08911  0x07
   mov bl, [cs:xios_con_var_2c07]                          ; 08912  0x2E, 0x8A, 0x1E, 0x07, 0x2C
@@ -2216,7 +2240,7 @@ xios_int28_fn_02_scroll_step:                ; 08910
   dw crt_scroll_sub_1be9, crt_scroll_sub_1cd3, crt_scroll_sub_1d14, crt_scroll_sub_1d14, crt_scroll_sub_1d3e, crt_scroll_sub_1d59
   dw crt_scroll_sub_1c10, crt_scroll_sub_1ccf, crt_scroll_sub_1d29, crt_scroll_sub_1d29, crt_scroll_sub_1d3e, crt_scroll_sub_1d59
 sub_0893E:                                     ; 0893E
-  mov cx, [bx + 0x48]                          ; 0893E  0x8B, 0x4F, 0x48
+  mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 0893E  0x8B, 0x4F, 0x48
 
 sub_08941:                                     ; 08941
   push cx                                      ; 08941  0x51
@@ -2592,7 +2616,7 @@ sub_08BFB:                                     ; 08BFB
   mov word [cs:fdc_drive_cyl_0], 0xffff
   call sub_096B8                               ; 08C0B  0xE8, 0xAA, 0x0A
   call sub_0920B                               ; 08C0E  0xE8, 0xFA, 0x05
-  mov cx, [bx + 0x48]                          ; 08C11  0x8B, 0x4F, 0x48
+  mov cx, [bx + CCB_SCROLL_BOTTOM]                          ; 08C11  0x8B, 0x4F, 0x48
   push bx                                      ; 08C14  0x53
   mov byte [cs:xios4_window_clip_flag], 0xff               ; 08C15  0x2E, 0xC6, 0x06, 0x5A, 0x2B, 0xFF
   test byte [bx + CCB_FLAGS], 4                     ; 08C1B  0xF6, 0x47, 0x6B, 0x04
@@ -2815,7 +2839,7 @@ vmenu_screen_buffer_d:
   lodsw                                        ; 08DCD  0xAD
   ret                                          ; 08DCE  0xC3
 
-xios_fn_18_vmenu_cmd:
+ww_statline:
   mov bx, vmenu_screen_buffer_d                            ; 08DCF  0xBB, 0x2D, 0x22
   jmp near loc_08C64                           ; 08DD2  0xE9, 0x8F, 0xFE
 
@@ -2859,7 +2883,7 @@ con_puts:                                     ; 08DF1
   call sub_09220                               ; 08E0B  0xE8, 0x12, 0x04
   call rtm_delay_1_tick                               ; 08E0E  0xE8, 0x01, 0x05
   mov word [cs:fdc_drive_cyl_0], 0xffff
-  push word [bx + 0x48]                        ; 08E18  0xFF, 0x77, 0x48
+  push word [bx + CCB_SCROLL_BOTTOM]                        ; 08E18  0xFF, 0x77, 0x48
   mov ax, 0x18                                 ; 08E1B  0xB8, 0x18, 0x00
   call sub_08444                               ; 08E1E  0xE8, 0x23, 0xF6
   pop ax                                       ; 08E21  0x58
@@ -2884,7 +2908,7 @@ con_puts:                                     ; 08DF1
   pop es                                       ; 08E4F  0x07
   mov al, [cs:kbd_prefix_char]                          ; 08E50  0x2E, 0xA0, 0x40, 0x10
   ret                                          ; 08E54  0xC3
-xios_int28_fn_00_graphics_mode:              ; 08E55
+int28_fn_00_graphics_mode:              ; 08E55
   mov es, dx                                   ; 08E55  0x8E, 0xC2
   xchg si, cx                                  ; 08E57  87 F1
   call get_cur_process_ccb                               ; 08E59  0xE8, 0x80, 0x01
@@ -2921,7 +2945,7 @@ loc_08E8B:                                     ; 08E8B
 loc_08EB3:                                     ; 08EB3
   mov [bx + 0x60], dx                          ; 08EB3  0x89, 0x57, 0x60
   inc dx                                       ; 08EB6  0x42
-  mov [bx + 0x4d], dl                          ; 08EB7  0x88, 0x57, 0x4D
+  mov [bx + CCB_WRAP_COL], dl                          ; 08EB7  0x88, 0x57, 0x4D
   call sub_0922F                               ; 08EBA  0xE8, 0x72, 0x03
   call rtm_delay_1_tick                               ; 08EBD  0xE8, 0x52, 0x04
   or byte [bx + CCB_FLAGS], 4                       ; 08EC0  0x80, 0x4F, 0x6B, 0x04
@@ -2987,9 +3011,9 @@ loc_08F30:                                     ; 08F30
 
 loc_08F5E:                                     ; 08F5E
   lea bx, [bx + CCB_ACTIVE]                          ; 08F5E  0x8D, 0x5F, 0x35
-  mov dx, [cs:0xc06]                           ; 08F61  0x2E, 0x8B, 0x16, 0x06, 0x0C
+  mov dx, [cs:xios_sysdat_segment_val]                           ; 08F61  0x2E, 0x8B, 0x16, 0x06, 0x0C
   ret                                          ; 08F66  0xC3
-xios_int28_fn_01_char_mode:                  ; 08F67
+int28_fn_01_char_mode:                  ; 08F67
   cmp word [cs:xios_video_offset_2c4b], 0                      ; 08F67  0x2E, 0x83, 0x3E, 0x4B, 0x2C, 0x00
   je loc_08FDB                                 ; 08F6D  0x74, 0x6C
   call get_cur_process_ccb                               ; 08F6F  0xE8, 0x6A, 0x00
@@ -3018,7 +3042,7 @@ xios_int28_fn_01_char_mode:                  ; 08F67
 %endif
 
 loc_08FBF:                                     ; 08FBF
-  mov byte [bx + 0x4d], 0x50                   ; 08FBF  0xC6, 0x47, 0x4D, 0x50
+  mov byte [bx + CCB_WRAP_COL], 0x50                   ; 08FBF  0xC6, 0x47, 0x4D, 0x50
   mov word [bx + 0x60], 0x4f                   ; 08FC3  0xC7, 0x47, 0x60, 0x4F, 0x00
   call crt_esc_f6_back                               ; 08FC8  0xE8, 0x3B, 0xF2
   and word [bx + CCB_FLAGS], 0xfdff                 ; 08FCB  0x81, 0x67, 0x6B, 0xFF, 0xFD
@@ -3119,7 +3143,7 @@ sub_09079:                                     ; 09079
   pop ds                                       ; 09094  0x1F
   ret                                          ; 09095  0xC3
 %endif
-xios_int28_fn_35_write_str:                  ; 09096
+int28_fn_35_write_str:                  ; 09096
   mov_bp_sp                                    ; 09096
   push ds                                      ; 09098  0x1E
   push dx                                      ; 09099  0x52
@@ -3164,10 +3188,10 @@ loc_090CE:                                     ; 090CE
   loop loc_090CE                               ; 090D6  0xE2, 0xF6
   pop ds                                       ; 090D8  0x1F
   jmp near sub_09334                           ; 090D9  0xE9, 0x58, 0x02
-xios_int28_fn_39_update_screen:              ; 090DC
+int28_fn_39_update_screen:              ; 090DC
   call get_cur_process_ccb                               ; 090DC  0xE8, 0xFD, 0xFE
   jmp near sub_09334                           ; 090DF  0xE9, 0x52, 0x02
-xios_int28_fn_20_def_alt_char:               ; 090E2
+int28_fn_20_def_alt_char:               ; 090E2
   mov_bp_sp                                    ; 090E2
   mov bp, [bp + 2]                             ; 090E4  0x8B, 0x6E, 0x02
   mov ch, 2                                    ; 090E7  0xB5, 0x02
@@ -3177,7 +3201,7 @@ xios_int28_fn_20_def_alt_char:               ; 090E2
   pop cx                                       ; 090EE  0x59
   pop dx                                       ; 090EF  0x5A
   or ch, 1                                     ; 090F0  0x80, 0xCD, 0x01
-xios_int28_fn_52_def_font:                   ; 090F3
+int28_fn_52_def_font:                   ; 090F3
   mov_bp_sp                                    ; 090F3
   mov bp, [bp + 2]                             ; 090F5  0x8B, 0x6E, 0x02
 
@@ -3189,7 +3213,7 @@ sub_090F8:                                     ; 090F8
   call sub_09131                               ; 09102  0xE8, 0x2C, 0x00
   mov byte [bx + CCB_ACTIVE], 0                      ; 09105  0xC6, 0x47, 0x35, 0x00
   ret                                          ; 09109  0xC3
-xios_int28_fn_51_get_font:                   ; 0910A
+int28_fn_51_get_font:                   ; 0910A
   mov_bp_sp                                    ; 0910A
   mov bp, [bp + 2]                             ; 0910C  0x8B, 0x6E, 0x02
   shl cx, 5                                    ; 0910F  0xC1, 0xE1, 0x05
@@ -3221,32 +3245,32 @@ sub_09131:                                     ; 09131
   pop di                                       ; 0913E  0x5F
   pop ds                                       ; 0913F  0x1F
   ret                                          ; 09140  0xC3
-xios_int28_fn_21_get_disp_list:              ; 09141
+int28_fn_21_get_disp_list:              ; 09141
   call get_cur_process_ccb                               ; 09141  0xE8, 0x98, 0xFE
   mov si, fdc_drive_type_0                               ; 09144  0xBE, 0xA4, 0x5F
   jmp near loc_091B1                           ; 09147  0xE9, 0x67, 0x00
-xios_int28_fn_22_set_disp_list:              ; 0914A
+int28_fn_22_set_disp_list:              ; 0914A
   call get_cur_process_ccb                               ; 0914A  0xE8, 0x8F, 0xFE
   mov dh, [bx + CCB_COL]                          ; 0914D  0x8A, 0x77, 0x64
   mov dl, [bx + CCB_ROW]                          ; 09150  0x8A, 0x57, 0x66
   xchg bx, dx                                  ; 09153  87 DA
   ret                                          ; 09155  0xC3
-xios_int28_fn_36_cursor_pos:                 ; 09156
+int28_fn_36_cursor_pos:                 ; 09156
   push bx                                      ; 09156  0x53
   call get_cur_process_ccb                               ; 09157  0xE8, 0x82, 0xFE
   pop dx                                       ; 0915A  0x5A
   mov [bx + CCB_COL], dh                          ; 0915B  0x88, 0x77, 0x64
   mov [bx + CCB_ROW], dl                          ; 0915E  0x88, 0x57, 0x66
   jmp near crt_update_cursor                            ; 09161  0xE9, 0x6F, 0xF4
-xios_int28_fn_37_get_attr:                   ; 09164
+int28_fn_37_get_attr:                   ; 09164
   call get_cur_process_ccb                               ; 09164  0xE8, 0x75, 0xFE
   mov ah, [bx + CCB_ATTR]                          ; 09167  0x8A, 0x67, 0x6A
   ret                                          ; 0916A  0xC3
-xios_int28_fn_38_set_attr:                   ; 0916B
+int28_fn_38_set_attr:                   ; 0916B
   call get_cur_process_ccb                               ; 0916B  0xE8, 0x6E, 0xFE
   mov [bx + CCB_ATTR], ah                          ; 0916E  0x88, 0x67, 0x6A
   ret                                          ; 09171  0xC3
-xios_int28_fn_31_palette:                    ; 09172
+int28_fn_31_palette:                    ; 09172
   xchg si, dx                                  ; 09172  87 F2
   call get_cur_process_ccb                               ; 09174  0xE8, 0x65, 0xFE
   lea di, [bx + 0x84]                          ; 09177  0x8D, 0xBF, 0x84, 0x00
@@ -3274,7 +3298,7 @@ loc_0919D:                                     ; 0919D
 loc_091A5:                                     ; 091A5
   ret                                          ; 091A5  0xC3
 
-xios_fn_16_get_window_ccb:
+ww_pointer:
   mov ax, xios4_vir_con_mode                               ; 091A6  0xB8, 0x51, 0x2B
   cmp dl, NUM_VIR_CONS                                    ; 091A9  0x80, 0xFA, 0x01
   jae loc_091BA                                ; 091AC  0x73, 0x0C
@@ -3345,17 +3369,17 @@ xios4_fn_19_auxist:
 .loc_1a75:
   ret                                          ; 00001A75
 
-xios4_fn_20_window_set:
+ww_new_window:
   push ax                                      ; 00001A76
   call get_ccb_by_index                               ; 00001A77 (slå vindues-CCB op for konsol)
   call sub_0922F                               ; 00001A7A
-  mov ax, [bx + 0x36]                          ; 00001A7D
-  mov [bx + 0x3a], ax                          ; 00001A80
-  mov ax, [bx + 0x38]                          ; 00001A83
-  mov [bx + 0x3c], ax                          ; 00001A86
-  mov [bx + 0x36], cx                          ; 00001A89
+  mov ax, [bx + CCB_WIN_LEFT]                          ; 00001A7D
+  mov [bx + CCB_LAST_TOP_LEFT], ax                          ; 00001A80
+  mov ax, [bx + CCB_WIN_TOP]                          ; 00001A83
+  mov [bx + CCB_LAST_BOT_RIGHT], ax                          ; 00001A86
+  mov [bx + CCB_WIN_LEFT], cx                          ; 00001A89
   pop cx                                       ; 00001A8C
-  mov [bx + 0x38], cx                          ; 00001A8D
+  mov [bx + CCB_WIN_TOP], cx                          ; 00001A8D
   push es                                      ; 00001A90
   push ds                                      ; 00001A91
   pop es                                       ; 00001A92
@@ -3367,10 +3391,10 @@ xios4_fn_20_window_set:
   call sub_08BFB                               ; 00001AA2
   ret                                          ; 00001AA5
 
-xios4_fn_21_window_config:
+ww_cursor_view:
   call get_ccb_by_index                               ; 00001AA6
   call sub_09220                               ; 00001AA9
-  mov [bx + 0x4c], dh                          ; 00001AAC
+  mov [bx + CCB_TRACKING_MODE], dh                          ; 00001AAC
   mov [bx + 0x40], cx                          ; 00001AAF
   call sub_092D3                               ; 00001AB2
   call sub_09334                               ; 00001AB5
@@ -3378,30 +3402,30 @@ xios4_fn_21_window_config:
   mov byte [bx + CCB_ACTIVE], 0                      ; 00001ABB
   ret                                          ; 00001ABF
 
-xios4_fn_22_window_mode:
+ww_wrap_column:
   call get_ccb_by_index                               ; 00001AC0
-  mov [bx + 0x4d], cl                          ; 00001AC3
+  mov [bx + CCB_WRAP_COL], cl                          ; 00001AC3
   ret                                          ; 00001AC6
 
-xios4_fn_23_window_select:
+ww_full_window:
   push dx                                      ; 00001AC7
   call get_ccb_by_index                               ; 00001AC8
   mov cx, 0                                    ; 00001ACB
-  mov ah, [bx + 0x48]                          ; 00001ACE
+  mov ah, [bx + CCB_SCROLL_BOTTOM]                          ; 00001ACE
   dec ah                                       ; 00001AD1
   mov al, 0x4f                                 ; 00001AD3
-  cmp [bx + 0x36], cx                          ; 00001AD5
+  cmp [bx + CCB_WIN_LEFT], cx                          ; 00001AD5
   jnz .loc_1ae5                                ; 00001AD8
-  cmp [bx + 0x38], ax                          ; 00001ADA
+  cmp [bx + CCB_WIN_TOP], ax                          ; 00001ADA
   jnz .loc_1ae5                                ; 00001ADD
-  mov cx, [bx + 0x3a]                          ; 00001ADF
-  mov ax, [bx + 0x3c]                          ; 00001AE2
+  mov cx, [bx + CCB_LAST_TOP_LEFT]                          ; 00001ADF
+  mov ax, [bx + CCB_LAST_BOT_RIGHT]                          ; 00001AE2
 
 .loc_1ae5:
   pop dx                                       ; 00001AE5
-  jmp near xios4_fn_20_window_set              ; 00001AE6
+  jmp near ww_new_window              ; 00001AE6
 
-xios4_fn_24_window_ret:
+ww_switch_display:
   ret                                          ; 00001AE9
 %endif
 
@@ -3477,7 +3501,7 @@ loc_0924B:                                     ; 0924B
   ret                                          ; 09257  0xC3
 
 sub_09258:                                     ; 09258
-  cmp byte [bx + 0x4c], 0                      ; 09258  0x80, 0x7F, 0x4C, 0x00
+  cmp byte [bx + CCB_TRACKING_MODE], 0                      ; 09258  0x80, 0x7F, 0x4C, 0x00
   je loc_09276                                 ; 0925C  0x74, 0x18
   mov ah, [bx + CCB_COL]                          ; 0925E  0x8A, 0x67, 0x64
   mov al, [bx + CCB_MASK]                          ; 09261  0x8A, 0x47, 0x4B
@@ -3493,7 +3517,7 @@ loc_09273:                                     ; 09273
   mov [bx + CCB_MASK], ah                          ; 09273  0x88, 0x67, 0x4B
 
 loc_09276:                                     ; 09276
-  mov dx, [bx + 0x36]                          ; 09276  0x8B, 0x57, 0x36
+  mov dx, [bx + CCB_WIN_LEFT]                          ; 09276  0x8B, 0x57, 0x36
   call crt_calc_screen_offset                               ; 09279  0xE8, 0x82, 0x00
   xchg dx, ax                                  ; 0927C  0x92
   mov al, 0x50                                 ; 0927D  0xB0, 0x50
@@ -3543,8 +3567,8 @@ sub_092BC:                                     ; Beregn vinduesstørrelse (bredd
   cbw                                          ; 092C2
   inc ax                                       ; 092C3  0x40
   mov [bx + CCB_ROWS], ax                          ; 092C4  0x89, 0x47, 0x42
-  mov al, [bx + 0x38]                          ; 092C7  0x8A, 0x47, 0x38
-  sub al, [bx + 0x36]                          ; 092CA  0x2A, 0x47, 0x36
+  mov al, [bx + CCB_WIN_TOP]                          ; 092C7  0x8A, 0x47, 0x38
+  sub al, [bx + CCB_WIN_LEFT]                          ; 092CA  0x2A, 0x47, 0x36
   cbw                                          ; 092CD
   inc ax                                       ; 092CE  0x40
   mov [bx + CCB_COLS], ax                          ; 092CF  0x89, 0x47, 0x44
@@ -3552,7 +3576,7 @@ sub_092BC:                                     ; Beregn vinduesstørrelse (bredd
 
 sub_092D3:                                     ; Tjek vinduesgrænser mod skærmstørrelse
   mov dx, [bx + 0x40]                          ; 092D3  0x8B, 0x57, 0x40
-  mov al, [bx + 0x48]                          ; 092D6  0x8A, 0x47, 0x48
+  mov al, [bx + CCB_SCROLL_BOTTOM]                          ; 092D6  0x8A, 0x47, 0x48
   sub al, [bx + CCB_ROWS]                          ; 092D9  0x2A, 0x47, 0x42
   cmp_al_dh                                    ; 092DC
   jae loc_092E2                                ; 092DE  0x73, 0x02
@@ -3578,7 +3602,7 @@ xios4_clip_setup:
   and [es:di], al
   inc di
   loop .loc_27f8
-  mov dx, [bx + 0x36]
+  mov dx, [bx + CCB_WIN_LEFT]
   cmp dh, 0
   jz .loc_2808
   dec dh
@@ -3587,8 +3611,8 @@ xios4_clip_setup:
   jz .loc_280f
   dec dl
 .loc_280f:
-  mov cx, [bx + 0x38]
-  mov al, [bx + 0x48]
+  mov cx, [bx + CCB_WIN_TOP]
+  mov al, [bx + CCB_SCROLL_BOTTOM]
   dec al
   cmp_ch_al
   jz .loc_281d
@@ -3673,7 +3697,7 @@ sub_x4_clip_repaint_entry:
   mov dl, [cs:.xios4_clip_v2]
   call get_ccb_by_index
   mov [bx + 0x58], si
-  mov dx, [bx + 0x36]
+  mov dx, [bx + CCB_WIN_LEFT]
   mov cx, [bx + CCB_ROWS]
 .loc_28a0:
   mov word [cs:.xios4_clip_v1], 0xffff
@@ -3837,7 +3861,7 @@ loc_093A2:                                     ; 093A2
   ret                                          ; 093A2  0xC3
 sub_093A3:
   mov word [bx + 0x5a], 0xffff                 ; 093A3  0xC7, 0x47, 0x5A, 0xFF, 0xFF
-  mov dx, [bx + 0x36]                          ; 093A8  0x8B, 0x57, 0x36
+  mov dx, [bx + CCB_WIN_LEFT]                          ; 093A8  0x8B, 0x57, 0x36
   mov cx, [bx + CCB_COLS]                          ; 093AB  0x8B, 0x4F, 0x44
   dec dh                                       ; 093AE  0xFE, 0xCE
   js loc_093BE                                 ; 093B0  0x78, 0x0C
@@ -3848,14 +3872,14 @@ sub_093A3:
 loc_093BE:                                     ; 093BE
   mov dh, [bx + 0x39]                          ; 093BE  0x8A, 0x77, 0x39
   inc dh                                       ; 093C1  0xFE, 0xC6
-  cmp dh, [bx + 0x48]                          ; 093C3  0x3A, 0x77, 0x48
+  cmp dh, [bx + CCB_SCROLL_BOTTOM]                          ; 093C3  0x3A, 0x77, 0x48
   je loc_093D4                                 ; 093C6  0x74, 0x0C
   mov byte [cs:xios_char_mode_byte], 0xd0                   ; 093C8  0x2E, 0xC6, 0x06, 0xCE, 0x28, 0xD0
   mov ax, 0xdad5                               ; 093CE  0xB8, 0xD5, 0xDA
   call sub_093F6                               ; 093D1  0xE8, 0x22, 0x00
 
 loc_093D4:                                     ; 093D4
-  mov dx, [bx + 0x36]                          ; 093D4  0x8B, 0x57, 0x36
+  mov dx, [bx + CCB_WIN_LEFT]                          ; 093D4  0x8B, 0x57, 0x36
   mov cx, [bx + CCB_ROWS]                          ; 093D7  0x8B, 0x4F, 0x42
   dec dl                                       ; 093DA  0xFE, 0xCA
   js loc_093E3                                 ; 093DC  0x78, 0x05
@@ -3863,7 +3887,7 @@ loc_093D4:                                     ; 093D4
   call sub_09457                               ; 093E0  0xE8, 0x74, 0x00
 
 loc_093E3:                                     ; 093E3
-  mov dl, [bx + 0x38]                          ; 093E3  0x8A, 0x57, 0x38
+  mov dl, [bx + CCB_WIN_TOP]                          ; 093E3  0x8A, 0x57, 0x38
   inc dl                                       ; 093E6  0xFE, 0xC2
   cmp dl, 0x50                                 ; 093E8  0x80, 0xFA, 0x50
   je loc_093F2                                 ; 093EB  0x74, 0x05
@@ -3999,7 +4023,7 @@ loc_0949F:                                     ; 0949F
 ; =============================================================================
 ; Sektion 4B: Fælles Mus- og CRT-driver (CS:2980..2BD0 / CS:2B43..2D93)
 ; =============================================================================
-xios_int28_fn_30_mouse:                      ; 094A0
+int28_fn_30_mouse:                      ; 094A0
   cmp cl, 4                                    ; 094A0  0x80, 0xF9, 0x04
   jb loc_094A8                                 ; 094A3  0x72, 0x03
   xor_al_al                                    ; 094A5
@@ -4948,7 +4972,7 @@ fdc_motor_timeout_tick:
   call sub_09DA4                               ; 09D86  0xE8, 0x1B, 0x00
 
 loc_09D89:                                     ; 09D89
-  mov byte [cs:0xc0e], 0xff                    ; 09D89  0x2E, 0xC6, 0x06, 0x0E, 0x0C, 0xFF
+  mov byte [cs:xt_door], 0xff                    ; 09D89  0x2E, 0xC6, 0x06, 0x0E, 0x0C, 0xFF
   mov di, dph_drive_a                               ; 09D8F  0xBF, 0x42, 0x39
   mov byte [di + 5], 0xff                      ; 09D92  0xC6, 0x45, 0x05, 0xFF
   mov di, dph_drive_b                               ; 09D96  0xBF, 0x56, 0x39
@@ -5020,7 +5044,7 @@ xios_fdc_select_drive:                         ; 09E05
   in al, dx                                    ; 09E10  0xEC
   test al, 0x80                                ; 09E11  0xA8, 0x80
   je loc_09E24                                 ; 09E13  0x74, 0x0F
-  mov byte [cs:0xc0e], 0xff                    ; 09E15  0x2E, 0xC6, 0x06, 0x0E, 0x0C, 0xFF
+  mov byte [cs:xt_door], 0xff                    ; 09E15  0x2E, 0xC6, 0x06, 0x0E, 0x0C, 0xFF
   mov byte [di + 5], 0xff                      ; 09E1B  0xC6, 0x45, 0x05, 0xFF
   xor [cs:fdc_param_376c], ah                          ; 09E1F  0x2E, 0x30, 0x26, 0x6C, 0x37
 
@@ -5196,7 +5220,7 @@ fdc_wait:                                      ; 09F4D
 i_disk:
 fdc_transfer_isr:
   call xios_switch_to_priv_stack               ; 09F5A  0xE8, 0xC0, 0x0F
-  mov ds, [cs:0xc06]                           ; 09F5D  0x2E, 0x8E, 0x1E, 0x06, 0x0C
+  mov ds, [cs:xios_sysdat_segment_val]                           ; 09F5D  0x2E, 0x8E, 0x1E, 0x06, 0x0C
   mov dx, PORT_FDC_CMD                         ; 09F62  0xBA, 0x80, 0x02
   in al, dx                                    ; 09F65  0xEC
   mov [cs:fdc_param_3782], al                          ; 09F66  0x2E, 0xA2, 0x82, 0x37
@@ -5270,7 +5294,7 @@ loc_09FDD:                                     ; 09FDD
 loc_09FF7:                                     ; 09FF7
   stc                                          ; 09FF7  0xF9
   ret                                          ; 09FF8  0xC3
-xios_int28_fn_05_recalibrate:                ; 09FF9
+int28_fn_05_recalibrate:                ; 09FF9
   mov byte [cs:fdc_param_3781], 1                      ; 09FF9  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x01
   mov_bp_sp                                    ; 09FFF
   mov ah, [bp + 0x14]                          ; 0A001  0x8A, 0x66, 0x14
@@ -5283,12 +5307,12 @@ fdc_read_path:                                 ; 0A00B
   out dx, al                                   ; 0A00E  0xEE
   call fdc_wait                                ; 0A00F  0xE8, 0x3B, 0xFF
   jmp near loc_0A13C                           ; 0A012  0xE9, 0x27, 0x01
-xios_int28_fn_06_reserved:                   ; 0A015
+int28_fn_06_reserved:                   ; 0A015
   ret                                          ; 0A015  0xC3
 
-xios_int28_fn_07_reserved:                   ; 0A016
+int28_fn_07_reserved:                   ; 0A016
   ret                                          ; 0A016  0xC3
-xios_int28_fn_08_step_in:                    ; 0A017
+int28_fn_08_step_in:                    ; 0A017
   mov byte [cs:fdc_param_3781], 1                      ; 0A017  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x01
   mov_bp_sp                                    ; 0A01D
   mov ah, [bp + 0x14]                          ; 0A01F  0x8A, 0x66, 0x14
@@ -5299,10 +5323,10 @@ xios_int28_fn_08_step_in:                    ; 0A017
   out dx, al                                   ; 0A02C  0xEE
   call fdc_wait                                ; 0A02D  0xE8, 0x1D, 0xFF
   jmp near loc_0A13C                           ; 0A030  0xE9, 0x09, 0x01
-xios_int28_fn_09_step_out:                   ; 0A033
+int28_fn_09_step_out:                   ; 0A033
   ret                                          ; 0A033  0xC3
 
-xios_int28_fn_10_write_track:                ; 0A034
+int28_fn_10_write_track:                ; 0A034
   mov byte [cs:fdc_param_3781], 1                      ; 0A034  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x01
   mov_bp_sp                                    ; 0A03A
   mov ax, [bp + 0xc]                           ; 0A03C  0x8B, 0x46, 0x0C
@@ -5355,7 +5379,7 @@ xios_fdc_send_cmd_wait:                        ; 0A0B0
   out dx, al                                   ; 0A0BA  0xEE
   call fdc_wait                                ; 0A0BB  0xE8, 0x8F, 0xFE
   ret                                          ; 0A0BE  0xC3
-xios_int28_fn_11_read_track:                 ; 0A0BF
+int28_fn_11_read_track:                 ; 0A0BF
   mov byte [cs:fdc_param_3781], 1                      ; 0A0BF  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x01
   mov_bp_sp                                    ; 0A0C5
   mov ax, [bp + 0xc]                           ; 0A0C7  0x8B, 0x46, 0x0C
@@ -5407,11 +5431,11 @@ loc_0A13C:                                     ; 0A13C
   mov al, [cs:fdc_param_3782]                          ; 0A142  0x2E, 0xA0, 0x82, 0x37
   mov byte [cs:fdc_param_3781], 0                      ; 0A146  0x2E, 0xC6, 0x06, 0x81, 0x37, 0x00
   ret                                          ; 0A14C  0xC3
-xios_int28_fn_13_disk_stats:                 ; 0A14D
-  mov es, [cs:0xc06]                           ; 0A14D  0x2E, 0x8E, 0x06, 0x06, 0x0C
+int28_fn_13_disk_stats:                 ; 0A14D
+  mov es, [cs:xios_sysdat_segment_val]                           ; 0A14D  0x2E, 0x8E, 0x06, 0x06, 0x0C
   mov ax, fdc_param_3785                               ; 0A152  0xB8, 0x85, 0x37
   ret                                          ; 0A155  0xC3
-xios_int28_fn_14_reserved:                   ; 0A156
+int28_fn_14_reserved:                   ; 0A156
   ret                                          ; 0A156  0xC3
 fdc_dma_buffer_ptr_35b7:
   db 0x00, 0x00                                ; 0A157  ..
@@ -5856,8 +5880,8 @@ loc_0A79D:                                     ; 0A79D
   pop ax                                       ; 0A7CD  0x58
   mov [bx + 0x1C], ax                          ; 0A7CE  0x89, 0x47, 0x1C
   mov byte [0x67], 0x50                        ; 0A7D1  0xC6, 0x06, 0x67, 0x00, 0x50
-  mov ds, [cs:0xc06]                           ; 0A7D6  0x2E, 0x8E, 0x1E, 0x06, 0x0C
-  mov es, [cs:0xc06]                           ; 0A7DB  0x2E, 0x8E, 0x06, 0x06, 0x0C
+  mov ds, [cs:xios_sysdat_segment_val]                           ; 0A7D6  0x2E, 0x8E, 0x1E, 0x06, 0x0C
+  mov es, [cs:xios_sysdat_segment_val]                           ; 0A7DB  0x2E, 0x8E, 0x06, 0x06, 0x0C
   mov bx, fdc_drive_type_0                               ; 0A7E0  0xBB, 0xA4, 0x5F
   jmp near loc_0B24F                           ; 0A7E3  0xE9, 0x69, 0x0A
 xios_auxin_ds:
@@ -5875,7 +5899,7 @@ io_auxout:
   ret                                          ; 0A7F0  0xC3
 
 loc_0A7F1:                                     ; 0A7F1
-  cmp dl, [cs:0xc12]                           ; 0A7F1  0x2E, 0x3A, 0x16, 0x12, 0x0C
+  cmp dl, [cs:xt_nccbs]                           ; 0A7F1  0x2E, 0x3A, 0x16, 0x12, 0x0C
   jb loc_0A7FB                                 ; 0A7F6  0x72, 0x03
   mov al, 0x1a                                 ; 0A7F8  0xB0, 0x1A
   ret                                          ; 0A7FA  0xC3
@@ -5985,7 +6009,7 @@ loc_0A8C2:                                     ; 0A8C2
   ret                                          ; 0A8C4  0xC3
 
 loc_0A8C5:                                     ; 0A8C5
-  cmp dl, [cs:0xc12]                           ; 0A8C5  0x2E, 0x3A, 0x16, 0x12, 0x0C
+  cmp dl, [cs:xt_nccbs]                           ; 0A8C5  0x2E, 0x3A, 0x16, 0x12, 0x0C
   jb loc_0A8CD                                 ; 0A8CA  0x72, 0x01
   ret                                          ; 0A8CC  0xC3
 
@@ -6079,7 +6103,7 @@ loc_0A9DB:                                     ; 0A9DB
 loc_0A9FC:                                     ; 0A9FC
   popf                                         ; 0A9FC  0x9D
   ret                                          ; 0A9FD  0xC3
-xios_int28_fn_25_reserved:                   ; 0A9FE
+int28_fn_25_reserved:                   ; 0A9FE
   db 0x2E, 0x3A, 0x16                          ; 0A9FE  .:.
 
 loc_0AA01:                                     ; 0AA01
@@ -6314,7 +6338,7 @@ sub_0ABBD:                                     ; 0ABBD
   mov bx, xios_crt_param_4058                               ; 0ABC0  0xBB, 0x58, 0x40
   ret                                          ; 0ABC3  0xC3
 
-xios_int28_fn_18_reserved:                   ; 0ABC4
+int28_fn_18_reserved:                   ; 0ABC4
   mov bx, xios_crt_param_4058                               ; 0ABC4  0xBB, 0x58, 0x40
   mov [bx + 0x1d], dl                          ; 0ABC7  0x88, 0x57, 0x1D
   ret                                          ; 0ABCA  0xC3
@@ -6476,7 +6500,7 @@ prn_dpc_out:
   out dx, al                                   ; 0ACDF  0xEE
   cli                                          ; 0ACE0  0xFA
   push ds                                      ; 0ACE1  0x1E
-  mov ds, [cs:0xc06]                           ; 0ACE2  0x2E, 0x8E, 0x1E, 0x06, 0x0C
+  mov ds, [cs:xios_sysdat_segment_val]                           ; 0ACE2  0x2E, 0x8E, 0x1E, 0x06, 0x0C
   mov bx, xios_crt_table_4256                               ; 0ACE7  0xBB, 0x56, 0x42
   mov al, [bx + 0x14]                          ; 0ACEA  0x8A, 0x47, 0x14
   cmp al, 5                                    ; 0ACED  0x3C, 0x05
@@ -6535,7 +6559,7 @@ io_listst:
   call net_reserve_printer                               ; 0AD48  0xE8, 0xD3, 0x1C
   cli                                          ; 0AD4B  0xFA
   push ds                                      ; 0AD4C  0x1E
-  mov ds, [cs:0xc06]                           ; 0AD4D  0x2E, 0x8E, 0x1E, 0x06, 0x0C
+  mov ds, [cs:xios_sysdat_segment_val]                           ; 0AD4D  0x2E, 0x8E, 0x1E, 0x06, 0x0C
   mov bx, xios_crt_table_4256                               ; 0AD52  0xBB, 0x56, 0x42
   mov al, [bx + 0x14]                          ; 0AD55  0x8A, 0x47, 0x14
   cmp al, 5                                    ; 0AD58  0x3C, 0x05
@@ -6626,23 +6650,23 @@ xios_crt_table_4256:
   db 0x02, 0x00                                ; 0AE10  add al, byte [bx + si]
   inc word [bx + si]                           ; 0AE12  0xFF, 0x00
   times 98 db 0                                ; 0AE14..0AE74 (98 bytes padding)
-xios_int28_fn_03_get_nvram:                  ; 0AE76
-  mov es, [cs:0xc06]                           ; 0AE76  0x2E, 0x8E, 0x06, 0x06, 0x0C
+int28_fn_03_get_nvram:                  ; 0AE76
+  mov es, [cs:xios_sysdat_segment_val]                           ; 0AE76  0x2E, 0x8E, 0x06, 0x06, 0x0C
   mov si, xios_crt_table_4256                               ; 0AE7B  0xBE, 0x56, 0x42
   ret                                          ; 0AE7E  0xC3
 
-xios_int28_fn_04_get_autoconfig:             ; 0AE7F
-  mov es, [cs:0xc06]                           ; 0AE7F  0x2E, 0x8E, 0x06, 0x06, 0x0C
+int28_fn_04_get_autoconfig:             ; 0AE7F
+  mov es, [cs:xios_sysdat_segment_val]                           ; 0AE7F  0x2E, 0x8E, 0x06, 0x06, 0x0C
   mov si, xios_crt_table_4225                               ; 0AE84  0xBE, 0x25, 0x42
   ret                                          ; 0AE87  0xC3
-xios_int28_fn_32_reserved:                   ; 0AE88
+int28_fn_32_reserved:                   ; 0AE88
   pushf                                        ; 0AE88  0x9C
   cli                                          ; 0AE89  0xFA
   mov [cs:xios_hook_timer_off], dx                          ; 0AE8A  0x2E, 0x89, 0x16, 0x25, 0x43
   mov [cs:xios_hook_timer_seg], cx                          ; 0AE8F  0x2E, 0x89, 0x0E, 0x27, 0x43
   popf                                         ; 0AE94  0x9D
   ret                                          ; 0AE95  0xC3
-xios_int28_fn_33_reserved:                   ; 0AE96
+int28_fn_33_reserved:                   ; 0AE96
   pushf                                        ; 0AE96  0x9C
   cli                                          ; 0AE97  0xFA
   mov ax, dummy_far_hook_ret                               ; 0AE98  0xB8, 0x24, 0x43
@@ -6650,7 +6674,7 @@ xios_int28_fn_33_reserved:                   ; 0AE96
   mov [cs:xios_hook_timer_seg], cs                          ; 0AE9F  0x2E, 0x8C, 0x0E, 0x27, 0x43
   popf                                         ; 0AEA4  0x9D
   ret                                          ; 0AEA5  0xC3
-xios_int28_fn_34_reserved:                   ; 0AEA6
+int28_fn_34_reserved:                   ; 0AEA6
   pushf                                        ; 0AEA6  0x9C
   cli                                          ; 0AEA7  0xFA
   mov [cs:xios_hook_sec_off], dx                          ; 0AEA8  0x2E, 0x89, 0x16, 0x29, 0x43
@@ -6736,7 +6760,7 @@ xios_switch_to_priv_stack:                     ; 0AF1D
   push ds                                      ; 0AF31  0x1E
   push es                                      ; 0AF32  0x06
   pusha                                        ; 0AF33  60
-  mov ds, [cs:0xc06]                           ; 0AF34  0x2E, 0x8E, 0x1E, 0x06, 0x0C
+  mov ds, [cs:xios_sysdat_segment_val]                           ; 0AF34  0x2E, 0x8E, 0x1E, 0x06, 0x0C
   jmp word [cs:xios_tick_subcount]                         ; 0AF39  0x2E, 0xFF, 0x26, 0x24, 0x44
 
 loc_0AF3E:                                     ; 0AF3E
@@ -6809,7 +6833,7 @@ rtc_write_reg:                                     ; 0AFE6
   out dx, al                                   ; 0AFFA  0xEE
   xchg ah, al                                  ; 0AFFB  86 E0
   ret                                          ; 0AFFD  0xC3
-xios_int28_fn_12_sound:                      ; 0AFFE
+int28_fn_12_sound:                      ; 0AFFE
   mov_ah_dl                                    ; 0AFFE
   in al, PORT_SOUND                            ; 0B000  0xE4, 0x56
   call io_bus_delay                               ; 0B002  0xE8, 0x14, 0x00
@@ -6833,7 +6857,7 @@ io_bus_delay:                                     ; 0B019
 .delay_loop:                                     ; 0B01C
   loop .delay_loop                               ; 0B01C  0xE2, 0xFE
   ret                                          ; 0B01E  0xC3
-xios_int28_fn_19_timer:                      ; 0B01F
+int28_fn_19_timer:                      ; 0B01F
   mov dx, [cs:xios_tick_high]                          ; 0B01F  0x2E, 0x8B, 0x16, 0x28, 0x44
   mov ax, [cs:xios_tick_low]                          ; 0B024  0x2E, 0xA1, 0x26, 0x44
   mov cl, [cs:crt_vsync_counter]                          ; 0B028  0x2E, 0x8A, 0x0E, 0xB3, 0x10
@@ -6841,7 +6865,7 @@ xios_int28_fn_19_timer:                      ; 0B01F
   mov_bx_ax                                    ; 0B02F
   ret                                          ; 0B031  0xC3
 
-xios_int28_fn_23_isbx_status:                ; 0B032
+int28_fn_23_isbx_status:                ; 0B032
 con_data_read:                                 ; 0B032
   mov dx, PORT_ISBX_MCS0_02                    ; 0B032  0xBA, 0x02, 0x03
   in al, dx                                    ; 0B035  0xEC
@@ -6872,7 +6896,7 @@ loc_0B056:                                     ; 0B056
 loc_0B05D:                                     ; 0B05D
   ret                                          ; 0B05D  0xC3
 
-xios_int28_fn_50_isbx_reset:                 ; 0B05E
+int28_fn_50_isbx_reset:                 ; 0B05E
   mov al, 1                                    ; 0B05E  0xB0, 0x01
   call sub_0B06E                               ; 0B060  0xE8, 0x0B, 0x00
   push cs                                      ; 0B063  0x0E
@@ -6942,14 +6966,14 @@ loc_0B0C3:                                     ; 0B0C3
   ret                                          ; 0B112  0xC3
 xios_diag_buf_4573:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 0B113  ................
-xios_int28_fn_24_isbx_init:                  ; 0B123
+int28_fn_24_isbx_init:                  ; 0B123
   push bp                                      ; 0B123  0x55
   mov_bp_sp                                    ; 0B124
   add bp, 2                                    ; 0B126  0x83, 0xC5, 0x02
   les di, [bp + 0xa]                           ; 0B129  0xC4, 0x7E, 0x0A
   mov cl, [es:di]                              ; 0B12C  0x26, 0x8A, 0x0D
   mov dl, [es:di + 2]                          ; 0B12F  0x26, 0x8A, 0x55, 0x02
-  call xios_int28_fn_18_reserved                               ; 0B133  0xE8, 0x8E, 0xFA
+  call int28_fn_18_reserved                               ; 0B133  0xE8, 0x8E, 0xFA
   mov bl, [es:di + 3]                          ; 0B136  0x26, 0x8A, 0x5D, 0x03
   xor_bh_bh                                    ; 0B13A
   shl bx, 1                                    ; 0B13C  0xD1, 0xE3
@@ -7135,7 +7159,7 @@ xios_diag_hook_target_46c0:
   or al, 0x2e                                  ; 0B265  0x0C, 0x2E
   mov [xios_saved_ss], ss                             ; 0B267  0x8C, 0x16, 0x20, 0x44
   mov [cs:xios_saved_sp], sp                          ; 0B26B  0x2E, 0x89, 0x26, 0x22, 0x44
-  mov ss, [cs:0xc06]                           ; 0B270  0x2E, 0x8E, 0x16, 0x06, 0x0C
+  mov ss, [cs:xios_sysdat_segment_val]                           ; 0B270  0x2E, 0x8E, 0x16, 0x06, 0x0C
   mov sp, xios_saved_stack_guard                               ; 0B275  0xBC, 0x1E, 0x44
   push ax                                      ; 0B278  0x50
   push bx                                      ; 0B279  0x53
@@ -7538,7 +7562,7 @@ mov [cs:fdc_dpb_current_format], ax                          ; 0BAB8  0x2E, 0xA3
 
 loc_0BAC6:                                     ; 0BAC6
 mov [cs:xios_con_var_2c08], al                          ; 0BAC6  0x2E, 0xA2, 0x08, 0x2C
-  mov dx, [cs:0xc38]                           ; 0BACA  0x2E, 0x8B, 0x16, 0x38, 0x0C
+  mov dx, [cs:xt_alloc]                           ; 0BACA  0x2E, 0x8B, 0x16, 0x38, 0x0C
 mov [cs:xios_sysdat_segment_ptr], dx                          ; 0BACF  0x2E, 0x89, 0x16, 0xF1, 0x2B
   mov es, dx                                   ; 0BAD4  0x8E, 0xC2
 mov cx, NUM_VIR_CONS                                    ; 0BAD6  0xB9, 0x01, 0x00
@@ -7643,7 +7667,7 @@ kbd_init_seq:
   db 0x1B, 0x42, 0x00                          ; 0BBB4  sbb ax, word [bp + si]
   add [bx + di], cl                            ; 0BBB7  0x00, 0x09
   db 0x00, 0x00                                ; 0BBB9
-  add [bx + 0x4c], bh                          ; 0BBBB  0x00, 0x7F, 0x4C
+  add [bx + CCB_TRACKING_MODE], bh                          ; 0BBBB  0x00, 0x7F, 0x4C
   db 0x00, 0x00                                ; 0BBBE
   jg loc_0BBC2                                 ; 0BBC0  0x7F, 0x00
 
@@ -7678,7 +7702,7 @@ rtc_timer_params:
 
 sub_0BC39:                                     ; 0BC39
   push es                                      ; 0BC39  0x06
-  mov ax, [cs:0xc06]                           ; 0BC3A  0x2E, 0xA1, 0x06, 0x0C
+  mov ax, [cs:xios_sysdat_segment_val]                           ; 0BC3A  0x2E, 0xA1, 0x06, 0x0C
   mov es, ax                                   ; 0BC3E  0x8E, 0xC0
   mov bx, 0                                    ; 0BC40  0xBB, 0x00, 0x00
   mov al, 2                                    ; 0BC43  0xB0, 0x02
@@ -7712,7 +7736,7 @@ sub_0BC7B:                                     ; 0BC7B
 
 sub_0BC89:                                     ; 0BC89
   push es                                      ; 0BC89  0x06
-  mov ax, [cs:0xc06]                           ; 0BC8A  0x2E, 0xA1, 0x06, 0x0C
+  mov ax, [cs:xios_sysdat_segment_val]                           ; 0BC8A  0x2E, 0xA1, 0x06, 0x0C
   mov es, ax                                   ; 0BC8E  0x8E, 0xC0
   mov bx, 0                                    ; 0BC90  0xBB, 0x00, 0x00
   mov al, 2                                    ; 0BC93  0xB0, 0x02
@@ -8115,7 +8139,7 @@ mov al, [cs:rtc_cur_day]                          ; 0BF9E  0x2E, 0xA0, 0x6A, 0x5
   xor_ah_ah                                    ; 0BFA2
 add ax, [cs:rtc_day_of_year]                          ; 0BFA4  0x2E, 0x03, 0x06, 0x67, 0x50
   push es                                      ; 0BFA9  0x06
-  mov es, [cs:0xc06]                           ; 0BFAA  0x2E, 0x8E, 0x06, 0x06, 0x0C
+  mov es, [cs:xios_sysdat_segment_val]                           ; 0BFAA  0x2E, 0x8E, 0x06, 0x06, 0x0C
   mov [es:0x7e], ax                            ; 0BFAF  0x26, 0xA3, 0x7E, 0x00
   pop es                                       ; 0BFB3  0x07
   mov dx, PORT_PCB_T0_MAXA                     ; 0BFB4  0xBA, 0x52, 0xFF
@@ -8140,7 +8164,7 @@ mov bx, xios_crt_table_4256                               ; 0BFE1  0xBB, 0x56, 0
   cmp byte [bx + 0x33], 1                      ; 0BFE4  0x80, 0x7F, 0x33, 0x01
   jne loc_0BFF9                                ; 0BFE8  0x75, 0x0F
   mov dl, 5                                    ; 0BFEA  0xB2, 0x05
-  call xios_int28_fn_50_isbx_reset                               ; 0BFEC  0xE8, 0x6F, 0xF0
+  call int28_fn_50_isbx_reset                               ; 0BFEC  0xE8, 0x6F, 0xF0
 mov bx, xios_crt_param_4058                               ; 0BFEF  0xBB, 0x58, 0x40
   mov dx, PORT_ISBX_MCS0_02                    ; 0BFF2  0xBA, 0x02, 0x03
   in al, dx                                    ; 0BFF5  0xEC
@@ -8576,9 +8600,9 @@ mov ax, xios_diag_hook_target_46c0                               ; 0C3EF  0xB8, 
   mov ax, cs                                   ; 0C3F3  0x8C, 0xC8
   stosw                                        ; 0C3F5  0xAB
   db 0x2E, 0xC7, 0x06, 0x8C, 0x00, 0x00, 0x00  ; 0C3F6  mov word [cs:sysdat_openvec], 0
-  db 0x2E, 0xC7, 0x06, 0xA2, 0x00, 0x00, 0x00  ; 0C3FD  mov word [cs:0xa2], 0
-  db 0x2E, 0xC7, 0x06, 0xA0, 0x00, 0x94, 0x00  ; 0C404  mov word [cs:0xa0], 0x94
-  mov [cs:0xa6], cs                            ; 0C40B  0x2E, 0x8C, 0x0E, 0xA6, 0x00
+  db 0x2E, 0xC7, 0x06, 0xA2, 0x00, 0x00, 0x00  ; 0C3FD  mov word [cs:sysdat_int_vec], 0
+  db 0x2E, 0xC7, 0x06, 0xA0, 0x00, 0x94, 0x00  ; 0C404  mov word [cs:sysdat_abort_vec], 0x94
+  mov [cs:sysdat_err_intercept_seg], cs                            ; 0C40B  0x2E, 0x8C, 0x0E, 0xA6, 0x00
 mov word [cs:sysdat_err_intercept], xios_diag_hook_target_46c0; 0C410  mov word [cs:sysdat_err_intercept], 0x46c0
 mov si, boot_msg_crlf_fpu                               ; 0C417  0xBE, 0x78, 0x4B
   call boot_print_str                               ; 0C41A  0xE8, 0x22, 0x00
@@ -8751,7 +8775,7 @@ xios_cas_block_num:
   db 0x00, 0x00
 xios_cas_state:
   db 0x01
-xios_int28_fn_26_cas_read_hdr:                 ; 0C6B6 (Båndoptager læs filhoved)
+int28_fn_26_cas_read_hdr:                 ; 0C6B6 (Båndoptager læs filhoved)
   call sub_0C9D9                               ; 0C6B6  0xE8, 0x20, 0x03
   mov_bx_dx                                    ; 0C6B9
 mov word [cs:xios_cas_block_num], 0; 0C6BB  mov word [cs:0x5b13], 0
@@ -8761,7 +8785,7 @@ mov [cs:xios_cas_byte_count], cx                          ; 0C6C8  0x2E, 0x89, 0
   xchg bx, dx                                  ; 0C6D0  87 DA
   xchg bx, cx                                  ; 0C6D2  87 D9
   ret                                          ; 0C6D4  0xC3
-xios_int28_fn_27_cas_write_hdr:                ; 0C6D5 (Båndoptager skriv filhoved)
+int28_fn_27_cas_write_hdr:                ; 0C6D5 (Båndoptager skriv filhoved)
   call sub_0C9D9                               ; 0C6D5  0xE8, 0x01, 0x03
   mov_bx_dx                                    ; 0C6D8
 mov word [cs:xios_cas_block_num], 0; 0C6DA  mov word [cs:0x5b13], 0
@@ -8770,7 +8794,7 @@ mov byte [cs:xios_cas_state], 1                      ; 0C6E6  0x2E, 0xC6, 0x06, 
   call cas_write_leader_and_header                               ; 0C6EC  0xE8, 0xA9, 0x01
   mov_dx_bx                                    ; 0C6EF
   ret                                          ; 0C6F1  0xC3
-xios_int28_fn_28_cas_read_data:               ; 0C6F2 (Båndoptager læs datablok)
+int28_fn_28_cas_read_data:               ; 0C6F2 (Båndoptager læs datablok)
   call sub_0C9D9                               ; 0C6F2  0xE8, 0xE4, 0x02
   mov_bx_dx                                    ; 0C6F5
 mov byte [cs:xios_cas_state], 2                      ; 0C6F7  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x02
@@ -8780,7 +8804,7 @@ mov [cs:xios_cas_byte_count], cx                          ; 0C702  0x2E, 0x89, 0
   xchg bx, dx                                  ; 0C70A  87 DA
   xchg bx, cx                                  ; 0C70C  87 D9
   ret                                          ; 0C70E  0xC3
-xios_int28_fn_29_cas_write_data:              ; 0C70F (Båndoptager skriv datablok)
+int28_fn_29_cas_write_data:              ; 0C70F (Båndoptager skriv datablok)
   call sub_0C9D9                               ; 0C70F  0xE8, 0xC7, 0x02
   mov_bx_dx                                    ; 0C712
 mov byte [cs:xios_cas_state], 2                      ; 0C714  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x02
@@ -8789,7 +8813,7 @@ inc word [cs:xios_cas_block_num]                         ; 0C71F  0x2E, 0xFF, 0x
   call cas_write_leader_and_header                               ; 0C724  0xE8, 0x71, 0x01
   mov_dx_bx                                    ; 0C727
   ret                                          ; 0C729  0xC3
-xios_int28_fn_40_cas_write_eof:               ; 0C72A (Båndoptager skriv EOF-blok)
+int28_fn_40_cas_write_eof:               ; 0C72A (Båndoptager skriv EOF-blok)
   call sub_0C9D9                               ; 0C72A  0xE8, 0xAC, 0x02
   mov_bx_dx                                    ; 0C72D
 mov byte [cs:xios_cas_state], 3                      ; 0C72F  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x03
@@ -9183,7 +9207,7 @@ sub_0C9A9:                                     ; 0C9A9
   push ax                                      ; 0C9AA  0x50
   push es                                      ; 0C9AB  0x06
   push bx                                      ; 0C9AC  0x53
-  mov ax, [cs:0xc06]                           ; 0C9AD  0x2E, 0xA1, 0x06, 0x0C
+  mov ax, [cs:xios_sysdat_segment_val]                           ; 0C9AD  0x2E, 0xA1, 0x06, 0x0C
   mov es, ax                                   ; 0C9B1  0x8E, 0xC0
   mov bx, 0                                    ; 0C9B3  0xBB, 0x00, 0x00
   mov al, 2                                    ; 0C9B6  0xB0, 0x02
@@ -9241,10 +9265,10 @@ mov di, xios_vmenu_line_buf_4909                               ; 0C9E7  0xBF, 0x
   pop es                                       ; 0C9FE  0x07
   call io_statline                               ; 0C9FF  0xE8, 0x5F, 0xC2
   ret                                          ; 0CA02  0xC3
-xios_int28_fn_41_dpc_parallel:               ; 0CA03 (Reserver/frigiv DPC interface)
+int28_fn_41_dpc_parallel:               ; 0CA03 (Reserver/frigiv DPC interface)
   push ax                                      ; 0CA03  0x50
   push es                                      ; 0CA04  0x06
-  call xios_int28_fn_04_get_autoconfig                               ; 0CA05  0xE8, 0x77, 0xE4
+  call int28_fn_04_get_autoconfig                               ; 0CA05  0xE8, 0x77, 0xE4
   add si, 0x13                                 ; 0CA08  0x83, 0xC6, 0x13
   mov al, [si]                                 ; 0CA0B  0x8A, 0x04
   cmp al, 0                                    ; 0CA0D  0x3C, 0x00
@@ -9324,10 +9348,10 @@ mov byte [cs:xios_prn_reserve_timer], 0                      ; 0CAAE  0x2E, 0xC6
 
 loc_0CAB4:                                     ; 0CAB4
   ret                                          ; 0CAB4  0xC3
-xios_int28_fn_42_shared_disk:                ; 0CAB5 (Reserver/frigiv delt disk)
+int28_fn_42_shared_disk:                ; 0CAB5 (Reserver/frigiv delt disk)
   push ax                                      ; 0CAB5  0x50
   push es                                      ; 0CAB6  0x06
-  call xios_int28_fn_04_get_autoconfig                               ; 0CAB7  0xE8, 0xC5, 0xE3
+  call int28_fn_04_get_autoconfig                               ; 0CAB7  0xE8, 0xC5, 0xE3
   add si, 0x13                                 ; 0CABA  0x83, 0xC6, 0x13
   mov al, [es:si]                              ; 0CABD  0x26, 0x8A, 0x04
   cmp al, 0                                    ; 0CAC0  0x3C, 0x00

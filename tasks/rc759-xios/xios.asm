@@ -85,9 +85,15 @@ sysdat_nlstdev:
   times (0x8c - 0x89) db 0
 sysdat_openvec:
   dw 0xffff
-  times (0xa4 - 0x8e) db 0
+  times (0xa0 - 0x8e) db 0
+sysdat_abort_vec:
+  dw 0
+sysdat_int_vec:
+  dw 0
 sysdat_err_intercept:
-  dw 0, 0
+  dw 0
+sysdat_err_intercept_seg:
+  dw 0
   times (3072 - 0xa8) db 0
 
 ; -----------------------------------------------------------------------------
