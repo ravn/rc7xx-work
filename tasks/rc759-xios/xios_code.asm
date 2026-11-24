@@ -3,6 +3,7 @@
 ; =============================================================================
 %if NUM_VIR_CONS == 4
   %define XT_ALLOC_PARAS 0x0500                 ; 1280 paragraffer unlinked bufferplads til 4 konsoller
+  %define ZORDER_LIST_SIZE 16                   ; 2^4 = 16 kombinationer for 4 konsoller
   %define DELTA_VMENU_PROLOGUE 50
   %define DELTA_VMENU_TBL 71
   %define DELTA_VMENU   74
@@ -14,6 +15,7 @@
   %define DELTA_49FA    859
 %else
   %define XT_ALLOC_PARAS 0x01F4                 ; 500 paragraffer unlinked bufferplads til 1 konsol
+  %define ZORDER_LIST_SIZE 2                    ; 2^1 = 2 kombinationer for 1 konsol
   %define DELTA_VMENU_PROLOGUE 0
   %define DELTA_VMENU_TBL 0
   %define DELTA_VMENU   0
@@ -1264,9 +1266,9 @@ loc_0806B:                                     ; 0806B
   jb loc_080BA                                 ; 08095  0x72, 0x23
 ; --- Chunk 3: Virtuel konsol-opslag for skærmposition (CS:14F6, +3 B) ---
 %if NUM_VIR_CONS == 4
-  mov al, [cs:si + xios4_clip_map]                     ; 0000093E
+  mov al, [cs:si + xios4_clip_map]             ; Slå op i klippekort for skærmposition (0000093E)
 %else
-  mov al, 1                                    ; 08097
+  mov al, 1                                    ; Konsol 0 er altid synlig og fuld skærm i XIOS1
 %endif
   call sub_0930B                               ; 08099  0xE8, 0x6F, 0x12
   cmp al, [bx + 0x34]                          ; 0809C  0x3A, 0x47, 0x34
@@ -3504,11 +3506,7 @@ sub_092A5:                                     ; 092A5
   mov di, window_zorder_list
   mov al, [bx + 0x4e]                          ; 092A8  0x8A, 0x47, 0x4E
   mov ah, 0                                    ; 092AB  0xB4, 0x00
-%if NUM_VIR_CONS == 4
-  mov cx, 16
-%else
-  mov cx, 2
-%endif
+  mov cx, ZORDER_LIST_SIZE                     ; Antal z-order kombinationer (2 i XIOS1, 16 i XIOS4)
 
 loc_092B0:                                     ; 092B0
   test al, ah                                  ; 092B0  0x84, 0xE0
@@ -8531,20 +8529,13 @@ mov ax, [cs:0x5fdc + DELTA_TAIL]                          ; 0BB1D  0x2E, 0xA1, 0
   mov cx, 0x780
   mov al, 0xf
   rep stosb
-  mov di, window_zorder_list
-  mov cx, 16
-  xor_al_al
-  rep stosb
-  mov di, window_zorder_list
-  mov dx, 3
-%else
-  mov di, window_zorder_list                   ; 0BB2E
-  mov cx, 2
-  xor_al_al
-  rep stosb
-  mov di, window_zorder_list
-  mov dx, 0
 %endif
+  mov di, window_zorder_list
+  mov cx, ZORDER_LIST_SIZE
+  xor_al_al
+  rep stosb
+  mov di, window_zorder_list
+  mov dx, NUM_VIR_CONS - 1
 
 loc_0BB3E:                                     ; 0BB3E
   mov_bx_dx                                    ; 0BB3E  mov bx, dx
