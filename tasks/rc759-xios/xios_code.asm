@@ -4,8 +4,6 @@
 %if NUM_VIR_CONS == 4
   %define XT_ALLOC_PARAS 0x0500                 ; 1280 paragraffer unlinked bufferplads til 4 konsoller
   %define ZORDER_LIST_SIZE 16                   ; 2^4 = 16 kombinationer for 4 konsoller
-  %define DELTA_VMENU_PROLOGUE 50
-  %define DELTA_VMENU_TBL 71
   %define DELTA_VMENU   74
   %define DELTA_WINDOW  451
   %define DELTA_TABLES  909
@@ -16,8 +14,6 @@
 %else
   %define XT_ALLOC_PARAS 0x01F4                 ; 500 paragraffer unlinked bufferplads til 1 konsol
   %define ZORDER_LIST_SIZE 2                    ; 2^1 = 2 kombinationer for 1 konsol
-  %define DELTA_VMENU_PROLOGUE 0
-  %define DELTA_VMENU_TBL 0
   %define DELTA_VMENU   0
   %define DELTA_WINDOW  0
   %define DELTA_TABLES  0
@@ -914,24 +910,32 @@ loc_07E02:                                     ; 07E02
   loop loc_07E02                               ; 07E04  0xE2, 0xFC
   ret                                          ; 07E06  0xC3
 
+vmenu_action_item_1:
 loc_07E07:                                     ; 07E07
   mov [bx + 0x74], al                          ; 07E07  0x88, 0x47, 0x74
   jmp near sub_096CF                           ; 07E0A
+
+vmenu_action_item_2:
   mov_ch_al                                    ; 07E0D  mov ch, al
   mov cl, 0xa                                  ; 07E0F  0xB1, 0x0A
 
 sub_7e11:                                      ; 07E11
   mov [bx + 0x72], cx                          ; 07E11  0x89, 0x4F, 0x72
   jmp near sub_096CF                           ; 07E14
+
+vmenu_action_item_3:
   mov [bx + 0x71], al                          ; 07E17  0x88, 0x47, 0x71
   mov [cs:0x2c08 + DELTA_TABLES], al           ; 07E1A
   ret                                          ; 07E1E  0xC3
+
+vmenu_action_item_4:
   mov [bx + 0x7f], al                          ; 07E1F  0x88, 0x47, 0x7F
   ret                                          ; 07E22  0xC3
 
 ; -----------------------------------------------------------------------------
 ; Chunk 2: Opdatering af virtuel konsolindeks-mapping (CS:1288)
 ; -----------------------------------------------------------------------------
+vmenu_action_item_5:
   push bx                                      ; 07E23  0x53
   push cx                                      ; 07E24  0x51
   xor_ah_ah                                    ; 07E25  xor ah, ah
@@ -964,48 +968,56 @@ sub_7e11:                                      ; 07E11
 ; Fælles for både XIOS1 og XIOS4 med parametriserede tabeller og symbolske instruktioner
 ; =============================================================================
 vmenu_item_table:                               ; 07E47 / 000006EE (Menupunkt-tabel)
-  dw 0x12c7 + DELTA_VMENU_TBL
-  dw 0x12ba + DELTA_VMENU_TBL
-  dw 0x12e4 + DELTA_VMENU_TBL
-  dw 0x130a + DELTA_VMENU_TBL
-  dw 0x12f1 + DELTA_VMENU_TBL
+  dw vmenu_item_2_options
+  dw vmenu_item_1_options
+  dw vmenu_item_3_options
+  dw vmenu_item_5_options
+  dw vmenu_item_4_options
 
 ; Item 1: Normal/Invers
+vmenu_item_1:
   db 0x00, 0x00, 0x04, 0x74, 0x00
   dw 0x47c0 + DELTA_TABLES
-  dw 0x1267 + DELTA_VMENU_PROLOGUE
+  dw vmenu_action_item_1
+vmenu_item_1_options:
   dw 0x483d + DELTA_TABLES
   dw 0x4841 + DELTA_TABLES
   db 0x00, 0x00
 
 ; Item 2: Markør Blinker
+vmenu_item_2:
   db 0x02, 0x73, 0x00
   dw 0x47cd + DELTA_TABLES
-  dw 0x126d + DELTA_VMENU_PROLOGUE
-  dw 0x133e + DELTA_VMENU_TBL
-  dw 0x133c + DELTA_VMENU_TBL
-  dw 0x133a + DELTA_VMENU_TBL
-  dw 0x1338 + DELTA_VMENU_TBL
-  dw 0x1336 + DELTA_VMENU_TBL
-  dw 0x1334 + DELTA_VMENU_TBL
-  dw 0x1332 + DELTA_VMENU_TBL
-  dw 0x1330 + DELTA_VMENU_TBL
-  dw 0x132e + DELTA_VMENU_TBL
-  dw 0x132c + DELTA_VMENU_TBL
+  dw vmenu_action_item_2
+vmenu_item_2_options:
+  dw vmenu_num_str_10
+  dw vmenu_num_str_9
+  dw vmenu_num_str_8
+  dw vmenu_num_str_7
+  dw vmenu_num_str_6
+  dw vmenu_num_str_5
+  dw vmenu_num_str_4
+  dw vmenu_num_str_3
+  dw vmenu_num_str_2
+  dw vmenu_num_str_1
   db 0x00, 0x00
 
 ; Item 3: Understregning
+vmenu_item_3:
   db 0x04, 0x71, 0x00
   dw 0x47da + DELTA_TABLES
-  dw 0x1277 + DELTA_VMENU_PROLOGUE
+  dw vmenu_action_item_3
+vmenu_item_3_options:
   dw 0x483d + DELTA_TABLES
   dw 0x4841 + DELTA_TABLES
   db 0x00, 0x00
 
 ; Item 4: Baggrund
+vmenu_item_4:
   db 0x07, 0x7f, 0x00
   dw 0x47e7 + DELTA_TABLES
-  dw 0x127f + DELTA_VMENU_PROLOGUE
+  dw vmenu_action_item_4
+vmenu_item_4_options:
   dw 0x4805 + DELTA_TABLES
   dw 0x480c + DELTA_TABLES
   dw 0x4813 + DELTA_TABLES
@@ -1017,29 +1029,46 @@ vmenu_item_table:                               ; 07E47 / 000006EE (Menupunkt-ta
   db 0x00, 0x00
 
 ; Item 5: Tastatur
+vmenu_item_5:
   db 0x02, 0x83, 0x00
   dw 0x47f6 + DELTA_TABLES
-  dw 0x1283 + DELTA_VMENU_PROLOGUE
-  dw 0x134a + DELTA_VMENU_TBL
-  dw 0x132c + DELTA_VMENU_TBL
-  dw 0x132e + DELTA_VMENU_TBL
-  dw 0x1330 + DELTA_VMENU_TBL
-  dw 0x1332 + DELTA_VMENU_TBL
-  dw 0x1334 + DELTA_VMENU_TBL
-  dw 0x1336 + DELTA_VMENU_TBL
-  dw 0x1338 + DELTA_VMENU_TBL
-  dw 0x133a + DELTA_VMENU_TBL
-  dw 0x133c + DELTA_VMENU_TBL
-  dw 0x133e + DELTA_VMENU_TBL
-  dw 0x1340 + DELTA_VMENU_TBL
-  dw 0x1342 + DELTA_VMENU_TBL
-  dw 0x1344 + DELTA_VMENU_TBL
-  dw 0x1346 + DELTA_VMENU_TBL
-  dw 0x1348 + DELTA_VMENU_TBL
+  dw vmenu_action_item_5
+vmenu_item_5_options:
+  dw vmenu_num_str_space
+  dw vmenu_num_str_1
+  dw vmenu_num_str_2
+  dw vmenu_num_str_3
+  dw vmenu_num_str_4
+  dw vmenu_num_str_5
+  dw vmenu_num_str_6
+  dw vmenu_num_str_7
+  dw vmenu_num_str_8
+  dw vmenu_num_str_9
+  dw vmenu_num_str_10
+  dw vmenu_num_str_11
+  dw vmenu_num_str_12
+  dw vmenu_num_str_13
+  dw vmenu_num_str_14
+  dw vmenu_num_str_15
   db 0x00, 0x00
 
 ; Tal-strenge (" 1".."15")
-  db "1 2 3 4 5 6 7 8 9 101112131415", 0x9B, 0x20
+vmenu_num_str_1:      db "1 "
+vmenu_num_str_2:      db "2 "
+vmenu_num_str_3:      db "3 "
+vmenu_num_str_4:      db "4 "
+vmenu_num_str_5:      db "5 "
+vmenu_num_str_6:      db "6 "
+vmenu_num_str_7:      db "7 "
+vmenu_num_str_8:      db "8 "
+vmenu_num_str_9:      db "9 "
+vmenu_num_str_10:     db "10"
+vmenu_num_str_11:     db "11"
+vmenu_num_str_12:     db "12"
+vmenu_num_str_13:     db "13"
+vmenu_num_str_14:     db "14"
+vmenu_num_str_15:     db "15"
+vmenu_num_str_space:  db 0x9B, 0x20
 
 loc_07EEC:                                     ; 07EEC
   test byte [bx + 0x6b], 4                     ; 07EEC  0xF6, 0x47, 0x6B, 0x04
@@ -1188,6 +1217,7 @@ loc_07FD4:                                     ; 07FD4
   pop es                                       ; 07FED  0x07
   ret                                          ; 07FEE  0xC3
 
+crt_char_handler:
 loc_07FEF:                                     ; 07FEF
   cmp cl, 0x20                                 ; 07FEF  0x80, 0xF9, 0x20
   jae loc_08053                                ; 07FF2  0x73, 0x5F
@@ -1330,9 +1360,9 @@ loc_080FC:                                     ; 080FC
   mov [bx + 0x66], ax                          ; 080FC  0x89, 0x47, 0x66
   ret                                          ; 080FF  0xC3
   call sub_095CB                               ; 08100  0xE8, 0xC8, 0x14
-  mov word [bx + 0x5e], 0x144f + DELTA_VMENU_TBL                 ; 08103  0xC7, 0x47, 0x5E, 0x4F, 0x14
+  mov word [bx + 0x5e], crt_char_handler                 ; 08103  0xC7, 0x47, 0x5E, 0x4F, 0x14
   jmp near loc_07FEF                           ; 08108  0xE9, 0xE4, 0xFE
-  mov word [bx + 0x5e], 0x144f + DELTA_VMENU_TBL                 ; 0810B  0xC7, 0x47, 0x5E, 0x4F, 0x14
+  mov word [bx + 0x5e], crt_char_handler                 ; 0810B  0xC7, 0x47, 0x5E, 0x4F, 0x14
   mov di, 0x15f4 + DELTA_VMENU                               ; 08110  0xBF, 0xF4, 0x15
   mov_al_cl                                    ; 08113  mov al, cl
   call sub_08B79                               ; 08115  0xE8, 0x61, 0x0A
@@ -1739,7 +1769,7 @@ rtm_al87_blocking_read:                        ; 0851E
 
 loc_0854D:                                     ; 0854D
   ret                                          ; 0854D  0xC3
-  mov word [bx + 0x5e], 0x144f + DELTA_VMENU_TBL                 ; 0854E  0xC7, 0x47, 0x5E, 0x4F, 0x14
+  mov word [bx + 0x5e], crt_char_handler                 ; 0854E  0xC7, 0x47, 0x5E, 0x4F, 0x14
   sub cl, 0x20                                 ; 08553  0x80, 0xE9, 0x20
   cmp cl, [bx + 0x60]                          ; 08556  0x3A, 0x4F, 0x60
   ja loc_08597                                 ; 08559  0x77, 0x3C
@@ -1771,7 +1801,7 @@ loc_0854D:                                     ; 0854D
   ret                                          ; 08596  0xC3
 
 loc_08597:                                     ; 08597
-  mov word [bx + 0x5e], 0x144f + DELTA_VMENU_TBL                 ; 08597  0xC7, 0x47, 0x5E, 0x4F, 0x14
+  mov word [bx + 0x5e], crt_char_handler                 ; 08597  0xC7, 0x47, 0x5E, 0x4F, 0x14
   ret                                          ; 0859C  0xC3
 
 sub_0859D:                                     ; 0859D
@@ -4290,7 +4320,7 @@ window_zorder_list:
   times 0x0b db 0
   dw 0xffff
   dw %3
-  dw 0x144f + DELTA_VMENU_TBL
+  dw crt_char_handler
   db 0x4f
   times 9 db 0
   dw %4
@@ -7755,7 +7785,7 @@ mov [cs:0x2bff + DELTA_TABLES], al                          ; 0BA85  0x2E, 0xA2,
   jmp short loc_0BA92                          ; 0BA89  0xEB, 0x07
 
 loc_0BA8B:                                     ; 0BA8B
-mov word [cs:0x12af + DELTA_VMENU_TBL], 0; 0BA8B  mov word [cs:0x12af], 0
+mov word [cs:vmenu_item_table + 8], 0; 0BA8B  mov word [cs:0x12af], 0
 
 loc_0BA92:                                     ; 0BA92
 mov bx, 0x4256 + DELTA_TABLES                               ; 0BA92  0xBB, 0x56, 0x42
