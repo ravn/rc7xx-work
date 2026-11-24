@@ -5,16 +5,12 @@
   %define XT_ALLOC_PARAS 0x0500                 ; 1280 paragraffer unlinked bufferplads til 4 konsoller
   %define ZORDER_LIST_SIZE 16                   ; 2^4 = 16 kombinationer for 4 konsoller
   %define DELTA_TABLES  909
-  %define DELTA_TAIL    3668
-%define DELTA_TAIL_PRE 3669
-  %define xios_screen_state_buf (xios4_clip_map + 0x780)
+    %define xios_screen_state_buf (xios4_clip_map + 0x780)
   %else
   %define XT_ALLOC_PARAS 0x01F4                 ; 500 paragraffer unlinked bufferplads til 1 konsol
   %define ZORDER_LIST_SIZE 2                    ; 2^1 = 2 kombinationer for 1 konsol
   %define DELTA_TABLES  0
-  %define DELTA_TAIL    0
-%define DELTA_TAIL_PRE 0
-  %define xios_screen_state_buf xios1_screen_state_buf
+    %define xios_screen_state_buf xios1_screen_state_buf
   %endif
 
 ; =============================================================================
@@ -474,7 +470,7 @@ loc_07AF0:
   je loc_07B0E
   test byte [cs:kbd_shift_state], 0x10
   je loc_07B0E
-  mov bx, 0x5fa4 + DELTA_TAIL
+  mov bx, fdc_drive_type_0
   jmp near loc_0B24F
   db 0xCC                                      ; int3 padding
   jmp near loc_07BA5
@@ -797,7 +793,7 @@ loc_07D35:                                     ; 07D35 / 000005C7
   push cx                                      ; 07D4B  0x51
   push ds                                      ; 07D4C  0x1E
   pop es                                       ; 07D4D  0x07
-  mov di, 0x614a + DELTA_TAIL                  ; 07D4E
+  mov di, xios_con_line_buffer_614a                  ; 07D4E
   push di                                      ; 07D51  0x57
   mov ax, 0x820                                ; 07D52  0xB8, 0x20, 0x08
   mov cx, 0x50                                 ; 07D55  0xB9, 0x50, 0x00
@@ -819,7 +815,7 @@ loc_07D65:                                     ; 07D65
   push di                                      ; 07D6C  0x57
   mov si, [di - 4]                             ; 07D6D  0x8B, 0x75, 0xFC
   lodsb                                        ; 07D70  0xAC
-  mov di, 0x6186 + DELTA_TAIL                  ; 07D71
+  mov di, xios_con_line_buffer_6186                  ; 07D71
   call sub_07DFE                               ; 07D74  0xE8, 0x87, 0x00
   mov cx, 0x14                                 ; 07D77  0xB9, 0x14, 0x00
   mov al, 0x20                                 ; 07D7A  0xB0, 0x20
@@ -844,7 +840,7 @@ loc_07D92:                                     ; 07D92
   push di                                      ; 07D99  0x57
   mov_si_ax                                    ; 07D9A  mov si, ax
   mov al, [di - 7]                             ; 07D9C  0x8A, 0x45, 0xF9
-  mov di, 0x61b8 + DELTA_TAIL                  ; 07D9F
+  mov di, xios_con_line_buffer_61b8                  ; 07D9F
   call sub_07DFE                               ; 07DA2  0xE8, 0x59, 0x00
   mov cx, 8                                    ; 07DA5  0xB9, 0x08, 0x00
   mov al, 0x20                                 ; 07DA8  0xB0, 0x20
@@ -1094,7 +1090,7 @@ loc_07EF5:                                     ; 07EF5
   mov cx, [bx + 0x48]                          ; 07F26  0x8B, 0x4F, 0x48
   test byte [cs:xios4_window_clip_flag], 0xff                  ; 07F29  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
   jne loc_07F37                                ; 07F2F  0x75, 0x06
-  mov bx, 0x61f6 + DELTA_TAIL                               ; 07F31  0xBB, 0xF6, 0x61
+  mov bx, xios_vmenu_line_offsets                               ; 07F31  0xBB, 0xF6, 0x61
   mov cx, 0x18                                 ; 07F34  0xB9, 0x18, 0x00
 
 loc_07F37:                                     ; 07F37
@@ -1110,7 +1106,7 @@ loc_07F37:                                     ; 07F37
   inc bx                                       ; 07F47  0x43
   inc bx                                       ; 07F48  0x43
   loop loc_07F37                               ; 07F49  0xE2, 0xEC
-  mov si, 0x614a + DELTA_TAIL                               ; 07F4B  0xBE, 0x4A, 0x61
+  mov si, xios_con_line_buffer_614a                               ; 07F4B  0xBE, 0x4A, 0x61
   call sub_07F5E                               ; 07F4E  0xE8, 0x0D, 0x00
 
 loc_07F51:                                     ; 07F51
@@ -1518,7 +1514,7 @@ loc_082BB:                                     ; 082BB
   or word [bx + 0x6b], 0x200                   ; 082DC  0x81, 0x4F, 0x6B, 0x00, 0x02
   test byte [bx + 0x6b], 2                     ; 082E1  0xF6, 0x47, 0x6B, 0x02
   jne loc_082EE                                ; 082E5  0x75, 0x07
-  mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
+  mov word [cs:fdc_drive_cyl_0], 0xffff
 
 loc_082EE:                                     ; 082EE
   ret                                          ; 082EE  0xC3
@@ -1691,7 +1687,7 @@ sub_08444:                                     ; 08444
   test byte [bx + 0x6b], 0x16                  ; 08447  0xF6, 0x47, 0x6B, 0x16
   jne loc_08459                                ; 0844B  0x75, 0x0C
   call sub_0893E                               ; 0844D  0xE8, 0xEE, 0x04
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 08450  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 08450  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   call sub_09312                               ; 08456  0xE8, 0xB9, 0x0E
 
 loc_08459:                                     ; 08459
@@ -1715,7 +1711,7 @@ loc_08459:                                     ; 08459
   ret                                          ; 08483  0xC3
 
 loc_08484:                                     ; 08484
-  mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
+  mov word [cs:fdc_drive_cyl_0], 0xffff
   jmp near sub_08625                           ; 0848B  0xE9, 0x97, 0x01
   crt_esc_M_sub:
   mov al, 1                                    ; 0848E  0xB0, 0x01
@@ -1921,13 +1917,13 @@ sub_085ED:                                     ; 085ED
   add dx, [bx + 0x36]                          ; 08614  0x03, 0x57, 0x36
 
 loc_08617:                                     ; 08617
-  mov [cs:0x5fbe + DELTA_TAIL], dx                          ; 08617  0x2E, 0x89, 0x16, 0xBE, 0x5F
+  mov [cs:fdc_drive_cyl_0], dx                          ; 08617  0x2E, 0x89, 0x16, 0xBE, 0x5F
 
 loc_0861C:                                     ; 0861C
   ret                                          ; 0861C  0xC3
 
 loc_0861D:                                     ; 0861D
-  mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
+  mov word [cs:fdc_drive_cyl_0], 0xffff
   ret                                          ; 08624  0xC3
 
 sub_08625:                                     ; 08625
@@ -2098,7 +2094,7 @@ loc_08716:                                     ; 08716
   jne loc_08754                                ; 08729  0x75, 0x29
   call sub_0865C                               ; 0872B  0xE8, 0x2E, 0xFF
   call sub_0893E                               ; 0872E  0xE8, 0x0D, 0x02
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 08731  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 08731  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   mov ah, 0                                    ; 08737  0xB4, 0x00
   call xios_crt_trigger_ca                     ; 08739  0xE8, 0xC5, 0x0E
   jmp short loc_0874F                          ; 0873C  0xEB, 0x11
@@ -2110,7 +2106,7 @@ loc_0873E:                                     ; 0873E
 loc_08743:                                     ; 08743
   call sub_0865C                               ; 08743  0xE8, 0x16, 0xFF
   call sub_0893E                               ; 08746  0xE8, 0xF5, 0x01
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 08749  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 08749  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
 
 loc_0874F:                                     ; 0874F
   mov byte [bx + 0x35], 0                      ; 0874F  0xC6, 0x47, 0x35, 0x00
@@ -2173,8 +2169,8 @@ loc_087CD:                                     ; 087CD
   db 0x03, 0xFB                                ; 087DC  add di, bx
   mov dx, [cs:0x2bf1 + DELTA_TABLES]                          ; 087DE  0x2E, 0x8B, 0x16, 0xF1, 0x2B
   call sub_09623                               ; 087E3  0xE8, 0x3D, 0x0E
-  mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 087ED  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  mov word [cs:fdc_drive_cyl_0], 0xffff
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 087ED  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 087F3  0xC3
 
 sub_087F4:                                     ; 087F4
@@ -2224,13 +2220,13 @@ sub_08825:                                     ; 08825
   rep movsw                                    ; 08841  0xF3, 0xA5
   lea ax, [bx + 0x7c]                          ; 08843  0x8D, 0x47, 0x7C
   call sub_09621                               ; 08846  0xE8, 0xD8, 0x0D
-  mov ax, 0x6140 + DELTA_TAIL                               ; 08849  0xB8, 0x40, 0x61
+  mov ax, fdc_param_6140                               ; 08849  0xB8, 0x40, 0x61
   call sub_09621                               ; 0884C  0xE8, 0xD2, 0x0D
   pop cx                                       ; 0884F  0x59
   rep movsw                                    ; 08850  0xF3, 0xA5
   lea ax, [bx + 0x80]                          ; 08852  0x8D, 0x87, 0x80, 0x00
   call sub_09621                               ; 08856  0xE8, 0xC8, 0x0D
-  mov ax, 0x6140 + DELTA_TAIL                               ; 08859  0xB8, 0x40, 0x61
+  mov ax, fdc_param_6140                               ; 08859  0xB8, 0x40, 0x61
   call sub_09621                               ; 0885C  0xE8, 0xC2, 0x0D
   pop cx                                       ; 0885F  0x59
   rep movsw                                    ; 08860  0xF3, 0xA5
@@ -2266,19 +2262,19 @@ loc_08875:                                     ; 08875
   db 0x03, 0xFB                                ; 088A4  add di, bx
   lea ax, [bx + 0x80]                          ; 088A6  0x8D, 0x87, 0x80, 0x00
   call sub_09621                               ; 088AA  0xE8, 0x74, 0x0D
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 088AD  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 088AD  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 088B3  0xC3
   crt_scroll_sub_1d14:
   call sub_08972                               ; 088B4  0xE8, 0xBB, 0x00
   add byte [cs:bx + 0x7c], 4                   ; 088B7  0x2E, 0x80, 0x47, 0x7C, 0x04
   add byte [cs:bx + 0x80], 4                   ; 088BC  0x2E, 0x80, 0x87, 0x80, 0x00, 0x04
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 088C2  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 088C2  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 088C8  0xC3
   crt_scroll_sub_1d29:
   call sub_08972                               ; 088C9  0xE8, 0xA6, 0x00
   sub byte [cs:bx + 0x7c], 4                   ; 088CC  0x2E, 0x80, 0x6F, 0x7C, 0x04
   sub byte [cs:bx + 0x80], 4                   ; 088D1  0x2E, 0x80, 0xAF, 0x80, 0x00, 0x04
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 088D7  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 088D7  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 088DD  0xC3
   crt_scroll_sub_1d3e:
   mov bx, [cs:0x2c00 + DELTA_TABLES]                          ; 088DE  0x2E, 0x8B, 0x1E, 0x00, 0x2C
@@ -2286,7 +2282,7 @@ loc_08875:                                     ; 08875
   push bx                                      ; 088E6  0x53
   mov bx, 0x2c13 + DELTA_TABLES                               ; 088E7  0xBB, 0x13, 0x2C
   call sub_08941                               ; 088EA  0xE8, 0x54, 0x00
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 088ED  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 088ED  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   pop bx                                       ; 088F3  0x5B
   mov byte [bx + 0x35], 0                      ; 088F4  0xC6, 0x47, 0x35, 0x00
   ret                                          ; 088F8  0xC3
@@ -2320,10 +2316,10 @@ sub_0893E:                                     ; 0893E
 sub_08941:                                     ; 08941
   push cx                                      ; 08941  0x51
   db 0x8B, 0xF3                                ; 08942  mov si, bx
-  mov di, 0x602a + DELTA_TAIL                               ; 08944  0xBF, 0x2A, 0x60
-  test byte [cs:0x5fa6 + DELTA_TAIL], 0x80                  ; 08947  0x2E, 0xF6, 0x06, 0xA6, 0x5F, 0x80
+  mov di, fdc_drive_1_dpb_ptr                               ; 08944  0xBF, 0x2A, 0x60
+  test byte [cs:fdc_drive_flags_0], 0x80                  ; 08947  0x2E, 0xF6, 0x06, 0xA6, 0x5F, 0x80
   jne loc_08952                                ; 0894D  0x75, 0x03
-  mov di, 0x60b2 + DELTA_TAIL                               ; 0894F  0xBF, 0xB2, 0x60
+  mov di, fdc_drive_2_dpb_ptr                               ; 0894F  0xBF, 0xB2, 0x60
 
 loc_08952:                                     ; 08952
   push cx                                      ; 08952  0x51
@@ -2337,18 +2333,18 @@ loc_08952:                                     ; 08952
 loc_08960:                                     ; 08960
   cmp cx, 0x18                                 ; 08960  0x83, 0xF9, 0x18
   ja loc_0896B                                 ; 08963  0x77, 0x06
-  mov ax, 0x614a + DELTA_TAIL                               ; 08965  0xB8, 0x4A, 0x61
+  mov ax, xios_con_line_buffer_614a                               ; 08965  0xB8, 0x4A, 0x61
   call sub_09621                               ; 08968  0xE8, 0xB6, 0x0C
 
 loc_0896B:                                     ; 0896B
-  mov ax, 0x61ea + DELTA_TAIL                               ; 0896B  0xB8, 0xEA, 0x61
+  mov ax, xios_crt_mode_line_table                               ; 0896B  0xB8, 0xEA, 0x61
   call sub_09621                               ; 0896E  0xE8, 0xB0, 0x0C
   ret                                          ; 08971  0xC3
 
 sub_08972:                                     ; 08972
-  mov si, 0x602a + DELTA_TAIL                               ; 08972  0xBE, 0x2A, 0x60
-  mov di, 0x60b2 + DELTA_TAIL                               ; 08975  0xBF, 0xB2, 0x60
-  test byte [cs:0x5fa6 + DELTA_TAIL], 0x80                  ; 08978  0x2E, 0xF6, 0x06, 0xA6, 0x5F, 0x80
+  mov si, fdc_drive_1_dpb_ptr                               ; 08972  0xBE, 0x2A, 0x60
+  mov di, fdc_drive_2_dpb_ptr                               ; 08975  0xBF, 0xB2, 0x60
+  test byte [cs:fdc_drive_flags_0], 0x80                  ; 08978  0x2E, 0xF6, 0x06, 0xA6, 0x5F, 0x80
   je loc_08982                                 ; 0897E  0x74, 0x02
   xchg si, di                                  ; 08980  87 F7
 
@@ -2688,7 +2684,7 @@ sub_08BFB:                                     ; 08BFB
   pop es                                       ; 08BFD  0x07
   mov dl, [bx + 0x34]                          ; 08BFE  0x8A, 0x57, 0x34
   call sub_0928E                               ; 08C01  0xE8, 0x8A, 0x06
-  mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
+  mov word [cs:fdc_drive_cyl_0], 0xffff
   call sub_096B8                               ; 08C0B  0xE8, 0xAA, 0x0A
   call sub_0920B                               ; 08C0E  0xE8, 0xFA, 0x05
   mov cx, [bx + 0x48]                          ; 08C11  0x8B, 0x4F, 0x48
@@ -2700,13 +2696,13 @@ sub_08BFB:                                     ; 08BFB
   je loc_08C36                                 ; 08C25  0x74, 0x0F
   mov byte [cs:xios4_window_clip_flag], 0                  ; 08C27  0x2E, 0xC6, 0x06, 0x5A, 0x2B, 0x00
   call sub_09333                               ; 08C2D  0xE8, 0x03, 0x07
-  mov bx, 0x61f6 + DELTA_TAIL                               ; 08C30  0xBB, 0xF6, 0x61
+  mov bx, xios_vmenu_line_offsets                               ; 08C30  0xBB, 0xF6, 0x61
   mov cx, 0x18                                 ; 08C33  0xB9, 0x18, 0x00
 
 loc_08C36:                                     ; 08C36
   call sub_08941                               ; 08C36  0xE8, 0x08, 0xFD
   pop bx                                       ; 08C39  0x5B
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 08C3A  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 08C3A  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   call sub_096CF                               ; 08C40  0xE8, 0x8C, 0x0A
   mov ah, 1                                    ; 08C43  0xB4, 0x01
   call xios_crt_trigger_ca                     ; 08C45  0xE8, 0xB9, 0x09
@@ -2892,7 +2888,7 @@ loc_08DAF:                                     ; 08DAF
   mov si, 0x4845 + DELTA_TABLES                               ; 08DAF  0xBE, 0x45, 0x48
 
 loc_08DB2:                                     ; 08DB2
-  mov di, 0x614a + DELTA_TAIL                               ; 08DB2  0xBF, 0x4A, 0x61
+  mov di, xios_con_line_buffer_614a                               ; 08DB2  0xBF, 0x4A, 0x61
   mov ah, 8                                    ; 08DB5  0xB4, 0x08
   mov cx, 0x50                                 ; 08DB7  0xB9, 0x50, 0x00
   pop bx                                       ; 08DBA  0x5B
@@ -2958,7 +2954,7 @@ sub_08DF1:                                     ; 08DF1
   mov bx, [cs:xios4_cur_window_ptr]                          ; 08E06  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   call sub_09220                               ; 08E0B  0xE8, 0x12, 0x04
   call sub_09312                               ; 08E0E  0xE8, 0x01, 0x05
-  mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
+  mov word [cs:fdc_drive_cyl_0], 0xffff
   push word [bx + 0x48]                        ; 08E18  0xFF, 0x77, 0x48
   mov ax, 0x18                                 ; 08E1B  0xB8, 0x18, 0x00
   call sub_08444                               ; 08E1E  0xE8, 0x23, 0xF6
@@ -3139,15 +3135,15 @@ sub_08FE7:                                     ; 08FE7
   je sub_09001                                 ; 08FEC  0x74, 0x13
 
 sub_08FEE:                                     ; 08FEE
-  mov word [cs:0x613c + DELTA_TAIL], 0x000f
-  mov word [cs:0x613e + DELTA_TAIL], 0x8723
-  mov si, 0x5ff8 + DELTA_TAIL                               ; 08FFC  0xBE, 0xF8, 0x5F
+  mov word [cs:fdc_param_613c], 0x000f
+  mov word [cs:fdc_param_613e], 0x8723
+  mov si, fdc_dpb_alternate                               ; 08FFC  0xBE, 0xF8, 0x5F
   jmp short loc_09012                          ; 08FFF  0xEB, 0x11
 
 sub_09001:                                     ; 09001
-  mov word [cs:0x613c + DELTA_TAIL], 0x0009
-  mov word [cs:0x613e + DELTA_TAIL], 0x8750
-  mov si, 0x5fca + DELTA_TAIL                               ; 0900F  0xBE, 0xCA, 0x5F
+  mov word [cs:fdc_param_613c], 0x0009
+  mov word [cs:fdc_param_613e], 0x8750
+  mov si, fdc_dpb_standard                               ; 0900F  0xBE, 0xCA, 0x5F
 
 loc_09012:                                     ; 09012
   mov ax, [cs:0x2c50 + DELTA_TABLES]                          ; 09012  0x2E, 0xA1, 0x50, 0x2C
@@ -3185,7 +3181,7 @@ loc_0902B:                                     ; 0902B
   mov al, [bx + 0x70]                          ; 0905D  0x8A, 0x47, 0x70
   mov dx, PORT_PPI_CTRL                        ; 09060  0xBA, 0x76, 0x00
   out dx, al                                   ; 09063  0xEE
-  mov di, 0x5fc2 + DELTA_TAIL                               ; 09064  0xBF, 0xC2, 0x5F
+  mov di, fdc_drive_0_dpb_ptr                               ; 09064  0xBF, 0xC2, 0x5F
   db 0x8B, 0xC6                                ; 09067  mov ax, si
   call sub_09621                               ; 09069  0xE8, 0xB5, 0x05
   mov ah, 4                                    ; 0906C  0xB4, 0x04
@@ -3323,7 +3319,7 @@ sub_09131:                                     ; 09131
   ret                                          ; 09140  0xC3
 xios_int28_fn_21_get_disp_list:              ; 09141
   call sub_08FDC                               ; 09141  0xE8, 0x98, 0xFE
-  mov si, 0x5fa4 + DELTA_TAIL                               ; 09144  0xBE, 0xA4, 0x5F
+  mov si, fdc_drive_type_0                               ; 09144  0xBE, 0xA4, 0x5F
   jmp near loc_091B1                           ; 09147  0xE9, 0x67, 0x00
 xios_int28_fn_22_set_disp_list:              ; 0914A
   call sub_08FDC                               ; 0914A  0xE8, 0x8F, 0xFE
@@ -4239,10 +4235,10 @@ sub_09588:                                     ; 09588
   jne loc_095CA                                ; 095A7  0x75, 0x21
   mov byte [cs:kbd_disabled_flag], 0xff                    ; 095A9  0x2E, 0xC6, 0x06, 0x60, 0x2A, 0xFF
   call sub_08972                               ; 095AF  0xE8, 0xC0, 0xF3
-  mov ax, 0x61ec + DELTA_TAIL                               ; 095B2  0xB8, 0xEC, 0x61
+  mov ax, xios_crt_line_entry_61ec                               ; 095B2  0xB8, 0xEC, 0x61
   call sub_09621                               ; 095B5  0xE8, 0x69, 0x00
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 095B8  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
-mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 095B8  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+mov word [cs:fdc_drive_cyl_0], 0xffff
   mov word [bx + 0x5e], crt_esc_dispatch_reset              ; 095C5  0xC7, 0x47, 0x5E, 0x60, 0x15
 
 loc_095CA:                                     ; 095CA
@@ -4260,7 +4256,7 @@ loc_095DA:                                     ; 095DA
   mov bx, [cs:kbd_buf_head]                                ; 095DA  0x2E, 0x8B, 0x1E, 0x5C, 0x2A
   mov [cs:kbd_buf_tail], bx                                ; 095DF  0x2E, 0x89, 0x1E, 0x5E, 0x2A
   push dx                                      ; 095E4  0x52
-  xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 095E5  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
+  xor byte [cs:fdc_drive_flags_0], 0x80                   ; 095E5  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   mov bx, [cs:xios4_cur_window_ptr]                          ; 095EB  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   call sub_08625                               ; 095F0  0xE8, 0x32, 0xF0
   pop dx                                       ; 095F3  0x5A
@@ -4276,16 +4272,16 @@ kbd_disabled_flag:
 
 xios_crt_trigger_ca:                           ; 09601
   mov al, 1                                    ; 09601  0xB0, 0x01
-  mov [cs:0x5fa4 + DELTA_TAIL], ax                          ; 09603  0x2E, 0xA3, 0xA4, 0x5F
+  mov [cs:fdc_drive_type_0], ax                          ; 09603  0x2E, 0xA3, 0xA4, 0x5F
 
 crt_post_cmd_wait:                             ; 09607
   mov dx, PORT_CRT_CA                          ; 09607  0xBA, 0x40, 0x02
   out dx, al                                   ; 0960A  0xEE
 
 loc_0960B:                                     ; 0960B
-  cmp [cs:0x5fa4 + DELTA_TAIL], al                          ; 0960B  0x2E, 0x38, 0x06, 0xA4, 0x5F
+  cmp [cs:fdc_drive_type_0], al                          ; 0960B  0x2E, 0x38, 0x06, 0xA4, 0x5F
   je loc_0960B                                 ; 09610  0x74, 0xF9
-  mov word [cs:0x5fa4 + DELTA_TAIL], 0x900
+  mov word [cs:fdc_drive_type_0], 0x900
   ret                                          ; 09619  0xC3
   mov dx, [cs:0x2bf1 + DELTA_TABLES]                          ; 0961A  0x2E, 0x8B, 0x16, 0xF1, 0x2B
   jmp short sub_09623                          ; 0961F  0xEB, 0x02
@@ -4381,11 +4377,11 @@ sub_096CF:                                     ; 096CF
   test byte [bx + 0x6b], 2                     ; 096CF  0xF6, 0x47, 0x6B, 0x02
   jne loc_096F0                                ; 096D3  0x75, 0x1B
   mov al, [bx + 0x75]                          ; 096D5  0x8A, 0x47, 0x75
-  mov [cs:0x5ff6 + DELTA_TAIL], al                          ; 096D8  0x2E, 0xA2, 0xF6, 0x5F
+  mov [cs:fdc_dpb_std_al0], al                          ; 096D8  0x2E, 0xA2, 0xF6, 0x5F
   mov al, [bx + 0x74]                          ; 096DC  0x8A, 0x47, 0x74
-  mov [cs:0x5ff2 + DELTA_TAIL], al                          ; 096DF  0x2E, 0xA2, 0xF2, 0x5F
+  mov [cs:fdc_dpb_std_drm], al                          ; 096DF  0x2E, 0xA2, 0xF2, 0x5F
   mov cx, [bx + 0x72]                          ; 096E3  0x8B, 0x4F, 0x72
-  mov [cs:0x5fdc + DELTA_TAIL], cx                          ; 096E6  0x2E, 0x89, 0x0E, 0xDC, 0x5F
+  mov [cs:fdc_dpb_current_format], cx                          ; 096E6  0x2E, 0x89, 0x0E, 0xDC, 0x5F
   mov ah, 4                                    ; 096EB  0xB4, 0x04
   call xios_crt_trigger_ca                     ; 096ED  0xE8, 0x11, 0xFF
 
@@ -5035,7 +5031,7 @@ loc_09D89:                                     ; 09D89
   mov byte [di + 5], 0xff                      ; 09D92  0xC6, 0x45, 0x05, 0xFF
   mov di, dph_drive_b                               ; 09D96  0xBF, 0x56, 0x39
   mov byte [di + 5], 0xff                      ; 09D99  0xC6, 0x45, 0x05, 0xFF
-  mov byte [cs:0x5e42 + DELTA_TAIL_PRE], 0xff                   ; 09D9D  0x2E, 0xC6, 0x06, 0x42, 0x5E, 0xFF
+  mov byte [cs:xios_fdc_reserve_flag], 0xff                   ; 09D9D  0x2E, 0xC6, 0x06, 0x42, 0x5E, 0xFF
 
 loc_09DA3:                                     ; 09DA3
   ret                                          ; 09DA3  0xC3
@@ -5644,10 +5640,10 @@ loc_0A24A:                                     ; 0A24A
   ret                                          ; 0A256  0xC3
 
 sub_0A257:                                     ; 0A257
-  mov dx, 0x5999 + DELTA_TAIL_PRE                               ; 0A257  0xBA, 0x99, 0x59
+  mov dx, xios_mx_dma0_msg                               ; 0A257  0xBA, 0x99, 0x59
   or_al_al                                     ; 0A25A  or al, al
   je loc_0A261                                 ; 0A25C  0x74, 0x03
-  mov dx, 0x59c5 + DELTA_TAIL_PRE                               ; 0A25E  0xBA, 0xC5, 0x59
+  mov dx, xios_mx_dma1_msg                               ; 0A25E  0xBA, 0xC5, 0x59
 
 loc_0A261:                                     ; 0A261
   pusha                                        ; 0A261  60
@@ -5668,10 +5664,10 @@ sub_0A276:                                     ; 0A276
   mov_cl_al                                    ; 0A279  mov cl, al
   shl ah, cl                                   ; 0A27B  0xD2, 0xE4
   or [cs:0x3755 + DELTA_TABLES], ah                           ; 0A27D  0x2E, 0x08, 0x26, 0x55, 0x37
-  mov dx, 0x5999 + DELTA_TAIL_PRE                               ; 0A282  0xBA, 0x99, 0x59
+  mov dx, xios_mx_dma0_msg                               ; 0A282  0xBA, 0x99, 0x59
   or_al_al                                     ; 0A285  or al, al
   je loc_0A28C                                 ; 0A287  0x74, 0x03
-  mov dx, 0x59c5 + DELTA_TAIL_PRE                               ; 0A289  0xBA, 0xC5, 0x59
+  mov dx, xios_mx_dma1_msg                               ; 0A289  0xBA, 0xC5, 0x59
 
 loc_0A28C:                                     ; 0A28C
   pusha                                        ; 0A28C  60
@@ -6284,7 +6280,7 @@ loc_0A79D:                                     ; 0A79D
   mov byte [0x67], 0x50                        ; 0A7D1  0xC6, 0x06, 0x67, 0x00, 0x50
   mov ds, [cs:0xc06]                           ; 0A7D6  0x2E, 0x8E, 0x1E, 0x06, 0x0C
   mov es, [cs:0xc06]                           ; 0A7DB  0x2E, 0x8E, 0x06, 0x06, 0x0C
-  mov bx, 0x5fa4 + DELTA_TAIL                               ; 0A7E0  0xBB, 0xA4, 0x5F
+  mov bx, fdc_drive_type_0                               ; 0A7E0  0xBB, 0xA4, 0x5F
   jmp near loc_0B24F                           ; 0A7E3  0xE9, 0x69, 0x0A
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00        ; 0A7E6  ......
   iret                                         ; 0A7EC  0xCF
@@ -6864,8 +6860,8 @@ loc_0ACA4:                                     ; 0ACA4
   cmp dl, 2                                    ; 0ACA9  0x80, 0xFA, 0x02
   jne loc_0ACFC                                ; 0ACAC  0x75, 0x4E
   cli                                          ; 0ACAE  0xFA
-  cmp byte [cs:0x5e40 + DELTA_TAIL_PRE], 0xff                   ; 0ACAF  0x2E, 0x80, 0x3E, 0x40, 0x5E, 0xFF
-  mov byte [cs:0x5e41 + DELTA_TAIL_PRE], 0xa                    ; 0ACB5  0x2E, 0xC6, 0x06, 0x41, 0x5E, 0x0A
+  cmp byte [cs:xios_prn_reserve_flag], 0xff                   ; 0ACAF  0x2E, 0x80, 0x3E, 0x40, 0x5E, 0xFF
+  mov byte [cs:xios_prn_reserve_timer], 0xa                    ; 0ACB5  0x2E, 0xC6, 0x06, 0x41, 0x5E, 0x0A
   sti                                          ; 0ACBB  0xFB
   je loc_0ACC3                                 ; 0ACBC  0x74, 0x05
   push cx                                      ; 0ACBE  0x51
@@ -6903,7 +6899,7 @@ loc_0ACC3:                                     ; 0ACC3
   mov al, 5                                    ; 0ACF1  0xB0, 0x05
 
 loc_0ACF3:                                     ; 0ACF3
-  mov [cs:0x5e41 + DELTA_TAIL_PRE], al                          ; 0ACF3  0x2E, 0xA2, 0x41, 0x5E
+  mov [cs:xios_prn_reserve_timer], al                          ; 0ACF3  0x2E, 0xA2, 0x41, 0x5E
   pop ds                                       ; 0ACF7  0x1F
   sti                                          ; 0ACF8  0xFB
   jmp near loc_0AD2F                           ; 0ACF9  0xE9, 0x33, 0x00
@@ -6950,9 +6946,9 @@ sub_0AD30:                                     ; 0AD30
   je loc_0AD7B                                 ; 0AD33  0x74, 0x46
   cmp dl, 2                                    ; 0AD35  0x80, 0xFA, 0x02
   jne loc_0AD73                                ; 0AD38  0x75, 0x39
-  cmp byte [cs:0x5e40 + DELTA_TAIL_PRE], 0xff                   ; 0AD3A  0x2E, 0x80, 0x3E, 0x40, 0x5E, 0xFF
+  cmp byte [cs:xios_prn_reserve_flag], 0xff                   ; 0AD3A  0x2E, 0x80, 0x3E, 0x40, 0x5E, 0xFF
   je floppy_status_check                       ; 0AD40  0x74, 0x22
-  mov byte [cs:0x5e45 + DELTA_TAIL_PRE], 0xff                   ; 0AD42  0x2E, 0xC6, 0x06, 0x45, 0x5E, 0xFF
+  mov byte [cs:xios_prn_pending_flag], 0xff                   ; 0AD42  0x2E, 0xC6, 0x06, 0x45, 0x5E, 0xFF
   call sub_0CA1E                               ; 0AD48  0xE8, 0xD3, 0x1C
   cli                                          ; 0AD4B  0xFA
   push ds                                      ; 0AD4C  0x1E
@@ -6964,7 +6960,7 @@ sub_0AD30:                                     ; 0AD30
   mov al, 5                                    ; 0AD5C  0xB0, 0x05
 
 loc_0AD5E:                                     ; 0AD5E
-  mov [cs:0x5e41 + DELTA_TAIL_PRE], al                          ; 0AD5E  0x2E, 0xA2, 0x41, 0x5E
+  mov [cs:xios_prn_reserve_timer], al                          ; 0AD5E  0x2E, 0xA2, 0x41, 0x5E
   pop ds                                       ; 0AD62  0x1F
   sti                                          ; 0AD63  0xFB
 
@@ -7795,7 +7791,7 @@ mov bx, 0x4225 + DELTA_TABLES                               ; 0B994  0xBB, 0x25,
   mov di, [bx + 8]                             ; 0B9A0  0x8B, 0x7F, 0x08
   mov byte [es:di + 1], 5                      ; 0B9A3  0x26, 0xC6, 0x45, 0x01, 0x05
   mov dx, cs                                   ; 0B9A8  0x8C, 0xCA
-mov ax, 0x5fa4 + DELTA_TAIL                               ; 0B9AA  0xB8, 0xA4, 0x5F
+mov ax, fdc_drive_type_0                               ; 0B9AA  0xB8, 0xA4, 0x5F
   call sub_09630                               ; 0B9AD  0xE8, 0x80, 0xDC
   add di, 0xe                                  ; 0B9B0  0x83, 0xC7, 0x0E
   stosw                                        ; 0B9B3  0xAB
@@ -7807,22 +7803,22 @@ crt_mode_switch:                               ; 0B9B7
   out dx, al                                   ; 0B9BA  0xEE
   push cs                                      ; 0B9BB  0x0E
   pop es                                       ; 0B9BC  0x07
-mov di, 0x5faa + DELTA_TAIL                               ; 0B9BD  0xBF, 0xAA, 0x5F
-mov ax, 0x6026 + DELTA_TAIL                               ; 0B9C0  0xB8, 0x26, 0x60
+mov di, fdc_drive_dph_0                               ; 0B9BD  0xBF, 0xAA, 0x5F
+mov ax, fdc_drive_dph_1                               ; 0B9C0  0xB8, 0x26, 0x60
   call sub_09621                               ; 0B9C3  0xE8, 0x5B, 0xDC
-mov ax, 0x60ae + DELTA_TAIL                               ; 0B9C6  0xB8, 0xAE, 0x60
+mov ax, fdc_drive_dph_2                               ; 0B9C6  0xB8, 0xAE, 0x60
   call sub_09621                               ; 0B9C9  0xE8, 0x55, 0xDC
-mov di, 0x5fc2 + DELTA_TAIL                               ; 0B9CC  0xBF, 0xC2, 0x5F
-mov ax, 0x5fca + DELTA_TAIL                               ; 0B9CF  0xB8, 0xCA, 0x5F
+mov di, fdc_drive_0_dpb_ptr                               ; 0B9CC  0xBF, 0xC2, 0x5F
+mov ax, fdc_dpb_standard                               ; 0B9CF  0xB8, 0xCA, 0x5F
   call sub_09621                               ; 0B9D2  0xE8, 0x4C, 0xDC
-mov ax, 0x6142 + DELTA_TAIL                               ; 0B9D5  0xB8, 0x42, 0x61
+mov ax, fdc_param_6142                               ; 0B9D5  0xB8, 0x42, 0x61
   call sub_09621                               ; 0B9D8  0xE8, 0x46, 0xDC
-mov ax, 0x6136 + DELTA_TAIL                               ; 0B9DB  0xB8, 0x36, 0x61
+mov ax, fdc_dpb_3_ptr                               ; 0B9DB  0xB8, 0x36, 0x61
   push ax                                      ; 0B9DE  0x50
-mov di, 0x6026 + DELTA_TAIL                               ; 0B9DF  0xBF, 0x26, 0x60
+mov di, fdc_drive_dph_1                               ; 0B9DF  0xBF, 0x26, 0x60
   call sub_09621                               ; 0B9E2  0xE8, 0x3C, 0xDC
   pop ax                                       ; 0B9E5  0x58
-mov di, 0x60ae + DELTA_TAIL                               ; 0B9E6  0xBF, 0xAE, 0x60
+mov di, fdc_drive_dph_2                               ; 0B9E6  0xBF, 0xAE, 0x60
   call sub_09621                               ; 0B9E9  0xE8, 0x35, 0xDC
 mov ax, [cs:0x2c45 + DELTA_TABLES]                          ; 0B9EC  0x2E, 0xA1, 0x45, 0x2C
   mov es, ax                                   ; 0B9F0  0x8E, 0xC0
@@ -7833,7 +7829,7 @@ mov ax, [cs:0x2c45 + DELTA_TABLES]                          ; 0B9EC  0x2E, 0xA1,
   push ds                                      ; 0B9FC  0x1E
 mov ax, [cs:0x2c45 + DELTA_TABLES]                          ; 0B9FD  0x2E, 0xA1, 0x45, 0x2C
   mov es, ax                                   ; 0BA01  0x8E, 0xC0
-lds bx, [cs:0x6228 + DELTA_TAIL]                          ; 0BA03  0x2E, 0xC5, 0x1E, 0x28, 0x62
+lds bx, [cs:xios_crt_font_ptr]                          ; 0BA03  0x2E, 0xC5, 0x1E, 0x28, 0x62
   lds si, [bx]                                 ; 0BA08  0xC5, 0x37
   lodsb                                        ; 0BA0A  0xAC
 
@@ -7859,19 +7855,19 @@ loc_0BA18:                                     ; 0BA18
   pop ds                                       ; 0BA26  0x1F
   mov al, 0x33                                 ; 0BA27  0xB0, 0x33
   mov cx, 0x97                                 ; 0BA29  0xB9, 0x97, 0x00
-mov dx, 0x5024 + DELTA_TAIL_PRE                               ; 0BA2C  0xBA, 0x24, 0x50
+mov dx, int_vec_backup_97                               ; 0BA2C  0xBA, 0x24, 0x50
   int 0x28                                     ; 0BA2F  0xCD, 0x28
   mov cx, 0x98                                 ; 0BA31  0xB9, 0x98, 0x00
   mov al, 0x33                                 ; 0BA34  0xB0, 0x33
-mov dx, 0x5044 + DELTA_TAIL_PRE                               ; 0BA36  0xBA, 0x44, 0x50
+mov dx, int_vec_backup_98                               ; 0BA36  0xBA, 0x44, 0x50
   int 0x28                                     ; 0BA39  0xCD, 0x28
   mov al, 0x34                                 ; 0BA3B  0xB0, 0x34
   mov cx, 0x97                                 ; 0BA3D  0xB9, 0x97, 0x00
-mov dx, 0x5044 + DELTA_TAIL_PRE                               ; 0BA40  0xBA, 0x44, 0x50
+mov dx, int_vec_backup_98                               ; 0BA40  0xBA, 0x44, 0x50
   int 0x28                                     ; 0BA43  0xCD, 0x28
   mov al, 0x34                                 ; 0BA45  0xB0, 0x34
   mov cx, 0x98                                 ; 0BA47  0xB9, 0x98, 0x00
-mov dx, 0x5024 + DELTA_TAIL_PRE                               ; 0BA4A  0xBA, 0x24, 0x50
+mov dx, int_vec_backup_97                               ; 0BA4A  0xBA, 0x24, 0x50
   int 0x28                                     ; 0BA4D  0xCD, 0x28
   pop ds                                       ; 0BA4F  0x1F
   pop es                                       ; 0BA50  0x07
@@ -7920,7 +7916,7 @@ mov [cs:0x2bfc + DELTA_TABLES], dl                          ; 0BAAD  0x2E, 0x88,
   mov al, 0xa                                  ; 0BAB2  0xB0, 0x0A
   mov ah, 9                                    ; 0BAB4  0xB4, 0x09
   db 0x2A, 0xE2                                ; 0BAB6  sub ah, dl
-mov [cs:0x5fdc + DELTA_TAIL], ax                          ; 0BAB8  0x2E, 0xA3, 0xDC, 0x5F
+mov [cs:fdc_dpb_current_format], ax                          ; 0BAB8  0x2E, 0xA3, 0xDC, 0x5F
   mov al, 0                                    ; 0BABC  0xB0, 0x00
   test byte [bx + 0x12], 0xf0                  ; 0BABE  0xF6, 0x47, 0x12, 0xF0
   je loc_0BAC6                                 ; 0BAC2  0x74, 0x02
@@ -7963,7 +7959,7 @@ mov al, [cs:0x2c08 + DELTA_TABLES]                          ; 0BB0F  0x2E, 0xA0,
   mov [bx + 0x71], al                          ; 0BB13  0x88, 0x47, 0x71
 mov al, [cs:0x2bfd + DELTA_TABLES]                          ; 0BB16  0x2E, 0xA0, 0xFD, 0x2B
   mov [bx + 0x74], al                          ; 0BB1A  0x88, 0x47, 0x74
-mov ax, [cs:0x5fdc + DELTA_TAIL]                          ; 0BB1D  0x2E, 0xA1, 0xDC, 0x5F
+mov ax, [cs:fdc_dpb_current_format]                          ; 0BB1D  0x2E, 0xA1, 0xDC, 0x5F
   mov [bx + 0x72], ax                          ; 0BB21  0x89, 0x47, 0x72
   pop di                                       ; 0BB24  0x5F
   add bx, 0x94                                 ; 0BB25  0x81, 0xC3, 0x94, 0x00
@@ -7998,12 +7994,12 @@ mov di, xios_screen_state_buf                             ; 0BB4E  0xBF, 0xC4, 0
   rep stosw                                    ; 0BB57  0xF3, 0xAB
   pop di                                       ; 0BB59  0x5F
   add di, 0xf0                                 ; 0BB5A  0x81, 0xC7, 0xF0, 0x00
-mov si, 0x4ff0 + DELTA_TAIL_PRE                               ; 0BB5E  0xBE, 0xF0, 0x4F
+mov si, kbd_init_seq                               ; 0BB5E  0xBE, 0xF0, 0x4F
   mov cx, 0x34                                 ; 0BB61  0xB9, 0x34, 0x00
   rep movsb                                    ; 0BB64  0xF3, 0xA4
 
 loc_0BB66:                                     ; 0BB66
-cmp byte [cs:0x5fa4 + DELTA_TAIL], 1                      ; 0BB66  0x2E, 0x80, 0x3E, 0xA4, 0x5F, 0x01
+cmp byte [cs:fdc_drive_type_0], 1                      ; 0BB66  0x2E, 0x80, 0x3E, 0xA4, 0x5F, 0x01
   je loc_0BB66                                 ; 0BB6C  0x74, 0xF8
   mov ah, 4                                    ; 0BB6E  0xB4, 0x04
   call xios_crt_trigger_ca                     ; 0BB70  0xE8, 0x8E, 0xDA
@@ -8019,6 +8015,7 @@ cmp byte [cs:0x5fa4 + DELTA_TAIL], 1                      ; 0BB66  0x2E, 0x80, 0
   sub dx, 2                                    ; 0BB8B  0x83, 0xEA, 0x02
   out dx, ax                                   ; 0BB8E  0xEF
   ret                                          ; 0BB8F  0xC3
+kbd_init_seq:
   db 0x1B, 0x48, 0x00                          ; 0BB90  sbb cx, word [bx + si]
   add [bp + di], bl                            ; 0BB93  0x00, 0x1B
   inc cx                                       ; 0BB95  0x41
@@ -8046,6 +8043,7 @@ cmp byte [cs:0x5fa4 + DELTA_TAIL], 1                      ; 0BB66  0x2E, 0x80, 0
 
 loc_0BBC2:                                     ; 0BBC2
   db 0x00, 0x00                                ; 0BBC2
+int_vec_backup_97:
   db 0x00, 0x00                                ; 0BBC4
   db 0x00, 0x00                                ; 0BBC6
   db 0x00, 0x00                                ; 0BBC8
@@ -8062,6 +8060,7 @@ loc_0BBC2:                                     ; 0BBC2
   db 0x00, 0x00                                ; 0BBDE
   db 0x00, 0x00                                ; 0BBE0
   db 0x00, 0x00                                ; 0BBE2
+int_vec_backup_98:
   db 0x00, 0x00                                ; 0BBE4
   db 0x00, 0x00                                ; 0BBE6
   db 0x00, 0x00                                ; 0BBE8
@@ -8078,41 +8077,28 @@ loc_0BBC2:                                     ; 0BBC2
   db 0x00, 0x00                                ; 0BBFE
   db 0x00, 0x00                                ; 0BC00
   db 0x00, 0x00                                ; 0BC02
-  db 0x00, 0x00                                ; 0BC04
-  db 0x00, 0x00                                ; 0BC06
-  db 0x00, 0x00                                ; 0BC08
-  add [bx + di], ax                            ; 0BC0A  0x01, 0x01
-  db 0x00, 0x00                                ; 0BC0C
-  pop ds                                       ; 0BC0E  0x1F
-  sbb al, 0x1f                                 ; 0BC0F  0x1C, 0x1F
-  push ds                                      ; 0BC11  0x1E
-  pop ds                                       ; 0BC12  0x1F
-  push ds                                      ; 0BC13  0x1E
-  pop ds                                       ; 0BC14  0x1F
-  pop ds                                       ; 0BC15  0x1F
-  push ds                                      ; 0BC16  0x1E
-  pop ds                                       ; 0BC17  0x1F
-  push ds                                      ; 0BC18  0x1E
-  pop ds                                       ; 0BC19  0x1F
-  add [bx], bl                                 ; 0BC1A  0x00, 0x1F
-  sbb ax, 0x1e1f                               ; 0BC1C  0x1D, 0x1F, 0x1E
-  pop ds                                       ; 0BC1F  0x1F
-  push ds                                      ; 0BC20  0x1E
-  pop ds                                       ; 0BC21  0x1F
-  pop ds                                       ; 0BC22  0x1F
-  push ds                                      ; 0BC23  0x1E
-  pop ds                                       ; 0BC24  0x1F
-  push ds                                      ; 0BC25  0x1E
-  pop ds                                       ; 0BC26  0x1F
-  db 0x00, 0x00                                ; 0BC27
-  db 0x00, 0x00                                ; 0BC29
-  db 0x00, 0x00                                ; 0BC2B
-  db 0x00, 0x00                                ; 0BC2D
-  db 0x00, 0x00                                ; 0BC2F
-  db 0x00, 0x00                                ; 0BC31
-  add al, 0                                    ; 0BC33  0x04, 0x00
-  or al, 0                                     ; 0BC35  0x0C, 0x00
-  test [bp + di], al                           ; 0BC37  0x84, 0x03
+rtc_time_buf_seg:
+  dw 0x0000                                    ; 0BC04 (CS:5064)
+rtc_time_buf_val:
+  db 0x00                                      ; 0BC06 (CS:5066)
+rtc_day_of_year:
+  dw 0x0000                                    ; 0BC07 (CS:5067)
+rtc_is_leap_year:
+  db 0x00                                      ; 0BC09 (CS:5069)
+rtc_cur_day:
+  db 0x01                                      ; 0BC0A (CS:506A)
+rtc_cur_month:
+  db 0x01                                      ; 0BC0B (CS:506B)
+rtc_cur_year:
+  db 0x00                                      ; 0BC0C (CS:506C)
+rtc_days_in_month_norm:
+  db 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ; 0BC0D (CS:506D)
+rtc_days_in_month_leap:
+  db 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ; 0BC1A (CS:507A)
+rtc_spare_buf_5087:
+  times 12 db 0x00                             ; 0BC27 (CS:5087)
+rtc_timer_params:
+  db 0x04, 0x00, 0x0C, 0x00, 0x84, 0x03        ; 0BC33 (CS:5093)
 
 sub_0BC39:                                     ; 0BC39
   push es                                      ; 0BC39  0x06
@@ -8131,11 +8117,11 @@ sub_0BC39:                                     ; 0BC39
   mov al, 7                                    ; 0BC61  0xB0, 0x07
   call sub_0AFE6                               ; 0BC63  0xE8, 0x80, 0xF3
   call sub_0BC7B                               ; 0BC66  0xE8, 0x12, 0x00
-mov [cs:0x506b + DELTA_TAIL_PRE], al                          ; 0BC69  0x2E, 0xA2, 0x6B, 0x50
+mov [cs:rtc_cur_month], al                          ; 0BC69  0x2E, 0xA2, 0x6B, 0x50
   mov al, 6                                    ; 0BC6D  0xB0, 0x06
   call sub_0AFE6                               ; 0BC6F  0xE8, 0x74, 0xF3
   call sub_0BC7B                               ; 0BC72  0xE8, 0x06, 0x00
-mov [cs:0x506a + DELTA_TAIL_PRE], al                          ; 0BC75  0x2E, 0xA2, 0x6A, 0x50
+mov [cs:rtc_cur_day], al                          ; 0BC75  0x2E, 0xA2, 0x6A, 0x50
   pop es                                       ; 0BC79  0x07
   ret                                          ; 0BC7A  0xC3
 
@@ -8166,11 +8152,11 @@ sub_0BC89:                                     ; 0BC89
   mov al, 6                                    ; 0BCB3  0xB0, 0x06
   call sub_0AFE6                               ; 0BCB5  0xE8, 0x2E, 0xF3
   call sub_0BC7B                               ; 0BCB8  0xE8, 0xC0, 0xFF
-mov [cs:0x506b + DELTA_TAIL_PRE], al                          ; 0BCBB  0x2E, 0xA2, 0x6B, 0x50
+mov [cs:rtc_cur_month], al                          ; 0BCBB  0x2E, 0xA2, 0x6B, 0x50
   mov al, 5                                    ; 0BCBF  0xB0, 0x05
   call sub_0AFE6                               ; 0BCC1  0xE8, 0x22, 0xF3
   call sub_0BC7B                               ; 0BCC4  0xE8, 0xB4, 0xFF
-mov [cs:0x506a + DELTA_TAIL_PRE], al                          ; 0BCC7  0x2E, 0xA2, 0x6A, 0x50
+mov [cs:rtc_cur_day], al                          ; 0BCC7  0x2E, 0xA2, 0x6A, 0x50
   pop es                                       ; 0BCCB  0x07
   ret                                          ; 0BCCC  0xC3
 
@@ -8259,7 +8245,7 @@ xios_init_entry:
 loc_0BD52:                                     ; 0BD52
   cli                                          ; 0BD52  0xFA
   cld                                          ; 0BD53  0xFC
-mov [cs:0x5064 + DELTA_TAIL_PRE], es                          ; 0BD54  0x2E, 0x8C, 0x06, 0x64, 0x50
+mov [cs:rtc_time_buf_seg], es                          ; 0BD54  0x2E, 0x8C, 0x06, 0x64, 0x50
   mov si, 0x50                                 ; 0BD59  0xBE, 0x50, 0x00
 mov di, 0x4225 + DELTA_TABLES                               ; 0BD5C  0xBF, 0x25, 0x42
   push ds                                      ; 0BD5F  0x1E
@@ -8317,9 +8303,9 @@ mov bx, 0x4225 + DELTA_TABLES                               ; 0BDB4  0xBB, 0x25,
   db 0x33, 0xC0                                ; 0BDC1  xor ax, ax
   push ds                                      ; 0BDC3  0x1E
   pop es                                       ; 0BDC4  0x07
-mov di, 0x5087 + DELTA_TAIL_PRE                               ; 0BDC5  0xBF, 0x87, 0x50
+mov di, rtc_spare_buf_5087                               ; 0BDC5  0xBF, 0x87, 0x50
   mov cx, 3                                    ; 0BDC8  0xB9, 0x03, 0x00
-mov bx, 0x5093 + DELTA_TAIL_PRE                               ; 0BDCB  0xBB, 0x93, 0x50
+mov bx, rtc_timer_params                               ; 0BDCB  0xBB, 0x93, 0x50
 
 loc_0BDCE:                                     ; 0BDCE
   mov si, [bx]                                 ; 0BDCE  0x8B, 0x37
@@ -8358,7 +8344,7 @@ mov bx, 0x4225 + DELTA_TABLES                               ; 0BDF7  0xBB, 0x25,
   db 0x33, 0xC0                                ; 0BE04  xor ax, ax
   mov es, ax                                   ; 0BE06  0x8E, 0xC0
   mov cx, 3                                    ; 0BE08  0xB9, 0x03, 0x00
-mov bx, 0x5093 + DELTA_TAIL_PRE                               ; 0BE0B  0xBB, 0x93, 0x50
+mov bx, rtc_timer_params                               ; 0BE0B  0xBB, 0x93, 0x50
 
 loc_0BE0E:                                     ; 0BE0E
   mov di, [bx]                                 ; 0BE0E  0x8B, 0x3F
@@ -8476,18 +8462,18 @@ loc_0BEE6:                                     ; 0BEE6
   call sub_0BC89                               ; 0BEF0  0xE8, 0x96, 0xFD
 
 loc_0BEF3:                                     ; 0BEF3
-mov word [cs:0x5067 + DELTA_TAIL_PRE], 0; 0BEF3  mov word [cs:0x5067], 0
+mov word [cs:rtc_day_of_year], 0; 0BEF3  mov word [cs:0x5067], 0
 mov bx, 0x4256 + DELTA_TABLES                               ; 0BEFA  0xBB, 0x56, 0x42
   mov al, [bx + 0x18]                          ; 0BEFD  0x8A, 0x47, 0x18
   call sub_0BC7B                               ; 0BF00  0xE8, 0x78, 0xFD
-mov [cs:0x506c + DELTA_TAIL_PRE], al                          ; 0BF03  0x2E, 0xA2, 0x6C, 0x50
+mov [cs:rtc_cur_year], al                          ; 0BF03  0x2E, 0xA2, 0x6C, 0x50
   mov al, [bx + 0x17]                          ; 0BF07  0x8A, 0x47, 0x17
   call sub_0BC7B                               ; 0BF0A  0xE8, 0x6E, 0xFD
-cmp al, [cs:0x506b + DELTA_TAIL_PRE]                          ; 0BF0D  0x2E, 0x3A, 0x06, 0x6B, 0x50
+cmp al, [cs:rtc_cur_month]                          ; 0BF0D  0x2E, 0x3A, 0x06, 0x6B, 0x50
   jb loc_0BF2E                                 ; 0BF12  0x72, 0x1A
   je loc_0BF3E                                 ; 0BF14  0x74, 0x28
-inc byte [cs:0x506c + DELTA_TAIL_PRE]                         ; 0BF16  0x2E, 0xFE, 0x06, 0x6C, 0x50
-mov al, [cs:0x506c + DELTA_TAIL_PRE]                          ; 0BF1B  0x2E, 0xA0, 0x6C, 0x50
+inc byte [cs:rtc_cur_year]                         ; 0BF16  0x2E, 0xFE, 0x06, 0x6C, 0x50
+mov al, [cs:rtc_cur_year]                          ; 0BF1B  0x2E, 0xA0, 0x6C, 0x50
   call sub_0C452                               ; 0BF1F  0xE8, 0x30, 0x05
   mov [bx + 0x18], al                          ; 0BF22  0x88, 0x47, 0x18
   mov_cl_al                                    ; 0BF25  mov cl, al
@@ -8496,7 +8482,7 @@ mov al, [cs:0x506c + DELTA_TAIL_PRE]                          ; 0BF1B  0x2E, 0xA
   call sub_0BCCD                               ; 0BF2B  0xE8, 0x9F, 0xFD
 
 loc_0BF2E:                                     ; 0BF2E
-mov al, [cs:0x506b + DELTA_TAIL_PRE]                          ; 0BF2E  0x2E, 0xA0, 0x6B, 0x50
+mov al, [cs:rtc_cur_month]                          ; 0BF2E  0x2E, 0xA0, 0x6B, 0x50
   call sub_0C452                               ; 0BF32  0xE8, 0x1D, 0x05
   mov_cl_al                                    ; 0BF35  mov cl, al
   mov ah, 0                                    ; 0BF37  0xB4, 0x00
@@ -8507,52 +8493,52 @@ loc_0BF3E:                                     ; 0BF3E
   mov ax, 0x4e                                 ; 0BF3E  0xB8, 0x4E, 0x00
 
 loc_0BF41:                                     ; 0BF41
-cmp al, [cs:0x506c + DELTA_TAIL_PRE]                          ; 0BF41  0x2E, 0x3A, 0x06, 0x6C, 0x50
+cmp al, [cs:rtc_cur_year]                          ; 0BF41  0x2E, 0x3A, 0x06, 0x6C, 0x50
   je loc_0BF60                                 ; 0BF46  0x74, 0x18
   test al, 3                                   ; 0BF48  0xA8, 0x03
   je loc_0BF56                                 ; 0BF4A  0x74, 0x0A
-add word [cs:0x5067 + DELTA_TAIL_PRE], 0x16d; 0BF4C  add word [cs:0x5067], 0x16d
+add word [cs:rtc_day_of_year], 0x16d; 0BF4C  add word [cs:0x5067], 0x16d
   inc ax                                       ; 0BF53  0x40
   jmp short loc_0BF41                          ; 0BF54  0xEB, 0xEB
 
 loc_0BF56:                                     ; 0BF56
-add word [cs:0x5067 + DELTA_TAIL_PRE], 0x16e; 0BF56  add word [cs:0x5067], 0x16e
+add word [cs:rtc_day_of_year], 0x16e; 0BF56  add word [cs:0x5067], 0x16e
   inc ax                                       ; 0BF5D  0x40
   jmp short loc_0BF41                          ; 0BF5E  0xEB, 0xE1
 
 loc_0BF60:                                     ; 0BF60
-test byte [cs:0x506c + DELTA_TAIL_PRE], 3                     ; 0BF60  0x2E, 0xF6, 0x06, 0x6C, 0x50, 0x03
+test byte [cs:rtc_cur_year], 3                     ; 0BF60  0x2E, 0xF6, 0x06, 0x6C, 0x50, 0x03
   je loc_0BF70                                 ; 0BF66  0x74, 0x08
-mov byte [cs:0x5069 + DELTA_TAIL_PRE], 0                      ; 0BF68  0x2E, 0xC6, 0x06, 0x69, 0x50, 0x00
+mov byte [cs:rtc_is_leap_year], 0                      ; 0BF68  0x2E, 0xC6, 0x06, 0x69, 0x50, 0x00
   jmp short loc_0BF76                          ; 0BF6E  0xEB, 0x06
 
 loc_0BF70:                                     ; 0BF70
-mov byte [cs:0x5069 + DELTA_TAIL_PRE], 0xff                   ; 0BF70  0x2E, 0xC6, 0x06, 0x69, 0x50, 0xFF
+mov byte [cs:rtc_is_leap_year], 0xff                   ; 0BF70  0x2E, 0xC6, 0x06, 0x69, 0x50, 0xFF
 
 loc_0BF76:                                     ; 0BF76
   mov bx, 1                                    ; 0BF76  0xBB, 0x01, 0x00
 
 loc_0BF79:                                     ; 0BF79
-cmp bl, [cs:0x506b + DELTA_TAIL_PRE]                          ; 0BF79  0x2E, 0x3A, 0x1E, 0x6B, 0x50
+cmp bl, [cs:rtc_cur_month]                          ; 0BF79  0x2E, 0x3A, 0x1E, 0x6B, 0x50
   je loc_0BF9E                                 ; 0BF7E  0x74, 0x1E
-cmp byte [cs:0x5069 + DELTA_TAIL_PRE], 0xff                   ; 0BF80  0x2E, 0x80, 0x3E, 0x69, 0x50, 0xFF
+cmp byte [cs:rtc_is_leap_year], 0xff                   ; 0BF80  0x2E, 0x80, 0x3E, 0x69, 0x50, 0xFF
   je loc_0BF8F                                 ; 0BF86  0x74, 0x07
-mov al, [cs:bx + 0x506d + DELTA_TAIL_PRE]                     ; 0BF88  0x2E, 0x8A, 0x87, 0x6D, 0x50
+mov al, [cs:bx + rtc_days_in_month_norm]                     ; 0BF88  0x2E, 0x8A, 0x87, 0x6D, 0x50
   jmp short loc_0BF94                          ; 0BF8D  0xEB, 0x05
 
 loc_0BF8F:                                     ; 0BF8F
-mov al, [cs:bx + 0x507a + DELTA_TAIL_PRE]                     ; 0BF8F  0x2E, 0x8A, 0x87, 0x7A, 0x50
+mov al, [cs:bx + rtc_days_in_month_leap]                     ; 0BF8F  0x2E, 0x8A, 0x87, 0x7A, 0x50
 
 loc_0BF94:                                     ; 0BF94
   xor_ah_ah                                    ; 0BF94  xor ah, ah
-add [cs:0x5067 + DELTA_TAIL_PRE], ax                          ; 0BF96  0x2E, 0x01, 0x06, 0x67, 0x50
+add [cs:rtc_day_of_year], ax                          ; 0BF96  0x2E, 0x01, 0x06, 0x67, 0x50
   inc bx                                       ; 0BF9B  0x43
   jmp short loc_0BF79                          ; 0BF9C  0xEB, 0xDB
 
 loc_0BF9E:                                     ; 0BF9E
-mov al, [cs:0x506a + DELTA_TAIL_PRE]                          ; 0BF9E  0x2E, 0xA0, 0x6A, 0x50
+mov al, [cs:rtc_cur_day]                          ; 0BF9E  0x2E, 0xA0, 0x6A, 0x50
   xor_ah_ah                                    ; 0BFA2  xor ah, ah
-add ax, [cs:0x5067 + DELTA_TAIL_PRE]                          ; 0BFA4  0x2E, 0x03, 0x06, 0x67, 0x50
+add ax, [cs:rtc_day_of_year]                          ; 0BFA4  0x2E, 0x03, 0x06, 0x67, 0x50
   push es                                      ; 0BFA9  0x06
   mov es, [cs:0xc06]                           ; 0BFAA  0x2E, 0x8E, 0x06, 0x06, 0x0C
   mov [es:0x7e], ax                            ; 0BFAF  0x26, 0xA3, 0x7E, 0x00
@@ -8571,7 +8557,7 @@ mov bx, 0x4225 + DELTA_TABLES                               ; 0BFCB  0xBB, 0x25,
   and byte [bx + 0x17], 0xdf                   ; 0BFCE  0x80, 0x67, 0x17, 0xDF
   cmp byte [bx + 0x17], 0x50                   ; 0BFD2  0x80, 0x7F, 0x17, 0x50
   jne loc_0BFE1                                ; 0BFD6  0x75, 0x09
-mov word [cs:0x593d + DELTA_TAIL_PRE], 0x18; 0BFD8  mov word [cs:0x593d], 0x18
+mov word [cs:xios_mx_param_593d], 0x18; 0BFD8  mov word [cs:0x593d], 0x18
   jmp short loc_0BFE1                          ; 0BFDF  0xEB, 0x00
 
 loc_0BFE1:                                     ; 0BFE1
@@ -8586,57 +8572,57 @@ mov bx, 0x4058 + DELTA_TABLES                               ; 0BFEF  0xBB, 0x58,
   mov [bx + 0x1E], al                          ; 0BFF6  0x88, 0x47, 0x1E
 
 loc_0BFF9:                                     ; 0BFF9
-mov es, [cs:0x5064 + DELTA_TAIL_PRE]                          ; 0BFF9  0x2E, 0x8E, 0x06, 0x64, 0x50
+mov es, [cs:rtc_time_buf_seg]                          ; 0BFF9  0x2E, 0x8E, 0x06, 0x64, 0x50
   mov cl, 0x86                                 ; 0BFFE  0xB1, 0x86
-mov dx, 0x5951 + DELTA_TAIL_PRE                               ; 0C000  0xBA, 0x51, 0x59
+mov dx, xios_mx_sound_qcb                               ; 0C000  0xBA, 0x51, 0x59
   call rtm_timer_wait2                         ; 0C003  0xE8, 0xCD, 0xB8
   mov cl, 0x87                                 ; 0C006  0xB1, 0x87
-mov dx, 0x596d + DELTA_TAIL_PRE                               ; 0C008  0xBA, 0x6D, 0x59
+mov dx, xios_mx_sound_msg                               ; 0C008  0xBA, 0x6D, 0x59
   call rtm_timer_wait2                         ; 0C00B  0xE8, 0xC5, 0xB8
   mov cl, 0x8b                                 ; 0C00E  0xB1, 0x8B
-mov dx, 0x596d + DELTA_TAIL_PRE                               ; 0C010  0xBA, 0x6D, 0x59
+mov dx, xios_mx_sound_msg                               ; 0C010  0xBA, 0x6D, 0x59
   call rtm_timer_wait2                         ; 0C013  0xE8, 0xBD, 0xB8
   mov cl, 0x86                                 ; 0C016  0xB1, 0x86
-mov dx, 0x597d + DELTA_TAIL_PRE                               ; 0C018  0xBA, 0x7D, 0x59
+mov dx, xios_mx_dma0_qcb                               ; 0C018  0xBA, 0x7D, 0x59
   call rtm_timer_wait2                         ; 0C01B  0xE8, 0xB5, 0xB8
   mov cl, 0x87                                 ; 0C01E  0xB1, 0x87
-mov dx, 0x5999 + DELTA_TAIL_PRE                               ; 0C020  0xBA, 0x99, 0x59
+mov dx, xios_mx_dma0_msg                               ; 0C020  0xBA, 0x99, 0x59
   call rtm_timer_wait2                         ; 0C023  0xE8, 0xAD, 0xB8
   mov cl, 0x8b                                 ; 0C026  0xB1, 0x8B
-mov dx, 0x5999 + DELTA_TAIL_PRE                               ; 0C028  0xBA, 0x99, 0x59
+mov dx, xios_mx_dma0_msg                               ; 0C028  0xBA, 0x99, 0x59
   call rtm_timer_wait2                         ; 0C02B  0xE8, 0xA5, 0xB8
   mov cl, 0x86                                 ; 0C02E  0xB1, 0x86
-mov dx, 0x59a9 + DELTA_TAIL_PRE                               ; 0C030  0xBA, 0xA9, 0x59
+mov dx, xios_mx_dma1_qcb                               ; 0C030  0xBA, 0xA9, 0x59
   call rtm_timer_wait2                         ; 0C033  0xE8, 0x9D, 0xB8
   mov cl, 0x87                                 ; 0C036  0xB1, 0x87
-mov dx, 0x59c5 + DELTA_TAIL_PRE                               ; 0C038  0xBA, 0xC5, 0x59
+mov dx, xios_mx_dma1_msg                               ; 0C038  0xBA, 0xC5, 0x59
   call rtm_timer_wait2                         ; 0C03B  0xE8, 0x95, 0xB8
   mov cl, 0x8b                                 ; 0C03E  0xB1, 0x8B
-mov dx, 0x59c5 + DELTA_TAIL_PRE                               ; 0C040  0xBA, 0xC5, 0x59
+mov dx, xios_mx_dma1_msg                               ; 0C040  0xBA, 0xC5, 0x59
   call rtm_timer_wait2                         ; 0C043  0xE8, 0x8D, 0xB8
   mov cl, 0x86                                 ; 0C046  0xB1, 0x86
-mov dx, 0x5ade + DELTA_TAIL_PRE                               ; 0C048  0xBA, 0xDE, 0x5A
+mov dx, xios_mx_cass_qcb                               ; 0C048  0xBA, 0xDE, 0x5A
   call rtm_timer_wait2                         ; 0C04B  0xE8, 0x85, 0xB8
   mov cl, 0x87                                 ; 0C04E  0xB1, 0x87
-mov dx, 0x5afa + DELTA_TAIL_PRE                               ; 0C050  0xBA, 0xFA, 0x5A
+mov dx, xios_mx_cass_msg                               ; 0C050  0xBA, 0xFA, 0x5A
   call rtm_timer_wait2                         ; 0C053  0xE8, 0x7D, 0xB8
   mov cl, 0x8b                                 ; 0C056  0xB1, 0x8B
-mov dx, 0x5afa + DELTA_TAIL_PRE                               ; 0C058  0xBA, 0xFA, 0x5A
+mov dx, xios_mx_cass_msg                               ; 0C058  0xBA, 0xFA, 0x5A
   call rtm_timer_wait2                         ; 0C05B  0xE8, 0x75, 0xB8
   mov cl, 0x86                                 ; 0C05E  0xB1, 0x86
-mov dx, 0x59d5 + DELTA_TAIL_PRE                               ; 0C060  0xBA, 0xD5, 0x59
+mov dx, xios_qcb_link_req                               ; 0C060  0xBA, 0xD5, 0x59
   call rtm_timer_wait2                         ; 0C063  0xE8, 0x6D, 0xB8
   mov cl, 0x86                                 ; 0C066  0xB1, 0x86
-mov dx, 0x59f1 + DELTA_TAIL_PRE                               ; 0C068  0xBA, 0xF1, 0x59
+mov dx, xios_qcb_xmit_req                               ; 0C068  0xBA, 0xF1, 0x59
   call rtm_timer_wait2                         ; 0C06B  0xE8, 0x65, 0xB8
   mov cl, 0x86                                 ; 0C06E  0xB1, 0x86
-mov dx, 0x5ab2 + DELTA_TAIL_PRE                               ; 0C070  0xBA, 0xB2, 0x5A
+mov dx, xios_mx_alt_qcb                               ; 0C070  0xBA, 0xB2, 0x5A
   call rtm_timer_wait2                         ; 0C073  0xE8, 0x5D, 0xB8
   mov cl, 0x87                                 ; 0C076  0xB1, 0x87
-mov dx, 0x5ace + DELTA_TAIL_PRE                               ; 0C078  0xBA, 0xCE, 0x5A
+mov dx, xios_mx_alt_msg                               ; 0C078  0xBA, 0xCE, 0x5A
   call rtm_timer_wait2                         ; 0C07B  0xE8, 0x55, 0xB8
   mov cl, 0x8b                                 ; 0C07E  0xB1, 0x8B
-mov dx, 0x5ace + DELTA_TAIL_PRE                               ; 0C080  0xBA, 0xCE, 0x5A
+mov dx, xios_mx_alt_msg                               ; 0C080  0xBA, 0xCE, 0x5A
   call rtm_timer_wait2                         ; 0C083  0xE8, 0x4D, 0xB8
 mov al, [cs:0x376c + DELTA_TABLES]                          ; 0C086  0x2E, 0xA0, 0x6C, 0x37
 
@@ -8668,9 +8654,9 @@ mov bx, 0x4225 + DELTA_TABLES                               ; 0C0AF  0xBB, 0x25,
   mov cl, 0xa                                  ; 0C0BA  0xB1, 0x0A
   shr di, cl                                   ; 0C0BC  0xD3, 0xEF
   db 0x03, 0xC7                                ; 0C0BE  add ax, di
-mov [cs:0x593f + DELTA_TAIL_PRE], ax                          ; 0C0C0  0x2E, 0xA3, 0x3F, 0x59
-mov bx, [cs:0x593d + DELTA_TAIL_PRE]                          ; 0C0C4  0x2E, 0x8B, 0x1E, 0x3D, 0x59
-sub [cs:0x593f + DELTA_TAIL_PRE], bx                          ; 0C0C9  0x2E, 0x29, 0x1E, 0x3F, 0x59
+mov [cs:xios_mx_mem_avail], ax                          ; 0C0C0  0x2E, 0xA3, 0x3F, 0x59
+mov bx, [cs:xios_mx_param_593d]                          ; 0C0C4  0x2E, 0x8B, 0x1E, 0x3D, 0x59
+sub [cs:xios_mx_mem_avail], bx                          ; 0C0C9  0x2E, 0x29, 0x1E, 0x3F, 0x59
 mov di, boot_msg_main_memory                               ; 0C0CE  0xBF, 0x73, 0x4A
   call sub_0C468                               ; 0C0D1  0xE8, 0x94, 0x03
 mov si, xios_boot_banner                               ; 0C0D4  0xBE, 0x48, 0x4A
@@ -8694,7 +8680,7 @@ mov si, boot_msg_floppy_drives                               ; 0C0F7  0xBE, 0xAC
 loc_0C0FD:                                     ; 0C0FD
   jmp near loc_0C11A                           ; 0C0FD  0xE9, 0x1A, 0x00
 mov bx, 0x4225 + DELTA_TABLES                               ; 0C100  0xBB, 0x25, 0x42
-mov al, [cs:0x5066 + DELTA_TAIL_PRE]                          ; 0C103  0x2E, 0xA0, 0x66, 0x50
+mov al, [cs:rtc_time_buf_val]                          ; 0C103  0x2E, 0xA0, 0x66, 0x50
   sub al, [bx + 0x13]                          ; 0C107  0x2A, 0x47, 0x13
   je loc_0C11A                                 ; 0C10A  0x74, 0x0E
   xor_ah_ah                                    ; 0C10C  xor ah, ah
@@ -8709,7 +8695,7 @@ mov bx, 0x4256 + DELTA_TABLES                               ; 0C11A  0xBB, 0x56,
   mov [cs:0x4b], al                            ; 0C120  0x2E, 0xA2, 0x4B, 0x00
   mov [cs:0x50], al                            ; 0C124  0x2E, 0xA2, 0x50, 0x00
 mov bx, 0x4256 + DELTA_TABLES                               ; 0C128  0xBB, 0x56, 0x42
-mov ax, [cs:0x593f + DELTA_TAIL_PRE]                          ; 0C12B  0x2E, 0xA1, 0x3F, 0x59
+mov ax, [cs:xios_mx_mem_avail]                          ; 0C12B  0x2E, 0xA1, 0x3F, 0x59
   mov bl, [bx + 0x1b]                          ; 0C12F  0x8A, 0x5F, 0x1B
   mov bh, 0                                    ; 0C132  0xB7, 0x00
   mov cl, 6                                    ; 0C134  0xB1, 0x06
@@ -8726,7 +8712,7 @@ mov si, boot_msg_mdisk_low_mem                               ; 0C14A  0xBE, 0x35
   jmp near loc_0C1A5                           ; 0C150  0xE9, 0x52, 0x00
 
 loc_0C153:                                     ; 0C153
-mov [cs:0x593f + DELTA_TAIL_PRE], ax                          ; 0C153  0x2E, 0xA3, 0x3F, 0x59
+mov [cs:xios_mx_mem_avail], ax                          ; 0C153  0x2E, 0xA3, 0x3F, 0x59
   push es                                      ; 0C157  0x06
   mov cl, 6                                    ; 0C158  0xB1, 0x06
   shl ax, cl                                   ; 0C15A  0xD3, 0xE0
@@ -8770,7 +8756,7 @@ loc_0C1A8:                                     ; 0C1A8
   call sub_0991B                               ; 0C1AD  0xE8, 0x6B, 0xD7
   db 0x0B, 0xDB                                ; 0C1B0  or bx, bx
   je loc_0C220                                 ; 0C1B2  0x74, 0x6C
-mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C1B4  0x2E, 0xA1, 0x41, 0x59
+mov ax, [cs:xios_mx_alloc_ptr]                          ; 0C1B4  0x2E, 0xA1, 0x41, 0x59
   mov [bx + 0xa], ax                           ; 0C1B8  0x89, 0x47, 0x0A
   push bx                                      ; 0C1BB  0x53
   mov bx, [bx + 8]                             ; 0C1BC  0x8B, 0x5F, 0x08
@@ -8788,7 +8774,7 @@ loc_0C1CF:                                     ; 0C1CF
   mov cl, 2                                    ; 0C1D6  0xB1, 0x02
   shr ax, cl                                   ; 0C1D8  0xD3, 0xE8
   inc ax                                       ; 0C1DA  0x40
-add [cs:0x5941 + DELTA_TAIL_PRE], ax                          ; 0C1DB  0x2E, 0x01, 0x06, 0x41, 0x59
+add [cs:xios_mx_alloc_ptr], ax                          ; 0C1DB  0x2E, 0x01, 0x06, 0x41, 0x59
   pop bx                                       ; 0C1E0  0x5B
 
 loc_0C1E1:                                     ; 0C1E1
@@ -8801,13 +8787,13 @@ loc_0C1E1:                                     ; 0C1E1
   add ax, 0x3ff                                ; 0C1ED  0x05, 0xFF, 0x03
   mov cl, 0xa                                  ; 0C1F0  0xB1, 0x0A
   shr ax, cl                                   ; 0C1F2  0xD3, 0xE8
-sub [cs:0x593f + DELTA_TAIL_PRE], ax                          ; 0C1F4  0x2E, 0x29, 0x06, 0x3F, 0x59
+sub [cs:xios_mx_mem_avail], ax                          ; 0C1F4  0x2E, 0x29, 0x06, 0x3F, 0x59
   pop bx                                       ; 0C1F9  0x5B
-mov ax, [cs:0x593f + DELTA_TAIL_PRE]                          ; 0C1FA  0x2E, 0xA1, 0x3F, 0x59
+mov ax, [cs:xios_mx_mem_avail]                          ; 0C1FA  0x2E, 0xA1, 0x3F, 0x59
   mov cl, 6                                    ; 0C1FE  0xB1, 0x06
   shl ax, cl                                   ; 0C200  0xD3, 0xE0
   mov [bx + 0x12], ax                          ; 0C202  0x89, 0x47, 0x12
-mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C205  0x2E, 0xA1, 0x41, 0x59
+mov ax, [cs:xios_mx_alloc_ptr]                          ; 0C205  0x2E, 0xA1, 0x41, 0x59
   mov [bx + 0xc], ax                           ; 0C209  0x89, 0x47, 0x0C
   push bx                                      ; 0C20C  0x53
   mov bx, [bx + 8]                             ; 0C20D  0x8B, 0x5F, 0x08
@@ -8817,7 +8803,7 @@ mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C205  0x2E, 0xA
   shr ax, cl                                   ; 0C216  0xD3, 0xE8
   inc ax                                       ; 0C218  0x40
   shl ax, 1                                    ; 0C219  0xD1, 0xE0
-add [cs:0x5941 + DELTA_TAIL_PRE], ax                          ; 0C21B  0x2E, 0x01, 0x06, 0x41, 0x59
+add [cs:xios_mx_alloc_ptr], ax                          ; 0C21B  0x2E, 0x01, 0x06, 0x41, 0x59
 
 loc_0C220:                                     ; 0C220
   pop cx                                       ; 0C220  0x59
@@ -8827,8 +8813,8 @@ loc_0C220:                                     ; 0C220
 
 loc_0C227:                                     ; 0C227
 mov bx, 0x4225 + DELTA_TABLES                               ; 0C227  0xBB, 0x25, 0x42
-mov dl, [cs:0x5066 + DELTA_TAIL_PRE]                          ; 0C22A  0x2E, 0x8A, 0x16, 0x66, 0x50
-mov word [cs:0x594f + DELTA_TAIL_PRE], 0x420; 0C22F  mov word [cs:0x594f], 0x420
+mov dl, [cs:rtc_time_buf_val]                          ; 0C22A  0x2E, 0x8A, 0x16, 0x66, 0x50
+mov word [cs:xios_mx_mem_limit], 0x420; 0C22F  mov word [cs:0x594f], 0x420
 mov bx, 0x4256 + DELTA_TABLES                               ; 0C236  0xBB, 0x56, 0x42
   mov cl, [bx + 0x1A]                          ; 0C239  0x8A, 0x4F, 0x1A
   mov ch, 0                                    ; 0C23C  0xB5, 0x00
@@ -8837,7 +8823,7 @@ mov bx, 0x4256 + DELTA_TABLES                               ; 0C236  0xBB, 0x56,
   mov cl, 6                                    ; 0C244  0xB1, 0x06
   shr bx, cl                                   ; 0C246  0xD3, 0xEB
   pop cx                                       ; 0C248  0x59
-mov ax, [cs:0x593f + DELTA_TAIL_PRE]                          ; 0C249  0x2E, 0xA1, 0x3F, 0x59
+mov ax, [cs:xios_mx_mem_avail]                          ; 0C249  0x2E, 0xA1, 0x3F, 0x59
   db 0x2B, 0xC3                                ; 0C24D  sub ax, bx
   sub ax, strict word 0x40                     ; 0C24F  2D 40 00
 
@@ -8856,15 +8842,15 @@ loc_0C25F:                                     ; 0C25F
   db 0x8A, 0xCA                                ; 0C25F  mov cl, dl
 
 loc_0C261:                                     ; 0C261
-sub [cs:0x593f + DELTA_TAIL_PRE], cx                          ; 0C261  0x2E, 0x29, 0x0E, 0x3F, 0x59
-mov ax, [cs:0x593f + DELTA_TAIL_PRE]                          ; 0C266  0x2E, 0xA1, 0x3F, 0x59
+sub [cs:xios_mx_mem_avail], cx                          ; 0C261  0x2E, 0x29, 0x0E, 0x3F, 0x59
+mov ax, [cs:xios_mx_mem_avail]                          ; 0C266  0x2E, 0xA1, 0x3F, 0x59
   push cx                                      ; 0C26A  0x51
   mov cl, 6                                    ; 0C26B  0xB1, 0x06
   shl ax, cl                                   ; 0C26D  0xD3, 0xE0
-mov [cs:0x593b + DELTA_TAIL_PRE], ax                          ; 0C26F  0x2E, 0xA3, 0x3B, 0x59
+mov [cs:xios_mx_mem_free], ax                          ; 0C26F  0x2E, 0xA3, 0x3B, 0x59
   pop cx                                       ; 0C273  0x59
 mov bx, 0x3bc2 + DELTA_TABLES                               ; 0C274  0xBB, 0xC2, 0x3B
-mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C277  0x2E, 0xA1, 0x41, 0x59
+mov ax, [cs:xios_mx_alloc_ptr]                          ; 0C277  0x2E, 0xA1, 0x41, 0x59
   mov [bx], ax                                 ; 0C27B  0x89, 0x07
   mov [bx + 2], cl                             ; 0C27D  0x88, 0x4F, 0x02
   db 0x0A, 0xC9                                ; 0C280  or cl, cl
@@ -8872,12 +8858,12 @@ mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C277  0x2E, 0xA
 
 loc_0C284:                                     ; 0C284
   push ax                                      ; 0C284  0x50
-mov ax, [cs:0x5943 + DELTA_TAIL_PRE]                          ; 0C285  0x2E, 0xA1, 0x43, 0x59
-sub ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C289  0x2E, 0x2B, 0x06, 0x41, 0x59
-cmp ax, [cs:0x594f + DELTA_TAIL_PRE]                          ; 0C28E  0x2E, 0x3B, 0x06, 0x4F, 0x59
+mov ax, [cs:xios_mx_free_ptr]                          ; 0C285  0x2E, 0xA1, 0x43, 0x59
+sub ax, [cs:xios_mx_alloc_ptr]                          ; 0C289  0x2E, 0x2B, 0x06, 0x41, 0x59
+cmp ax, [cs:xios_mx_mem_limit]                          ; 0C28E  0x2E, 0x3B, 0x06, 0x4F, 0x59
   pop ax                                       ; 0C293  0x58
   jb loc_0C2C4                                 ; 0C294  0x72, 0x2E
-add word [cs:0x5941 + DELTA_TAIL_PRE], 0x10                   ; 0C296  0x2E, 0x83, 0x06, 0x41, 0x59, 0x10
+add word [cs:xios_mx_alloc_ptr], 0x10                   ; 0C296  0x2E, 0x83, 0x06, 0x41, 0x59, 0x10
   mov_bx_ax                                    ; 0C29C  mov bx, ax
   db 0x8B, 0xFB                                ; 0C29E  mov di, bx
   push cx                                      ; 0C2A0  0x51
@@ -8888,10 +8874,10 @@ add word [cs:0x5941 + DELTA_TAIL_PRE], 0x10                   ; 0C296  0x2E, 0x8
   rep stosw                                    ; 0C2A8  0xF3, 0xAB
   pop cx                                       ; 0C2AA  0x59
   mov byte [bx], 0xff                          ; 0C2AB  0xC6, 0x07, 0xFF
-mov ax, [cs:0x593b + DELTA_TAIL_PRE]                          ; 0C2AE  0x2E, 0xA1, 0x3B, 0x59
+mov ax, [cs:xios_mx_mem_free]                          ; 0C2AE  0x2E, 0xA1, 0x3B, 0x59
   mov [bx + 0xa], ax                           ; 0C2B2  0x89, 0x47, 0x0A
-add word [cs:0x593b + DELTA_TAIL_PRE], 0x40                   ; 0C2B5  0x2E, 0x83, 0x06, 0x3B, 0x59, 0x40
-mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C2BB  0x2E, 0xA1, 0x41, 0x59
+add word [cs:xios_mx_mem_free], 0x40                   ; 0C2B5  0x2E, 0x83, 0x06, 0x3B, 0x59, 0x40
+mov ax, [cs:xios_mx_alloc_ptr]                          ; 0C2BB  0x2E, 0xA1, 0x41, 0x59
   mov [bx + 0xc], ax                           ; 0C2BF  0x89, 0x47, 0x0C
   loop loc_0C284                               ; 0C2C2  0xE2, 0xC0
 
@@ -8910,22 +8896,22 @@ mov di, boot_msg_data_buffers                               ; 0C2D8  0xBF, 0xED,
 mov si, boot_msg_data_buffers                               ; 0C2DE  0xBE, 0xED, 0x4A
   call sub_0C43F                               ; 0C2E1  0xE8, 0x5B, 0x01
 mov bx, 0x3bb3 + DELTA_TABLES                               ; 0C2E4  0xBB, 0xB3, 0x3B
-mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C2E7  0x2E, 0xA1, 0x41, 0x59
+mov ax, [cs:xios_mx_alloc_ptr]                          ; 0C2E7  0x2E, 0xA1, 0x41, 0x59
   mov [bx], ax                                 ; 0C2EB  0x89, 0x07
   mov cl, 0                                    ; 0C2ED  0xB1, 0x00
 
 loc_0C2EF:                                     ; 0C2EF
-mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C2EF  0x2E, 0xA1, 0x41, 0x59
+mov ax, [cs:xios_mx_alloc_ptr]                          ; 0C2EF  0x2E, 0xA1, 0x41, 0x59
   add ax, 0x410                                ; 0C2F3  0x05, 0x10, 0x04
-cmp ax, [cs:0x5943 + DELTA_TAIL_PRE]                          ; 0C2F6  0x2E, 0x3B, 0x06, 0x43, 0x59
+cmp ax, [cs:xios_mx_free_ptr]                          ; 0C2F6  0x2E, 0x3B, 0x06, 0x43, 0x59
   ja loc_0C324                                 ; 0C2FB  0x77, 0x27
-mov bx, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C2FD  0x2E, 0x8B, 0x1E, 0x41, 0x59
-add word [cs:0x5941 + DELTA_TAIL_PRE], 0x10                   ; 0C302  0x2E, 0x83, 0x06, 0x41, 0x59, 0x10
+mov bx, [cs:xios_mx_alloc_ptr]                          ; 0C2FD  0x2E, 0x8B, 0x1E, 0x41, 0x59
+add word [cs:xios_mx_alloc_ptr], 0x10                   ; 0C302  0x2E, 0x83, 0x06, 0x41, 0x59, 0x10
   mov byte [bx], 0xff                          ; 0C308  0xC6, 0x07, 0xFF
-mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C30B  0x2E, 0xA1, 0x41, 0x59
+mov ax, [cs:xios_mx_alloc_ptr]                          ; 0C30B  0x2E, 0xA1, 0x41, 0x59
   mov [bx + 0xa], ax                           ; 0C30F  0x89, 0x47, 0x0A
-add word [cs:0x5941 + DELTA_TAIL_PRE], 0x400; 0C312  add word [cs:0x5941], 0x400
-mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C319  0x2E, 0xA1, 0x41, 0x59
+add word [cs:xios_mx_alloc_ptr], 0x400; 0C312  add word [cs:0x5941], 0x400
+mov ax, [cs:xios_mx_alloc_ptr]                          ; 0C319  0x2E, 0xA1, 0x41, 0x59
   mov [bx + 0xc], ax                           ; 0C31D  0x89, 0x47, 0x0C
   inc cl                                       ; 0C320  0xFE, 0xC1
   jmp short loc_0C2EF                          ; 0C322  0xEB, 0xCB
@@ -8942,7 +8928,7 @@ mov si, boot_msg_dir_buffers                               ; 0C339  0xBE, 0x04, 
   call sub_0C43F                               ; 0C33C  0xE8, 0x00, 0x01
 
 loc_0C33F:                                     ; 0C33F
-mov ax, [cs:0x593f + DELTA_TAIL_PRE]                          ; 0C33F  0x2E, 0xA1, 0x3F, 0x59
+mov ax, [cs:xios_mx_mem_avail]                          ; 0C33F  0x2E, 0xA1, 0x3F, 0x59
   mov cl, 6                                    ; 0C343  0xB1, 0x06
   shl ax, cl                                   ; 0C345  0xD3, 0xE0
   sub ax, strict word 0x10                     ; 0C347  2D 10 00
@@ -8956,7 +8942,7 @@ mov word [cs:0x406a + DELTA_TABLES], 0x10; 0C36A  mov word [cs:0x406a], 0x10
   push ax                                      ; 0C371  0x50
   mov cl, 6                                    ; 0C372  0xB1, 0x06
   shr ax, cl                                   ; 0C374  0xD3, 0xE8
-mov [cs:0x593f + DELTA_TAIL_PRE], ax                          ; 0C376  0x2E, 0xA3, 0x3F, 0x59
+mov [cs:xios_mx_mem_avail], ax                          ; 0C376  0x2E, 0xA3, 0x3F, 0x59
   pop cx                                       ; 0C37A  0x59
   mov bx, 0x5a                                 ; 0C37B  0xBB, 0x5A, 0x00
 
@@ -8994,7 +8980,7 @@ loc_0C3AE:                                     ; 0C3AE
   mov [di], ax                                 ; 0C3BF  0x89, 0x05
 
 loc_0C3C1:                                     ; 0C3C1
-mov ax, [cs:0x593f + DELTA_TAIL_PRE]                          ; 0C3C1  0x2E, 0xA1, 0x3F, 0x59
+mov ax, [cs:xios_mx_mem_avail]                          ; 0C3C1  0x2E, 0xA1, 0x3F, 0x59
   mov bx, [cs:0x44]                            ; 0C3C5  0x2E, 0x8B, 0x1E, 0x44, 0x00
   mov cl, 6                                    ; 0C3CA  0xB1, 0x06
   shr bx, cl                                   ; 0C3CC  0xD3, 0xEB
@@ -9004,7 +8990,7 @@ mov di, boot_msg_user_memory                               ; 0C3D0  0xBF, 0x8F, 
 mov si, boot_msg_user_memory                               ; 0C3D6  0xBE, 0x8F, 0x4A
   call sub_0C43F                               ; 0C3D9  0xE8, 0x63, 0x00
   db 0x33, 0xC0                                ; 0C3DC  xor ax, ax
-or ax, [cs:0x589d + DELTA_TAIL_PRE]                           ; 0C3DE  0x2E, 0x0B, 0x06, 0x9D, 0x58
+or ax, [cs:xios_boot_fpu_lan_flag]                           ; 0C3DE  0x2E, 0x0B, 0x06, 0x9D, 0x58
   mov ax, 0xa0                                 ; 0C3E3  0xB8, 0xA0, 0x00
   je loc_0C420                                 ; 0C3E6  0x74, 0x38
   db 0x33, 0xC0                                ; 0C3E8  xor ax, ax
@@ -9039,7 +9025,8 @@ loc_0C430:                                     ; 0C430
   mov dx, 2                                    ; 0C438  0xBA, 0x02, 0x00
   out dx, ax                                   ; 0C43B  0xEF
   retf                                         ; 0C43C  0xCB
-  db 0x00, 0x00                                ; 0C43D  ..
+xios_boot_fpu_lan_flag:
+  dw 0x0000                                    ; 0C43D  FPU / LAN boot-flag (CS:589D)
 
 sub_0C43F:                                     ; 0C43F
   db 0x32, 0xD2                                ; 0C43F  xor dl, dl
@@ -9085,7 +9072,7 @@ sub_0C468:                                     ; 0C468
 
 loc_0C470:                                     ; 0C470
   db 0x2B, 0xD2                                ; 0C470  sub dx, dx
-idiv word [cs:si + 0x5945 + DELTA_TAIL_PRE]; 0C472  idiv word [cs:si + 0x5945]
+idiv word [cs:si + xios_mx_div_table]; 0C472  idiv word [cs:si + 0x5945]
   mov bl, 0x30                                 ; 0C477  0xB3, 0x30
   db 0x02, 0xC3                                ; 0C479  add al, bl
   mov [di], al                                 ; 0C47B  0x88, 0x05
@@ -9111,33 +9098,52 @@ loc_0C496:                                     ; 0C496
   pop bx                                       ; 0C498  0x5B
   pop cx                                       ; 0C499  0x59
   ret                                          ; 0C49A  0xC3
-  times 70 db 0
-
-; -----------------------------------------------------------------------------
 ; CCP/M-86 Queue og Mutual Exclusion (MX) Deskriptorer
-; -----------------------------------------------------------------------------
+  times 64 db 0x00
+xios_mx_mem_free:
+  dw 0x0000
+xios_mx_param_593d:
+  dw 0x0000
+xios_mx_mem_avail:
+  dw 0x0000
+xios_mx_alloc_ptr:
 %if NUM_VIR_CONS == 4
   dw 0x6007
-  dw 0x6790
 %else
   dw 0x4F54
-  dw 0x593B
 %endif
-  db 0x10, 0x27, 0xE8, 0x03, 0x64, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x03, 0x00, 0x4D, 0x58, 0x73, 0x6F, 0x75, 0x6E, 0x64, 0x20, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x4D, 0x58, 0x73, 0x6F, 0x75, 0x6E, 0x64, 0x20, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x4D, 0x58
-  db 0x64, 0x6D, 0x61, 0x30, 0x20, 0x20, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4D, 0x58, 0x64, 0x6D
-  db 0x61, 0x30, 0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x4D, 0x58, 0x64, 0x6D, 0x61, 0x31
-  db 0x20, 0x20, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+xios_mx_free_ptr:
+  dw xios_mx_mem_free
+xios_mx_div_table:
+  db 0x10, 0x27, 0xE8, 0x03, 0x64, 0x00, 0x0A, 0x00, 0x01, 0x00
+xios_mx_mem_limit:
+  db 0x00, 0x00
+xios_mx_sound_qcb:
+  db 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x4D, 0x58, 0x73, 0x6F, 0x75, 0x6E, 0x64, 0x20, 0x00, 0x00
+  db 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+xios_mx_sound_msg:
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4D, 0x58, 0x73, 0x6F, 0x75, 0x6E, 0x64, 0x20
+xios_mx_dma0_qcb:
+  db 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x4D, 0x58, 0x64, 0x6D, 0x61, 0x30, 0x20, 0x20, 0x00, 0x00
+  db 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+xios_mx_dma0_msg:
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4D, 0x58, 0x64, 0x6D, 0x61, 0x30, 0x20, 0x20
+xios_mx_dma1_qcb:
+  db 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x4D, 0x58, 0x64, 0x6D, 0x61, 0x31, 0x20, 0x20, 0x00, 0x00
+  db 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+xios_mx_dma1_msg:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4D, 0x58, 0x64, 0x6D, 0x61, 0x31, 0x20, 0x20
+xios_qcb_link_req:
   db 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x6C, 0x69, 0x6E, 0x6B, 0x5F, 0x72, 0x65, 0x71, 0x0F, 0x00
   db 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  dw 0x5A0D + DELTA_TAIL_PRE
+  dw xios_q_link_buf
+xios_qcb_xmit_req:
   db 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x58, 0x4D, 0x49, 0x54, 0x5F, 0x52, 0x45, 0x51, 0x0F, 0x00
   db 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  dw 0x5A1C + DELTA_TAIL_PRE
+  dw xios_q_xmit_buf
+xios_q_link_buf:
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+xios_q_xmit_buf:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -9147,20 +9153,35 @@ loc_0C496:                                     ; 0C496
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x4D, 0x58, 0x61, 0x6C, 0x74
-  db 0x20, 0x20, 0x20, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4D, 0x58, 0x61, 0x6C, 0x74, 0x20, 0x20
-  db 0x20, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x4D, 0x58, 0x63, 0x61, 0x73, 0x73, 0x20, 0x20, 0x00
-  db 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x4D, 0x58, 0x63, 0x61, 0x73, 0x73, 0x20, 0x20, 0xFF, 0xFF, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+xios_mx_alt_qcb:
+  db 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x4D, 0x58, 0x61, 0x6C, 0x74, 0x20, 0x20, 0x20, 0x00, 0x00
+  db 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+xios_mx_alt_msg:
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4D, 0x58, 0x61, 0x6C, 0x74, 0x20, 0x20, 0x20
+xios_mx_cass_qcb:
+  db 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x4D, 0x58, 0x63, 0x61, 0x73, 0x73, 0x20, 0x20, 0x00, 0x00
+  db 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+xios_mx_cass_msg:
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4D, 0x58, 0x63, 0x61, 0x73, 0x73, 0x20, 0x20
+xios_cas_timeout_counter:
+  db 0xFF, 0xFF
+xios_cas_buf_ptr:
+  db 0x00, 0x00
+xios_cas_last_bit:
+  db 0x00, 0x00, 0x00
+xios_cas_byte_count:
+  db 0x00, 0x00
+xios_cas_block_num:
+  db 0x00, 0x00
+xios_cas_state:
+  db 0x01
 xios_int28_fn_26_cas_read_hdr:                 ; 0C6B6 (Båndoptager læs filhoved)
   call sub_0C9D9                               ; 0C6B6  0xE8, 0x20, 0x03
   mov_bx_dx                                    ; 0C6B9  mov bx, dx (d=1)
-mov word [cs:0x5b13 + DELTA_TAIL_PRE], 0; 0C6BB  mov word [cs:0x5b13], 0
-mov byte [cs:0x5b15 + DELTA_TAIL_PRE], 1                      ; 0C6C2  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x01
-mov [cs:0x5b11 + DELTA_TAIL_PRE], cx                          ; 0C6C8  0x2E, 0x89, 0x0E, 0x11, 0x5B
+mov word [cs:xios_cas_block_num], 0; 0C6BB  mov word [cs:0x5b13], 0
+mov byte [cs:xios_cas_state], 1                      ; 0C6C2  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x01
+mov [cs:xios_cas_byte_count], cx                          ; 0C6C8  0x2E, 0x89, 0x0E, 0x11, 0x5B
   call sub_0C747                               ; 0C6CD  0xE8, 0x77, 0x00
   xchg bx, dx                                  ; 0C6D0  87 DA
   xchg bx, cx                                  ; 0C6D2  87 D9
@@ -9168,18 +9189,18 @@ mov [cs:0x5b11 + DELTA_TAIL_PRE], cx                          ; 0C6C8  0x2E, 0x8
 xios_int28_fn_27_cas_write_hdr:                ; 0C6D5 (Båndoptager skriv filhoved)
   call sub_0C9D9                               ; 0C6D5  0xE8, 0x01, 0x03
   mov_bx_dx                                    ; 0C6D8  mov bx, dx
-mov word [cs:0x5b13 + DELTA_TAIL_PRE], 0; 0C6DA  mov word [cs:0x5b13], 0
-mov [cs:0x5b11 + DELTA_TAIL_PRE], cx                          ; 0C6E1  0x2E, 0x89, 0x0E, 0x11, 0x5B
-mov byte [cs:0x5b15 + DELTA_TAIL_PRE], 1                      ; 0C6E6  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x01
+mov word [cs:xios_cas_block_num], 0; 0C6DA  mov word [cs:0x5b13], 0
+mov [cs:xios_cas_byte_count], cx                          ; 0C6E1  0x2E, 0x89, 0x0E, 0x11, 0x5B
+mov byte [cs:xios_cas_state], 1                      ; 0C6E6  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x01
   call sub_0C898                               ; 0C6EC  0xE8, 0xA9, 0x01
   db 0x8B, 0xD3                                ; 0C6EF  mov dx, bx
   ret                                          ; 0C6F1  0xC3
 xios_int28_fn_28_cas_read_data:               ; 0C6F2 (Båndoptager læs datablok)
   call sub_0C9D9                               ; 0C6F2  0xE8, 0xE4, 0x02
   mov_bx_dx                                    ; 0C6F5  mov bx, dx
-mov byte [cs:0x5b15 + DELTA_TAIL_PRE], 2                      ; 0C6F7  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x02
-inc word [cs:0x5b13 + DELTA_TAIL_PRE]                         ; 0C6FD  0x2E, 0xFF, 0x06, 0x13, 0x5B
-mov [cs:0x5b11 + DELTA_TAIL_PRE], cx                          ; 0C702  0x2E, 0x89, 0x0E, 0x11, 0x5B
+mov byte [cs:xios_cas_state], 2                      ; 0C6F7  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x02
+inc word [cs:xios_cas_block_num]                         ; 0C6FD  0x2E, 0xFF, 0x06, 0x13, 0x5B
+mov [cs:xios_cas_byte_count], cx                          ; 0C702  0x2E, 0x89, 0x0E, 0x11, 0x5B
   call sub_0C747                               ; 0C707  0xE8, 0x3D, 0x00
   xchg bx, dx                                  ; 0C70A  87 DA
   xchg bx, cx                                  ; 0C70C  87 D9
@@ -9187,18 +9208,18 @@ mov [cs:0x5b11 + DELTA_TAIL_PRE], cx                          ; 0C702  0x2E, 0x8
 xios_int28_fn_29_cas_write_data:              ; 0C70F (Båndoptager skriv datablok)
   call sub_0C9D9                               ; 0C70F  0xE8, 0xC7, 0x02
   mov_bx_dx                                    ; 0C712  mov bx, dx
-mov byte [cs:0x5b15 + DELTA_TAIL_PRE], 2                      ; 0C714  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x02
-mov [cs:0x5b11 + DELTA_TAIL_PRE], cx                          ; 0C71A  0x2E, 0x89, 0x0E, 0x11, 0x5B
-inc word [cs:0x5b13 + DELTA_TAIL_PRE]                         ; 0C71F  0x2E, 0xFF, 0x06, 0x13, 0x5B
+mov byte [cs:xios_cas_state], 2                      ; 0C714  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x02
+mov [cs:xios_cas_byte_count], cx                          ; 0C71A  0x2E, 0x89, 0x0E, 0x11, 0x5B
+inc word [cs:xios_cas_block_num]                         ; 0C71F  0x2E, 0xFF, 0x06, 0x13, 0x5B
   call sub_0C898                               ; 0C724  0xE8, 0x71, 0x01
   db 0x8B, 0xD3                                ; 0C727  mov dx, bx
   ret                                          ; 0C729  0xC3
 xios_int28_fn_40_cas_write_eof:               ; 0C72A (Båndoptager skriv EOF-blok)
   call sub_0C9D9                               ; 0C72A  0xE8, 0xAC, 0x02
   mov_bx_dx                                    ; 0C72D  mov bx, dx
-mov byte [cs:0x5b15 + DELTA_TAIL_PRE], 3                      ; 0C72F  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x03
-mov word [cs:0x5b11 + DELTA_TAIL_PRE], 0; 0C735  mov word [cs:0x5b11], 0
-inc word [cs:0x5b13 + DELTA_TAIL_PRE]                         ; 0C73C  0x2E, 0xFF, 0x06, 0x13, 0x5B
+mov byte [cs:xios_cas_state], 3                      ; 0C72F  0x2E, 0xC6, 0x06, 0x15, 0x5B, 0x03
+mov word [cs:xios_cas_byte_count], 0; 0C735  mov word [cs:0x5b11], 0
+inc word [cs:xios_cas_block_num]                         ; 0C73C  0x2E, 0xFF, 0x06, 0x13, 0x5B
   call sub_0C898                               ; 0C741  0xE8, 0x54, 0x01
   db 0x8B, 0xD3                                ; 0C744  mov dx, bx
   ret                                          ; 0C746  0xC3
@@ -9224,7 +9245,7 @@ sub_0C747:                                     ; 0C747
 loc_0C768:                                     ; 0C768
   in al, PORT_PPI_PORTA                        ; 0C768  0xE4, 0x70
   and al, 1                                    ; 0C76A  0x24, 0x01
-mov [cs:0x5b0e + DELTA_TAIL_PRE], al                          ; 0C76C  0x2E, 0xA2, 0x0E, 0x5B
+mov [cs:xios_cas_last_bit], al                          ; 0C76C  0x2E, 0xA2, 0x0E, 0x5B
   mov dx, 0x3f7a                               ; 0C770  0xBA, 0x7A, 0x3F
 
 loc_0C773:                                     ; 0C773
@@ -9255,7 +9276,7 @@ loc_0C795:                                     ; 0C795
   call sub_0C83E                               ; 0C79A  0xE8, 0xA1, 0x00
   cmp al, 3                                    ; 0C79D  0x3C, 0x03
   je loc_0C81F                                 ; 0C79F  0x74, 0x7E
-cmp al, [cs:0x5b15 + DELTA_TAIL_PRE]                          ; 0C7A1  0x2E, 0x3A, 0x06, 0x15, 0x5B
+cmp al, [cs:xios_cas_state]                          ; 0C7A1  0x2E, 0x3A, 0x06, 0x15, 0x5B
   jne loc_0C814                                ; 0C7A6  0x75, 0x6C
   pop si                                       ; 0C7A8  0x5E
   pop cx                                       ; 0C7A9  0x59
@@ -9263,7 +9284,7 @@ cmp al, [cs:0x5b15 + DELTA_TAIL_PRE]                          ; 0C7A1  0x2E, 0x3
   call sub_0C83E                               ; 0C7AB  0xE8, 0x90, 0x00
   db 0x8A, 0xE0                                ; 0C7AE  mov ah, al
   call sub_0C83E                               ; 0C7B0  0xE8, 0x8B, 0x00
-cmp ax, [cs:0x5b13 + DELTA_TAIL_PRE]                          ; 0C7B3  0x2E, 0x3B, 0x06, 0x13, 0x5B
+cmp ax, [cs:xios_cas_block_num]                          ; 0C7B3  0x2E, 0x3B, 0x06, 0x13, 0x5B
   mov al, 4                                    ; 0C7B8  0xB0, 0x04
   push ax                                      ; 0C7BA  0x50
   jne loc_0C82F                                ; 0C7BB  0x75, 0x72
@@ -9280,7 +9301,7 @@ loc_0C7CC:                                     ; 0C7CC
 
 loc_0C7CD:                                     ; 0C7CD
   mov ax, 0                                    ; 0C7CD  0xB8, 0x00, 0x00
-mov word [cs:0x5b0a + DELTA_TAIL_PRE], 0xffff; 0C7D0  mov word [cs:0x5b0a], 0xffff
+mov word [cs:xios_cas_timeout_counter], 0xffff; 0C7D0  mov word [cs:0x5b0a], 0xffff
   mov dx, PORT_NVRAM_BASE                      ; 0C7D7  0xBA, 0x80, 0x00
 
 loc_0C7DA:                                     ; 0C7DA
@@ -9298,7 +9319,7 @@ loc_0C7E5:                                     ; 0C7E5
   db 0x8A, 0xE0                                ; 0C7EB  mov ah, al
   call sub_0C83E                               ; 0C7ED  0xE8, 0x4E, 0x00
   not ax                                       ; 0C7F0  0xF7, 0xD0
-cmp word [cs:0x5b0a + DELTA_TAIL_PRE], 0x1d0f; 0C7F2  cmp word [cs:0x5b0a], 0x1d0f
+cmp word [cs:xios_cas_timeout_counter], 0x1d0f; 0C7F2  cmp word [cs:0x5b0a], 0x1d0f
   mov al, 0                                    ; 0C7F9  0xB0, 0x00
   jne loc_0C804                                ; 0C7FB  0x75, 0x07
   jcxz loc_0C806                               ; 0C7FD  0xE3, 0x07
@@ -9329,7 +9350,7 @@ loc_0C81A:                                     ; 0C81A
   jmp near loc_0C829                           ; 0C81C  0xE9, 0x0A, 0x00
 
 loc_0C81F:                                     ; 0C81F
-cmp byte [cs:0x5b15 + DELTA_TAIL_PRE], 1                      ; 0C81F  0x2E, 0x80, 0x3E, 0x15, 0x5B, 0x01
+cmp byte [cs:xios_cas_state], 1                      ; 0C81F  0x2E, 0x80, 0x3E, 0x15, 0x5B, 0x01
   je loc_0C814                                 ; 0C825  0x74, 0xED
   mov al, 5                                    ; 0C827  0xB0, 0x05
 
@@ -9391,21 +9412,21 @@ loc_0C86A:                                     ; 0C86A
 
 sub_0C870:                                     ; 0C870
   mov cx, 0x190                                ; 0C870  0xB9, 0x90, 0x01
-mov ah, [cs:0x5b0e + DELTA_TAIL_PRE]                          ; 0C873  0x2E, 0x8A, 0x26, 0x0E, 0x5B
+mov ah, [cs:xios_cas_last_bit]                          ; 0C873  0x2E, 0x8A, 0x26, 0x0E, 0x5B
 
 loc_0C878:                                     ; 0C878
   in al, PORT_PPI_PORTA                        ; 0C878  0xE4, 0x70
   and al, 1                                    ; 0C87A  0x24, 0x01
   db 0x3A, 0xC4                                ; 0C87C  cmp al, ah
   loope loc_0C878                              ; 0C87E  0xE1, 0xF8
-mov [cs:0x5b0e + DELTA_TAIL_PRE], al                          ; 0C880  0x2E, 0xA2, 0x0E, 0x5B
+mov [cs:xios_cas_last_bit], al                          ; 0C880  0x2E, 0xA2, 0x0E, 0x5B
   push dx                                      ; 0C884  0x52
   mov dx, PORT_PCB_T0_CNT                      ; 0C885  0xBA, 0x50, 0xFF
   in ax, dx                                    ; 0C888  0xED
   pop dx                                       ; 0C889  0x5A
   mov_bx_ax                                    ; 0C88A  mov bx, ax
-mov ax, [cs:0x5b0c + DELTA_TAIL_PRE]                          ; 0C88C  0x2E, 0xA1, 0x0C, 0x5B
-mov [cs:0x5b0c + DELTA_TAIL_PRE], bx                          ; 0C890  0x2E, 0x89, 0x1E, 0x0C, 0x5B
+mov ax, [cs:xios_cas_buf_ptr]                          ; 0C88C  0x2E, 0xA1, 0x0C, 0x5B
+mov [cs:xios_cas_buf_ptr], bx                          ; 0C890  0x2E, 0x89, 0x1E, 0x0C, 0x5B
   sub_bx_ax                                    ; 0C895  sub bx, ax
   ret                                          ; 0C897  0xC3
 
@@ -9432,19 +9453,19 @@ loc_0C8B8:                                     ; 0C8B8
   loop loc_0C8B8                               ; 0C8BC  0xE2, 0xFA
   clc                                          ; 0C8BE  0xF8
   call sub_0C94F                               ; 0C8BF  0xE8, 0x8D, 0x00
-mov al, [cs:0x5b15 + DELTA_TAIL_PRE]                          ; 0C8C2  0x2E, 0xA0, 0x15, 0x5B
+mov al, [cs:xios_cas_state]                          ; 0C8C2  0x2E, 0xA0, 0x15, 0x5B
   push ax                                      ; 0C8C6  0x50
   call sub_0C938                               ; 0C8C7  0xE8, 0x6E, 0x00
   pop ax                                       ; 0C8CA  0x58
   cmp al, 3                                    ; 0C8CB  0x3C, 0x03
   je loc_0C925                                 ; 0C8CD  0x74, 0x56
-mov ax, [cs:0x5b13 + DELTA_TAIL_PRE]                          ; 0C8CF  0x2E, 0xA1, 0x13, 0x5B
+mov ax, [cs:xios_cas_block_num]                          ; 0C8CF  0x2E, 0xA1, 0x13, 0x5B
   push ax                                      ; 0C8D3  0x50
   xchg ah, al                                  ; 0C8D4  86 E0
   call sub_0C938                               ; 0C8D6  0xE8, 0x5F, 0x00
   pop ax                                       ; 0C8D9  0x58
   call sub_0C938                               ; 0C8DA  0xE8, 0x5B, 0x00
-mov ax, [cs:0x5b11 + DELTA_TAIL_PRE]                          ; 0C8DD  0x2E, 0xA1, 0x11, 0x5B
+mov ax, [cs:xios_cas_byte_count]                          ; 0C8DD  0x2E, 0xA1, 0x11, 0x5B
   push ax                                      ; 0C8E1  0x50
   xchg ah, al                                  ; 0C8E2  86 E0
   call sub_0C938                               ; 0C8E4  0xE8, 0x51, 0x00
@@ -9454,7 +9475,7 @@ mov ax, [cs:0x5b11 + DELTA_TAIL_PRE]                          ; 0C8DD  0x2E, 0xA
   pop bx                                       ; 0C8EC  0x5B
 
 loc_0C8ED:                                     ; 0C8ED
-mov word [cs:0x5b0a + DELTA_TAIL_PRE], 0xffff; 0C8ED  mov word [cs:0x5b0a], 0xffff
+mov word [cs:xios_cas_timeout_counter], 0xffff; 0C8ED  mov word [cs:0x5b0a], 0xffff
   mov dx, PORT_NVRAM_BASE                      ; 0C8F4  0xBA, 0x80, 0x00
 
 loc_0C8F7:                                     ; 0C8F7
@@ -9467,7 +9488,7 @@ loc_0C8F7:                                     ; 0C8F7
 loc_0C900:                                     ; 0C900
   dec dx                                       ; 0C900  0x4A
   jg loc_0C8F7                                 ; 0C901  0x7F, 0xF4
-mov ax, [cs:0x5b0a + DELTA_TAIL_PRE]                          ; 0C903  0x2E, 0xA1, 0x0A, 0x5B
+mov ax, [cs:xios_cas_timeout_counter]                          ; 0C903  0x2E, 0xA1, 0x0A, 0x5B
   not ax                                       ; 0C907  0xF7, 0xD0
   push ax                                      ; 0C909  0x50
   xchg ah, al                                  ; 0C90A  86 E0
@@ -9555,7 +9576,7 @@ loc_0C96D:                                     ; 0C96D
   ret                                          ; 0C981  0xC3
 
 sub_0C982:                                     ; 0C982
-mov ax, [cs:0x5b0a + DELTA_TAIL_PRE]                          ; 0C982  0x2E, 0xA1, 0x0A, 0x5B
+mov ax, [cs:xios_cas_timeout_counter]                          ; 0C982  0x2E, 0xA1, 0x0A, 0x5B
   rcr ax, 1                                    ; 0C986  0xD1, 0xD8
   rcl ax, 1                                    ; 0C988  0xD1, 0xD0
   clc                                          ; 0C98A  0xF8
@@ -9565,7 +9586,7 @@ mov ax, [cs:0x5b0a + DELTA_TAIL_PRE]                          ; 0C982  0x2E, 0xA
 
 loc_0C991:                                     ; 0C991
   rcl ax, 1                                    ; 0C991  0xD1, 0xD0
-mov [cs:0x5b0a + DELTA_TAIL_PRE], ax                          ; 0C993  0x2E, 0xA3, 0x0A, 0x5B
+mov [cs:xios_cas_timeout_counter], ax                          ; 0C993  0x2E, 0xA3, 0x0A, 0x5B
   ret                                          ; 0C997  0xC3
 
 sub_0C998:                                     ; 0C998
@@ -9613,7 +9634,18 @@ sub_0C9D9:                                     ; 0C9D9
   push bx                                      ; 0C9DD  0x53
   push ax                                      ; 0C9DE  0x50
   ret                                          ; 0C9DF  0xC3
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00        ; 0C9E0  ......
+xios_prn_reserve_flag:
+  db 0x00                                      ; 0C9E0 (CS:5E40)
+xios_prn_reserve_timer:
+  db 0x00                                      ; 0C9E1 (CS:5E41)
+xios_fdc_reserve_flag:
+  db 0x00                                      ; 0C9E2 (CS:5E42)
+xios_prn_client_mode:
+  db 0x00                                      ; 0C9E3 (CS:5E43)
+xios_fdc_client_mode:
+  db 0x00                                      ; 0C9E4 (CS:5E44)
+xios_prn_pending_flag:
+  db 0x00                                      ; 0C9E5 (CS:5E45)
 
 sub_0C9E6:                                     ; 0C9E6
   push es                                      ; 0C9E6  0x06
@@ -9646,7 +9678,7 @@ xios_int28_fn_41_dpc_parallel:               ; 0CA03 (Reserver/frigiv DPC interf
   je loc_0CA7E                                 ; 0CA11  0x74, 0x6B
   cmp ah, 1                                    ; 0CA13  0x80, 0xFC, 0x01
   jne loc_0CA72                                ; 0CA16  0x75, 0x5A
-mov byte [cs:0x5e43 + DELTA_TAIL_PRE], 0xff                   ; 0CA18  0x2E, 0xC6, 0x06, 0x43, 0x5E, 0xFF
+mov byte [cs:xios_prn_client_mode], 0xff                   ; 0CA18  0x2E, 0xC6, 0x06, 0x43, 0x5E, 0xFF
 
 sub_0CA1E:                                     ; 0CA1E
   mov dx, PORT_PRN_RESERVE                     ; 0CA1E  0xBA, 0x92, 0x02
@@ -9672,15 +9704,15 @@ mov si, 0x497e + DELTA_TABLES                               ; 0CA37  0xBE, 0x7E,
   mov cl, 0x83                                 ; 0CA41  0xB1, 0x83
   mov dl, 2                                    ; 0CA43  0xB2, 0x02
   call rtm_timer_wait2                         ; 0CA45  0xE8, 0x8B, 0xAE
-mov byte [cs:0x5e40 + DELTA_TAIL_PRE], 0xff                   ; 0CA48  0x2E, 0xC6, 0x06, 0x40, 0x5E, 0xFF
+mov byte [cs:xios_prn_reserve_flag], 0xff                   ; 0CA48  0x2E, 0xC6, 0x06, 0x40, 0x5E, 0xFF
   mov cx, 0xffff                               ; 0CA4E  0xB9, 0xFF, 0xFF
   call sub_08C61                               ; 0CA51  0xE8, 0x0D, 0xC2
 
 loc_0CA54:                                     ; 0CA54
-cmp byte [cs:0x5e45 + DELTA_TAIL_PRE], 0xff                   ; 0CA54  0x2E, 0x80, 0x3E, 0x45, 0x5E, 0xFF
-mov byte [cs:0x5e45 + DELTA_TAIL_PRE], 0                      ; 0CA5A  0x2E, 0xC6, 0x06, 0x45, 0x5E, 0x00
-mov byte [cs:0x5e40 + DELTA_TAIL_PRE], 0xff                   ; 0CA60  0x2E, 0xC6, 0x06, 0x40, 0x5E, 0xFF
-mov byte [cs:0x5e41 + DELTA_TAIL_PRE], 0xa                    ; 0CA66  0x2E, 0xC6, 0x06, 0x41, 0x5E, 0x0A
+cmp byte [cs:xios_prn_pending_flag], 0xff                   ; 0CA54  0x2E, 0x80, 0x3E, 0x45, 0x5E, 0xFF
+mov byte [cs:xios_prn_pending_flag], 0                      ; 0CA5A  0x2E, 0xC6, 0x06, 0x45, 0x5E, 0x00
+mov byte [cs:xios_prn_reserve_flag], 0xff                   ; 0CA60  0x2E, 0xC6, 0x06, 0x40, 0x5E, 0xFF
+mov byte [cs:xios_prn_reserve_timer], 0xa                    ; 0CA66  0x2E, 0xC6, 0x06, 0x41, 0x5E, 0x0A
   jne loc_0CA6F                                ; 0CA6C  0x75, 0x01
   ret                                          ; 0CA6E  0xC3
 
@@ -9691,7 +9723,7 @@ loc_0CA6F:                                     ; 0CA6F
 loc_0CA72:                                     ; 0CA72
   cmp ah, 2                                    ; 0CA72  0x80, 0xFC, 0x02
   jne loc_0CA7E                                ; 0CA75  0x75, 0x07
-mov byte [cs:0x5e43 + DELTA_TAIL_PRE], 0                      ; 0CA77  0x2E, 0xC6, 0x06, 0x43, 0x5E, 0x00
+mov byte [cs:xios_prn_client_mode], 0                      ; 0CA77  0x2E, 0xC6, 0x06, 0x43, 0x5E, 0x00
   ret                                          ; 0CA7D  0xC3
 
 loc_0CA7E:                                     ; 0CA7E
@@ -9699,21 +9731,21 @@ loc_0CA7E:                                     ; 0CA7E
   ret                                          ; 0CA81  0xC3
 
 sub_0CA82:                                     ; 0CA82
-cmp byte [cs:0x5e40 + DELTA_TAIL_PRE], 0xff                   ; 0CA82  0x2E, 0x80, 0x3E, 0x40, 0x5E, 0xFF
+cmp byte [cs:xios_prn_reserve_flag], 0xff                   ; 0CA82  0x2E, 0x80, 0x3E, 0x40, 0x5E, 0xFF
   jne loc_0CAB4                                ; 0CA88  0x75, 0x2A
-cmp byte [cs:0x5e41 + DELTA_TAIL_PRE], 0                      ; 0CA8A  0x2E, 0x80, 0x3E, 0x41, 0x5E, 0x00
+cmp byte [cs:xios_prn_reserve_timer], 0                      ; 0CA8A  0x2E, 0x80, 0x3E, 0x41, 0x5E, 0x00
   je loc_0CA9A                                 ; 0CA90  0x74, 0x08
-dec byte [cs:0x5e41 + DELTA_TAIL_PRE]                         ; 0CA92  0x2E, 0xFE, 0x0E, 0x41, 0x5E
+dec byte [cs:xios_prn_reserve_timer]                         ; 0CA92  0x2E, 0xFE, 0x0E, 0x41, 0x5E
   jmp near loc_0CAB4                           ; 0CA97  0xE9, 0x1A, 0x00
 
 loc_0CA9A:                                     ; 0CA9A
-cmp byte [cs:0x5e43 + DELTA_TAIL_PRE], 0xff                   ; 0CA9A  0x2E, 0x80, 0x3E, 0x43, 0x5E, 0xFF
+cmp byte [cs:xios_prn_client_mode], 0xff                   ; 0CA9A  0x2E, 0x80, 0x3E, 0x43, 0x5E, 0xFF
   je loc_0CAB4                                 ; 0CAA0  0x74, 0x12
   mov dx, PORT_PRN_RELEASE                     ; 0CAA2  0xBA, 0x94, 0x02
   out dx, al                                   ; 0CAA5  0xEE
   db 0x33, 0xC0                                ; 0CAA6  xor ax, ax
-mov byte [cs:0x5e40 + DELTA_TAIL_PRE], 0                      ; 0CAA8  0x2E, 0xC6, 0x06, 0x40, 0x5E, 0x00
-mov byte [cs:0x5e41 + DELTA_TAIL_PRE], 0                      ; 0CAAE  0x2E, 0xC6, 0x06, 0x41, 0x5E, 0x00
+mov byte [cs:xios_prn_reserve_flag], 0                      ; 0CAA8  0x2E, 0xC6, 0x06, 0x40, 0x5E, 0x00
+mov byte [cs:xios_prn_reserve_timer], 0                      ; 0CAAE  0x2E, 0xC6, 0x06, 0x41, 0x5E, 0x00
 
 loc_0CAB4:                                     ; 0CAB4
   ret                                          ; 0CAB4  0xC3
@@ -9729,10 +9761,10 @@ xios_int28_fn_42_shared_disk:                ; 0CAB5 (Reserver/frigiv delt disk)
   je loc_0CB14                                 ; 0CAC4  0x74, 0x4E
   cmp ah, 1                                    ; 0CAC6  0x80, 0xFC, 0x01
   jne loc_0CB08                                ; 0CAC9  0x75, 0x3D
-mov byte [cs:0x5e44 + DELTA_TAIL_PRE], 0xff                   ; 0CACB  0x2E, 0xC6, 0x06, 0x44, 0x5E, 0xFF
+mov byte [cs:xios_fdc_client_mode], 0xff                   ; 0CACB  0x2E, 0xC6, 0x06, 0x44, 0x5E, 0xFF
 
 sub_0CAD1:                                     ; 0CAD1
-mov byte [cs:0x5e42 + DELTA_TAIL_PRE], 0                      ; 0CAD1  0x2E, 0xC6, 0x06, 0x42, 0x5E, 0x00
+mov byte [cs:xios_fdc_reserve_flag], 0                      ; 0CAD1  0x2E, 0xC6, 0x06, 0x42, 0x5E, 0x00
   mov dx, PORT_FDC_RESERVE                     ; 0CAD7  0xBA, 0x8E, 0x02
   mov al, 0xff                                 ; 0CADA  0xB0, 0xFF
   out dx, al                                   ; 0CADC  0xEE
@@ -9765,7 +9797,7 @@ loc_0CB07:                                     ; 0CB07
 loc_0CB08:                                     ; 0CB08
   cmp ah, 2                                    ; 0CB08  0x80, 0xFC, 0x02
   jne loc_0CB14                                ; 0CB0B  0x75, 0x07
-mov byte [cs:0x5e44 + DELTA_TAIL_PRE], 0                      ; 0CB0D  0x2E, 0xC6, 0x06, 0x44, 0x5E, 0x00
+mov byte [cs:xios_fdc_client_mode], 0                      ; 0CB0D  0x2E, 0xC6, 0x06, 0x44, 0x5E, 0x00
   ret                                          ; 0CB13  0xC3
 
 loc_0CB14:                                     ; 0CB14
@@ -9773,9 +9805,9 @@ loc_0CB14:                                     ; 0CB14
   ret                                          ; 0CB17  0xC3
 
 sub_0CB18:                                     ; 0CB18
-cmp byte [cs:0x5e42 + DELTA_TAIL_PRE], 0xff                   ; 0CB18  0x2E, 0x80, 0x3E, 0x42, 0x5E, 0xFF
+cmp byte [cs:xios_fdc_reserve_flag], 0xff                   ; 0CB18  0x2E, 0x80, 0x3E, 0x42, 0x5E, 0xFF
   jne loc_0CB3B                                ; 0CB1E  0x75, 0x1B
-cmp byte [cs:0x5e44 + DELTA_TAIL_PRE], 0xff                   ; 0CB20  0x2E, 0x80, 0x3E, 0x44, 0x5E, 0xFF
+cmp byte [cs:xios_fdc_client_mode], 0xff                   ; 0CB20  0x2E, 0x80, 0x3E, 0x44, 0x5E, 0xFF
   je loc_0CB3B                                 ; 0CB26  0x74, 0x13
   mov ax, [cs:0x88]                            ; 0CB28  0x2E, 0xA1, 0x88, 0x00
   and ax, 0xefff                               ; 0CB2C  0x25, 0xFF, 0xEF
@@ -9784,7 +9816,7 @@ cmp byte [cs:0x5e44 + DELTA_TAIL_PRE], 0xff                   ; 0CB20  0x2E, 0x8
 fdc_release:                                   ; 0CB31
   mov dx, PORT_FDC_RELEASE                     ; 0CB31  0xBA, 0x90, 0x02
   out dx, al                                   ; 0CB34  0xEE
-mov byte [cs:0x5e42 + DELTA_TAIL_PRE], 0                      ; 0CB35  0x2E, 0xC6, 0x06, 0x42, 0x5E, 0x00
+mov byte [cs:xios_fdc_reserve_flag], 0                      ; 0CB35  0x2E, 0xC6, 0x06, 0x42, 0x5E, 0x00
 
 loc_0CB3B:                                     ; 0CB3B
   ret                                          ; 0CB3B  0xC3
@@ -9794,15 +9826,34 @@ sub_0CB3C:                                     ; 0CB3C
   call sub_0CA82                               ; 0CB3F  0xE8, 0x40, 0xFF
   ret                                          ; 0CB42  0xC3
   align 2, db 0
-  db 0x01, 0x03, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x03, 0x2F, 0x29, 0x06, 0x29, 0x06, 0x00, 0x00
-  db 0x09, 0x00, 0x0A, 0x00, 0x05, 0x00, 0x09, 0x06, 0x09, 0x00, 0x09, 0x00, 0x09, 0x09, 0x00, 0x00
-  db 0x38, 0x01, 0x05, 0x00, 0x24, 0x00, 0x1E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x47, 0x03, 0x47
-  db 0x04, 0xFA, 0xF9, 0xFF, 0x00, 0x10, 0x03, 0x2F, 0x29, 0x06, 0x29, 0x06, 0x00, 0x00, 0x0F, 0x00
-  db 0x10, 0x00, 0x05, 0x00, 0x09, 0x06, 0x09, 0x08, 0x09, 0x00, 0x09, 0x09, 0x00, 0x00, 0x38, 0x01
-  db 0x05, 0x00, 0x20, 0x00, 0x20, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x47, 0x03, 0x47, 0x00, 0xFF
-  db 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+fdc_drive_type_0:
+  db 0x01, 0x03
+fdc_drive_flags_0:
+  db 0x00, 0x00, 0x50, 0x00
+fdc_drive_dph_0:
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  db 0xF7, 0xFF, 0x00, 0x00
+fdc_drive_cyl_0:
+  db 0xFF, 0xFF, 0xFF, 0xFF
+fdc_drive_0_dpb_ptr:
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+fdc_dpb_standard:
+  db 0x00, 0x10, 0x03, 0x2F, 0x29, 0x06, 0x29, 0x06, 0x00, 0x00, 0x09, 0x00, 0x0A, 0x00, 0x05, 0x00
+  db 0x09, 0x06
+fdc_dpb_current_format:
+  db 0x09, 0x00, 0x09, 0x00, 0x09, 0x09, 0x00, 0x00, 0x38, 0x01, 0x05, 0x00, 0x24, 0x00, 0x1E, 0x01
+  db 0x00, 0x00, 0x00, 0x00, 0x01, 0x47
+fdc_dpb_std_drm:
+  db 0x03, 0x47, 0x04, 0xFA
+fdc_dpb_std_al0:
+  db 0xF9, 0xFF
+fdc_dpb_alternate:
+  db 0x00, 0x10, 0x03, 0x2F, 0x29, 0x06, 0x29, 0x06, 0x00, 0x00, 0x0F, 0x00, 0x10, 0x00, 0x05, 0x00
+  db 0x09, 0x06, 0x09, 0x08, 0x09, 0x00, 0x09, 0x09, 0x00, 0x00, 0x38, 0x01, 0x05, 0x00, 0x20, 0x00
+  db 0x20, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x47, 0x03, 0x47, 0x00, 0xFF, 0xFF, 0xFF
+fdc_drive_dph_1:
+  db 0x00, 0x00, 0x00, 0x00
+fdc_drive_1_dpb_ptr:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -9810,7 +9861,11 @@ sub_0CB3C:                                     ; 0CB3C
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x84, 0x00, 0x88, 0x00, 0x85, 0x00, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x84, 0x00, 0x88
+  db 0x00, 0x85, 0x00, 0x88
+fdc_drive_dph_2:
+  db 0x00, 0x00, 0x00, 0x00
+fdc_drive_2_dpb_ptr:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -9818,31 +9873,49 @@ sub_0CB3C:                                     ; 0CB3C
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x84, 0x00, 0x88, 0x00, 0x85
-  db 0x00, 0x88, 0x00, 0x8E, 0x00, 0x00, 0x01, 0x83, 0x09, 0x00, 0x50, 0x87, 0x00, 0x88, 0x01, 0x83
-  db 0x00, 0x04, 0x50, 0x8A, 0x00, 0x00
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x84, 0x00, 0x88
+  db 0x00, 0x85, 0x00, 0x88
+fdc_dpb_3_ptr:
+  db 0x00, 0x8E, 0x00, 0x00, 0x01, 0x83
+fdc_param_613c:
+  db 0x09, 0x00
+fdc_param_613e:
+  db 0x50, 0x87
+fdc_param_6140:
+  db 0x00, 0x88
+fdc_param_6142:
+  db 0x01, 0x83, 0x00, 0x04, 0x50, 0x8A, 0x00, 0x00
 
-buffer_614a:
+xios_con_line_buffer_614a:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+xios_con_line_buffer_6186:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  db 0x00, 0x00
+xios_con_line_buffer_61b8:
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-  db 0x00, 0x81, 0x52, 0x87, 0xFF, 0x0C, 0x50, 0x8A, 0x20, 0x08, 0x00, 0x81, 0x00, 0x00, 0xA0, 0x00
-  db 0x40, 0x01, 0xE0, 0x01, 0x80, 0x02, 0x20, 0x03, 0xC0, 0x03, 0x60, 0x04, 0x00, 0x05, 0xA0, 0x05
-  db 0x40, 0x06, 0xE0, 0x06, 0x80, 0x07
+  db 0x00, 0x00
+xios_crt_mode_line_table:
+  db 0x00, 0x81
+xios_crt_line_entry_61ec:
+  db 0x52, 0x87, 0xFF, 0x0C, 0x50, 0x8A, 0x20, 0x08, 0x00, 0x81
+xios_vmenu_line_offsets:
+  db 0x00, 0x00, 0xA0, 0x00, 0x40, 0x01, 0xE0, 0x01, 0x80, 0x02, 0x20, 0x03, 0xC0, 0x03, 0x60, 0x04
+  db 0x00, 0x05, 0xA0, 0x05, 0x40, 0x06, 0xE0, 0x06, 0x80, 0x07
 
 ; -----------------------------------------------------------------------------
 ; Terminal Linje-Tabel & int3 Padding
 ; -----------------------------------------------------------------------------
 vmenu_screen_line_table:
   dw 0x0820, 0x08C0, 0x0960, 0x0A00, 0x0AA0, 0x0B40, 0x0BE0, 0x0C80, 0x0D20, 0x0DC0, 0x0E60
-  dw 0x614A + DELTA_TAIL
+  dw xios_con_line_buffer_614a
+xios_crt_font_ptr:
   dw 0x0000, 0xFFF8, 0x0000, 0x0000
 %if NUM_VIR_CONS == 4
   times 6 dw 0x0000
