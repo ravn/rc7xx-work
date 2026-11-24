@@ -941,3 +941,28 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
       - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+
+15. **Forening af Sektion 4A og 4C: Vinduesmanager, Klipning & Display Lister (2026-11-24)**:
+    - **Sektion 4A: Funktion 16..24 & Konsolskift (CS:264C..2980 i X1 / CS:2696..2B43 i X4)**:
+      - XIOS1 indeholder `io_auxist` (44 bytes), funktionsstubs (7 bytes) og `io_setblank` (4 bytes).
+      - XIOS4 indeholder den fulde 4-konsol vinduesstyring for funktion 16..24 og `io_setblank` (168 bytes).
+      - Samtlige subrutiner (`sub_091F2` til `sub_09473`) er nu **100% forenede til én fælles kilde**:
+        - Konsolløkker parametriseret med `NUM_VIR_CONS` (`mov cx, NUM_VIR_CONS`).
+        - Konsol-deskriptor 0 (CCB) parametriseret: `0x2b5d` for 1 konsol hhv. `0x2d2e` for 4 konsoller.
+        - Prioritets- og vinduesadresser parametriseret med `DELTA_WINDOW = 451` (`0x2b53`, `0x2b5b`, `0x2b5a`).
+        - Buffer-adresser parametriseret med `DELTA_TABLES = 909` (`0x2bf1`, `0x2bf3`, `0x2bfb`).
+        - Selvkodende tegnmodus-variabel ved CS:0x28CE / CS:0x2A80 forenet som symbolsk label `xios_char_mode_byte: db 0`.
+        - De 3 multi-konsol clipping-rutiner i XIOS4 (+295 bytes i alt) er indkapslet under `%if NUM_VIR_CONS == 4` med symbolske labels:
+          1. `xios4_clip_setup:` (91 bytes i X4, returnerer direkte i X1).
+          2. `sub_x4_clip_repaint_entry:` & `sub_09333:` (193 bytes multi-konsol rektangel-clipping og genmaling i X4, dummy returns i X1).
+          3. `sub_0946F:` tegn-/attribut-clipping mod aktiv konsol (19 bytes i X4, dummy return i X1).
+      - Fjernet 12 midlertidige stub-definitioner (`sub_091F2 equ ...`, `sub_0920B equ ...`, osv.) fra header-blokken.
+      - Slettede over **550 linjer redundante rå `db` statements** fra XIOS4.
+    - **Sektion 4C: Display Lists, Konsol-deskriptorer (CCB) & CRT Output Buffere (CS:2BD0..2D7B / CS:2D93..3108)**:
+      - Struktureret som 1-konsol CCB (148 bytes) og display lister under `%if NUM_VIR_CONS == 1` og 4-konsol CCB (592 bytes) og display lister under `%else`.
+    - Resultat: Sektion 4 er nu **100% fuldført og forenet**!
+    - Samlet reduktion på tværs af projektet: **Over 5.750 linjer redundans elimineret**.
+    - Fuld verifikation:
+      - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
