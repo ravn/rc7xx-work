@@ -4,7 +4,6 @@
 %if NUM_VIR_CONS == 4
   %define XT_ALLOC_PARAS 0x0500                 ; 1280 paragraffer unlinked bufferplads til 4 konsoller
   %define ZORDER_LIST_SIZE 16                   ; 2^4 = 16 kombinationer for 4 konsoller
-  %define DELTA_WINDOW  451
   %define DELTA_TABLES  909
   %define DELTA_TAIL    3668
 %define DELTA_TAIL_PRE 3669
@@ -13,7 +12,6 @@
 %else
   %define XT_ALLOC_PARAS 0x01F4                 ; 500 paragraffer unlinked bufferplads til 1 konsol
   %define ZORDER_LIST_SIZE 2                    ; 2^1 = 2 kombinationer for 1 konsol
-  %define DELTA_WINDOW  0
   %define DELTA_TABLES  0
   %define DELTA_TAIL    0
 %define DELTA_TAIL_PRE 0
@@ -436,7 +434,7 @@ loc_07A29:                                     ; 07A29
 i_keyboard:
 kbd_handler:                                   ; 07A93 / 000002F3
   call xios_switch_to_priv_stack               ; Skift til intern XIOS stak
-  cmp byte [cs:0x2a60 + DELTA_WINDOW], 0xff    ; Tastatur deaktiveret?
+  cmp byte [cs:kbd_disabled_flag], 0xff       ; Tastatur deaktiveret?
   jne .kbd_not_disabled
   call sub_095CB                               ; Nulstil buffer
 
@@ -692,7 +690,7 @@ loc_07CB9:                                     ; 07CB9
   jmp near loc_0A7F1                           ; 07CBE
 
 loc_07CC1:
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]           ; 07CC1
+  mov bx, [cs:xios4_cur_window_ptr]           ; 07CC1
   cmp byte [bx + 0x7a], 0                      ; 07CC6
   jne loc_07D18                                ; 07CCA
 
@@ -701,8 +699,8 @@ loc_07CCC:
   mov dx, 5                                    ; 07CCD
   call rtm_timer_wait                          ; 07CD0
   pop bx                                       ; 07CD3
-  mov ax, [cs:0x2a5c + DELTA_WINDOW]           ; 07CD4
-  mov [cs:0x2a5e + DELTA_WINDOW], ax           ; 07CD8
+  mov ax, [cs:kbd_buf_head]                   ; 07CD4
+  mov [cs:kbd_buf_tail], ax                   ; 07CD8
   mov ax, [cs:kbd_char_buffer]                          ; 07CDC
   test ah, ah                                  ; 07CE0
   je loc_07CFD                                 ; 07CE2
@@ -829,7 +827,7 @@ loc_07D65:                                     ; 07D65
   mov al, 0x20                                 ; 07D7A  0xB0, 0x20
   rep stosw                                    ; 07D7C  0xF3, 0xAB
   pop di                                       ; 07D7E  0x5F
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]           ; 07D7F
+  mov bx, [cs:xios4_cur_window_ptr]           ; 07D7F
   mov si, [di - 6]                             ; 07D84  0x8B, 0x75, 0xFA
   mov bl, [bx + si]                            ; 07D87  0x8A, 0x18
   xor_bh_bh                                    ; 07D89  xor bh, bh
@@ -892,7 +890,7 @@ sub_07DF0:                                     ; 07DF0
   shr bx, 1                                    ; 07DF0  0xD1, 0xEB
   xchg bx, ax                                  ; 07DF2  0x93
   push si                                      ; 07DF3  0x56
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]           ; 07DF4
+  mov bx, [cs:xios4_cur_window_ptr]           ; 07DF4
   call word [di - 2]                           ; 07DF9  0xFF, 0x55, 0xFE
   pop si                                       ; 07DFC  0x5E
   ret                                          ; 07DFD  0xC3
@@ -953,8 +951,8 @@ vmenu_action_item_5:
   sub_bx_ax                                    ; 07E34  sub bx, ax
   mov cl, 2                                    ; 07E36  0xB1, 0x02
   shl bx, cl                                   ; 07E38  0xD3, 0xE3
-  mov [cs:0x2a5c + DELTA_WINDOW], bx           ; 07E3A
-  mov [cs:0x2a5e + DELTA_WINDOW], bx           ; 07E3F
+  mov [cs:kbd_buf_head], bx                   ; 07E3A
+  mov [cs:kbd_buf_tail], bx                   ; 07E3F
   pop cx                                       ; 07E44  0x59
   pop bx                                       ; 07E45  0x5B
   ret                                          ; 07E46  0xC3
@@ -1094,9 +1092,9 @@ loc_07EF5:                                     ; 07EF5
   je loc_07F59                                 ; 07F1A  0x74, 0x3D
   mov cl, 0xc                                  ; 07F1C  0xB1, 0x0C
   call sub_07F88                               ; 07F1E  0xE8, 0x67, 0x00
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]                          ; 07F21  0x2E, 0x8B, 0x1E, 0x58, 0x2B
+  mov bx, [cs:xios4_cur_window_ptr]                          ; 07F21  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   mov cx, [bx + 0x48]                          ; 07F26  0x8B, 0x4F, 0x48
-  test byte [cs:0x2b5a + DELTA_WINDOW], 0xff                  ; 07F29  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
+  test byte [cs:xios4_window_clip_flag], 0xff                  ; 07F29  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
   jne loc_07F37                                ; 07F2F  0x75, 0x06
   mov bx, 0x61f6 + DELTA_TAIL                               ; 07F31  0xBB, 0xF6, 0x61
   mov cx, 0x18                                 ; 07F34  0xB9, 0x18, 0x00
@@ -1210,8 +1208,8 @@ loc_07FD4:                                     ; 07FD4
   shl bx, 1                                    ; 07FDB  0xD1, 0xE3
   mov bx, [cs:bx + 0x2bf3 + DELTA_TABLES]                     ; 07FDD  0x2E, 0x8B, 0x9F, 0xF3, 0x2B
   call word [bx + 0x5e]                        ; 07FE2  0xFF, 0x57, 0x5E
-  mov ax, [cs:0x2a5c + DELTA_WINDOW]                          ; 07FE5  0x2E, 0xA1, 0x5C, 0x2A
-  mov [cs:0x2a5e + DELTA_WINDOW], ax                          ; 07FE9  0x2E, 0xA3, 0x5E, 0x2A
+  mov ax, [cs:kbd_buf_head]                                ; 07FE5  0x2E, 0xA1, 0x5C, 0x2A
+  mov [cs:kbd_buf_tail], ax                                ; 07FE9  0x2E, 0xA3, 0x5E, 0x2A
   pop es                                       ; 07FED  0x07
   ret                                          ; 07FEE  0xC3
 
@@ -1289,7 +1287,7 @@ loc_0806B:                                     ; 0806B
   push es                                      ; 08071  0x06
   mov es, [cs:0x2bf1 + DELTA_TABLES]                          ; 08072  0x2E, 0x8E, 0x06, 0xF1, 0x2B
   mov [es:di], cx                              ; 08077  0x26, 0x89, 0x0D
-  test byte [cs:0x2b5a + DELTA_WINDOW], 0xff                  ; 0807A  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
+  test byte [cs:xios4_window_clip_flag], 0xff                  ; 0807A  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
   jne loc_080BE                                ; 08080  0x75, 0x3C
   call sub_09220                               ; 08082  0xE8, 0x9B, 0x11
   mov dh, [bx + 0x64]                          ; 08085  0x8A, 0x77, 0x64
@@ -1984,7 +1982,7 @@ sub_0865F:                                     ; 0865F
   jne sub_0865F                                ; 08669  0x75, 0xF4
 
 loc_0866B:                                     ; 0866B
-  test byte [cs:0x2b5a + DELTA_WINDOW], 0xff                  ; 0866B  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
+  test byte [cs:xios4_window_clip_flag], 0xff                  ; 0866B  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
   jne loc_08676                                ; 08671  0x75, 0x03
   call sub_09334                               ; 08673  0xE8, 0xBE, 0x0C
 
@@ -2633,12 +2631,12 @@ sub_08B79:                                     ; 08B79
   db 0x03, 0xF1                                ; 08B84  add si, cx
   jmp word [si]                                ; 08B86  0xFF, 0x24
 io_switch:
-  cmp dl, [cs:0x2b56 + DELTA_WINDOW]                          ; 08B88  0x2E, 0x3A, 0x16, 0x56, 0x2B
+  cmp dl, [cs:xios4_active_vir_con]                        ; 08B88  0x2E, 0x3A, 0x16, 0x56, 0x2B
   jne loc_08B90                                ; 08B8D  0x75, 0x01
   ret                                          ; 08B8F  0xC3
 
 loc_08B90:                                     ; 08B90
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]                          ; 08B90  0x2E, 0x8B, 0x1E, 0x58, 0x2B
+  mov bx, [cs:xios4_cur_window_ptr]                          ; 08B90  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   call sub_08C56                               ; 08B95  0xE8, 0xBE, 0x00
   je loc_08B9B                                 ; 08B98  0x74, 0x01
   ret                                          ; 08B9A  0xC3
@@ -2658,7 +2656,7 @@ loc_08BB5:                                     ; 08BB5
   or byte [bx + 0x6b], 2                       ; 08BB5  0x80, 0x4F, 0x6B, 0x02
   mov cl, [bx + 0x70]                          ; 08BB9  0x8A, 0x4F, 0x70
   call sub_092F2                               ; 08BBC  0xE8, 0x33, 0x07
-  mov [cs:0x2b58 + DELTA_WINDOW], bx                          ; 08BBF  0x2E, 0x89, 0x1E, 0x58, 0x2B
+  mov [cs:xios4_cur_window_ptr], bx                        ; 08BBF  0x2E, 0x89, 0x1E, 0x58, 0x2B
   and byte [bx + 0x6b], 0xfd                   ; 08BC4  0x80, 0x67, 0x6B, 0xFD
   cmp cl, [bx + 0x70]                          ; 08BC8  0x3A, 0x4F, 0x70
   je sub_08BFB                                 ; 08BCB  0x74, 0x2E
@@ -2697,12 +2695,12 @@ sub_08BFB:                                     ; 08BFB
   call sub_0920B                               ; 08C0E  0xE8, 0xFA, 0x05
   mov cx, [bx + 0x48]                          ; 08C11  0x8B, 0x4F, 0x48
   push bx                                      ; 08C14  0x53
-  mov byte [cs:0x2b5a + DELTA_WINDOW], 0xff                   ; 08C15  0x2E, 0xC6, 0x06, 0x5A, 0x2B, 0xFF
+  mov byte [cs:xios4_window_clip_flag], 0xff               ; 08C15  0x2E, 0xC6, 0x06, 0x5A, 0x2B, 0xFF
   test byte [bx + 0x6b], 4                     ; 08C1B  0xF6, 0x47, 0x6B, 0x04
   jne loc_08C36                                ; 08C1F  0x75, 0x15
   test byte [bx + 0x6b], 0x10                  ; 08C21  0xF6, 0x47, 0x6B, 0x10
   je loc_08C36                                 ; 08C25  0x74, 0x0F
-  mov byte [cs:0x2b5a + DELTA_WINDOW], 0                      ; 08C27  0x2E, 0xC6, 0x06, 0x5A, 0x2B, 0x00
+  mov byte [cs:xios4_window_clip_flag], 0                  ; 08C27  0x2E, 0xC6, 0x06, 0x5A, 0x2B, 0x00
   call sub_09333                               ; 08C2D  0xE8, 0x03, 0x07
   mov bx, 0x61f6 + DELTA_TAIL                               ; 08C30  0xBB, 0xF6, 0x61
   mov cx, 0x18                                 ; 08C33  0xB9, 0x18, 0x00
@@ -2776,11 +2774,11 @@ loc_08C9A:                                     ; 08C9A
   mov cx, 0x488c + DELTA_TABLES                               ; 08CA9  0xB9, 0x8C, 0x48
   db 0x2B, 0xCF                                ; 08CAC  sub cx, di
   rep stosb                                    ; 08CAE  0xF3, 0xAA
-  mov al, [cs:0x2b56 + DELTA_WINDOW]                          ; 08CB0  0x2E, 0xA0, 0x56, 0x2B
+  mov al, [cs:xios4_active_vir_con]                        ; 08CB0  0x2E, 0xA0, 0x56, 0x2B
   add al, 0x30                                 ; 08CB4  0x04, 0x30
   mov [cs:0x484d + DELTA_TABLES], al                          ; 08CB6  0x2E, 0xA2, 0x4D, 0x48
   mov word [cs:0x4884 + DELTA_TABLES], 0x2030
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]                          ; 08CC1  0x2E, 0x8B, 0x1E, 0x58, 0x2B
+  mov bx, [cs:xios4_cur_window_ptr]                          ; 08CC1  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   mov bx, [bx + 0x5c]                          ; 08CC6  0x8B, 0x5F, 0x5C
   mov si, [bx]                                 ; 08CC9  0x8B, 0x37
   test si, si                                  ; 08CCB  0x85, 0xF6
@@ -2870,12 +2868,12 @@ loc_08D6B:                                     ; 08D6B
   rep movsb                                    ; 08D84  0xF3, 0xA4
 
 loc_08D86:                                     ; 08D86
-  cmp byte [cs:0x2b51 + DELTA_WINDOW], 0                      ; 08D86  0x2E, 0x80, 0x3E, 0x51, 0x2B, 0x00
+  cmp byte [cs:xios4_vir_con_mode], 0                      ; 08D86  0x2E, 0x80, 0x3E, 0x51, 0x2B, 0x00
   je loc_08D94                                 ; 08D8C  0x74, 0x06
   mov byte [cs:0x4861 + DELTA_TABLES], 7                      ; 08D8E  0x2E, 0xC6, 0x06, 0x61, 0x48, 0x07
 
 loc_08D94:                                     ; 08D94
-  test byte [cs:0x2b5a + DELTA_WINDOW], 0xff                  ; 08D94  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
+  test byte [cs:xios4_window_clip_flag], 0xff                  ; 08D94  0x2E, 0xF6, 0x06, 0x5A, 0x2B, 0xFF
   jne loc_08DAF                                ; 08D9A  0x75, 0x13
   mov cx, NUM_VIR_CONS                                    ; 08D9C  0xB9, 0x01, 0x00
   mov si, 0x2bf3 + DELTA_TABLES                               ; 08D9F  0xBE, 0xF3, 0x2B
@@ -2959,7 +2957,7 @@ sub_08DF1:                                     ; 08DF1
   mov_cl_al                                    ; 08E01  mov cl, al
   pop di                                       ; 08E03  0x5F
   rep movsb                                    ; 08E04  0xF3, 0xA4
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]                          ; 08E06  0x2E, 0x8B, 0x1E, 0x58, 0x2B
+  mov bx, [cs:xios4_cur_window_ptr]                          ; 08E06  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   call sub_09220                               ; 08E0B  0xE8, 0x12, 0x04
   call sub_09312                               ; 08E0E  0xE8, 0x01, 0x05
   mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
@@ -3086,7 +3084,7 @@ loc_08F30:                                     ; 08F30
   xor_di_di                                    ; 08F4D  xor di, di
   rep stosw                                    ; 08F4F  0xF3, 0xAB
   or word [bx + 0x6b], 0x200                   ; 08F51  0x81, 0x4F, 0x6B, 0x00, 0x02
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]                          ; 08F56  0x2E, 0x8B, 0x1E, 0x58, 0x2B
+  mov bx, [cs:xios4_cur_window_ptr]                          ; 08F56  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   call sub_08BFB                               ; 08F5B  0xE8, 0x9D, 0xFC
 
 loc_08F5E:                                     ; 08F5E
@@ -3127,7 +3125,7 @@ loc_08FBF:                                     ; 08FBF
   call sub_08206                               ; 08FC8  0xE8, 0x3B, 0xF2
   and word [bx + 0x6b], 0xfdff                 ; 08FCB  0x81, 0x67, 0x6B, 0xFF, 0xFD
   call sub_0922F                               ; 08FD0  0xE8, 0x5C, 0x02
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]                          ; 08FD3  0x2E, 0x8B, 0x1E, 0x58, 0x2B
+  mov bx, [cs:xios4_cur_window_ptr]                          ; 08FD3  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   call sub_08BFB                               ; 08FD8  0xE8, 0x20, 0xFC
 
 loc_08FDB:                                     ; 08FDB
@@ -3379,7 +3377,7 @@ loc_091A5:                                     ; 091A5
   ret                                          ; 091A5  0xC3
 
 xios_fn_16_get_window_ccb:
-  mov ax, 0x2b51 + DELTA_WINDOW                               ; 091A6  0xB8, 0x51, 0x2B
+  mov ax, xios4_vir_con_mode                               ; 091A6  0xB8, 0x51, 0x2B
   cmp dl, NUM_VIR_CONS                                    ; 091A9  0x80, 0xFA, 0x01
   jae loc_091BA                                ; 091AC  0x73, 0x0C
   call sub_092F2                               ; 091AE  0xE8, 0x41, 0x01
@@ -3616,7 +3614,7 @@ loc_09276:                                     ; 09276
   ret                                          ; 0928D  0xC3
 
 sub_0928E:                                     ; 0928E
-  mov di, 0x2b53 + DELTA_WINDOW
+  mov di, xios4_vir_con_mode_p2
   mov cx, NUM_VIR_CONS
   mov_al_dl                                    ; 09294  mov al, dl
   repne scasb                                  ; 09296  0xF2, 0xAE
@@ -3882,7 +3880,7 @@ sub_09333:
 %endif
 
 sub_09334:                                     ; 09334
-  test byte [cs:0x2b5a + DELTA_WINDOW], 0xff
+  test byte [cs:xios4_window_clip_flag], 0xff
   jne loc_093A2                                ; 0933A  0x75, 0x66
   call sub_09258                               ; 0933C  0xE8, 0x19, 0xFF
   shl dx, 1                                    ; 0933F  0xD1, 0xE2
@@ -4120,35 +4118,48 @@ loc_094A8:                                     ; 094A8
   mov_bl_cl                                    ; 094A8  mov bl, cl
   xor_bh_bh                                    ; 094AA  xor bh, bh
   shl bx, 1                                    ; 094AC  0xD1, 0xE3
-  jmp word [cs:bx + 0x2913 + DELTA_WINDOW]                    ; 094AE  0x2E, 0xFF, 0xA7, 0x13, 0x29
-    dw 0x2928 + DELTA_WINDOW
-    dw 0x292c + DELTA_WINDOW
-    dw 0x292b + DELTA_WINDOW
-    dw 0x2932 + DELTA_WINDOW
-  add ax, strict word 0                        ; 094BB  05 00 00
-  db 0x00, 0x00                                ; 094BE
-  db 0x00, 0x00                                ; 094C0
-  db 0x00, 0x00                                ; 094C2
-  db 0x00, 0x00                                ; 094C4
-  db 0x00, 0x00                                ; 094C6
+  jmp word [cs:bx + mouse_jump_table]
+mouse_jump_table:
+  dw mouse_fn_reset
+  dw mouse_fn_init
+  dw mouse_fn_nop
+  dw mouse_fn_read
+mouse_counter:
+  db 0x05
+mouse_pos_x:
+  dw 0x0000
+mouse_delta_x:
+  dw 0x0000
+mouse_delta_y:
+  dw 0x0000
+mouse_state:
+  dw 0x0000
+mouse_step_x:
+  dw 0x0000
+mouse_step_y:
+  dw 0x0000
+mouse_fn_reset:
   mov al, 0xff                                 ; 094C8  0xB0, 0xFF
   ret                                          ; 094CA  0xC3
+mouse_fn_nop:
   ret                                          ; 094CB  0xC3
-  mov byte [cs:0x291b + DELTA_WINDOW], 5                      ; 094CC  0x2E, 0xC6, 0x06, 0x1B, 0x29, 0x05
+mouse_fn_init:
+  mov byte [cs:mouse_counter], 5
+  mouse_fn_read:
   pushf                                        ; 094D2  0x9C
   cli                                          ; 094D3  0xFA
   db 0x33, 0xC0                                ; 094D4  xor ax, ax
   xor_bx_bx                                    ; 094D6  xor bx, bx
   db 0x33, 0xC9                                ; 094D8  xor cx, cx
-  xchg [cs:0x291c + DELTA_WINDOW], ax                         ; 094DA  0x2E, 0x87, 0x06, 0x1C, 0x29
-  xchg [cs:0x291e + DELTA_WINDOW], bx                         ; 094DF  0x2E, 0x87, 0x1E, 0x1E, 0x29
-  xchg [cs:0x2920 + DELTA_WINDOW], cx                         ; 094E4  0x2E, 0x87, 0x0E, 0x20, 0x29
+  xchg [cs:mouse_pos_x], ax                                ; 094DA  0x2E, 0x87, 0x06, 0x1C, 0x29
+  xchg [cs:mouse_delta_x], bx                              ; 094DF  0x2E, 0x87, 0x1E, 0x1E, 0x29
+  xchg [cs:mouse_delta_y], cx                              ; 094E4  0x2E, 0x87, 0x0E, 0x20, 0x29
   popf                                         ; 094E9  0x9D
   ret                                          ; 094EA  0xC3
 
 sub_094EB:                                     ; 094EB
   db 0x8A, 0xE0                                ; 094EB  mov ah, al
-  cmp byte [cs:0x291b + DELTA_WINDOW], 5                      ; 094ED  0x2E, 0x80, 0x3E, 0x1B, 0x29, 0x05
+  cmp byte [cs:mouse_counter], 5                           ; 094ED  0x2E, 0x80, 0x3E, 0x1B, 0x29, 0x05
   jne loc_0952E                                ; 094F3  0x75, 0x39
   and ah, 0xf8                                 ; 094F5  0x80, 0xE4, 0xF8
   cmp ah, 0x80                                 ; 094F8  0x80, 0xFC, 0x80
@@ -4156,11 +4167,11 @@ sub_094EB:                                     ; 094EB
   not al                                       ; 094FD  0xF6, 0xD0
   and al, 7                                    ; 094FF  0x24, 0x07
   jne loc_0950C                                ; 09501  0x75, 0x09
-mov word [cs:0x2922 + DELTA_WINDOW], 2
+mov word [cs:mouse_state], 2
   jmp short loc_09528                          ; 0950A  0xEB, 0x1C
 
 loc_0950C:                                     ; 0950C
-  cmp word [cs:0x2922 + DELTA_WINDOW], 1                      ; 0950C  0x2E, 0x83, 0x3E, 0x22, 0x29, 0x01
+  cmp word [cs:mouse_state], 1                             ; 0950C  0x2E, 0x83, 0x3E, 0x22, 0x29, 0x01
   je loc_0952D                                 ; 09512  0x74, 0x19
   mov ah, 0x20                                 ; 09514  0xB4, 0x20
   test al, 4                                   ; 09516  0xA8, 0x04
@@ -4172,10 +4183,10 @@ loc_0950C:                                     ; 0950C
 
 loc_09522:                                     ; 09522
   mov al, 1                                    ; 09522  0xB0, 0x01
-  mov [cs:0x2922 + DELTA_WINDOW], ax                          ; 09524  0x2E, 0xA3, 0x22, 0x29
+  mov [cs:mouse_state], ax                                 ; 09524  0x2E, 0xA3, 0x22, 0x29
 
 loc_09528:                                     ; 09528
-  dec byte [cs:0x291b + DELTA_WINDOW]                         ; 09528  0x2E, 0xFE, 0x0E, 0x1B, 0x29
+  dec byte [cs:mouse_counter]                              ; 09528  0x2E, 0xFE, 0x0E, 0x1B, 0x29
 
 loc_0952D:                                     ; 0952D
   ret                                          ; 0952D  0xC3
@@ -4186,49 +4197,49 @@ loc_0952E:                                     ; 0952E
   cmp ah, 0x80                                 ; 09533  0x80, 0xFC, 0x80
   je loc_0957F                                 ; 09536  0x74, 0x47
   db 0x98                                      ; 09538  cwde
-  mov bl, [cs:0x291b + DELTA_WINDOW]                          ; 09539  0x2E, 0x8A, 0x1E, 0x1B, 0x29
+  mov bl, [cs:mouse_counter]                               ; 09539  0x2E, 0x8A, 0x1E, 0x1B, 0x29
   dec bl                                       ; 0953E  0xFE, 0xCB
   je loc_0955D                                 ; 09540  0x74, 0x1B
   dec bl                                       ; 09542  0xFE, 0xCB
   je loc_09556                                 ; 09544  0x74, 0x10
   dec bl                                       ; 09546  0xFE, 0xCB
   je loc_09550                                 ; 09548  0x74, 0x06
-  mov [cs:0x2924 + DELTA_WINDOW], ax                          ; 0954A  0x2E, 0xA3, 0x24, 0x29
+  mov [cs:mouse_step_x], ax                                ; 0954A  0x2E, 0xA3, 0x24, 0x29
   jmp short loc_09528                          ; 0954E  0xEB, 0xD8
 
 loc_09550:                                     ; 09550
-  mov [cs:0x2926 + DELTA_WINDOW], ax                          ; 09550  0x2E, 0xA3, 0x26, 0x29
+  mov [cs:mouse_step_y], ax                                ; 09550  0x2E, 0xA3, 0x26, 0x29
   jmp short loc_09528                          ; 09554  0xEB, 0xD2
 
 loc_09556:                                     ; 09556
-  add [cs:0x2924 + DELTA_WINDOW], ax                          ; 09556  0x2E, 0x01, 0x06, 0x24, 0x29
+  add [cs:mouse_step_x], ax                                ; 09556  0x2E, 0x01, 0x06, 0x24, 0x29
   jmp short loc_09528                          ; 0955B  0xEB, 0xCB
 
 loc_0955D:                                     ; 0955D
-  add ax, [cs:0x2926 + DELTA_WINDOW]                          ; 0955D  0x2E, 0x03, 0x06, 0x26, 0x29
-  add [cs:0x2920 + DELTA_WINDOW], ax                          ; 09562  0x2E, 0x01, 0x06, 0x20, 0x29
-  mov ax, [cs:0x2924 + DELTA_WINDOW]                          ; 09567  0x2E, 0xA1, 0x24, 0x29
-  add [cs:0x291e + DELTA_WINDOW], ax                          ; 0956B  0x2E, 0x01, 0x06, 0x1E, 0x29
-  mov ax, [cs:0x2922 + DELTA_WINDOW]                          ; 09570  0x2E, 0xA1, 0x22, 0x29
-  mov [cs:0x291c + DELTA_WINDOW], ax                          ; 09574  0x2E, 0xA3, 0x1C, 0x29
-  mov byte [cs:0x291b + DELTA_WINDOW], 5                      ; 09578  0x2E, 0xC6, 0x06, 0x1B, 0x29, 0x05
+  add ax, [cs:mouse_step_y]                                ; 0955D  0x2E, 0x03, 0x06, 0x26, 0x29
+  add [cs:mouse_delta_y], ax                               ; 09562  0x2E, 0x01, 0x06, 0x20, 0x29
+  mov ax, [cs:mouse_step_x]                                ; 09567  0x2E, 0xA1, 0x24, 0x29
+  add [cs:mouse_delta_x], ax                               ; 0956B  0x2E, 0x01, 0x06, 0x1E, 0x29
+  mov ax, [cs:mouse_state]                                 ; 09570  0x2E, 0xA1, 0x22, 0x29
+  mov [cs:mouse_pos_x], ax                                 ; 09574  0x2E, 0xA3, 0x1C, 0x29
+  mov byte [cs:mouse_counter], 5                           ; 09578  0x2E, 0xC6, 0x06, 0x1B, 0x29, 0x05
   ret                                          ; 0957E  0xC3
 
 loc_0957F:                                     ; 0957F
-  mov byte [cs:0x291b + DELTA_WINDOW], 5                      ; 0957F  0x2E, 0xC6, 0x06, 0x1B, 0x29, 0x05
+  mov byte [cs:mouse_counter], 5                           ; 0957F  0x2E, 0xC6, 0x06, 0x1B, 0x29, 0x05
   jmp near sub_094EB                           ; 09585  0xE9, 0x63, 0xFF
 
 sub_09588:                                     ; 09588
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]                          ; 09588  0x2E, 0x8B, 0x1E, 0x58, 0x2B
+  mov bx, [cs:xios4_cur_window_ptr]                          ; 09588  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   cmp byte [bx + 0x83], 0                      ; 0958D  0x80, 0xBF, 0x83, 0x00, 0x00
   je loc_095CA                                 ; 09592  0x74, 0x36
   test byte [bx + 0x6b], 4                     ; 09594  0xF6, 0x47, 0x6B, 0x04
   jne loc_095CA                                ; 09598  0x75, 0x30
-  cmp byte [cs:0x2a60 + DELTA_WINDOW], 0xff                   ; 0959A  0x2E, 0x80, 0x3E, 0x60, 0x2A, 0xFF
+  cmp byte [cs:kbd_disabled_flag], 0xff                    ; 0959A  0x2E, 0x80, 0x3E, 0x60, 0x2A, 0xFF
   je loc_095CA                                 ; 095A0  0x74, 0x28
-  dec word [cs:0x2a5e + DELTA_WINDOW]                         ; 095A2  0x2E, 0xFF, 0x0E, 0x5E, 0x2A
+  dec word [cs:kbd_buf_tail]                               ; 095A2  0x2E, 0xFF, 0x0E, 0x5E, 0x2A
   jne loc_095CA                                ; 095A7  0x75, 0x21
-  mov byte [cs:0x2a60 + DELTA_WINDOW], 0xff                   ; 095A9  0x2E, 0xC6, 0x06, 0x60, 0x2A, 0xFF
+  mov byte [cs:kbd_disabled_flag], 0xff                    ; 095A9  0x2E, 0xC6, 0x06, 0x60, 0x2A, 0xFF
   call sub_08972                               ; 095AF  0xE8, 0xC0, 0xF3
   mov ax, 0x61ec + DELTA_TAIL                               ; 095B2  0xB8, 0xEC, 0x61
   call sub_09621                               ; 095B5  0xE8, 0x69, 0x00
@@ -4241,26 +4252,29 @@ loc_095CA:                                     ; 095CA
 
 sub_095CB:                                     ; 095CB
   push bx                                      ; 095CB  0x53
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]                          ; 095CC  0x2E, 0x8B, 0x1E, 0x58, 0x2B
+  mov bx, [cs:xios4_cur_window_ptr]                          ; 095CC  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   cmp byte [bx + 0x83], 0                      ; 095D1  0x80, 0xBF, 0x83, 0x00, 0x00
   jne loc_095DA                                ; 095D6  0x75, 0x02
   pop bx                                       ; 095D8  0x5B
   ret                                          ; 095D9  0xC3
 
 loc_095DA:                                     ; 095DA
-  mov bx, [cs:0x2a5c + DELTA_WINDOW]                          ; 095DA  0x2E, 0x8B, 0x1E, 0x5C, 0x2A
-  mov [cs:0x2a5e + DELTA_WINDOW], bx                          ; 095DF  0x2E, 0x89, 0x1E, 0x5E, 0x2A
+  mov bx, [cs:kbd_buf_head]                                ; 095DA  0x2E, 0x8B, 0x1E, 0x5C, 0x2A
+  mov [cs:kbd_buf_tail], bx                                ; 095DF  0x2E, 0x89, 0x1E, 0x5E, 0x2A
   push dx                                      ; 095E4  0x52
   xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 095E5  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
-  mov bx, [cs:0x2b58 + DELTA_WINDOW]                          ; 095EB  0x2E, 0x8B, 0x1E, 0x58, 0x2B
+  mov bx, [cs:xios4_cur_window_ptr]                          ; 095EB  0x2E, 0x8B, 0x1E, 0x58, 0x2B
   call sub_08625                               ; 095F0  0xE8, 0x32, 0xF0
   pop dx                                       ; 095F3  0x5A
   pop bx                                       ; 095F4  0x5B
-  mov byte [cs:0x2a60 + DELTA_WINDOW], 0                      ; 095F5  0x2E, 0xC6, 0x06, 0x60, 0x2A, 0x00
+  mov byte [cs:kbd_disabled_flag], 0                       ; 095F5  0x2E, 0xC6, 0x06, 0x60, 0x2A, 0x00
   ret                                          ; 095FB  0xC3
-  test [bp + di], al                           ; 095FC  0x84, 0x03
-  test [bp + di], al                           ; 095FE  0x84, 0x03
-  db 0x00                                      ; 09600  .
+kbd_buf_head:
+  dw 0x0384
+kbd_buf_tail:
+  dw 0x0384
+kbd_disabled_flag:
+  db 0x00
 
 xios_crt_trigger_ca:                           ; 09601
   mov al, 1                                    ; 09601  0xB0, 0x01
@@ -4386,11 +4400,14 @@ loc_096F0:                                     ; 096F0
 ; =============================================================================
 xios4_vir_con_mode:
   db 0x00, NUM_VIR_CONS
-  db 0x03, 0x02, 0x01, 0x00
-xios4_active_vir_con equ xios4_vir_con_mode + 5
-xios4_cur_window_ptr equ xios4_vir_con_mode + 7
+xios4_vir_con_mode_p2:
+  db 0x03, 0x02, 0x01
+xios4_active_vir_con:
   db 0x00
+  db 0x00
+xios4_cur_window_ptr:
   dw ccb_console_0
+xios4_window_clip_flag:
   db 0xff
 
 window_zorder_list:
