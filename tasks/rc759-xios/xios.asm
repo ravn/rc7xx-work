@@ -59,9 +59,36 @@ cmd_header:
 section text vstart=0 align=1
 xios_code_base:
 xios_prefix:
-  times 0x8c db 0
+  times 0x38 db 0
+sysdat_dispatcher:
+  dw 0, 0
+  times (0x44 - 0x3c) db 0
+sysdat_endseg:
+  dw 0
+  times (0x4b - 0x46) db 0
+sysdat_srchdisk:
+  db 0
+  times (0x50 - 0x4c) db 0
+sysdat_tempdisk:
+  db 0
+  times (0x58 - 0x51) db 0
+sysdat_mdul:
+  dw 0
+sysdat_mfl:
+  dw 0
+  times (0x68 - 0x5c) db 0
+sysdat_rlr:
+  dw 0
+  times (0x88 - 0x6a) db 0
+sysdat_nlstdev:
+  db 0
+  times (0x8c - 0x89) db 0
+sysdat_openvec:
   dw 0xffff
-  times (3072 - 0x8e) db 0
+  times (0xa4 - 0x8e) db 0
+sysdat_err_intercept:
+  dw 0, 0
+  times (3072 - 0xa8) db 0
 
 ; -----------------------------------------------------------------------------
 ; XIOS Driver Code

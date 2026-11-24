@@ -25,7 +25,7 @@
 - **[Token-efficiency](feedback_token_efficiency.md) — HARD: no raw logs in context; long builds in background; handoff file at boundaries**
 - **[Show thinking — TIERED](feedback_show_thinking.md) — HARD: full narration at decisions/forks/surprises; one-liners in mechanical loops**
 - **[State certainty](feedback_state_certainty.md) — HARD: fact only if verified this session; surface ALL doubt**
-- [Style](feedback_style.md) — tænk højt, ingen undskyldninger eller komplimenter, ingen aforismer, record prompts
+- [Style](feedback_style.md) — fakta (klar og koncis), ingen ros/komplimenter, ingen undskyldninger, tænk højt
 - [Suggest model switch](feedback_suggest_model_switch.md) — flag Opus/Sonnet fit before and mid-task
 
 ## 2. Before any commit / PR / issue
