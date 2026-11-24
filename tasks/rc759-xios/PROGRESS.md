@@ -966,3 +966,13 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
       - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+
+16. **Indførelse af `rasm86.inc` Kompatibilitetsmakroer (2026-11-24)**:
+    - Digital Researchs RASM-86 assembler (brugt til det originale XIOS) genererer modsat direction-bit (`d=1`) for to-registers 8086-instruktioner i forhold til NASMs standard (`d=0`).
+    - Oprettet `tasks/rc759-xios/rasm86.inc` med symbolske makroer for register-register instruktioner (`add_bp_bx`, `add_dx_bx`, `sub_cx_dx`, `sub_bx_dx`, `cmp_ch_al`, `mov_bp_dx`, `xor_di_di`, osv.).
+    - Erstattet 240 rå `db 0x..` instruktioner i `xios_code.asm` med disse symbolske makroer, så koden fremstår som regulære assembly-instruktioner.
+    - **Arkitekturmål for dispatch-tabeller**: Når samtlige sektioner (inkl. Sektion 6 & 7) er forenede, skal `int28h_jump_table` og CCP/M-86 dispatch-tabellen være 100% fri for `%if` og udelukkende pege på de symbolske funktionslabels, som NASM automatisk relokerer for henholdsvis XIOS1 og XIOS4.
+    - Fuld verifikation:
+      - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
