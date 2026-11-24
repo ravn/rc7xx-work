@@ -52,6 +52,11 @@ CCB_COL             equ 0x64                   ; Current cursor column (0-based)
 CCB_ROW             equ 0x66                   ; Current cursor row (0-based)
 CCB_ATTR            equ 0x6a                   ; Cursor / display attribute byte
 CCB_FLAGS           equ 0x6b                   ; Console control & mode flags
+CCB_SCROLL_MODE     equ 0x71                   ; Console scroll / line mode
+CCB_CURSOR_LINES    equ 0x72                   ; Cursor start scanline (word 0x72 = start/end scanlines)
+CCB_CURSOR_HEIGHT   equ 0x73                   ; Cursor end scanline / height
+CCB_BLINK_FLAG      equ 0x74                   ; Cursor blink enable flag
+CCB_VIDEO_MODE      equ 0x7f                   ; Background color / video mode
 CCB_CHAR_ATTR       equ 0x80                   ; Character attribute byte
 CCB_COLOR_MODE      equ 0x83                   ; Virtual console color/mode setting
 
@@ -793,7 +798,7 @@ loc_07E02:                                     ; 07E02
   ret                                          ; 07E06  0xC3
 
 vmenu_action_item_1:
-  mov [bx + 0x74], al                          ; 07E07  0x88, 0x47, 0x74
+  mov [bx + CCB_BLINK_FLAG], al                          ; 07E07  0x88, 0x47, 0x74
   jmp near sub_096CF                           ; 07E0A
 
 vmenu_action_item_2:
@@ -801,16 +806,16 @@ vmenu_action_item_2:
   mov cl, 0xa                                  ; 07E0F  0xB1, 0x0A
 
 sub_7e11:                                      ; 07E11
-  mov [bx + 0x72], cx                          ; 07E11  0x89, 0x4F, 0x72
+  mov [bx + CCB_CURSOR_LINES], cx                          ; 07E11  0x89, 0x4F, 0x72
   jmp near sub_096CF                           ; 07E14
 
 vmenu_action_item_3:
-  mov [bx + 0x71], al                          ; 07E17  0x88, 0x47, 0x71
+  mov [bx + CCB_SCROLL_MODE], al                          ; 07E17  0x88, 0x47, 0x71
   mov [cs:xios_con_var_2c08], al           ; 07E1A
   ret                                          ; 07E1E  0xC3
 
 vmenu_action_item_4:
-  mov [bx + 0x7f], al                          ; 07E1F  0x88, 0x47, 0x7F
+  mov [bx + CCB_VIDEO_MODE], al                          ; 07E1F  0x88, 0x47, 0x7F
   ret                                          ; 07E22  0xC3
 
 ; -----------------------------------------------------------------------------
@@ -848,28 +853,40 @@ vmenu_action_item_5:
 ; Sektion 3B.2: Skærmtrimningsmenu Tabeller & Terminal/Konsol Output (CS:12A7..1500)
 ; Fælles for både XIOS1 og XIOS4 med parametriserede tabeller og symbolske instruktioner
 ; =============================================================================
+; =============================================================================
+; Virtuel Menu Tabeller og Element-definitioner
+; Format for hvert menupunkt (7 bytes foran options-listen):
+;   db <attr_color>     ; [di - 7] = Tekstfarve / skærmattribut for punktets værdi
+;   dw <ccb_offset>     ; [di - 6] = Forskydning i aktuel CCB for den styrede parameter
+;   dw <prompt_str>     ; [di - 4] = Pointer til menupunktets ledetekst
+;   dw <action_handler> ; [di - 2] = Handler der kaldes når værdien ændres
+;   dw opt1, opt2...    ; [di + 0] = Nul-termineret liste af valgmulighed-strenge
+; =============================================================================
 vmenu_item_table:                               ; 07E47 / 000006EE (Menupunkt-tabel)
   dw vmenu_item_2_options
   dw vmenu_item_1_options
   dw vmenu_item_3_options
   dw vmenu_item_5_options
   dw vmenu_item_4_options
+  dw 0x0000                                    ; Nul-terminering / padding (2 bytes)
 
-; Item 1: Normal/Invers
+; Item 1: Markør blink (Ja/Nej)
 vmenu_item_1:
-  db 0x00, 0x00, 0x04, 0x74, 0x00
-  dw xios_vmenu_str_blink
-  dw vmenu_action_item_1
+  db 0x04                                      ; Farveattribut: Rød (4)
+  dw CCB_BLINK_FLAG                            ; CCB offset 0x74: Markør blink-status
+  dw xios_vmenu_str_blink                      ; Prompt: "Blink   "
+  dw vmenu_action_item_1                       ; Handling: opdater CCB[0x74]
 vmenu_item_1_options:
   dw xios_vmenu_opt_no
   dw xios_vmenu_opt_yes
-  db 0x00, 0x00
+  dw 0x0000                                    ; Afslutning af optionsliste
 
-; Item 2: Markør Blinker
+; Item 2: Markør højde / scanlines (1..10)
 vmenu_item_2:
-  db 0x02, 0x73, 0x00
-  dw xios_vmenu_str_height
-  dw vmenu_action_item_2
+  db 0x02                                      ; Farveattribut: Grøn (2)
+  dw CCB_CURSOR_HEIGHT                         ; CCB offset 0x73: Markør scanline-højde
+  dw xios_vmenu_str_height                     ; Prompt: "Højde   "
+  dw vmenu_action_item_2                       ; Handling: opdater CCB[0x72..0x73]
 vmenu_item_2_options:
   dw vmenu_num_str_10
   dw vmenu_num_str_9
@@ -881,23 +898,25 @@ vmenu_item_2_options:
   dw vmenu_num_str_3
   dw vmenu_num_str_2
   dw vmenu_num_str_1
-  db 0x00, 0x00
+  dw 0x0000                                    ; Afslutning af optionsliste
 
-; Item 3: Understregning
+; Item 3: Rulning / scroll (Ja/Nej)
 vmenu_item_3:
-  db 0x04, 0x71, 0x00
-  dw xios_vmenu_str_scroll
-  dw vmenu_action_item_3
+  db 0x04                                      ; Farveattribut: Rød (4)
+  dw CCB_SCROLL_MODE                           ; CCB offset 0x71: Rulnings-tilstand
+  dw xios_vmenu_str_scroll                     ; Prompt: "Rulning "
+  dw vmenu_action_item_3                       ; Handling: opdater CCB[0x71]
 vmenu_item_3_options:
   dw xios_vmenu_opt_no
   dw xios_vmenu_opt_yes
-  db 0x00, 0x00
+  dw 0x0000                                    ; Afslutning af optionsliste
 
-; Item 4: Baggrund
+; Item 4: Baggrundsfarve (Sort..Hvid)
 vmenu_item_4:
-  db 0x07, 0x7f, 0x00
-  dw xios_vmenu_str_color
-  dw vmenu_action_item_4
+  db 0x07                                      ; Farveattribut: Hvid (7)
+  dw CCB_VIDEO_MODE                            ; CCB offset 0x7F: Baggrundsfarve
+  dw xios_vmenu_str_color                      ; Prompt: "Farve   "
+  dw vmenu_action_item_4                       ; Handling: opdater CCB[CCB_VIDEO_MODE]
 vmenu_item_4_options:
   dw xios_vmenu_opt_sort
   dw xios_vmenu_opt_blue
@@ -907,13 +926,14 @@ vmenu_item_4_options:
   dw xios_vmenu_opt_magenta
   dw xios_vmenu_opt_yellow
   dw xios_vmenu_opt_white
-  db 0x00, 0x00
+  dw 0x0000                                    ; Afslutning af optionsliste
 
-; Item 5: Tastatur
+; Item 5: Konsol-skærmblanking / timeout
 vmenu_item_5:
-  db 0x02, 0x83, 0x00
-  dw xios_vmenu_str_blank
-  dw vmenu_action_item_5
+  db 0x02                                      ; Farveattribut: Grøn (2)
+  dw CCB_COLOR_MODE                            ; CCB offset 0x83: Blanking / tilstand
+  dw xios_vmenu_str_blank                      ; Prompt: "Blank   "
+  dw vmenu_action_item_5                       ; Handling: opdater CCB[CCB_COLOR_MODE]
 vmenu_item_5_options:
   dw vmenu_num_str_space
   dw vmenu_num_str_1
@@ -7548,11 +7568,11 @@ mov al, [cs:xios_con_var_2bff]                          ; 0BAFD  0x2E, 0xA0, 0xF
   mov [bx + CCB_CHAR_ATTR], al                          ; 0BB01  0x88, 0x87, 0x80, 0x00
   or byte [bx + CCB_FLAGS], 8                       ; 0BB05  0x80, 0x4F, 0x6B, 0x08
   shr al, 4                                    ; 0BB09  0xC0, 0xE8, 0x04
-  mov [bx + 0x7f], al                          ; 0BB0C  0x88, 0x47, 0x7F
+  mov [bx + CCB_VIDEO_MODE], al                          ; 0BB0C  0x88, 0x47, 0x7F
 mov al, [cs:xios_con_var_2c08]                          ; 0BB0F  0x2E, 0xA0, 0x08, 0x2C
-  mov [bx + 0x71], al                          ; 0BB13  0x88, 0x47, 0x71
+  mov [bx + CCB_SCROLL_MODE], al                          ; 0BB13  0x88, 0x47, 0x71
 mov al, [cs:xios_con_var_2bfd]                          ; 0BB16  0x2E, 0xA0, 0xFD, 0x2B
-  mov [bx + 0x74], al                          ; 0BB1A  0x88, 0x47, 0x74
+  mov [bx + CCB_BLINK_FLAG], al                          ; 0BB1A  0x88, 0x47, 0x74
 mov ax, [cs:fdc_dpb_current_format]                          ; 0BB1D  0x2E, 0xA1, 0xDC, 0x5F
   mov [bx + 0x72], ax                          ; 0BB21  0x89, 0x47, 0x72
   pop di                                       ; 0BB24  0x5F
