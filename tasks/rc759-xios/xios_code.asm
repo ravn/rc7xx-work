@@ -8,16 +8,14 @@
   %define DELTA_TAIL    3668
 %define DELTA_TAIL_PRE 3669
   %define xios_screen_state_buf (xios4_clip_map + 0x780)
-  %define DELTA_49FA    859
-%else
+  %else
   %define XT_ALLOC_PARAS 0x01F4                 ; 500 paragraffer unlinked bufferplads til 1 konsol
   %define ZORDER_LIST_SIZE 2                    ; 2^1 = 2 kombinationer for 1 konsol
   %define DELTA_TABLES  0
   %define DELTA_TAIL    0
 %define DELTA_TAIL_PRE 0
   %define xios_screen_state_buf xios1_screen_state_buf
-  %define DELTA_49FA    0
-%endif
+  %endif
 
 ; =============================================================================
 ; RC759 Piccoline XIOS Driver (Master Source)
@@ -1081,13 +1079,13 @@ loc_07EF5:                                     ; 07EF5
   mov cl, 0xa1                                 ; 07F03  0xB1, 0xA1
   call rtm_timer_wait2                         ; 07F05  0xE8, 0xCB, 0xF9
   pop dx                                       ; 07F08  0x5A
-  mov si, 0x49e3 + DELTA_49FA
+  mov si, boot_msg_printer_reserved
   or_ax_ax                                     ; 07F0C  or ax, ax
   jne loc_07F59                                ; 07F0E  0x75, 0x49
   push dx                                      ; 07F10  0x52
   call sub_0AD30                               ; 07F11  0xE8, 0x1C, 0x2E
   pop dx                                       ; 07F14  0x5A
-  mov si, 0x49cd + DELTA_49FA
+  mov si, boot_msg_printer_not_ready
   or_al_al                                     ; 07F18  or al, al
   je loc_07F59                                 ; 07F1A  0x74, 0x3D
   mov cl, 0xc                                  ; 07F1C  0xB1, 0x0C
@@ -2994,7 +2992,7 @@ xios_int28_fn_00_graphics_mode:              ; 08E55
   je loc_08E79                                 ; 08E62  0x74, 0x15
   cmp dl, [cs:0x2c4d + DELTA_TABLES]                          ; 08E64  0x2E, 0x3A, 0x16, 0x4D, 0x2C
   je loc_08E79                                 ; 08E69  0x74, 0x0E
-  mov si, 0x49fa + DELTA_49FA                               ; 08E6B  0xBE, 0xFA, 0x49
+  mov si, boot_msg_graphics_reserved                               ; 08E6B  0xBE, 0xFA, 0x49
   call sub_08DF1                               ; 08E6E  0xE8, 0x80, 0xFF
   mov cl, 0                                    ; 08E71  0xB1, 0x00
   call rtm_timer_wait2                         ; 08E73  0xE8, 0x5D, 0xEA
@@ -6833,7 +6831,7 @@ sub_0AC5F:                                     ; 0AC5F
   pop ds                                       ; 0AC6F  0x1F
   mov si, [cs:0x68]                            ; 0AC70  0x2E, 0x8B, 0x36, 0x68, 0x00
   mov es, [si + 0x10]                          ; 0AC75  0x8E, 0x44, 0x10
-  mov si, 0x4a15 + DELTA_49FA                               ; 0AC78  0xBE, 0x15, 0x4A
+  mov si, boot_msg_printer_retry                               ; 0AC78  0xBE, 0x15, 0x4A
   call sub_08DF1                               ; 0AC7B  0xE8, 0x73, 0xE1
   pop dx                                       ; 0AC7E  0x5A
   pop cx                                       ; 0AC7F  0x59
@@ -7719,13 +7717,17 @@ sub_0B341:                                     ; 0B341
   db_dk " ** Venter på fælles skriver1"
   db_dk "** Kun 1 konsol - Vinduesstyring ikke installeret"  ; 0B53E
 %endif
+boot_msg_printer_not_ready:
   db 0x15                                      ; 0B570
   db_dk " ** Skriver ikke klar"
+boot_msg_printer_reserved:
   db 0x16                                      ; 0B586
   db_dk " ** Skriver Reserveret"
+boot_msg_graphics_reserved:
   db 0x1A                                      ; 0B59D
-  db_dk " ** Grafikskærm reserveret2"
-  db_dk " ** Skriver ikke klar. 1=gentag,2=afbryd,3=ignorer"  ; 0B5B6
+  db_dk " ** Grafikskærm reserveret"
+boot_msg_printer_retry:
+  db_dk "2 ** Skriver ikke klar. 1=gentag,2=afbryd,3=ignorer"  ; 0B5B6
 
 ; =============================================================================
 ; RC759 Piccoline Boot Banner & Hardware Rapport (0x0B5E1 - 0x0B79D)
@@ -7733,25 +7735,35 @@ sub_0B341:                                     ; 0B341
 xios_boot_banner:
   db_dk "PICCOLINE XIOS version 2.3 - Marts 1985 "  ; 0B5E1
   db 0x0D, 0x0A, 0x0A
+boot_msg_main_memory:
   db_dk "      K bytes hoved lager"            ; 0B613
   db 0x0D, 0x0A, 0
+boot_msg_user_memory:
   db_dk "      K bytes bruger lager"           ; 0B62F
   db 0x0D, 0x0A, 0
+boot_msg_floppy_drives:
   db_dk "      Diskette station(er)"           ; 0B64C
   db 0x0D, 0x0A, 0
+boot_msg_winchester_drives:
   db_dk "      Winchester disk station(er)"    ; 0B669
   db 0x0D, 0x0A, 0
+boot_msg_data_buffers:
   db_dk "      Data buffer(e)"                 ; 0B68D
   db 0x0D, 0x0A, 0
+boot_msg_dir_buffers:
   db_dk "      Katalog buffer(e)"              ; 0B6A4
   db 0x0D, 0x0A, 0
+boot_msg_mdisk_kbytes:
   db_dk "      K bytes M-disk"                 ; 0B6BE
   db 0x0D, 0x0A, 0
+boot_msg_mdisk_low_mem:
   db_dk "  *** For lidt lager til M-disk"      ; 0B6DA
   db 0x0D, 0x0A, 0
+boot_msg_crlf_lan:
   db 0x0D, 0x0A                                ; 0B6F7
   db_dk "Lokalnet adaptor installeret"
   db 0x0D, 0x0A, 0
+boot_msg_crlf_fpu:
   db 0x0D, 0x0A                                ; 0B718
   db_dk "Numerisk Regneenhed installeret"
   db 0x0D, 0x0A, 0
@@ -8659,9 +8671,9 @@ mov bx, 0x4225 + DELTA_TABLES                               ; 0C0AF  0xBB, 0x25,
 mov [cs:0x593f + DELTA_TAIL_PRE], ax                          ; 0C0C0  0x2E, 0xA3, 0x3F, 0x59
 mov bx, [cs:0x593d + DELTA_TAIL_PRE]                          ; 0C0C4  0x2E, 0x8B, 0x1E, 0x3D, 0x59
 sub [cs:0x593f + DELTA_TAIL_PRE], bx                          ; 0C0C9  0x2E, 0x29, 0x1E, 0x3F, 0x59
-mov di, 0x4a73 + DELTA_49FA                               ; 0C0CE  0xBF, 0x73, 0x4A
+mov di, boot_msg_main_memory                               ; 0C0CE  0xBF, 0x73, 0x4A
   call sub_0C468                               ; 0C0D1  0xE8, 0x94, 0x03
-mov si, 0x4a48 + DELTA_49FA                               ; 0C0D4  0xBE, 0x48, 0x4A
+mov si, xios_boot_banner                               ; 0C0D4  0xBE, 0x48, 0x4A
   call sub_0C43F                               ; 0C0D7  0xE8, 0x65, 0x03
 mov bx, 0x4225 + DELTA_TABLES                               ; 0C0DA  0xBB, 0x25, 0x42
   mov al, [bx + 0x13]                          ; 0C0DD  0x8A, 0x47, 0x13
@@ -8674,9 +8686,9 @@ mov bx, 0x3932 + DELTA_TABLES                               ; 0C0EA  0xBB, 0x32,
   mov byte [bx + 1], 0                         ; 0C0ED  0xC6, 0x47, 0x01, 0x00
 
 loc_0C0F1:                                     ; 0C0F1
-mov di, 0x4aac + DELTA_49FA                               ; 0C0F1  0xBF, 0xAC, 0x4A
+mov di, boot_msg_floppy_drives                               ; 0C0F1  0xBF, 0xAC, 0x4A
   call sub_0C468                               ; 0C0F4  0xE8, 0x71, 0x03
-mov si, 0x4aac + DELTA_49FA                               ; 0C0F7  0xBE, 0xAC, 0x4A
+mov si, boot_msg_floppy_drives                               ; 0C0F7  0xBE, 0xAC, 0x4A
   call sub_0C43F                               ; 0C0FA  0xE8, 0x42, 0x03
 
 loc_0C0FD:                                     ; 0C0FD
@@ -8686,9 +8698,9 @@ mov al, [cs:0x5066 + DELTA_TAIL_PRE]                          ; 0C103  0x2E, 0xA
   sub al, [bx + 0x13]                          ; 0C107  0x2A, 0x47, 0x13
   je loc_0C11A                                 ; 0C10A  0x74, 0x0E
   xor_ah_ah                                    ; 0C10C  xor ah, ah
-mov di, 0x4ac9 + DELTA_49FA                               ; 0C10E  0xBF, 0xC9, 0x4A
+mov di, boot_msg_winchester_drives                               ; 0C10E  0xBF, 0xC9, 0x4A
   call sub_0C468                               ; 0C111  0xE8, 0x54, 0x03
-mov si, 0x4ac9 + DELTA_49FA                               ; 0C114  0xBE, 0xC9, 0x4A
+mov si, boot_msg_winchester_drives                               ; 0C114  0xBE, 0xC9, 0x4A
   call sub_0C43F                               ; 0C117  0xE8, 0x25, 0x03
 
 loc_0C11A:                                     ; 0C11A
@@ -8709,7 +8721,7 @@ mov ax, [cs:0x593f + DELTA_TAIL_PRE]                          ; 0C12B  0x2E, 0xA
   add bx, 0x40                                 ; 0C143  0x83, 0xC3, 0x40
   db 0x3B, 0xC3                                ; 0C146  cmp ax, bx
   ja loc_0C153                                 ; 0C148  0x77, 0x09
-mov si, 0x4b35 + DELTA_49FA                               ; 0C14A  0xBE, 0x35, 0x4B
+mov si, boot_msg_mdisk_low_mem                               ; 0C14A  0xBE, 0x35, 0x4B
   call sub_0C43F                               ; 0C14D  0xE8, 0xEF, 0x02
   jmp near loc_0C1A5                           ; 0C150  0xE9, 0x52, 0x00
 
@@ -8729,9 +8741,9 @@ mov bx, 0x4256 + DELTA_TABLES                               ; 0C160  0xBB, 0x56,
   dec ax                                       ; 0C170  0x48
 mov [cs:0x3b64 + DELTA_TABLES], ax                          ; 0C171  0x2E, 0xA3, 0x64, 0x3B
   inc ax                                       ; 0C175  0x40
-mov di, 0x4b1e + DELTA_49FA                               ; 0C176  0xBF, 0x1E, 0x4B
+mov di, boot_msg_mdisk_kbytes                               ; 0C176  0xBF, 0x1E, 0x4B
   call sub_0C468                               ; 0C179  0xE8, 0xEC, 0x02
-mov si, 0x4b1e + DELTA_49FA                               ; 0C17C  0xBE, 0x1E, 0x4B
+mov si, boot_msg_mdisk_kbytes                               ; 0C17C  0xBE, 0x1E, 0x4B
   call sub_0C43F                               ; 0C17F  0xE8, 0xBD, 0x02
   mov byte [cs:0x50], 0xc                      ; 0C182  0x2E, 0xC6, 0x06, 0x50, 0x00, 0x0C
 mov bx, 0x3932 + DELTA_TABLES                               ; 0C188  0xBB, 0x32, 0x39
@@ -8893,9 +8905,9 @@ mov bx, 0x3bc2 + DELTA_TABLES                               ; 0C2C9  0xBB, 0xC2,
   xor_ah_ah                                    ; 0C2D2  xor ah, ah
   or_ax_ax                                     ; 0C2D4  or ax, ax
   je loc_0C33F                                 ; 0C2D6  0x74, 0x67
-mov di, 0x4aed + DELTA_49FA                               ; 0C2D8  0xBF, 0xED, 0x4A
+mov di, boot_msg_data_buffers                               ; 0C2D8  0xBF, 0xED, 0x4A
   call sub_0C468                               ; 0C2DB  0xE8, 0x8A, 0x01
-mov si, 0x4aed + DELTA_49FA                               ; 0C2DE  0xBE, 0xED, 0x4A
+mov si, boot_msg_data_buffers                               ; 0C2DE  0xBE, 0xED, 0x4A
   call sub_0C43F                               ; 0C2E1  0xE8, 0x5B, 0x01
 mov bx, 0x3bb3 + DELTA_TABLES                               ; 0C2E4  0xBB, 0xB3, 0x3B
 mov ax, [cs:0x5941 + DELTA_TAIL_PRE]                          ; 0C2E7  0x2E, 0xA1, 0x41, 0x59
@@ -8924,9 +8936,9 @@ mov bx, 0x3bb3 + DELTA_TABLES                               ; 0C329  0xBB, 0xB3,
   mov [bx + 2], cl                             ; 0C32C  0x88, 0x4F, 0x02
   mov_al_cl                                    ; 0C32F  mov al, cl
   xor_ah_ah                                    ; 0C331  xor ah, ah
-mov di, 0x4b04 + DELTA_49FA                               ; 0C333  0xBF, 0x04, 0x4B
+mov di, boot_msg_dir_buffers                               ; 0C333  0xBF, 0x04, 0x4B
   call sub_0C468                               ; 0C336  0xE8, 0x2F, 0x01
-mov si, 0x4b04 + DELTA_49FA                               ; 0C339  0xBE, 0x04, 0x4B
+mov si, boot_msg_dir_buffers                               ; 0C339  0xBE, 0x04, 0x4B
   call sub_0C43F                               ; 0C33C  0xE8, 0x00, 0x01
 
 loc_0C33F:                                     ; 0C33F
@@ -8987,9 +8999,9 @@ mov ax, [cs:0x593f + DELTA_TAIL_PRE]                          ; 0C3C1  0x2E, 0xA
   mov cl, 6                                    ; 0C3CA  0xB1, 0x06
   shr bx, cl                                   ; 0C3CC  0xD3, 0xEB
   db 0x2B, 0xC3                                ; 0C3CE  sub ax, bx
-mov di, 0x4a8f + DELTA_49FA                               ; 0C3D0  0xBF, 0x8F, 0x4A
+mov di, boot_msg_user_memory                               ; 0C3D0  0xBF, 0x8F, 0x4A
   call sub_0C468                               ; 0C3D3  0xE8, 0x92, 0x00
-mov si, 0x4a8f + DELTA_49FA                               ; 0C3D6  0xBE, 0x8F, 0x4A
+mov si, boot_msg_user_memory                               ; 0C3D6  0xBE, 0x8F, 0x4A
   call sub_0C43F                               ; 0C3D9  0xE8, 0x63, 0x00
   db 0x33, 0xC0                                ; 0C3DC  xor ax, ax
 or ax, [cs:0x589d + DELTA_TAIL_PRE]                           ; 0C3DE  0x2E, 0x0B, 0x06, 0x9D, 0x58
@@ -9007,7 +9019,7 @@ mov ax, 0x46c0 + DELTA_TABLES                               ; 0C3EF  0xB8, 0xC0,
   db 0x2E, 0xC7, 0x06, 0xA0, 0x00, 0x94, 0x00  ; 0C404  mov word [cs:0xa0], 0x94
   mov [cs:0xa6], cs                            ; 0C40B  0x2E, 0x8C, 0x0E, 0xA6, 0x00
 mov word [cs:0xa4], 0x46c0 + DELTA_TABLES; 0C410  mov word [cs:0xa4], 0x46c0
-mov si, 0x4b78 + DELTA_49FA                               ; 0C417  0xBE, 0x78, 0x4B
+mov si, boot_msg_crlf_fpu                               ; 0C417  0xBE, 0x78, 0x4B
   call sub_0C43F                               ; 0C41A  0xE8, 0x22, 0x00
   mov ax, 0x80                                 ; 0C41D  0xB8, 0x80, 0x00
 
@@ -9016,7 +9028,7 @@ loc_0C420:                                     ; 0C420
 mov bx, 0x4225 + DELTA_TABLES                               ; 0C421  0xBB, 0x25, 0x42
   cmp byte [bx + 0xd], 0xff                    ; 0C424  0x80, 0x7F, 0x0D, 0xFF
   jne loc_0C430                                ; 0C428  0x75, 0x06
-mov si, 0x4b57 + DELTA_49FA                               ; 0C42A  0xBE, 0x57, 0x4B
+mov si, boot_msg_crlf_lan                               ; 0C42A  0xBE, 0x57, 0x4B
   call sub_0C43F                               ; 0C42D  0xE8, 0x0F, 0x00
 
 loc_0C430:                                     ; 0C430
