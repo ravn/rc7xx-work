@@ -77,56 +77,40 @@ loc_077DA:
 ; Indgang: AL = funktionsnummer (0..13 standard + udvidede funktioner)
 ; =============================================================================
 xios_function_table:
+  dw io_const                                  ; Func  0: Console input status
+  dw io_conin                                  ; Func  1: Console input character
+  dw io_conout                                 ; Func  2: Console output character
+  dw io_listst                                 ; Func  3: List/printer status
+  dw io_list                                   ; Func  4: List/printer output
+  dw io_auxin                                  ; Func  5: AUX/serial input
+  dw io_auxout                                 ; Func  6: AUX/serial output
+  dw io_switch                                 ; Func  7: Switch virtual console
+  dw io_statline                               ; Func  8: Update console status line
+  dw io_seldsk                                 ; Func  9: Select disk drive
+  dw io_read                                   ; Func 10: Read logical disk sector
+  dw io_write                                  ; Func 11: Write logical disk sector
+  dw io_flushbuf                               ; Func 12: Flush disk buffers
+  dw io_poll                                   ; Func 13: Poll hardware device
+  dw xios_int28_stub_ret                       ; Func 14: Uimplementeret
+  dw xios_int28_stub_ret                       ; Func 15: Uimplementeret
 %if NUM_VIR_CONS == 4
-  dw 0x1116                                    ; Func  0: io_const (Console input status)
-  dw 0x1119                                    ; Func  1: io_conin (Console input character)
-  dw 0x1473                                    ; Func  2: io_conout (Console output character)
-  dw 0x451D                                    ; Func  3: io_listst (List/printer status)
-  dw 0x444C                                    ; Func  4: io_list (List/printer output)
-  dw 0x3FDA                                    ; Func  5: io_auxin (AUX/serial input)
-  dw 0x3FDD                                    ; Func  6: io_auxout (AUX/serial output)
-  dw 0x2032                                    ; Func  7: io_switch (Switch virtual console)
-  dw 0x210B                                    ; Func  8: io_statline (Update console status line)
-  dw 0x3108                                    ; Func  9: io_seldsk (Select disk drive)
-  dw 0x3166                                    ; Func 10: io_read (Read logical disk sector)
-  dw 0x3226                                    ; Func 11: io_write (Write logical disk sector)
-  dw 0x32E8                                    ; Func 12: io_flushbuf (Flush disk buffers)
-  dw 0x440E                                    ; Func 13: io_poll (Poll hardware device)
-  dw 0x0D18                                    ; Func 14: Reserveret stub
-  dw 0x0D18                                    ; Func 15: Reserveret stub
-  dw 0x2630                                    ; Func 16: Udvidet funktion (virtual console)
-  dw 0x1451                                    ; Func 17: Udvidet funktion
-  dw 0x2279                                    ; Func 18: Udvidet funktion
-  dw 0x2645                                    ; Func 19: io_auxist (AUX input status)
-  dw 0x2676                                    ; Func 20: Udvidet funktion
-  dw 0x26A6                                    ; Func 21: Udvidet funktion
-  dw 0x26C0                                    ; Func 22: Udvidet funktion
-  dw 0x26C7                                    ; Func 23: Udvidet funktion
-  dw 0x26E9                                    ; Func 24: Udvidet funktion
-  times 5 dw 0x0D18                            ; Func 25..29: Reserveret stubs
-  dw 0x26EA                                    ; Func 30: io_setblank (Screen blanking)
-  times 6 dw 0x0D18                            ; Func 31..36: Reserveret stubs
+  dw xios_fn_16_get_window_ccb                 ; Func 16: Hent vindues-CCB
+  dw xios_fn_17_check_console_event            ; Func 17: Tjek konsol-hændelse
+  dw xios_fn_18_vmenu_cmd                      ; Func 18: Menukommando
+  dw xios4_fn_19_auxist                        ; Func 19: AUX/konsol status
+  dw xios4_fn_20_window_set                    ; Func 20: Vinduesopsætning
+  dw xios4_fn_21_window_config                 ; Func 21: Vindueskonfiguration
+  dw xios4_fn_22_window_mode                   ; Func 22: Vinduestilstand
+  dw xios4_fn_23_window_select                 ; Func 23: Vælg vindue
+  dw xios4_fn_24_window_ret                    ; Func 24: Vindue retur
 %else
-  dw io_const                                  ; Func  0: Console input status (CS:1116h)
-  dw io_conin                                  ; Func  1: Console input character (CS:1119h)
-  dw io_conout                                 ; Func  2: Console output character (CS:142Ch)
-  dw io_listst                                 ; Func  3: List/printer status (CS:4190h)
-  dw io_list                                   ; Func  4: List/printer output (CS:40BFh)
-  dw io_auxin                                  ; Func  5: AUX/serial input (CS:3C4Dh)
-  dw io_auxout                                 ; Func  6: AUX/serial output (CS:3C50h)
-  dw io_switch                                 ; Func  7: Switch virtual console (CS:1FE8h)
-  dw io_statline                               ; Func  8: Update console status line (CS:20C1h)
-  dw io_seldsk                                 ; Func  9: Select disk drive (CS:2D7Bh)
-  dw io_read                                   ; Func 10: Read logical disk sector (CS:2DD9h)
-  dw io_write                                  ; Func 11: Write logical disk sector (CS:2E99h)
-  dw io_flushbuf                               ; Func 12: Flush disk buffers (CS:2F5Bh)
-  dw io_poll                                   ; Func 13: Poll hardware device (CS:4081h)
-  times 5 dw xios_int28_stub_ret               ; Func 14..18: Uimplementerede funktioner (CS:0D18h)
-  dw io_auxist                                 ; Func 19: AUX input status (CS:261Bh)
-  times 10 dw xios_int28_stub_ret              ; Func 20..29: Uimplementerede funktioner (CS:0D18h)
-  dw io_setblank                               ; Func 30: Screen blanking / skærmsluk (CS:264Eh)
-  times 6 dw xios_int28_stub_ret               ; Func 31..36: Uimplementerede funktioner (CS:0D18h)
+  times 3 dw xios_int28_stub_ret               ; Func 16..18: Uimplementeret i XIOS1
+  dw io_auxist                                 ; Func 19: AUX input status
+  times 5 dw xios_int28_stub_ret               ; Func 20..24: Uimplementeret i XIOS1
 %endif
+  times 5 dw xios_int28_stub_ret               ; Func 25..29: Reserveret
+  dw io_setblank                               ; Func 30: Skærmblanking / skærmsluk
+  times 6 dw xios_int28_stub_ret               ; Func 31..36: Reserveret
 
 ; -----------------------------------------------------------------------------
 ; INT 28H Dispatcher (RC759 Udvidet Hardware/BIOS Funktioner)
@@ -1209,6 +1193,8 @@ loc_07F9D:                                     ; 07F9D
   pop ds                                       ; 07FA7  0x1F
   pop dx                                       ; 07FA8  0x5A
   ret                                          ; 07FA9  0xC3
+
+xios_fn_17_check_console_event:
   xor_ah_ah                                    ; 07FAA  xor ah, ah
   mov al, [cs:0x1043]                          ; 07FAC  0x2E, 0xA0, 0x43, 0x10
   cmp cl, 0xfe                                 ; 07FB0  0x80, 0xF9, 0xFE
@@ -2864,6 +2850,8 @@ loc_08DC2:                                     ; 08DC2
   ret                                          ; 08DCC  0xC3
   lodsw                                        ; 08DCD  0xAD
   ret                                          ; 08DCE  0xC3
+
+xios_fn_18_vmenu_cmd:
   mov bx, 0x222d + DELTA_VMENU                               ; 08DCF  0xBB, 0x2D, 0x22
   jmp near loc_08C64                           ; 08DD2  0xE9, 0x8F, 0xFE
 
@@ -3318,6 +3306,8 @@ loc_0919D:                                     ; 0919D
 
 loc_091A5:                                     ; 091A5
   ret                                          ; 091A5  0xC3
+
+xios_fn_16_get_window_ccb:
   mov ax, 0x2b51 + DELTA_WINDOW                               ; 091A6  0xB8, 0x51, 0x2B
   cmp dl, NUM_VIR_CONS                                    ; 091A9  0x80, 0xFA, 0x01
   jae loc_091BA                                ; 091AC  0x73, 0x0C
@@ -3369,6 +3359,8 @@ io_setblank:
   ret                                          ; 091F1  0xC3
 
 %else
+io_auxist:
+xios4_fn_19_auxist:
   db 0x80, 0xF9, 0x03          ; 00001A45  cmp cl,0x3
   db 0x73, 0x11                ; 00001A48  jnc 0x1a5b
   db 0x2E, 0x88, 0x0E, 0x14, 0x2D ; 00001A4A  mov [cs:0x2d14],cl
@@ -3386,6 +3378,8 @@ io_setblank:
   db 0x9C                      ; 00001A6F  pushf
   db 0x2E, 0xFF, 0x1E, 0x38, 0x00 ; 00001A70  call far [cs:0x38]
   db 0xC3                      ; 00001A75  ret
+
+xios4_fn_20_window_set:
   db 0x50                      ; 00001A76  push ax
   db 0xE8, 0xCE, 0x01          ; 00001A77  call 0x1c48
   db 0xE8, 0xAE, 0x00          ; 00001A7A  call 0x1b2b
@@ -3406,6 +3400,8 @@ io_setblank:
   db 0x2E, 0x8B, 0x1E, 0x1B, 0x2D ; 00001A9D  mov bx,[cs:0x2d1b]
   db 0xE8, 0x00, 0xFA          ; 00001AA2  call 0x14a5
   db 0xC3                      ; 00001AA5  ret
+
+xios4_fn_21_window_config:
   db 0xE8, 0x9F, 0x01          ; 00001AA6  call 0x1c48
   db 0xE8, 0x70, 0x00          ; 00001AA9  call 0x1b1c
   db 0x88, 0x77, 0x4C          ; 00001AAC  mov [bx+0x4c],dh
@@ -3415,9 +3411,13 @@ io_setblank:
   db 0xE8, 0x14, 0xF4          ; 00001AB8  call 0xecf
   db 0xC6, 0x47, 0x35, 0x00    ; 00001ABB  mov byte [bx+0x35],0x0
   db 0xC3                      ; 00001ABF  ret
+
+xios4_fn_22_window_mode:
   db 0xE8, 0x85, 0x01          ; 00001AC0  call 0x1c48
   db 0x88, 0x4F, 0x4D          ; 00001AC3  mov [bx+0x4d],cl
   db 0xC3                      ; 00001AC6  ret
+
+xios4_fn_23_window_select:
 sub_01AC7:
   db 0x52                      ; 00001AC7  push dx
   db 0xE8, 0x7D, 0x01          ; 00001AC8  call 0x1c48
@@ -3433,11 +3433,14 @@ sub_01AC7:
   db 0x8B, 0x47, 0x3C          ; 00001AE2  mov ax,[bx+0x3c]
   db 0x5A                      ; 00001AE5  pop dx
   db 0xE9, 0x8D, 0xFF          ; 00001AE6  jmp 0x1a76
+
+xios4_fn_24_window_ret:
   db 0xC3                      ; 00001AE9  ret
+
+io_setblank:
   db 0xB8, 0x01, 0x50          ; 00001AEA  mov ax,0x5001
   db 0xC3                      ; 00001AED  ret
 %endif
-
 sub_091F2:                                     ; 091F2
   mov ax, [bx + 0x4a]                          ; 091F2  0x8B, 0x47, 0x4A
   cmp_dl_al                                    ; 091F5  cmp dl, al
