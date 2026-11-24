@@ -745,12 +745,16 @@ loc_07CCC:
   cmp al, 0x7a                                 ; 07CE4
   je loc_07D2D                                 ; 07CE6
   cmp al, 0x7b                                 ; 07CE8
-  db 0x74                                      ; 07CEA  je
+  db 0x74                                      ; 07CEA  je opcode (overlap: 'je loc_07D2F')
 loc_07CEB:
+  ; Bemærk: Dette er et bevidst bytecode-overlap trick:
+  ; - Hvis der hoppes hertil via 'jle loc_07CEB', udføres 0x4B ('dec bx' i XIOS4)
+  ;   hhv. 0x43 ('inc bx' i XIOS1) før der faldes igennem til 'cmp al, 0x7d'.
+  ; - Hvis 'cmp al, 0x7b' ovenfor matcher, udføres 'je loc_07D2F' (0x74 0x4B i XIOS4 / 0x74 0x43 i XIOS1).
 %if NUM_VIR_CONS == 4
-  db 0x4B                                      ; 0000054B (displacement til loc_07D2F i XIOS4)
+  dec bx                                       ; 0000054B (0x4B: displacement til loc_07D2F / 'dec bx')
 %else
-  inc bx                                       ; 07CEB  0x43 (displacement til loc_07D2F i XIOS1)
+  inc bx                                       ; 07CEB    (0x43: displacement til loc_07D2F / 'inc bx')
 %endif
   cmp al, 0x7d                                 ; 07CEC
   je loc_07D35                                 ; 07CEE (je target_7d)
@@ -800,16 +804,16 @@ loc_07D18:
 
 %if NUM_VIR_CONS == 4
 loc_07D2D:                                     ; 0000058D (XIOS4 konsol switch-tast)
-  mov dl, [cs:0x2d19]
+  mov dl, [cs:xios4_active_vir_con]
   call sub_01AC7
   jmp short loc_07CCC
 
 loc_07D2F:                                     ; 00000597 (XIOS4 virtuel konsol omskifter)
-  cmp byte [cs:0x2d14], 1
+  cmp byte [cs:xios4_vir_con_mode], 1
   jc .skip_switch
   call sub_08C56
   jnz .skip_switch
-  mov byte [cs:0x2d14], 2
+  mov byte [cs:xios4_vir_con_mode], 2
   mov dx, 0x18
   mov [cs:0x1041], dx
   mov byte [cs:0x1043], 0xff
@@ -818,19 +822,16 @@ loc_07D2F:                                     ; 00000597 (XIOS4 virtuel konsol 
   call far [cs:0x38]
 .skip_switch:
   jmp near loc_07CCC
-
-loc_07D32:                                     ; 000005C4
-  call sub_09312
 %else
 loc_07D2D:                                     ; 07D2D
   jmp short loc_07CCC                          ; 07D2D  0xEB, 0x9D
 
 loc_07D2F:                                     ; 07D2F
   jmp near loc_07CCC                           ; 07D2F  0xE9, 0x9A, 0xFF
-
-loc_07D32:                                     ; 07D32
-  call sub_09312                               ; 07D32  0xE8, 0xDD, 0x15
 %endif
+
+loc_07D32:                                     ; Fælles retur til menu-genopfriskning
+  call sub_09312
 
 ; -----------------------------------------------------------------------------
 ; Skærmtrimningsmenu (VMenu / Display Trim Menu)
@@ -3358,7 +3359,7 @@ io_auxist:
 xios4_fn_19_auxist:
   db 0x80, 0xF9, 0x03          ; 00001A45  cmp cl,0x3
   db 0x73, 0x11                ; 00001A48  jnc 0x1a5b
-  db 0x2E, 0x88, 0x0E, 0x14, 0x2D ; 00001A4A  mov [cs:0x2d14],cl
+  db 0x2E, 0x88, 0x0E, 0x14, 0x2D ; 00001A4A  mov [cs:xios4_vir_con_mode], cl
   db 0x80, 0xF9, 0x02          ; 00001A4F  cmp cl,0x2
   db 0x74, 0x21                ; 00001A52  jz 0x1a75
   db 0x2E, 0xC7, 0x06, 0x41, 0x10, 0x05, 0x00 ; 00001A54  mov word [cs:0x1041],0x5
@@ -4595,9 +4596,11 @@ loc_098E3:                                     ; 098E3
   db 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x96, 0xF1, 0xF2, 0xF3, 0x91, 0xF0, 0xFF  ; 0990D  ..............
 
 %else
+xios4_vir_con_mode:
   db 0x00, 0x04                ; 00002114  add [si],al
   db 0x03, 0x02                ; 00002116  add ax,[bp+si]
   db 0x01, 0x00                ; 00002118  add [bx+si],ax
+xios4_active_vir_con equ xios4_vir_con_mode + 5
   db 0x00, 0x2E, 0x2D, 0xFF    ; 0000211A  add [0xff2d],ch
 window_zorder_list:
   db 0x00, 0x00                ; 0000211E  add [bx+si],al
