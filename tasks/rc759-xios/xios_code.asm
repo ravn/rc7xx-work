@@ -1118,21 +1118,13 @@ loc_07EF5:                                     ; 07EF5
   mov cl, 0xa1                                 ; 07F03  0xB1, 0xA1
   call rtm_timer_wait2                         ; 07F05  0xE8, 0xCB, 0xF9
   pop dx                                       ; 07F08  0x5A
-%if NUM_VIR_CONS == 4
-  mov si, 0x4d3e
-%else
-  mov si, 0x49e3
-%endif
+  mov si, 0x49e3 + DELTA_49FA
   or_ax_ax                                     ; 07F0C  or ax, ax
   jne loc_07F59                                ; 07F0E  0x75, 0x49
   push dx                                      ; 07F10  0x52
   call sub_0AD30                               ; 07F11  0xE8, 0x1C, 0x2E
   pop dx                                       ; 07F14  0x5A
-%if NUM_VIR_CONS == 4
-  mov si, 0x4d28
-%else
-  mov si, 0x49cd
-%endif
+  mov si, 0x49cd + DELTA_49FA
   or_al_al                                     ; 07F18  or al, al
   je loc_07F59                                 ; 07F1A  0x74, 0x3D
   mov cl, 0xc                                  ; 07F1C  0xB1, 0x0C
