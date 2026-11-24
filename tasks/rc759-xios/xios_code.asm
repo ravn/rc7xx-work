@@ -81,7 +81,7 @@ xios_function_table:
   dw xios_fn_16_get_window_ccb                 ; Func 16: Hent vindues-CCB
   dw xios_fn_17_check_console_event            ; Func 17: Tjek konsol-hændelse
   dw xios_fn_18_vmenu_cmd                      ; Func 18: Menukommando
-  dw xios4_fn_19_auxist                        ; Func 19: AUX/konsol status
+  dw io_auxist                                 ; Func 19: AUX/konsol status
   dw xios4_fn_20_window_set                    ; Func 20: Vinduesopsætning
   dw xios4_fn_21_window_config                 ; Func 21: Vindueskonfiguration
   dw xios4_fn_22_window_mode                   ; Func 22: Vinduestilstand
@@ -697,9 +697,9 @@ loc_07CCC:
   test ah, ah                                  ; 07CE0
   je loc_07CFD                                 ; 07CE2
   cmp al, 0x7a                                 ; 07CE4
-  je loc_07D2D                                 ; 07CE6
+  je xios_handle_con_switch_key                                 ; 07CE6
   cmp al, 0x7b                                 ; 07CE8
-  je loc_07D2F                                 ; 07CEA (spring til virtuel konsol omskifter)
+  je xios_handle_vir_con_switch                                 ; 07CEA (spring til virtuel konsol omskifter)
   cmp al, 0x7d                                 ; 07CEC
   je loc_07D35                                 ; 07CEE (je target_7d)
   cmp al, 0x7e                                 ; 07CF0
@@ -747,12 +747,12 @@ loc_07D18:
 ; -----------------------------------------------------------------------------
 
 %if NUM_VIR_CONS == 4
-loc_07D2D:                                     ; 0000058D (XIOS4 konsol switch-tast)
+xios_handle_con_switch_key:                                     ; 0000058D (XIOS4 konsol switch-tast)
   mov dl, [cs:xios4_active_vir_con]
   call sub_01AC7
   jmp short loc_07CCC
 
-loc_07D2F:                                     ; 00000597 (XIOS4 virtuel konsol omskifter)
+xios_handle_vir_con_switch:                                     ; 00000597 (XIOS4 virtuel konsol omskifter)
   cmp byte [cs:xios4_vir_con_mode], 1
   jc .skip_switch
   call sub_08C56
@@ -767,10 +767,10 @@ loc_07D2F:                                     ; 00000597 (XIOS4 virtuel konsol 
 .skip_switch:
   jmp near loc_07CCC
 %else
-loc_07D2D:                                     ; 07D2D
+xios_handle_con_switch_key:                                     ; 07D2D
   jmp short loc_07CCC                          ; 07D2D  0xEB, 0x9D
 
-loc_07D2F:                                     ; 07D2F
+xios_handle_vir_con_switch:                                     ; 07D2F
   jmp near loc_07CCC                           ; 07D2F  0xE9, 0x9A, 0xFF
 %endif
 
@@ -2693,7 +2693,7 @@ sub_08BFB:                                     ; 08BFB
   test byte [bx + 0x6b], 0x10                  ; 08C21  0xF6, 0x47, 0x6B, 0x10
   je loc_08C36                                 ; 08C25  0x74, 0x0F
   mov byte [cs:xios4_window_clip_flag], 0                  ; 08C27  0x2E, 0xC6, 0x06, 0x5A, 0x2B, 0x00
-  call sub_09333                               ; 08C2D  0xE8, 0x03, 0x07
+  call xios_clip_repaint_windows                               ; 08C2D  0xE8, 0x03, 0x07
   mov bx, xios_vmenu_line_offsets                               ; 08C30  0xBB, 0xF6, 0x61
   mov cx, 0x18                                 ; 08C33  0xB9, 0x18, 0x00
 
@@ -3386,8 +3386,8 @@ loc_091BA:                                     ; 091BA
 ; =============================================================================
 ; Sektion 4A: Funktion 16..24, Konsolskift & Vinduesmanager
 ; =============================================================================
-%if NUM_VIR_CONS == 1
 io_auxist:
+%if NUM_VIR_CONS == 1
   push ds                                      ; 091BB  0x1E
   push es                                      ; 091BC  0x06
   push cx                                      ; 091BD  0x51
@@ -3415,12 +3415,7 @@ loc_091E7:                                     ; 091E7
   ret                                          ; 091E9  0xC3
   jmp near loc_091E7                           ; 091EA  0xE9, 0xFA, 0xFF
   ret                                          ; 091ED  0xC3
-io_setblank:
-  mov ax, 0x5001                               ; 091EE  0xB8, 0x01, 0x50
-  ret                                          ; 091F1  0xC3
-
 %else
-io_auxist:
 xios4_fn_19_auxist:
   cmp cl, 3                                    ; 00001A45
   jnc .loc_1a5b                                ; 00001A48
@@ -3503,11 +3498,11 @@ sub_01AC7:
 
 xios4_fn_24_window_ret:
   ret                                          ; 00001AE9
+%endif
 
 io_setblank:
-  mov ax, 0x5001                               ; 00001AEA
-  ret                                          ; 00001AED
-%endif
+  mov ax, 0x5001                               ; 00001AEA / 091EE
+  ret                                          ; 00001AED / 091F1
 sub_091F2:                                     ; 091F2
   mov ax, [bx + 0x4a]                          ; 091F2  0x8B, 0x47, 0x4A
   cmp_dl_al                                    ; 091F5  cmp dl, al
@@ -3831,7 +3826,7 @@ sub_x4_clip_repaint_entry:
   dw 0
 .xios4_clip_v2:
   db 0
-sub_09333:
+xios_clip_repaint_windows:
   call near sub_x4_clip_repaint_entry
   push es
   mov si, xios4_clip_map
@@ -3867,7 +3862,7 @@ sub_09333:
 %else
   ret                                          ; 0932F  0xC3
   db 0x00, 0x00, 0x00                          ; 09330  ...
-sub_09333:
+xios_clip_repaint_windows:
   ret                                          ; 09333  0xC3
 %endif
 
@@ -3988,7 +3983,7 @@ sub_093F6:                                     ; 093F6
   dec di                                       ; 09406  0x4F
   dec di                                       ; 09407  0x4F
   dec si                                       ; 09408  0x4E
-  call sub_0946F                               ; 09409  0xE8, 0x63, 0x00
+  call xios_clip_draw_char                               ; 09409  0xE8, 0x63, 0x00
 
 loc_0940C:                                     ; 0940C
   add_dl_cl                                    ; 0940C  add dl, cl
@@ -3999,16 +3994,16 @@ loc_0940C:                                     ; 0940C
   push cx                                      ; 09419  0x51
   mov ah, 8                                    ; 0941A  0xB4, 0x08
   mov al, 0x20                                 ; 0941C  0xB0, 0x20
-  call sub_0946F                               ; 0941E  0xE8, 0x4E, 0x00
+  call xios_clip_draw_char                               ; 0941E  0xE8, 0x4E, 0x00
   mov al, [bx + 0x34]                          ; 09421  0x8A, 0x47, 0x34
   add al, 0x30                                 ; 09424  0x04, 0x30
-  call sub_0946F                               ; 09426  0xE8, 0x46, 0x00
+  call xios_clip_draw_char                               ; 09426  0xE8, 0x46, 0x00
   mov al, 0x3a                                 ; 09429  0xB0, 0x3A
-  call sub_0946F                               ; 0942B  0xE8, 0x41, 0x00
+  call xios_clip_draw_char                               ; 0942B  0xE8, 0x41, 0x00
   mov [bx + 0x5a], si                          ; 0942E  0x89, 0x77, 0x5A
   call sub_09473                               ; 09431  0xE8, 0x3F, 0x00
   mov al, 0x20                                 ; 09434  0xB0, 0x20
-  call sub_0946F                               ; 09436  0xE8, 0x36, 0x00
+  call xios_clip_draw_char                               ; 09436  0xE8, 0x36, 0x00
   pop cx                                       ; 09439  0x59
   pop ax                                       ; 0943A  0x58
   sub cx, 0xc                                  ; 0943B  0x83, 0xE9, 0x0C
@@ -4018,7 +4013,7 @@ loc_09440:                                     ; 09440
   mov al, [cs:xios_char_mode_byte]                          ; 09440  0x2E, 0xA0, 0xCE, 0x28
 
 loc_09444:                                     ; 09444
-  call sub_0946F                               ; 09444  0xE8, 0x28, 0x00
+  call xios_clip_draw_char                               ; 09444  0xE8, 0x28, 0x00
   loop loc_09444                               ; 09447  0xE2, 0xFB
 
 loc_09449:                                     ; 09449
@@ -4026,7 +4021,7 @@ loc_09449:                                     ; 09449
   xchg al, ch                                  ; 0944A  86 C5
   cmp dl, 0x4f                                 ; 0944C  0x80, 0xFA, 0x4F
   je loc_09454                                 ; 0944F  0x74, 0x03
-  call sub_0946F                               ; 09451  0xE8, 0x1B, 0x00
+  call xios_clip_draw_char                               ; 09451  0xE8, 0x1B, 0x00
 
 loc_09454:                                     ; 09454
   pop cx                                       ; 09454  0x59
@@ -4042,7 +4037,7 @@ sub_09457:                                     ; 09457
   mov ah, 8                                    ; 0945E  0xB4, 0x08
 
 loc_09460:                                     ; 09460
-  call sub_0946F                               ; 09460  0xE8, 0x0C, 0x00
+  call xios_clip_draw_char                               ; 09460  0xE8, 0x0C, 0x00
   add di, 0x9e                                 ; 09463  0x81, 0xC7, 0x9E, 0x00
   add si, 0x4f                                 ; 09467  0x83, 0xC6, 0x4F
   loop loc_09460                               ; 0946A  0xE2, 0xF4
@@ -4050,8 +4045,8 @@ loc_09460:                                     ; 09460
   ret                                          ; 0946D  0xC3
 xios_char_mode_byte:
   db 0
+xios_clip_draw_char:
 %if NUM_VIR_CONS == 4
-sub_0946F:
   push ax
   mov al, [cs:si + xios4_clip_map]
   inc si
@@ -4066,7 +4061,6 @@ sub_0946F:
   inc di
   ret
 %else
-sub_0946F:
   ret
   inc di
   inc di
@@ -4091,7 +4085,7 @@ loc_09495:                                     ; 09495
   xchg si, bp                                  ; 09495  87 F5
   lodsb                                        ; 09497  0xAC
   xchg si, bp                                  ; 09498  87 F5
-  call sub_0946F                               ; 0949A  0xE8, 0xD2, 0xFF
+  call xios_clip_draw_char                               ; 0949A  0xE8, 0xD2, 0xFF
   loop loc_09495                               ; 0949D  0xE2, 0xF6
 
 loc_0949F:                                     ; 0949F
