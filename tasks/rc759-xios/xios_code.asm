@@ -156,70 +156,60 @@ int28h_dispatcher:
 ; Reference: PICCOLINE Programmer's Guide v2, Appendix A
 ; =============================================================================
 int28h_jump_table:
-%if NUM_VIR_CONS == 4
-  dw 0x22FF, 0x2411, 0x1DBA, 0x4663, 0x466C, 0x37E6, 0x3802, 0x3803
-  dw 0x3804, 0x3820, 0x3821, 0x38AC, 0x47EB, 0x393A, 0x3943, 0x110D
-  dw 0x0D18, 0x0D18, 0x43B1, 0x480C, 0x256C, 0x25CB, 0x25D4, 0x481F
-  dw 0x4910, 0x41EB, 0x696B, 0x698A, 0x69A7, 0x69C4, 0x2AC3, 0x25FC
-  dw 0x4675, 0x4683, 0x4693, 0x2520, 0x25E0, 0x25EE, 0x25F5, 0x2566
-  dw 0x69DF, 0x6CB8, 0x6D6A, 0x0D18, 0x0D18, 0x0D18, 0x0D18, 0x0D18
-  dw 0x0D18, 0x0D18, 0x484B, 0x2594, 0x257D, 0x0D19
-%else
-  dw xios_int28_fn_00_graphics_mode            ; Func  0: Skift til grafik-tilstand (CS:22B5, fil 0x08E55)
-  dw xios_int28_fn_01_char_mode                ; Func  1: Skift til tekst/tegn-tilstand (CS:23C7, fil 0x08F67)
-  dw xios_int28_fn_02_scroll_step              ; Func  2: Blød rulning scanline-step (CS:1D70, fil 0x08910)
-  dw xios_int28_fn_03_get_nvram                ; Func  3: Hent kopi af NVRAM (CS:42D6, fil 0x0AE76)
-  dw xios_int28_fn_04_get_autoconfig           ; Func  4: Hent autokonfiguration / maskin-ID (CS:42DF, fil 0x0AE7F)
-  dw xios_int28_fn_05_recalibrate              ; Func  5: Floppy drev rekalibrering (CS:3459, fil 0x09FF9)
-  dw xios_int28_fn_06_reserved                 ; Func  6: Reserveret (CS:3475, fil 0x0A015)
-  dw xios_int28_fn_07_reserved                 ; Func  7: Reserveret (CS:3476, fil 0x0A016)
-  dw xios_int28_fn_08_step_in                  ; Func  8: Floppy step et spor ind (CS:3477, fil 0x0A017)
-  dw xios_int28_fn_09_step_out                 ; Func  9: Floppy step et spor ud (CS:3493, fil 0x0A033)
-  dw xios_int28_fn_10_write_track              ; Func 10: Floppy skriv helt spor (CS:3494, fil 0x0A034)
-  dw xios_int28_fn_11_read_track               ; Func 11: Floppy læs helt spor (CS:351F, fil 0x0A0BF)
-  dw xios_int28_fn_12_sound                    ; Func 12: Lydgenerator skriv data-byte (CS:445E, fil 0x0AFFE)
-  dw xios_int28_fn_13_disk_stats               ; Func 13: Hent diskdriver-statistikker (CS:35AD, fil 0x0A14D)
-  dw xios_int28_fn_14_reserved                 ; Func 14: Reserveret (CS:35B6, fil 0x0A156)
-  dw xios_int28_fn_15_reserved                 ; Func 15: Reserveret (CS:110D, fil 0x07CAD)
-  dw xios_int28_stub_ret                       ; Func 16: Reserveret stub (CS:0D18, fil 0x078B8)
-  dw xios_int28_stub_ret                       ; Func 17: Reserveret stub (CS:0D18, fil 0x078B8)
-  dw xios_int28_fn_18_reserved                 ; Func 18: Reserveret (CS:4024, fil 0x0ABC4)
-  dw xios_int28_fn_19_timer                    ; Func 19: Hent 16 ms timer-tæller (CS:447F, fil 0x0B01F)
-  dw xios_int28_fn_20_def_alt_char             ; Func 20: Definer tegn i alternativt tegnsæt (CS:2542, fil 0x090E2)
-  dw xios_int28_fn_21_get_disp_list            ; Func 21: Hent pointer til display list (CS:25A1, fil 0x09141)
-  dw xios_int28_fn_22_set_disp_list            ; Func 22: Sæt display list tabel-pointer (CS:25AA, fil 0x0914A)
-  dw xios_int28_fn_23_isbx_status              ; Func 23: Hent iSBX351 seriel status (CS:4492, fil 0x0B032)
-  dw xios_int28_fn_24_isbx_init                ; Func 24: Initialiser iSBX351 controller (CS:4583, fil 0x0B123)
-  dw xios_int28_fn_25_reserved                 ; Func 25: Reserveret (CS:3E5E, fil 0x0A9FE)
-  dw xios_int28_fn_26_cas_read_hdr             ; Func 26: Båndoptager læs filhoved (CS:5B16, fil 0x0C6B6)
-  dw xios_int28_fn_27_cas_write_hdr            ; Func 27: Båndoptager skriv filhoved (CS:5B35, fil 0x0C6D5)
-  dw xios_int28_fn_28_cas_read_data            ; Func 28: Båndoptager læs datablok (CS:5B52, fil 0x0C6F2)
-  dw xios_int28_fn_29_cas_write_data           ; Func 29: Båndoptager skriv datablok (CS:5B6F, fil 0x0C70F)
-  dw xios_int28_fn_30_mouse                    ; Func 30: Mus styring/status (CS:2900, fil 0x094A0)
-  dw xios_int28_fn_31_palette                  ; Func 31: Definer farvepalette (CS:25D2, fil 0x09172)
-  dw xios_int28_fn_32_reserved                 ; Func 32: Reserveret (CS:42E8, fil 0x0AE88)
-  dw xios_int28_fn_33_reserved                 ; Func 33: Reserveret (CS:42F6, fil 0x0AE96)
-  dw xios_int28_fn_34_reserved                 ; Func 34: Reserveret (CS:4306, fil 0x0AEA6)
-  dw xios_int28_fn_35_write_str                ; Func 35: Skriv streng direkte til konsolbuffer (CS:24F6, fil 0x09096)
-  dw xios_int28_fn_36_cursor_pos               ; Func 36: Sæt cursorposition (BH=række, BL=kol) (CS:25B6, fil 0x09156)
-  dw xios_int28_fn_37_get_attr                 ; Func 37: Hent aktuelle skærmattributter (CS:25C4, fil 0x09164)
-  dw xios_int28_fn_38_set_attr                 ; Func 38: Sæt skærmattributter (CS:25CB, fil 0x0916B)
-  dw xios_int28_fn_39_update_screen            ; Func 39: Opdater fysisk skærm (CS:253C, fil 0x090DC)
-  dw xios_int28_fn_40_cas_write_eof            ; Func 40: Båndoptager skriv EOF-blok (CS:5B8A, fil 0x0C72A)
-  dw xios_int28_fn_41_dpc_parallel             ; Func 41: Reserver/frigiv DPC parallelinterface (CS:5E63, fil 0x0CA03)
-  dw xios_int28_fn_42_shared_disk              ; Func 42: Reserver/frigiv delt disk (CS:5F15, fil 0x0CAB5)
-  dw xios_int28_stub_ret                       ; Func 43: Reserveret stub (CS:0D18, fil 0x078B8)
-  dw xios_int28_stub_ret                       ; Func 44: Reserveret stub (CS:0D18, fil 0x078B8)
-  dw xios_int28_stub_ret                       ; Func 45: Reserveret stub (CS:0D18, fil 0x078B8)
-  dw xios_int28_stub_ret                       ; Func 46: Reserveret stub (CS:0D18, fil 0x078B8)
-  dw xios_int28_stub_ret                       ; Func 47: Reserveret stub (CS:0D18, fil 0x078B8)
-  dw xios_int28_stub_ret                       ; Func 48: Reserveret stub (CS:0D18, fil 0x078B8)
-  dw xios_int28_stub_ret                       ; Func 49: Reserveret stub (CS:0D18, fil 0x078B8)
-  dw xios_int28_fn_50_isbx_reset               ; Func 50: Reset iSBX351 controller (CS:44BE, fil 0x0B05E)
-  dw xios_int28_fn_51_get_font                 ; Func 51: Hent tegndefinition fra font-RAM (CS:256A, fil 0x0910A)
-  dw xios_int28_fn_52_def_font                 ; Func 52: Definer tegn i font-RAM (CS:2553, fil 0x090F3)
-  dw xios_int28_fn_53_version                  ; Func 53: Hent XIOS version (CS:0D19, fil 0x078B9)
-%endif
+  dw xios_int28_fn_00_graphics_mode            ; Func  0: Skift til grafik-tilstand (CS:22B5 / CS:22FF)
+  dw xios_int28_fn_01_char_mode                ; Func  1: Skift til tekst/tegn-tilstand (CS:23C7 / CS:2411)
+  dw xios_int28_fn_02_scroll_step              ; Func  2: Blød rulning scanline-step (CS:1D70 / CS:1DBA)
+  dw xios_int28_fn_03_get_nvram                ; Func  3: Hent kopi af NVRAM (CS:42D6 / CS:4663)
+  dw xios_int28_fn_04_get_autoconfig           ; Func  4: Hent autokonfiguration / maskin-ID (CS:42DF / CS:466C)
+  dw xios_int28_fn_05_recalibrate              ; Func  5: Floppy drev rekalibrering (CS:3459 / CS:37E6)
+  dw xios_int28_fn_06_reserved                 ; Func  6: Reserveret (CS:3475 / CS:3802)
+  dw xios_int28_fn_07_reserved                 ; Func  7: Reserveret (CS:3476 / CS:3803)
+  dw xios_int28_fn_08_step_in                  ; Func  8: Floppy step et spor ind (CS:3477 / CS:3804)
+  dw xios_int28_fn_09_step_out                 ; Func  9: Floppy step et spor ud (CS:3493 / CS:3820)
+  dw xios_int28_fn_10_write_track              ; Func 10: Floppy skriv helt spor (CS:3494 / CS:3821)
+  dw xios_int28_fn_11_read_track               ; Func 11: Floppy læs helt spor (CS:351F / CS:38AC)
+  dw xios_int28_fn_12_sound                    ; Func 12: Lydgenerator skriv data-byte (CS:445E / CS:47EB)
+  dw xios_int28_fn_13_disk_stats               ; Func 13: Hent diskdriver-statistikker (CS:35AD / CS:393A)
+  dw xios_int28_fn_14_reserved                 ; Func 14: Reserveret (CS:35B6 / CS:3943)
+  dw xios_int28_fn_15_reserved                 ; Func 15: Reserveret (CS:110D)
+  dw xios_int28_stub_ret                       ; Func 16: Reserveret stub (CS:0D18)
+  dw xios_int28_stub_ret                       ; Func 17: Reserveret stub (CS:0D18)
+  dw xios_int28_fn_18_reserved                 ; Func 18: Reserveret (CS:4024 / CS:43B1)
+  dw xios_int28_fn_19_timer                    ; Func 19: Hent 16 ms timer-tæller (CS:447F / CS:480C)
+  dw xios_int28_fn_20_def_alt_char             ; Func 20: Definer tegn i alternativt tegnsæt (CS:2542 / CS:256C)
+  dw xios_int28_fn_21_get_disp_list            ; Func 21: Hent pointer til display list (CS:25A1 / CS:25CB)
+  dw xios_int28_fn_22_set_disp_list            ; Func 22: Sæt display list tabel-pointer (CS:25AA / CS:25D4)
+  dw xios_int28_fn_23_isbx_status              ; Func 23: Hent iSBX351 seriel status (CS:4492 / CS:481F)
+  dw xios_int28_fn_24_isbx_init                ; Func 24: Initialiser iSBX351 controller (CS:4583 / CS:4910)
+  dw xios_int28_fn_25_reserved                 ; Func 25: Reserveret (CS:3E5E / CS:41EB)
+  dw xios_int28_fn_26_cas_read_hdr             ; Func 26: Båndoptager læs filhoved (CS:5B16 / CS:696B)
+  dw xios_int28_fn_27_cas_write_hdr            ; Func 27: Båndoptager skriv filhoved (CS:5B35 / CS:698A)
+  dw xios_int28_fn_28_cas_read_data            ; Func 28: Båndoptager læs datablok (CS:5B52 / CS:69A7)
+  dw xios_int28_fn_29_cas_write_data           ; Func 29: Båndoptager skriv datablok (CS:5B6F / CS:69C4)
+  dw xios_int28_fn_30_mouse                    ; Func 30: Mus styring/status (CS:2900 / CS:2AC3)
+  dw xios_int28_fn_31_palette                  ; Func 31: Definer farvepalette (CS:25D2 / CS:25FC)
+  dw xios_int28_fn_32_reserved                 ; Func 32: Reserveret (CS:42E8 / CS:4675)
+  dw xios_int28_fn_33_reserved                 ; Func 33: Reserveret (CS:42F6 / CS:4683)
+  dw xios_int28_fn_34_reserved                 ; Func 34: Reserveret (CS:4306 / CS:4693)
+  dw xios_int28_fn_35_write_str                ; Func 35: Skriv streng direkte til konsolbuffer (CS:24F6 / CS:2520)
+  dw xios_int28_fn_36_cursor_pos               ; Func 36: Sæt cursorposition (CS:25B6 / CS:25E0)
+  dw xios_int28_fn_37_get_attr                 ; Func 37: Hent aktuelle skærmattributter (CS:25C4 / CS:25EE)
+  dw xios_int28_fn_38_set_attr                 ; Func 38: Sæt skærmattributter (CS:25CB / CS:25F5)
+  dw xios_int28_fn_39_update_screen            ; Func 39: Opdater fysisk skærm (CS:253C / CS:2566)
+  dw xios_int28_fn_40_cas_write_eof            ; Func 40: Båndoptager skriv EOF-blok (CS:5B8A / CS:69DF)
+  dw xios_int28_fn_41_dpc_parallel             ; Func 41: Reserver/frigiv DPC interface (CS:5E63 / CS:6CB8)
+  dw xios_int28_fn_42_shared_disk              ; Func 42: Reserver/frigiv delt disk (CS:5F15 / CS:6D6A)
+  dw xios_int28_stub_ret                       ; Func 43: Reserveret stub (CS:0D18)
+  dw xios_int28_stub_ret                       ; Func 44: Reserveret stub (CS:0D18)
+  dw xios_int28_stub_ret                       ; Func 45: Reserveret stub (CS:0D18)
+  dw xios_int28_stub_ret                       ; Func 46: Reserveret stub (CS:0D18)
+  dw xios_int28_stub_ret                       ; Func 47: Reserveret stub (CS:0D18)
+  dw xios_int28_stub_ret                       ; Func 48: Reserveret stub (CS:0D18)
+  dw xios_int28_stub_ret                       ; Func 49: Reserveret stub (CS:0D18)
+  dw xios_int28_fn_50_isbx_reset               ; Func 50: Reset iSBX351 controller (CS:44BE / CS:484B)
+  dw xios_int28_fn_51_get_font                 ; Func 51: Hent tegndefinition fra font-RAM (CS:256A / CS:2594)
+  dw xios_int28_fn_52_def_font                 ; Func 52: Definer tegn i font-RAM (CS:2553 / CS:257D)
+  dw xios_int28_fn_53_version                  ; Func 53: Hent XIOS version (CS:0D19)
 
 xios_int28_stub_ret:                            ; 078B8
 loc_078B8:
@@ -7459,6 +7449,13 @@ loc_0AC5E:                                     ; 0AC5E
 %if NUM_VIR_CONS == 4
   sub_0CA1E equ 0x6cd3
   sub_0CB3C equ 0x6df1
+  xios_int28_fn_26_cas_read_hdr equ 0x696B
+  xios_int28_fn_27_cas_write_hdr equ 0x698A
+  xios_int28_fn_28_cas_read_data equ 0x69A7
+  xios_int28_fn_29_cas_write_data equ 0x69C4
+  xios_int28_fn_40_cas_write_eof equ 0x69DF
+  xios_int28_fn_41_dpc_parallel equ 0x6CB8
+  xios_int28_fn_42_shared_disk equ 0x6D6A
 %endif
 
 io_list:
