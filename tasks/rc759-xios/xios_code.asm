@@ -7667,8 +7667,6 @@ xios1_screen_state_buf:
   db 0x0D, 0x0A, 0
   db_dk "Winchester disk  x har dårlig konfigurations sektor"  ; 0B765
   db 0x0D, 0x0A, 0
-loc_0B79D:                                     ; 0B79D
-
 loc_0B79D:
 %if NUM_VIR_CONS == 4
   times 71 db 0
