@@ -47,33 +47,22 @@ xios_config_table:
   db 0x00                                      ; xt_door (reserveret)
   db 0x00                                      ; xt_rsvd (reserveret)
   db 0x01                                      ; xt_xpcns (antal fysiske konsoller = 1)
-%if NUM_VIR_CONS == 4
-  db 0x04                                      ; xt_nvcns (antal virtuelle konsoller = 4 i CCPM4)
-%else
-  db 0x01                                      ; xt_nvcns (antal virtuelle konsoller = 1 i CCPM1)
-%endif
+  db NUM_VIR_CONS                              ; xt_nvcns (antal virtuelle konsoller: 1 eller 4)
   db 0x09                                      ; xt_nccbs (antal Console Control Blocks = 9)
   db 0x03                                      ; xt_nlcbs (antal List Control Blocks = 3)
   dw 0x0D49                                    ; xt_ccb (offset til CCB-array i SYSDAT)
   dw 0x0ED5                                    ; xt_lcb (offset til LCB-array i SYSDAT)
   ; xt_dphtab: Disk Parameter Header pointere for drev A..P
-%if NUM_VIR_CONS == 4
-  dw 0x3CCF                                    ; Drev A (Floppy 0 DPH)
-  dw 0x3CE3                                    ; Drev B (Floppy 1 DPH)
+  dw dph_drive_a                               ; Drev A (Floppy 0 DPH)
+  dw dph_drive_b                               ; Drev B (Floppy 1 DPH)
   dw 0x0000, 0x0000, 0x0000, 0x0000            ; Drev C, D, E, F
   dw 0x0000, 0x0000, 0x0000, 0x0000            ; Drev G, H, I, J
   dw 0x0000, 0x0000                            ; Drev K, L
-  dw 0x3DBF                                    ; Drev M (Memory Disk / M-Disk DPH)
+  dw dph_drive_m                               ; Drev M (Memory Disk / M-Disk DPH)
   dw 0x0000, 0x0000, 0x0000                    ; Drev N, O, P
+%if NUM_VIR_CONS == 4
   dw 0x0500                                    ; xt_alloc (unlinked 1280 paras)
 %else
-  dw 0x3942                                    ; Drev A (Floppy 0 DPH)
-  dw 0x3956                                    ; Drev B (Floppy 1 DPH)
-  dw 0x0000, 0x0000, 0x0000, 0x0000            ; Drev C, D, E, F
-  dw 0x0000, 0x0000, 0x0000, 0x0000            ; Drev G, H, I, J
-  dw 0x0000, 0x0000                            ; Drev K, L
-  dw 0x3A32                                    ; Drev M (Memory Disk / M-Disk DPH)
-  dw 0x0000, 0x0000, 0x0000                    ; Drev N, O, P
   dw 0x01F4                                    ; xt_alloc (unlinked 500 paras)
 %endif
 
@@ -5203,7 +5192,7 @@ loc_0995B:                                     ; 0995B
   db 0x03, 0xC3                                ; 09961  add ax, bx
   push ax                                      ; 09963  0x50
   db 0x8A, 0xCD                                ; 09964  mov cl, ch
-  mov bx, 0x3942 + DELTA_TABLES                               ; 09966  0xBB, 0x42, 0x39
+  mov bx, dph_drive_a                               ; 09966  0xBB, 0x42, 0x39
   mov al, 0x14                                 ; 09969  0xB0, 0x14
   db 0xF6, 0xE1                                ; 0996B  mul cl
   db 0x03, 0xD8                                ; 0996D  add bx, ax
@@ -5254,7 +5243,7 @@ loc_099B0:                                     ; 099B0
   and [cs:0x3768 + DELTA_TABLES], al                          ; 099B6  0x2E, 0x20, 0x06, 0x68, 0x37
   and al, 0xf7                                 ; 099BB  0x24, 0xF7
   push ax                                      ; 099BD  0x50
-  mov bx, 0x3942 + DELTA_TABLES                               ; 099BE  0xBB, 0x42, 0x39
+  mov bx, dph_drive_a                               ; 099BE  0xBB, 0x42, 0x39
   mov al, 0x14                                 ; 099C1  0xB0, 0x14
   db 0xF6, 0xE1                                ; 099C3  mul cl
   db 0x03, 0xC3                                ; 099C5  add ax, bx
@@ -5339,7 +5328,7 @@ loc_09A70:                                     ; 09A70
   and [cs:0x3768 + DELTA_TABLES], al                          ; 09A76  0x2E, 0x20, 0x06, 0x68, 0x37
   and al, 0xf7                                 ; 09A7B  0x24, 0xF7
   push ax                                      ; 09A7D  0x50
-  mov bx, 0x3942 + DELTA_TABLES                               ; 09A7E  0xBB, 0x42, 0x39
+  mov bx, dph_drive_a                               ; 09A7E  0xBB, 0x42, 0x39
   mov al, 0x14                                 ; 09A81  0xB0, 0x14
   db 0xF6, 0xE1                                ; 09A83  mul cl
   db 0x03, 0xC3                                ; 09A85  add ax, bx
@@ -5690,9 +5679,9 @@ sub_09D62:                                     ; 09D62
 
 loc_09D89:                                     ; 09D89
   mov byte [cs:0xc0e], 0xff                    ; 09D89  0x2E, 0xC6, 0x06, 0x0E, 0x0C, 0xFF
-  mov di, 0x3942 + DELTA_TABLES                               ; 09D8F  0xBF, 0x42, 0x39
+  mov di, dph_drive_a                               ; 09D8F  0xBF, 0x42, 0x39
   mov byte [di + 5], 0xff                      ; 09D92  0xC6, 0x45, 0x05, 0xFF
-  mov di, 0x3956 + DELTA_TABLES                               ; 09D96  0xBF, 0x56, 0x39
+  mov di, dph_drive_b                               ; 09D96  0xBF, 0x56, 0x39
   mov byte [di + 5], 0xff                      ; 09D99  0xC6, 0x45, 0x05, 0xFF
   mov byte [cs:0x5e42 + DELTA_TAIL_PRE], 0xff                   ; 09D9D  0x2E, 0xC6, 0x06, 0x42, 0x5E, 0xFF
 
@@ -5727,7 +5716,7 @@ sub_09DC8:                                     ; 09DC8
 sub_09DD0:                                     ; 09DD0
   test byte [cs:0x3932 + DELTA_TABLES], 0xf                   ; 09DD0  0x2E, 0xF6, 0x06, 0x32, 0x39, 0x0F
   je loc_09DE6                                 ; 09DD6  0x74, 0x0E
-  mov di, 0x3942 + DELTA_TABLES                               ; 09DD8  0xBF, 0x42, 0x39
+  mov di, dph_drive_a                               ; 09DD8  0xBF, 0x42, 0x39
   mov al, [cs:0x376c + DELTA_TABLES]                          ; 09DDB  0x2E, 0xA0, 0x6C, 0x37
   and al, 0xfe                                 ; 09DDF  0x24, 0xFE
   mov ah, 2                                    ; 09DE1  0xB4, 0x02
@@ -5736,7 +5725,7 @@ sub_09DD0:                                     ; 09DD0
 loc_09DE6:                                     ; 09DE6
   test byte [cs:0x3933 + DELTA_TABLES], 0xf                   ; 09DE6  0x2E, 0xF6, 0x06, 0x33, 0x39, 0x0F
   je loc_09DFC                                 ; 09DEC  0x74, 0x0E
-  mov di, 0x3956 + DELTA_TABLES                               ; 09DEE  0xBF, 0x56, 0x39
+  mov di, dph_drive_b                               ; 09DEE  0xBF, 0x56, 0x39
   mov al, [cs:0x376c + DELTA_TABLES]                          ; 09DF1  0x2E, 0xA0, 0x6C, 0x37
   or al, 1                                     ; 09DF5  0x0C, 0x01
   mov ah, 4                                    ; 09DF7  0xB4, 0x04
@@ -6709,146 +6698,38 @@ loc_0A2C4:                                     ; 0A2C4
   db 0xCC                                      ; 0A4C8  int3
   db 0xCC                                      ; 0A4C9  int3
   db 0xCC                                      ; 0A4CA  int3
-  db 0x00, 0x00                                ; 0A4CB
-  db 0x00, 0x00                                ; 0A4CD
-  db 0x00, 0x00                                ; 0A4CF
-  db 0x00, 0x00                                ; 0A4D1
-  db 0x00, 0x00                                ; 0A4D3
-  db 0x00, 0x00                                ; 0A4D5
-  db 0x00, 0x00                                ; 0A4D7
-  db 0x00, 0x00                                ; 0A4D9
-  db 0x00, 0x00                                ; 0A4DB
-  db 0x00, 0x00                                ; 0A4DD
-  db 0x00, 0x00                                ; 0A4DF
-  db 0x00, 0x00                                ; 0A4E1
-  db 0x00, 0x00                                ; 0A4E3
-  db 0x00, 0x00                                ; 0A4E5
-  db 0x00, 0x00                                ; 0A4E7
-    db 0
-    dw 0x3a82 + DELTA_TABLES
-    dw 0, 0
-    dw 0x3bb3 + DELTA_TABLES
-    dw 0x3bc2 + DELTA_TABLES
-    times 5 dw 0
-    dw 0x3a82 + DELTA_TABLES
-    dw 0, 0
-    dw 0x3bb3 + DELTA_TABLES
-    dw 0x3bc2 + DELTA_TABLES
-    db 0
-  db 0x00, 0x00                                ; 0A509
-  db 0x00, 0x00                                ; 0A50B
-  db 0x00, 0x00                                ; 0A50D
-  db 0x00, 0x00                                ; 0A50F
-  db 0x00, 0x00                                ; 0A511
-  db 0x00, 0x00                                ; 0A513
-  db 0x00, 0x00                                ; 0A515
-  db 0x00, 0x00                                ; 0A517
-  db 0x00, 0x00                                ; 0A519
-  db 0x00, 0x00                                ; 0A51B
-  db 0x00, 0x00                                ; 0A51D
-  db 0x00, 0x00                                ; 0A51F
-  db 0x00, 0x00                                ; 0A521
-  db 0x00, 0x00                                ; 0A523
-  db 0x00, 0x00                                ; 0A525
-  db 0x00, 0x00                                ; 0A527
-  db 0x00, 0x00                                ; 0A529
-  db 0x00, 0x00                                ; 0A52B
-  db 0x00, 0x00                                ; 0A52D
-  db 0x00, 0x00                                ; 0A52F
-  db 0x00, 0x00                                ; 0A531
-  db 0x00, 0x00                                ; 0A533
-  db 0x00, 0x00                                ; 0A535
-  db 0x00, 0x00                                ; 0A537
-  db 0x00, 0x00                                ; 0A539
-  db 0x00, 0x00                                ; 0A53B
-  db 0x00, 0x00                                ; 0A53D
-  db 0x00, 0x00                                ; 0A53F
-  db 0x00, 0x00                                ; 0A541
-  db 0x00, 0x00                                ; 0A543
-  db 0x00, 0x00                                ; 0A545
-  db 0x00, 0x00                                ; 0A547
-  db 0x00, 0x00                                ; 0A549
-  db 0x00, 0x00                                ; 0A54B
-  db 0x00, 0x00                                ; 0A54D
-  db 0x00, 0x00                                ; 0A54F
-  db 0x00, 0x00                                ; 0A551
-  db 0x00, 0x00                                ; 0A553
-  db 0x00, 0x00                                ; 0A555
-  db 0x00, 0x00                                ; 0A557
-  db 0x00, 0x00                                ; 0A559
-  db 0x00, 0x00                                ; 0A55B
-  db 0x00, 0x00                                ; 0A55D
-  db 0x00, 0x00                                ; 0A55F
-  db 0x00, 0x00                                ; 0A561
-  db 0x00, 0x00                                ; 0A563
-  db 0x00, 0x00                                ; 0A565
-  db 0x00, 0x00                                ; 0A567
-  db 0x00, 0x00                                ; 0A569
-  db 0x00, 0x00                                ; 0A56B
-  db 0x00, 0x00                                ; 0A56D
-  db 0x00, 0x00                                ; 0A56F
-  db 0x00, 0x00                                ; 0A571
-  db 0x00, 0x00                                ; 0A573
-  db 0x00, 0x00                                ; 0A575
-  db 0x00, 0x00                                ; 0A577
-  db 0x00, 0x00                                ; 0A579
-  db 0x00, 0x00                                ; 0A57B
-  db 0x00, 0x00                                ; 0A57D
-  db 0x00, 0x00                                ; 0A57F
-  db 0x00, 0x00                                ; 0A581
-  db 0x00, 0x00                                ; 0A583
-  db 0x00, 0x00                                ; 0A585
-  db 0x00, 0x00                                ; 0A587
-  db 0x00, 0x00                                ; 0A589
-  db 0x00, 0x00                                ; 0A58B
-  db 0x00, 0x00                                ; 0A58D
-  db 0x00, 0x00                                ; 0A58F
-  db 0x00, 0x00                                ; 0A591
-  db 0x00, 0x00                                ; 0A593
-  db 0x00, 0x00                                ; 0A595
-  db 0x00, 0x00                                ; 0A597
-  db 0x00, 0x00                                ; 0A599
-  db 0x00, 0x00                                ; 0A59B
-  db 0x00, 0x00                                ; 0A59D
-  db 0x00, 0x00                                ; 0A59F
-  db 0x00, 0x00                                ; 0A5A1
-  db 0x00, 0x00                                ; 0A5A3
-  db 0x00, 0x00                                ; 0A5A5
-  db 0x00, 0x00                                ; 0A5A7
-  db 0x00, 0x00                                ; 0A5A9
-  db 0x00, 0x00                                ; 0A5AB
-  db 0x00, 0x00                                ; 0A5AD
-  db 0x00, 0x00                                ; 0A5AF
-  db 0x00, 0x00                                ; 0A5B1
-  db 0x00, 0x00                                ; 0A5B3
-  db 0x00, 0x00                                ; 0A5B5
-  db 0x00, 0x00                                ; 0A5B7
-  db 0x00, 0x00                                ; 0A5B9
-  db 0x00, 0x00                                ; 0A5BB
-  db 0x00, 0x00                                ; 0A5BD
-  db 0x00, 0x00                                ; 0A5BF
-  db 0x00, 0x00                                ; 0A5C1
-  db 0x00, 0x00                                ; 0A5C3
-  db 0x00, 0x00                                ; 0A5C5
-  db 0x00, 0x00                                ; 0A5C7
-  db 0x00, 0x00                                ; 0A5C9
-  db 0x00, 0x00                                ; 0A5CB
-  db 0x00, 0x00                                ; 0A5CD
-  db 0x00, 0x00                                ; 0A5CF
-  db 0x00, 0x00                                ; 0A5D1
-  db 0x00, 0x00                                ; 0A5D3
-  db 0x00, 0x00                                ; 0A5D5
-  db 0x00, 0x00                                ; 0A5D7
-    db 0
-    dw 0x3b5f + DELTA_TABLES
-    dw 0, 0
-    dw 0x3bb3 + DELTA_TABLES
-    dw 0x3bc2 + DELTA_TABLES
-    db 0
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 0A5E5  ................
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 0A5F5  ................
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 0A605  ................
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 0A615  .............
+  times 23 db 0
+
+dph_drive_a:
+  dw 0                                         ; XLT (Translation table: none)
+  dw 0, 0, 0                                   ; Scratch words
+  dw 0x3a82 + DELTA_TABLES                     ; DPB (Disk Parameter Block)
+  dw 0, 0                                      ; CSV, ALV (Checksum vector, Allocation vector)
+  dw 0x3bb3 + DELTA_TABLES                     ; DIRBCB (Directory Buffer Control Block)
+  dw 0x3bc2 + DELTA_TABLES                     ; DTABCB (Data Buffer Control Block)
+  dw 0                                         ; HASH / reserveret
+
+dph_drive_b:
+  dw 0                                         ; XLT (Translation table: none)
+  dw 0, 0, 0                                   ; Scratch words
+  dw 0x3a82 + DELTA_TABLES                     ; DPB (Disk Parameter Block)
+  dw 0, 0                                      ; CSV, ALV (Checksum vector, Allocation vector)
+  dw 0x3bb3 + DELTA_TABLES                     ; DIRBCB (Directory Buffer Control Block)
+  dw 0x3bc2 + DELTA_TABLES                     ; DTABCB (Data Buffer Control Block)
+  dw 0                                         ; HASH / reserveret
+
+  times 200 db 0                               ; Disk buffere (CSV/ALV for Floppy A og B)
+
+dph_drive_m:
+  dw 0                                         ; XLT (Translation table: none)
+  dw 0, 0, 0                                   ; Scratch words
+  dw 0x3b5f + DELTA_TABLES                     ; DPB (Disk Parameter Block for M-Disk)
+  dw 0, 0                                      ; CSV, ALV
+  dw 0x3bb3 + DELTA_TABLES                     ; DIRBCB (Directory Buffer Control Block)
+  dw 0x3bc2 + DELTA_TABLES                     ; DTABCB (Data Buffer Control Block)
+  dw 0                                         ; HASH / reserveret
+
+  times 60 db 0                                ; Bufferområde for M-disk
   or [bx + si], al                             ; 0A622  0x08, 0x00
   add al, 0xf                                  ; 0A624  0x04, 0x0F
   add [bx + 2], dl                             ; 0A626  0x00, 0x57, 0x02
