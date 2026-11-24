@@ -4,7 +4,6 @@
 %if NUM_VIR_CONS == 4
   %define XT_ALLOC_PARAS 0x0500                 ; 1280 paragraffer unlinked bufferplads til 4 konsoller
   %define ZORDER_LIST_SIZE 16                   ; 2^4 = 16 kombinationer for 4 konsoller
-  %define DELTA_VMENU   74
   %define DELTA_WINDOW  451
   %define DELTA_TABLES  909
   %define DELTA_TAIL    3668
@@ -14,7 +13,6 @@
 %else
   %define XT_ALLOC_PARAS 0x01F4                 ; 500 paragraffer unlinked bufferplads til 1 konsol
   %define ZORDER_LIST_SIZE 2                    ; 2^1 = 2 kombinationer for 1 konsol
-  %define DELTA_VMENU   0
   %define DELTA_WINDOW  0
   %define DELTA_TABLES  0
   %define DELTA_TAIL    0
@@ -584,7 +582,7 @@ loc_07BC4:
   test byte [cs:kbd_raw_scancode], 0x80
   jne loc_07BDC
   xor [cs:kbd_lock_state], ah
-  cmp byte [cs:0x224e + DELTA_VMENU], 0xff
+  cmp byte [cs:vmenu_active_flag], 0xff
   je loc_07BDC
   call sub_08C5F
 
@@ -794,11 +792,11 @@ loc_07D32:                                     ; Fælles retur til menu-genopfri
 ; -----------------------------------------------------------------------------
 loc_07D35:                                     ; 07D35 / 000005C7
   mov al, 0xff                                 ; 07D35  0xB0, 0xFF
-  xchg [cs:0x224e + DELTA_VMENU], al           ; 07D37
+  xchg [cs:vmenu_active_flag], al           ; 07D37
   cmp al, 0xff                                 ; 07D3C  0x3C, 0xFF
   je loc_07D32                                 ; 07D3E  0x74, 0xF2
-  mov [cs:0x224f + DELTA_VMENU], bx            ; 07D40
-  mov [cs:0x224e + DELTA_VMENU], al            ; 07D45
+  mov [cs:vmenu_saved_bx], bx            ; 07D40
+  mov [cs:vmenu_active_flag], al            ; 07D45
   mov bp, es                                   ; 07D49  0x8C, 0xC5
   push cx                                      ; 07D4B  0x51
   push ds                                      ; 07D4C  0x1E
@@ -1260,7 +1258,7 @@ loc_08034:                                     ; 08034
 loc_08037:                                     ; 08037
   cmp cl, 0x1b                                 ; 08037  0x80, 0xF9, 0x1B
   jne loc_08042                                ; 0803A  0x75, 0x06
-  mov word [bx + 0x5e], 0x156b + DELTA_VMENU                 ; 0803C  0xC7, 0x47, 0x5E, 0x6B, 0x15
+  mov word [bx + 0x5e], crt_esc_dispatch_normal              ; 0803C  0xC7, 0x47, 0x5E, 0x6B, 0x15
   ret                                          ; 08041  0xC3
 
 loc_08042:                                     ; 08042
@@ -1359,42 +1357,52 @@ sub_080F0:                                     ; 080F0
 loc_080FC:                                     ; 080FC
   mov [bx + 0x66], ax                          ; 080FC  0x89, 0x47, 0x66
   ret                                          ; 080FF  0xC3
+  crt_esc_dispatch_reset:
   call sub_095CB                               ; 08100  0xE8, 0xC8, 0x14
   mov word [bx + 0x5e], crt_char_handler                 ; 08103  0xC7, 0x47, 0x5E, 0x4F, 0x14
   jmp near loc_07FEF                           ; 08108  0xE9, 0xE4, 0xFE
+  crt_esc_dispatch_normal:
   mov word [bx + 0x5e], crt_char_handler                 ; 0810B  0xC7, 0x47, 0x5E, 0x4F, 0x14
-  mov di, 0x15f4 + DELTA_VMENU                               ; 08110  0xBF, 0xF4, 0x15
+  mov di, crt_esc_table                                    ; 08110  0xBF, 0xF4, 0x15
   mov_al_cl                                    ; 08113  mov al, cl
   call sub_08B79                               ; 08115  0xE8, 0x61, 0x0A
+  crt_esc_jump_table:
   ; --- Escape sequence jump table (62 word pointers) ---
-  dw 0x1942 + DELTA_VMENU, 0x192a + DELTA_VMENU, 0x1922 + DELTA_VMENU, 0x191c + DELTA_VMENU, 0x1916 + DELTA_VMENU, 0x190f + DELTA_VMENU, 0x1908 + DELTA_VMENU, 0x1903 + DELTA_VMENU
-  dw 0x18fe + DELTA_VMENU, 0x18f8 + DELTA_VMENU, 0x18f3 + DELTA_VMENU, 0x18ee + DELTA_VMENU, 0x191c + DELTA_VMENU, 0x1916 + DELTA_VMENU, 0x18cb + DELTA_VMENU, 0x18ba + DELTA_VMENU
-  dw 0x1883 + DELTA_VMENU, 0x186c + DELTA_VMENU, 0x1861 + DELTA_VMENU, 0x185a + DELTA_VMENU, 0x193c + DELTA_VMENU, 0x17a0 + DELTA_VMENU, 0x179a + DELTA_VMENU, 0x1854 + DELTA_VMENU
-  dw 0x184e + DELTA_VMENU, 0x17c1 + DELTA_VMENU, 0x17b9 + DELTA_VMENU, 0x178f + DELTA_VMENU, 0x178a + DELTA_VMENU, 0x177e + DELTA_VMENU, 0x1777 + DELTA_VMENU, 0x171b + DELTA_VMENU
-  dw 0x1732 + DELTA_VMENU, 0x1723 + DELTA_VMENU, 0x1767 + DELTA_VMENU, 0x1759 + DELTA_VMENU, 0x174f + DELTA_VMENU, 0x1794 + DELTA_VMENU, 0x1772 + DELTA_VMENU, 0x176d + DELTA_VMENU
-  dw 0x1732 + DELTA_VMENU, 0x1723 + DELTA_VMENU, 0x170f + DELTA_VMENU, 0x1709 + DELTA_VMENU, 0x1703 + DELTA_VMENU, 0x16fd + DELTA_VMENU, 0x1936 + DELTA_VMENU, 0x16f8 + DELTA_VMENU
-  dw 0x16f3 + DELTA_VMENU, 0x16af + DELTA_VMENU, 0x16ca + DELTA_VMENU, 0x16a0 + DELTA_VMENU, 0x1691 + DELTA_VMENU, 0x1688 + DELTA_VMENU, 0x1679 + DELTA_VMENU, 0x1659 + DELTA_VMENU
-  dw 0x1666 + DELTA_VMENU, 0x1650 + DELTA_VMENU, 0x164d + DELTA_VMENU, 0x1644 + DELTA_VMENU, 0x1635 + DELTA_VMENU, 0x1632 + DELTA_VMENU
+  dw crt_esc_equal_sub, crt_esc_H_sub, crt_esc_C_sub, crt_esc_D_sub, crt_esc_B_sub, crt_esc_A_sub, crt_esc_E_sub, crt_esc_I_sub
+  dw crt_esc_J_sub, crt_esc_K_sub, crt_esc_L_sub, crt_esc_M_sub, crt_esc_D_sub, crt_esc_B_sub, crt_esc_P_sub, crt_esc_Q_sub
+  dw crt_esc_Y_sub, crt_esc_a_sub, crt_esc_b_sub, crt_esc_c_sub, crt_esc_d_sub, crt_esc_e_sub, crt_esc_f_sub, crt_esc_g_sub
+  dw crt_esc_h_sub, crt_esc_i_sub, crt_esc_j_sub, crt_esc_k_sub, crt_esc_l_sub, crt_esc_m_sub, crt_esc_n_sub, crt_esc_o_sub
+  dw crt_esc_p_sub, crt_esc_q_sub, crt_esc_s_sub, crt_esc_t_sub, crt_esc_r_sub, crt_esc_u_sub, crt_esc_v_sub, crt_esc_w_sub
+  dw crt_esc_p_sub, crt_esc_q_sub, crt_esc_colon_pos, crt_esc_lt_sub, crt_esc_gt_sub, crt_esc_0_attr, crt_esc_1_sub, crt_esc_2_cur_off
+  dw crt_esc_3_cur_on, crt_esc_6_toggle, crt_esc_7_toggle, crt_esc_f1_func, crt_esc_f2_ins, crt_esc_f3_del, crt_esc_f4_tab, crt_esc_f5_fwd
+  dw crt_esc_f6_back, crt_esc_f7_home, crt_esc_fb_left, crt_esc_fc_right, crt_esc_fd_down, crt_esc_fe_up
+  crt_esc_table:
   ; --- Escape sequence character table (62 bytes) ---
   db "=HCDBAEIJKLMNOPQYabcdefghijklmnopqstruvwxz:<>012367", 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xfb, 0xfc, 0xfd, 0xfe
+  crt_esc_fe_up:
   jmp near sub_085C9                           ; 081D2  0xE9, 0xF4, 0x03
+  crt_esc_fd_down:
   mov dx, [bx + 0x66]                          ; 081D5  0x8B, 0x57, 0x66
   cmp dx, [bx + 0x60]                          ; 081D8  0x3B, 0x57, 0x60
   je loc_08203                                 ; 081DB  0x74, 0x26
   inc dx                                       ; 081DD  0x42
   mov [bx + 0x66], dx                          ; 081DE  0x89, 0x57, 0x66
   jmp near sub_85d3                            ; 081E1  0xE9, 0xEF, 0x03
+  crt_esc_fc_right:
   dec word [bx + 0x66]                         ; 081E4  0xFF, 0x4F, 0x66
   jns loc_08203                                ; 081E7  0x79, 0x1A
   inc word [bx + 0x66]                         ; 081E9  0xFF, 0x47, 0x66
   ret                                          ; 081EC  0xC3
+  crt_esc_fb_left:
   jmp near loc_085BA                           ; 081ED  0xE9, 0xCA, 0x03
 
 loc_081F0:                                     ; 081F0
+  crt_esc_f7_home:
   dec word [bx + 0x64]                         ; 081F0  0xFF, 0x4F, 0x64
   jns loc_08203                                ; 081F3  0x79, 0x0E
   inc word [bx + 0x64]                         ; 081F5  0xFF, 0x47, 0x64
   ret                                          ; 081F8  0xC3
+  crt_esc_f5_fwd:
   mov si, [bx + 0x64]                          ; 081F9  0x8B, 0x77, 0x64
   test si, si                                  ; 081FC  0x85, 0xF6
   jne loc_081F0                                ; 081FE  0x75, 0xF0
@@ -1404,6 +1412,7 @@ loc_08203:                                     ; 08203
   jmp near sub_85d3                            ; 08203  0xE9, 0xCD, 0x03
 
 sub_08206:                                     ; 08206
+  crt_esc_f6_back:
   test byte [bx + 0x6b], 4                     ; 08206  0xF6, 0x47, 0x6B, 0x04
   jne loc_08216                                ; 0820A  0x75, 0x0A
   call sub_09643                               ; 0820C  0xE8, 0x34, 0x14
@@ -1412,41 +1421,32 @@ sub_08206:                                     ; 08206
 
 loc_08216:                                     ; 08216
   call sub_085C9                               ; 08216  0xE8, 0xB0, 0x03
+  crt_esc_f4_tab:
   mov si, [bx + 0x64]                          ; 08219  0x8B, 0x77, 0x64
-  inc si                                       ; 0821C  0x46
-  cmp si, [bx + 0x48]                          ; 0821D  0x3B, 0x77, 0x48
-  db 0x74, 0x06                                ; 08220  je 0x8228
-  mov dx, [bx + 0x48]                          ; 08222  0x8B, 0x57, 0x48
-  db 0xE8, 0x37                                ; 08225  .7
-
-loc_08227:                                     ; 08227
-  add al, 0x8b                                 ; 08227  0x04, 0x8B
-  dec di                                       ; 08229  0x4F
-  db 0x60                                      ; 0822A  pusha
-  db 0x8B                                      ; 0822B  .
-
-loc_0822C:                                     ; 0822C
-  push di                                      ; 0822C  0x57
-  db 0x66, 0xE9                                ; 0822D  f.
-
-loc_0822F:                                     ; 0822F
-  std                                          ; 0822F  0xFD
-  db 0x03, 0xE8                                ; 08230  add bp, ax
-  db 0x20                                      ; 08232
-
-loc_08233:                                     ; 08233
-  or [bp + di + 0x6477], cl                    ; 08233  0x08, 0x8B, 0x77, 0x64
-  db 0xE8                                      ; 08237  .
-
-loc_08238:                                     ; 08238
-  mov ch, 4                                    ; 08238  0xB5, 0x04
-  call sub_080F0                               ; 0823A  0xE8, 0xB3, 0xFE
-  jmp near sub_08625                           ; 0823D  0xE9, 0xE5, 0x03
-  call sub_8a54                                ; 08240  0xE8, 0x11, 0x08
-  mov si, [bx + 0x64]                          ; 08243  0x8B, 0x77, 0x64
-  call sub_086C6                               ; 08246  0xE8, 0x7D, 0x04
-  call sub_080F0                               ; 08249  0xE8, 0xA4, 0xFE
-  jmp near sub_08625                           ; 0824C  0xE9, 0xD6, 0x03
+.loc_1680:
+  inc si
+  cmp si, [bx + 0x48]
+  je .loc_1688
+  mov dx, [bx + 0x48]
+  call sub_0865F                               ; call 0x1ABF / 0x1B09
+.loc_1688:
+crt_esc_f3_del:
+  mov cx, [bx + 0x60]
+  mov dx, [bx + 0x66]
+  jmp near loc_0862E                           ; jmp 0x1A8E / 0x1AD8
+crt_esc_f2_ins:
+  call sub_8a54                                ; call 0x1EB4 / 0x1EFE
+  mov si, [bx + 0x64]
+  call sub_086EF                               ; call 0x1B4F / 0x1B99
+  call sub_080F0                               ; call 0x1550 / 0x159A
+  jmp near sub_08625                           ; jmp 0x1A85 / 0x1ACF
+crt_esc_f1_func:
+  call sub_8a54                                ; call 0x1EB4 / 0x1EFE
+  mov si, [bx + 0x64]
+  call sub_086C6                               ; call 0x1B26 / 0x1B70
+  call sub_080F0                               ; call 0x1550 / 0x159A
+  jmp near sub_08625                           ; jmp 0x1A85 / 0x1ACF
+  crt_esc_6_toggle:
   test byte [bx + 0x6b], 4                     ; 0824F  0xF6, 0x47, 0x6B, 0x04
   jne loc_08297                                ; 08253  0x75, 0x42
   mov si, [bx + 0x64]                          ; 08255  0x8B, 0x77, 0x64
@@ -1460,6 +1460,7 @@ loc_08238:                                     ; 08238
   dec si                                       ; 08266  0x4E
   std                                          ; 08267  0xFD
   jmp short loc_08277                          ; 08268  0xEB, 0x0D
+  crt_esc_7_toggle:
   test byte [bx + 0x6b], 4                     ; 0826A  0xF6, 0x47, 0x6B, 0x04
   jne loc_08297                                ; 0826E  0x75, 0x27
   mov si, [bx + 0x62]                          ; 08270  0x8B, 0x77, 0x62
@@ -1480,18 +1481,24 @@ loc_08277:                                     ; 08277
   pop es                                       ; 0828E  0x07
   cld                                          ; 0828F  0xFC
   jmp near sub_09334                           ; 08290  0xE9, 0xA1, 0x10
+  crt_esc_3_cur_on:
   or byte [bx + 0x6a], 2                       ; 08293  0x80, 0x4F, 0x6A, 0x02
 
 loc_08297:                                     ; 08297
   ret                                          ; 08297  0xC3
+  crt_esc_2_cur_off:
   and byte [bx + 0x6a], 0xfd                   ; 08298  0x80, 0x67, 0x6A, 0xFD
   ret                                          ; 0829C  0xC3
-  mov word [bx + 0x5e], 0x19f7 + DELTA_VMENU                 ; 0829D  0xC7, 0x47, 0x5E, 0xF7, 0x19
+  crt_esc_0_attr:
+  mov word [bx + 0x5e], crt_esc_sub_19f7                   ; 0829D  0xC7, 0x47, 0x5E, 0xF7, 0x19
   ret                                          ; 082A2  0xC3
-  mov word [bx + 0x5e], 0x1943 + DELTA_VMENU                 ; 082A3  0xC7, 0x47, 0x5E, 0x43, 0x19
+  crt_esc_gt_sub:
+  mov word [bx + 0x5e], crt_esc_sub_1943                   ; 082A3  0xC7, 0x47, 0x5E, 0x43, 0x19
   ret                                          ; 082A8  0xC3
-  mov word [bx + 0x5e], 0x194c + DELTA_VMENU                 ; 082A9  0xC7, 0x47, 0x5E, 0x4C, 0x19
+  crt_esc_lt_sub:
+  mov word [bx + 0x5e], crt_esc_sub_194c                   ; 082A9  0xC7, 0x47, 0x5E, 0x4C, 0x19
   ret                                          ; 082AE  0xC3
+  crt_esc_colon_pos:
   xor_si_si                                    ; 082AF  xor si, si
   mov dx, [bx + 0x64]                          ; 082B1  0x8B, 0x57, 0x64
   or_dx_dx                                     ; 082B4  or dx, dx
@@ -1499,13 +1506,16 @@ loc_08297:                                     ; 08297
   call sub_0865F                               ; 082B8  0xE8, 0xA4, 0x03
 
 loc_082BB:                                     ; 082BB
+  crt_esc_o_sub:
   db 0x33, 0xD2                                ; 082BB  xor dx, dx
   mov cx, [bx + 0x66]                          ; 082BD  0x8B, 0x4F, 0x66
   jmp near loc_0862E                           ; 082C0  0xE9, 0x6B, 0x03
+  crt_esc_q_sub:
   test word [bx + 0x6b], 0x200                 ; 082C3  0xF7, 0x47, 0x6B, 0x00, 0x02
   je loc_082EE                                 ; 082C8  0x74, 0x24
   and word [bx + 0x6b], 0xfdff                 ; 082CA  0x81, 0x67, 0x6B, 0xFF, 0xFD
   jmp near sub_08625                           ; 082CF  0xE9, 0x53, 0x03
+  crt_esc_p_sub:
   test word [bx + 0x6b], 0x200                 ; 082D2  0xF7, 0x47, 0x6B, 0x00, 0x02
   jne loc_082EE                                ; 082D7  0x75, 0x15
   call sub_8a54                                ; 082D9  0xE8, 0x78, 0x07
@@ -1516,36 +1526,48 @@ loc_082BB:                                     ; 082BB
 
 loc_082EE:                                     ; 082EE
   ret                                          ; 082EE  0xC3
+  crt_esc_r_sub:
   mov al, [bx + 0x66]                          ; 082EF  0x8A, 0x47, 0x66
   mov ah, [bx + 0x64]                          ; 082F2  0x8A, 0x67, 0x64
   mov [bx + 0x68], ax                          ; 082F5  0x89, 0x47, 0x68
   ret                                          ; 082F8  0xC3
+  crt_esc_t_sub:
   db 0x33, 0xC0                                ; 082F9  xor ax, ax
   xchg [bx + 0x68], ax                         ; 082FB  0x87, 0x47, 0x68
   mov [bx + 0x66], al                          ; 082FE  0x88, 0x47, 0x66
   mov [bx + 0x64], ah                          ; 08301  0x88, 0x67, 0x64
   jmp near sub_85d3                            ; 08304  0xE9, 0xCC, 0x02
+  crt_esc_s_sub:
   mov si, [bx + 0x64]                          ; 08307  0x8B, 0x77, 0x64
   jmp near sub_0865C                           ; 0830A  0xE9, 0x4F, 0x03
+  crt_esc_w_sub:
   or byte [bx + 0x6a], 1                       ; 0830D  0x80, 0x4F, 0x6A, 0x01
   ret                                          ; 08311  0xC3
+  crt_esc_v_sub:
   and byte [bx + 0x6a], 0xfe                   ; 08312  0x80, 0x67, 0x6A, 0xFE
   ret                                          ; 08316  0xC3
+  crt_esc_n_sub:
   or word [bx + 0x6b], 0x400                   ; 08317  0x81, 0x4F, 0x6B, 0x00, 0x04
   jmp short loc_08323                          ; 0831C  0xEB, 0x05
+  crt_esc_m_sub:
   and word [bx + 0x6b], 0xfbff                 ; 0831E  0x81, 0x67, 0x6B, 0xFF, 0xFB
 
 loc_08323:                                     ; 08323
   mov al, [bx + 0x80]                          ; 08323  0x8A, 0x87, 0x80, 0x00
   jmp near sub_08371                           ; 08327  0xE9, 0x47, 0x00
+  crt_esc_l_sub:
   or byte [bx + 0x6a], 4                       ; 0832A  0x80, 0x4F, 0x6A, 0x04
   ret                                          ; 0832E  0xC3
+  crt_esc_k_sub:
   and byte [bx + 0x6a], 0xfb                   ; 0832F  0x80, 0x67, 0x6A, 0xFB
   ret                                          ; 08333  0xC3
+  crt_esc_u_sub:
   or word [bx + 0x6b], 0x1000                  ; 08334  0x81, 0x4F, 0x6B, 0x00, 0x10
   ret                                          ; 08339  0xC3
+  crt_esc_f_sub:
   and word [bx + 0x6b], 0xefff                 ; 0833A  0x81, 0x67, 0x6B, 0xFF, 0xEF
   ret                                          ; 0833F  0xC3
+  crt_esc_e_sub:
   and word [bx + 0x6b], 0xe0ff                 ; 08340  0x81, 0x67, 0x6B, 0xFF, 0xE0
   and byte [bx + 0x6a], 0xf8                   ; 08345  0x80, 0x67, 0x6A, 0xF8
   mov byte [bx + 0x75], 0xf8                   ; 08349  0xC6, 0x47, 0x75, 0xF8
@@ -1553,9 +1575,11 @@ loc_08323:                                     ; 08323
   ror al, 4                                    ; 08350  0xC0, 0xC8, 0x04
   call sub_08371                               ; 08353  0xE8, 0x1B, 0x00
   jmp near sub_08625                           ; 08356  0xE9, 0xCC, 0x02
+  crt_esc_j_sub:
   mov al, [bx + 0x80]                          ; 08359  0x8A, 0x87, 0x80, 0x00
   or al, 0x80                                  ; 0835D  0x0C, 0x80
   jmp short sub_08371                          ; 0835F  0xEB, 0x10
+  crt_esc_i_sub:
   mov al, [bx + 0x80]                          ; 08361  0x8A, 0x87, 0x80, 0x00
   and al, 0x7f                                 ; 08365  0x24, 0x7F
   jmp short sub_08371                          ; 08367  0xEB, 0x08
@@ -1627,17 +1651,22 @@ loc_083EB:                                     ; 083EB
   pop di                                       ; 083EB  0x5F
   pop cx                                       ; 083EC  0x59
   ret                                          ; 083ED  0xC3
+  crt_esc_h_sub:
   and word [bx + 0x6b], 0xfeff                 ; 083EE  0x81, 0x67, 0x6B, 0xFF, 0xFE
   ret                                          ; 083F3  0xC3
+  crt_esc_g_sub:
   or word [bx + 0x6b], 0x100                   ; 083F4  0x81, 0x4F, 0x6B, 0x00, 0x01
   ret                                          ; 083F9  0xC3
-  mov word [bx + 0x7b], 0x1b2a + DELTA_VMENU                 ; 083FA  0xC7, 0x47, 0x7B, 0x2A, 0x1B
+  crt_esc_c_sub:
+  mov word [bx + 0x7b], crt_esc_sub_1b2a                   ; 083FA  0xC7, 0x47, 0x7B, 0x2A, 0x1B
   jmp short loc_08406                          ; 083FF  0xEB, 0x05
-  mov word [bx + 0x7b], 0x1b53 + DELTA_VMENU                 ; 08401  0xC7, 0x47, 0x7B, 0x53, 0x1B
+  crt_esc_b_sub:
+  mov word [bx + 0x7b], crt_esc_sub_1b53                   ; 08401  0xC7, 0x47, 0x7B, 0x53, 0x1B
 
 loc_08406:                                     ; 08406
-  mov word [bx + 0x5e], 0x195d + DELTA_VMENU                 ; 08406  0xC7, 0x47, 0x5E, 0x5D, 0x19
+  mov word [bx + 0x5e], crt_esc_sub_195d                   ; 08406  0xC7, 0x47, 0x5E, 0x5D, 0x19
   ret                                          ; 0840B  0xC3
+  crt_esc_a_sub:
   mov si, 0x18                                 ; 0840C  0xBE, 0x18, 0x00
   call sub_0865C                               ; 0840F  0xE8, 0x4A, 0x02
   call sub_09220                               ; 08412  0xE8, 0x0B, 0x0E
@@ -1646,6 +1675,7 @@ loc_08406:                                     ; 08406
   call sub_08444                               ; 0841B  0xE8, 0x26, 0x00
   mov byte [bx + 0x35], 0                      ; 0841E  0xC6, 0x47, 0x35, 0x00
   ret                                          ; 08422  0xC3
+  crt_esc_Y_sub:
   call sub_09220                               ; 08423  0xE8, 0xFA, 0x0D
   call sub_09312                               ; 08426  0xE8, 0xE9, 0x0E
   cmp word [bx + 0x64], 0x18                   ; 08429  0x83, 0x7F, 0x64, 0x18
@@ -1670,12 +1700,14 @@ sub_08444:                                     ; 08444
 
 loc_08459:                                     ; 08459
   ret                                          ; 08459  0xC3
+  crt_esc_Q_sub:
   mov ax, [bx + 0x6b]                          ; 0845A  0x8B, 0x47, 0x6B
   mov al, [bx + 0x6a]                          ; 0845D  0x8A, 0x47, 0x6A
   mov [bx + 0x6d], ax                          ; 08460  0x89, 0x47, 0x6D
   mov al, [bx + 0x80]                          ; 08463  0x8A, 0x87, 0x80, 0x00
   mov [bx + 0x6f], al                          ; 08467  0x88, 0x47, 0x6F
   ret                                          ; 0846A  0xC3
+  crt_esc_P_sub:
   mov ax, [bx + 0x6d]                          ; 0846B  0x8B, 0x47, 0x6D
   mov [bx + 0x6a], al                          ; 0846E  0x88, 0x47, 0x6A
   mov al, [bx + 0x6b]                          ; 08471  0x8A, 0x47, 0x6B
@@ -1689,27 +1721,38 @@ loc_08459:                                     ; 08459
 loc_08484:                                     ; 08484
   mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
   jmp near sub_08625                           ; 0848B  0xE9, 0x97, 0x01
+  crt_esc_M_sub:
   mov al, 1                                    ; 0848E  0xB0, 0x01
   jmp near loc_07E07                           ; 08490  0xE9, 0x74, 0xF9
+  crt_esc_L_sub:
   xor_al_al                                    ; 08493  xor al, al
   jmp near loc_07E07                           ; 08495  0xE9, 0x6F, 0xF9
-  mov word [bx + 0x5e], 0x1991 + DELTA_VMENU                 ; 08498  0xC7, 0x47, 0x5E, 0x91, 0x19
+  crt_esc_K_sub:
+  mov word [bx + 0x5e], crt_esc_sub_1991                   ; 08498  0xC7, 0x47, 0x5E, 0x91, 0x19
   ret                                          ; 0849D  0xC3
+  crt_esc_J_sub:
   mov byte [bx + 0x71], 1                      ; 0849E  0xC6, 0x47, 0x71, 0x01
   ret                                          ; 084A2  0xC3
+  crt_esc_I_sub:
   mov byte [bx + 0x71], 0                      ; 084A3  0xC6, 0x47, 0x71, 0x00
   ret                                          ; 084A7  0xC3
+  crt_esc_E_sub:
   mov byte [bx + 0x75], 0xff                   ; 084A8  0xC6, 0x47, 0x75, 0xFF
   jmp near sub_096CF                           ; 084AC  0xE9, 0x20, 0x12
+  crt_esc_A_sub:
   mov byte [bx + 0x75], 0xf8                   ; 084AF  0xC6, 0x47, 0x75, 0xF8
   jmp near sub_096CF                           ; 084B3  0xE9, 0x19, 0x12
+  crt_esc_B_sub:
   or word [bx + 0x6b], 0x800                   ; 084B6  0x81, 0x4F, 0x6B, 0x00, 0x08
   ret                                          ; 084BB  0xC3
+  crt_esc_D_sub:
   and word [bx + 0x6b], 0xf7ff                 ; 084BC  0x81, 0x67, 0x6B, 0xFF, 0xF7
   ret                                          ; 084C1  0xC3
+  crt_esc_C_sub:
   mov si, [bx + 0x76]                          ; 084C2  0x8B, 0x77, 0x76
   mov di, 0x4bc4 + DELTA_VIDTBL                               ; 084C5  0xBF, 0xC4, 0x4B
   jmp short loc_084D0                          ; 084C8  0xEB, 0x06
+  crt_esc_H_sub:
   mov di, [bx + 0x76]                          ; 084CA  0x8B, 0x7F, 0x76
   mov si, 0x4bc4 + DELTA_VIDTBL                               ; 084CD  0xBE, 0xC4, 0x4B
 
@@ -1717,25 +1760,32 @@ loc_084D0:                                     ; 084D0
   mov cx, 0x1c8                                ; 084D0  0xB9, 0xC8, 0x01
   rep movsb                                    ; 084D3  0xF3, 0xA4
   ret                                          ; 084D5  0xC3
-  mov word [bx + 0x5e], 0x199d + DELTA_VMENU                 ; 084D6  0xC7, 0x47, 0x5E, 0x9D, 0x19
+  crt_esc_1_sub:
+  mov word [bx + 0x5e], crt_esc_sub_199d                   ; 084D6  0xC7, 0x47, 0x5E, 0x9D, 0x19
   ret                                          ; 084DB  0xC3
-  mov word [bx + 0x5e], 0x19c3 + DELTA_VMENU                 ; 084DC  0xC7, 0x47, 0x5E, 0xC3, 0x19
+  crt_esc_d_sub:
+  mov word [bx + 0x5e], crt_esc_sub_19c3                   ; 084DC  0xC7, 0x47, 0x5E, 0xC3, 0x19
   ret                                          ; 084E1  0xC3
+  crt_esc_equal_sub:
   ret                                          ; 084E2  0xC3
+  crt_esc_sub_1943:
   shl cl, 4                                    ; 084E3  0xC0, 0xE1, 0x04
   call sub_08369                               ; 084E6  0xE8, 0x80, 0xFE
   jmp near loc_08597                           ; 084E9  0xE9, 0xAB, 0x00
+  crt_esc_sub_194c:
   and cl, 0xf                                  ; 084EC  0x80, 0xE1, 0x0F
   mov al, [bx + 0x80]                          ; 084EF  0x8A, 0x87, 0x80, 0x00
   and al, 0xf0                                 ; 084F3  0x24, 0xF0
   db 0x0A, 0xC1                                ; 084F5  or al, cl
   call sub_08371                               ; 084F7  0xE8, 0x77, 0xFE
   jmp near loc_08597                           ; 084FA  0xE9, 0x9A, 0x00
-  mov word [bx + 0x5e], 0x196b + DELTA_VMENU                 ; 084FD  0xC7, 0x47, 0x5E, 0x6B, 0x19
+  crt_esc_sub_195d:
+  mov word [bx + 0x5e], crt_esc_sub_196b                   ; 084FD  0xC7, 0x47, 0x5E, 0x6B, 0x19
   sub cl, 0x20                                 ; 08502  0x80, 0xE9, 0x20
   xor_ch_ch                                    ; 08505  xor ch, ch
   mov [bx + 0x7d], cx                          ; 08507  0x89, 0x4F, 0x7D
   ret                                          ; 0850A  0xC3
+  crt_esc_sub_196b:
   sub cl, 0x20                                 ; 0850B  0x80, 0xE9, 0x20
   cmp cl, [bx + 0x48]                          ; 0850E  0x3A, 0x4F, 0x48
   jae loc_0854D                                ; 08511  0x73, 0x3A
@@ -1757,11 +1807,13 @@ rtm_al87_blocking_read:                        ; 0851E
   call sub_8a95                                ; 08528  0xE8, 0x6A, 0x05
   call sub_85d3                                ; 0852B  0xE8, 0xA5, 0x00
   jmp near loc_08597                           ; 0852E  0xE9, 0x66, 0x00
+  crt_esc_sub_1991:
   ror cx, 4                                    ; 08531  0xC1, 0xC9, 0x04
   ror ch, 4                                    ; 08534  0xC0, 0xCD, 0x04
   call sub_7e11                                ; 08537  0xE8, 0xD7, 0xF8
   jmp near loc_08597                           ; 0853A  0xE9, 0x5A, 0x00
-  mov word [bx + 0x5e], 0x19ae + DELTA_VMENU                 ; 0853D  0xC7, 0x47, 0x5E, 0xAE, 0x19
+  crt_esc_sub_199d:
+  mov word [bx + 0x5e], crt_esc_sub_19ae                   ; 0853D  0xC7, 0x47, 0x5E, 0xAE, 0x19
   sub cl, 0x20                                 ; 08542  0x80, 0xE9, 0x20
   cmp cl, [bx + 0x48]                          ; 08545  0x3A, 0x4F, 0x48
   jae loc_0854D                                ; 08548  0x73, 0x03
@@ -1769,6 +1821,7 @@ rtm_al87_blocking_read:                        ; 0851E
 
 loc_0854D:                                     ; 0854D
   ret                                          ; 0854D  0xC3
+  crt_esc_sub_19ae:
   mov word [bx + 0x5e], crt_char_handler                 ; 0854E  0xC7, 0x47, 0x5E, 0x4F, 0x14
   sub cl, 0x20                                 ; 08553  0x80, 0xE9, 0x20
   cmp cl, [bx + 0x60]                          ; 08556  0x3A, 0x4F, 0x60
@@ -1776,6 +1829,7 @@ loc_0854D:                                     ; 0854D
   mov [bx + 0x66], cl                          ; 0855B  0x88, 0x4F, 0x66
   call sub_85d3                                ; 0855E  0xE8, 0x72, 0x00
   jmp short loc_08597                          ; 08561  0xEB, 0x34
+  crt_esc_sub_19c3:
   xchg al, cl                                  ; 08563  86 C1
   mov di, key_scan_code_table                  ; CS:10B5 (start af funktionstast-tabel, 66 bytes)
   mov_dx_di                                    ; 08568  mov dx, di
@@ -1788,8 +1842,9 @@ loc_0854D:                                     ; 0854D
   call sub_7c97                                ; 08575  0xE8, 0x1F, 0xF7
   mov [bx + 0x7b], si                          ; 08578  0x89, 0x77, 0x7B
   mov [bx + 0x7d], cl                          ; 0857B  0x88, 0x4F, 0x7D
-  mov word [bx + 0x5e], 0x19e4 + DELTA_VMENU                 ; 0857E  0xC7, 0x47, 0x5E, 0xE4, 0x19
+  mov word [bx + 0x5e], crt_esc_sub_19e4                   ; 0857E  0xC7, 0x47, 0x5E, 0xE4, 0x19
   ret                                          ; 08583  0xC3
+  crt_esc_sub_19e4:
   mov si, [bx + 0x7b]                          ; 08584  0x8B, 0x77, 0x7B
   mov [si], cl                                 ; 08587  0x88, 0x0C
   inc si                                       ; 08589  0x46
@@ -1801,6 +1856,7 @@ loc_0854D:                                     ; 0854D
   ret                                          ; 08596  0xC3
 
 loc_08597:                                     ; 08597
+  crt_esc_sub_19f7:
   mov word [bx + 0x5e], crt_char_handler                 ; 08597  0xC7, 0x47, 0x5E, 0x4F, 0x14
   ret                                          ; 0859C  0xC3
 
@@ -1984,6 +2040,7 @@ loc_086B3:                                     ; 086B3
 sub_086C6:                                     ; 086C6
   mov di, [bx + 0x48]                          ; 086C6  0x8B, 0x7F, 0x48
   dec di                                       ; 086C9  0x4F
+  crt_esc_sub_1b2a:
   test byte [bx + 0x6b], 4                     ; 086CA  0xF6, 0x47, 0x6B, 0x04
   je loc_086D3                                 ; 086CE  0x74, 0x03
   jmp near loc_08AEE                           ; 086D0  0xE9, 0x1B, 0x04
@@ -2009,6 +2066,7 @@ loc_086D3:                                     ; 086D3
 sub_086EF:                                     ; 086EF
   mov di, [bx + 0x48]                          ; 086EF  0x8B, 0x7F, 0x48
   dec di                                       ; 086F2  0x4F
+  crt_esc_sub_1b53:
   test byte [bx + 0x6b], 4                     ; 086F3  0xF6, 0x47, 0x6B, 0x04
   je loc_086FA                                 ; 086F7  0x74, 0x01
   ret                                          ; 086F9  0xC3
@@ -2081,6 +2139,7 @@ loc_08754:                                     ; 08754
   call rtm_timer_wait                          ; 08784  0xE8, 0x4A, 0xF1
   pop bx                                       ; 08787  0x5B
   ret                                          ; 08788  0xC3
+  crt_scroll_sub_1be9:
   call sub_0880E                               ; 08789  0xE8, 0x82, 0x00
   inc word [cs:0x2c04 + DELTA_TABLES]                         ; 0878C  0x2E, 0xFF, 0x06, 0x04, 0x2C
   push ax                                      ; 08791  0x50
@@ -2095,6 +2154,7 @@ loc_08754:                                     ; 08754
   add di, 3                                    ; 087A8  0x83, 0xC7, 0x03
   mov cl, 1                                    ; 087AB  0xB1, 0x01
   jmp near loc_087CD                           ; 087AD  0xE9, 0x1D, 0x00
+  crt_scroll_sub_1c10:
   call sub_0880E                               ; 087B0  0xE8, 0x5B, 0x00
   push ax                                      ; 087B3  0x50
   call sub_0865C                               ; 087B4  0xE8, 0xA5, 0xFE
@@ -2183,8 +2243,10 @@ sub_08825:                                     ; 08825
   mov cx, [bx + 0x48]                          ; 08868  0x8B, 0x4F, 0x48
   pop bx                                       ; 0886B  0x5B
   jmp near loc_08960                           ; 0886C  0xE9, 0xF1, 0x00
+  crt_scroll_sub_1ccf:
   mov al, 5                                    ; 0886F  0xB0, 0x05
   jmp short loc_08875                          ; 08871  0xEB, 0x02
+  crt_scroll_sub_1cd3:
   mov al, 3                                    ; 08873  0xB0, 0x03
 
 loc_08875:                                     ; 08875
@@ -2210,16 +2272,19 @@ loc_08875:                                     ; 08875
   call sub_09621                               ; 088AA  0xE8, 0x74, 0x0D
   xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 088AD  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 088B3  0xC3
+  crt_scroll_sub_1d14:
   call sub_08972                               ; 088B4  0xE8, 0xBB, 0x00
   add byte [cs:bx + 0x7c], 4                   ; 088B7  0x2E, 0x80, 0x47, 0x7C, 0x04
   add byte [cs:bx + 0x80], 4                   ; 088BC  0x2E, 0x80, 0x87, 0x80, 0x00, 0x04
   xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 088C2  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 088C8  0xC3
+  crt_scroll_sub_1d29:
   call sub_08972                               ; 088C9  0xE8, 0xA6, 0x00
   sub byte [cs:bx + 0x7c], 4                   ; 088CC  0x2E, 0x80, 0x6F, 0x7C, 0x04
   sub byte [cs:bx + 0x80], 4                   ; 088D1  0x2E, 0x80, 0xAF, 0x80, 0x00, 0x04
   xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 088D7  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
   ret                                          ; 088DD  0xC3
+  crt_scroll_sub_1d3e:
   mov bx, [cs:0x2c00 + DELTA_TABLES]                          ; 088DE  0x2E, 0x8B, 0x1E, 0x00, 0x2C
   mov cx, [bx + 0x48]                          ; 088E3  0x8B, 0x4F, 0x48
   push bx                                      ; 088E6  0x53
@@ -2229,6 +2294,7 @@ loc_08875:                                     ; 08875
   pop bx                                       ; 088F3  0x5B
   mov byte [bx + 0x35], 0                      ; 088F4  0xC6, 0x47, 0x35, 0x00
   ret                                          ; 088F8  0xC3
+  crt_scroll_sub_1d59:
   mov bx, [cs:0x2c00 + DELTA_TABLES]                          ; 088F9  0x2E, 0x8B, 0x1E, 0x00, 0x2C
   mov al, [cs:0x2c06 + DELTA_TABLES]                          ; 088FE  0x2E, 0xA0, 0x06, 0x2C
   or_al_al                                     ; 08902  or al, al
@@ -2245,12 +2311,13 @@ xios_int28_fn_02_scroll_step:                ; 08910
   mov bl, [cs:0x2c07 + DELTA_TABLES]                          ; 08912  0x2E, 0x8A, 0x1E, 0x07, 0x2C
   xor_bh_bh                                    ; 08917  xor bh, bh
   shl bx, 1                                    ; 08919  0xD1, 0xE3
-  call word [cs:bx + 0x1d86 + DELTA_VMENU]                   ; 0891B  0x2E, 0xFF, 0x97, 0x86, 0x1D
+  call word [cs:bx + crt_state_jump_table]                 ; 0891B  0x2E, 0xFF, 0x97, 0x86, 0x1D
   inc byte [cs:0x2c07 + DELTA_TABLES]                         ; 08920  0x2E, 0xFE, 0x06, 0x07, 0x2C
   ret                                          ; 08925  0xC3
+  crt_state_jump_table:
   ; --- State jump table (12 word pointers) ---
-  dw 0x1be9 + DELTA_VMENU, 0x1cd3 + DELTA_VMENU, 0x1d14 + DELTA_VMENU, 0x1d14 + DELTA_VMENU, 0x1d3e + DELTA_VMENU, 0x1d59 + DELTA_VMENU
-  dw 0x1c10 + DELTA_VMENU, 0x1ccf + DELTA_VMENU, 0x1d29 + DELTA_VMENU, 0x1d29 + DELTA_VMENU, 0x1d3e + DELTA_VMENU, 0x1d59 + DELTA_VMENU
+  dw crt_scroll_sub_1be9, crt_scroll_sub_1cd3, crt_scroll_sub_1d14, crt_scroll_sub_1d14, crt_scroll_sub_1d3e, crt_scroll_sub_1d59
+  dw crt_scroll_sub_1c10, crt_scroll_sub_1ccf, crt_scroll_sub_1d29, crt_scroll_sub_1d29, crt_scroll_sub_1d3e, crt_scroll_sub_1d59
 sub_0893E:                                     ; 0893E
   mov cx, [bx + 0x48]                          ; 0893E  0x8B, 0x4F, 0x48
 
@@ -2295,7 +2362,7 @@ loc_08982:                                     ; 08982
 
 sub_08985:                                     ; 08985
   mov bp, [bx + 0x6b]                          ; 08985  0x8B, 0x6F, 0x6B
-  mov [cs:0x1fce + DELTA_VMENU], bp                          ; 08988  0x2E, 0x89, 0x2E, 0xCE, 0x1F
+  mov [cs:crt_state_flags], bp                          ; 08988  0x2E, 0x89, 0x2E, 0xCE, 0x1F
   push bx                                      ; 0898D  0x53
   push ds                                      ; 0898E  0x1E
   call sub_08B5E                               ; 0898F  0xE8, 0xCC, 0x01
@@ -2304,7 +2371,7 @@ sub_08985:                                     ; 08985
   mov cl, 5                                    ; 08996  0xB1, 0x05
   shl bx, cl                                   ; 08998  0xD3, 0xE3
   call sub_08B27                               ; 0899A  0xE8, 0x8A, 0x01
-  cmp byte [cs:0x1fd7 + DELTA_VMENU], 2                      ; 0899D  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
+  cmp byte [cs:crt_mode_ah], 2                          ; 0899D  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
   je loc_089AC                                 ; 089A3  0x74, 0x07
   mov bp, 0x1ff                                ; 089A5  0xBD, 0xFF, 0x01
   ror bp, cl                                   ; 089A8  0xD3, 0xCD
@@ -2315,12 +2382,12 @@ loc_089AC:                                     ; 089AC
   jge loc_089BE                                ; 089AF  0x7D, 0x0D
   mov bp, 3                                    ; 089B1  0xBD, 0x03, 0x00
   ror bp, cl                                   ; 089B4  0xD3, 0xCD
-  mov byte [cs:0x1fd8 + DELTA_VMENU], 0xff                   ; 089B6  0x2E, 0xC6, 0x06, 0xD8, 0x1F, 0xFF
+  mov byte [cs:crt_screen_attr], 0xff                   ; 089B6  0x2E, 0xC6, 0x06, 0xD8, 0x1F, 0xFF
   jmp short loc_089CB                          ; 089BC  0xEB, 0x0D
 
 loc_089BE:                                     ; 089BE
   mov bp, 0x3ff                                ; 089BE  0xBD, 0xFF, 0x03
-  mov byte [cs:0x1fd8 + DELTA_VMENU], 0                      ; 089C1  0x2E, 0xC6, 0x06, 0xD8, 0x1F, 0x00
+  mov byte [cs:crt_screen_attr], 0                      ; 089C1  0x2E, 0xC6, 0x06, 0xD8, 0x1F, 0x00
   ror bp, cl                                   ; 089C7  0xD3, 0xCD
   shr cl, 1                                    ; 089C9  0xD0, 0xE9
 
@@ -2329,15 +2396,15 @@ loc_089CB:                                     ; 089CB
 
 loc_089CD:                                     ; 089CD
   mov ax, [es:bx]                              ; 089CD  0x26, 0x8B, 0x07
-  test word [cs:0x1fce + DELTA_VMENU], 0x400                 ; 089D0  2E F7 06 CE 1F 00 04
+  test word [cs:crt_state_flags], 0x400                 ; 089D0  2E F7 06 CE 1F 00 04
   je loc_089DB                                 ; 089D7  0x74, 0x02
   not ax                                       ; 089D9  0xF7, 0xD0
 
 loc_089DB:                                     ; 089DB
   and ax, 0xfe00                               ; 089DB  0x25, 0x00, 0xFE
-  cmp byte [cs:0x1fd7 + DELTA_VMENU], 2                      ; 089DE  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
+  cmp byte [cs:crt_mode_ah], 2                          ; 089DE  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
   jne loc_089F8                                ; 089E4  0x75, 0x12
-  cmp byte [cs:0x1fd8 + DELTA_VMENU], 0                      ; 089E6  0x2E, 0x80, 0x3E, 0xD8, 0x1F, 0x00
+  cmp byte [cs:crt_screen_attr], 0                      ; 089E6  0x2E, 0x80, 0x3E, 0xD8, 0x1F, 0x00
   je loc_089F8                                 ; 089EC  0x74, 0x0A
   push cx                                      ; 089EE  0x51
   mov cx, 8                                    ; 089EF  0xB9, 0x08, 0x00
@@ -2347,9 +2414,9 @@ loc_089DB:                                     ; 089DB
 
 loc_089F8:                                     ; 089F8
   ror ax, cl                                   ; 089F8  0xD3, 0xC8
-  cmp byte [cs:0x1fd7 + DELTA_VMENU], 2                      ; 089FA  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
+  cmp byte [cs:crt_mode_ah], 2                          ; 089FA  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
   jne loc_08A0A                                ; 08A00  0x75, 0x08
-  cmp byte [cs:0x1fd8 + DELTA_VMENU], 0                      ; 08A02  0x2E, 0x80, 0x3E, 0xD8, 0x1F, 0x00
+  cmp byte [cs:crt_screen_attr], 0                      ; 08A02  0x2E, 0x80, 0x3E, 0xD8, 0x1F, 0x00
   je loc_08A18                                 ; 08A08  0x74, 0x0E
 
 loc_08A0A:                                     ; 08A0A
@@ -2408,18 +2475,18 @@ sub_8a54:                                      ; 08A54
   jne loc_08A91                                ; 08A5F  0x75, 0x30
   push ds                                      ; 08A61  0x1E
   call sub_08B5E                               ; 08A62  0xE8, 0xF9, 0x00
-  mov dx, [cs:0x1fd0 + DELTA_VMENU]                          ; 08A65  0x2E, 0x8B, 0x16, 0xD0, 0x1F
-  mov si, [cs:0x1fd3 + DELTA_VMENU]                          ; 08A6A  0x2E, 0x8B, 0x36, 0xD3, 0x1F
-  mov di, [cs:0x1fd5 + DELTA_VMENU]                          ; 08A6F  0x2E, 0x8B, 0x3E, 0xD5, 0x1F
+  mov dx, [cs:crt_cursor_dx]                          ; 08A65  0x2E, 0x8B, 0x16, 0xD0, 0x1F
+  mov si, [cs:crt_cursor_si]                          ; 08A6A  0x2E, 0x8B, 0x36, 0xD3, 0x1F
+  mov di, [cs:crt_cursor_di]                          ; 08A6F  0x2E, 0x8B, 0x3E, 0xD5, 0x1F
   xor [si], dh                                 ; 08A74  0x30, 0x34
-  cmp byte [cs:0x1fd7 + DELTA_VMENU], 2                      ; 08A76  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
+  cmp byte [cs:crt_mode_ah], 2                          ; 08A76  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
   je loc_08A82                                 ; 08A7C  0x74, 0x04
   xor [di], dl                                 ; 08A7E  0x30, 0x15
   jmp short loc_08A8C                          ; 08A80  0xEB, 0x0A
 
 loc_08A82:                                     ; 08A82
   xor [di], dl                                 ; 08A82  0x30, 0x15
-  mov al, [cs:0x1fd2 + DELTA_VMENU]                          ; 08A84  0x2E, 0xA0, 0xD2, 0x1F
+  mov al, [cs:crt_cursor_al]                          ; 08A84  0x2E, 0xA0, 0xD2, 0x1F
   xor [si + 0x200], al                         ; 08A88  0x30, 0x84, 0x00, 0x02
 
 loc_08A8C:                                     ; 08A8C
@@ -2442,7 +2509,7 @@ sub_8a95:                                      ; 08A95
   call sub_08B27                               ; 08AA6  0xE8, 0x7E, 0x00
   add si, 0x12                                 ; 08AA9  0x83, 0xC6, 0x12
   add di, 0x12                                 ; 08AAC  0x83, 0xC7, 0x12
-  cmp byte [cs:0x1fd7 + DELTA_VMENU], 2                      ; 08AAF  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
+  cmp byte [cs:crt_mode_ah], 2                          ; 08AAF  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
   je loc_08AC2                                 ; 08AB5  0x74, 0x0B
   mov dx, 0xfe00                               ; 08AB7  0xBA, 0x00, 0xFE
   ror dx, cl                                   ; 08ABA  0xD3, 0xCA
@@ -2459,12 +2526,12 @@ loc_08AC2:                                     ; 08AC2
   xor [si], dh                                 ; 08ACD  0x30, 0x34
   xor [di], dl                                 ; 08ACF  0x30, 0x15
   xor [si + 0x200], al                         ; 08AD1  0x30, 0x84, 0x00, 0x02
-  mov [cs:0x1fd2 + DELTA_VMENU], al                          ; 08AD5  0x2E, 0xA2, 0xD2, 0x1F
+  mov [cs:crt_cursor_al], al                          ; 08AD5  0x2E, 0xA2, 0xD2, 0x1F
 
 loc_08AD9:                                     ; 08AD9
-  mov [cs:0x1fd0 + DELTA_VMENU], dx                          ; 08AD9  0x2E, 0x89, 0x16, 0xD0, 0x1F
-  mov [cs:0x1fd3 + DELTA_VMENU], si                          ; 08ADE  0x2E, 0x89, 0x36, 0xD3, 0x1F
-  mov [cs:0x1fd5 + DELTA_VMENU], di                          ; 08AE3  0x2E, 0x89, 0x3E, 0xD5, 0x1F
+  mov [cs:crt_cursor_dx], dx                          ; 08AD9  0x2E, 0x89, 0x16, 0xD0, 0x1F
+  mov [cs:crt_cursor_si], si                          ; 08ADE  0x2E, 0x89, 0x36, 0xD3, 0x1F
+  mov [cs:crt_cursor_di], di                          ; 08AE3  0x2E, 0x89, 0x3E, 0xD5, 0x1F
   pop ds                                       ; 08AE8  0x1F
   mov byte [bx + 0x35], 0                      ; 08AE9  0xC6, 0x47, 0x35, 0x00
   ret                                          ; 08AED  0xC3
@@ -2509,7 +2576,7 @@ sub_08B27:                                     ; 08B27
   mov_si_ax                                    ; 08B2B  mov si, ax
   mov ax, 7                                    ; 08B2D  0xB8, 0x07, 0x00
   db 0xF7, 0xE2                                ; 08B30  mul dx
-  cmp byte [cs:0x1fd7 + DELTA_VMENU], 2                      ; 08B32  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
+  cmp byte [cs:crt_mode_ah], 2                          ; 08B32  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
   jne loc_08B3C                                ; 08B38  0x75, 0x02
   shl ax, 1                                    ; 08B3A  0xD1, 0xE0
 
@@ -2540,7 +2607,20 @@ sub_08B5E:                                     ; 08B5E
   mov es, [cs:0x2c4e + DELTA_TABLES]                          ; 08B63  0x2E, 0x8E, 0x06, 0x4E, 0x2C
   mov ds, [cs:0x2c50 + DELTA_TABLES]                          ; 08B68  0x2E, 0x8E, 0x1E, 0x50, 0x2C
   ret                                          ; 08B6D  0xC3
-  db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 08B6E  ...........
+crt_state_flags:
+  dw 0x0000
+crt_cursor_dx:
+  dw 0x0000
+crt_cursor_al:
+  db 0x00
+crt_cursor_si:
+  dw 0x0000
+crt_cursor_di:
+  dw 0x0000
+crt_mode_ah:
+  db 0x00
+crt_screen_attr:
+  db 0x00
 
 sub_08B79:                                     ; 08B79
   db 0x33, 0xC9                                ; 08B79  xor cx, cx
@@ -2653,11 +2733,11 @@ sub_08C5F:                                     ; 08C5F
 
 io_statline:
 sub_08C61:                                     ; 08C61
-  mov bx, 0x222b + DELTA_VMENU                               ; 08C61  0xBB, 0x2B, 0x22
+  mov bx, vmenu_screen_buffer_b                            ; 08C61  0xBB, 0x2B, 0x22
 
 loc_08C64:                                     ; 08C64
   mov al, 0xff                                 ; 08C64  0xB0, 0xFF
-  xchg [cs:0x224e + DELTA_VMENU], al                         ; 08C66  0x2E, 0x86, 0x06, 0x4E, 0x22
+  xchg [cs:vmenu_active_flag], al                         ; 08C66  0x2E, 0x86, 0x06, 0x4E, 0x22
   cmp al, 0xff                                 ; 08C6B  0x3C, 0xFF
   jne loc_08C74                                ; 08C6D  0x75, 0x05
   call sub_09312                               ; 08C6F  0xE8, 0xA0, 0x06
@@ -2672,10 +2752,10 @@ loc_08C74:                                     ; 08C74
   mov es, ax                                   ; 08C7A  0x8E, 0xC0
   mov al, 0xff                                 ; 08C7C  0xB0, 0xFF
   jcxz loc_08C85                               ; 08C7E  0xE3, 0x05
-  mov [cs:0x224f + DELTA_VMENU], cx                          ; 08C80  0x2E, 0x89, 0x0E, 0x4F, 0x22
+  mov [cs:vmenu_saved_bx], cx                          ; 08C80  0x2E, 0x89, 0x0E, 0x4F, 0x22
 
 loc_08C85:                                     ; 08C85
-  cmp word [cs:0x224f + DELTA_VMENU], -1                     ; 08C85  0x2E, 0x83, 0x3E, 0x4F, 0x22, 0xFF
+  cmp word [cs:vmenu_saved_bx], -1                     ; 08C85  0x2E, 0x83, 0x3E, 0x4F, 0x22, 0xFF
   je loc_08C9A                                 ; 08C8B  0x74, 0x0D
   jcxz loc_08C96                               ; 08C8D  0xE3, 0x07
   mov ds, dx                                   ; 08C8F  0x8E, 0xDA
@@ -2828,17 +2908,19 @@ loc_08DBB:                                     ; 08DBB
   xor_al_al                                    ; 08DC0  xor al, al
 
 loc_08DC2:                                     ; 08DC2
-  mov byte [cs:0x224e + DELTA_VMENU], 0                      ; 08DC2  0x2E, 0xC6, 0x06, 0x4E, 0x22, 0x00
+  mov byte [cs:vmenu_active_flag], 0                      ; 08DC2  0x2E, 0xC6, 0x06, 0x4E, 0x22, 0x00
   pop ds                                       ; 08DC8  0x1F
   pop es                                       ; 08DC9  0x07
   ret                                          ; 08DCA  0xC3
+vmenu_screen_buffer_b:
   lodsb                                        ; 08DCB  0xAC
   ret                                          ; 08DCC  0xC3
+vmenu_screen_buffer_d:
   lodsw                                        ; 08DCD  0xAD
   ret                                          ; 08DCE  0xC3
 
 xios_fn_18_vmenu_cmd:
-  mov bx, 0x222d + DELTA_VMENU                               ; 08DCF  0xBB, 0x2D, 0x22
+  mov bx, vmenu_screen_buffer_d                            ; 08DCF  0xBB, 0x2D, 0x22
   jmp near loc_08C64                           ; 08DD2  0xE9, 0x8F, 0xFE
 
 sub_08DD5:                                     ; 08DD5
@@ -2858,7 +2940,10 @@ sub_08DDE:                                     ; 08DDE
 
 loc_08DED:                                     ; 08DED
   ret                                          ; 08DED  0xC3
-  db 0x00, 0xFF, 0xFF                          ; 08DEE  ...
+vmenu_active_flag:
+  db 0x00
+vmenu_saved_bx:
+  dw 0xffff
 
 sub_08DF1:                                     ; 08DF1
   push es                                      ; 08DF1  0x06
@@ -2931,7 +3016,7 @@ loc_08E8B:                                     ; 08E8B
   mov [cs:0x2c4b + DELTA_TABLES], es                          ; 08E95  0x2E, 0x8C, 0x06, 0x4B, 0x2C
   mov dx, [es:si + 1]                          ; 08E9A  0x26, 0x8B, 0x54, 0x01
   mov [cs:0x2c47 + DELTA_TABLES], dx                          ; 08E9E  0x2E, 0x89, 0x16, 0x47, 0x2C
-  mov [cs:0x1fd7 + DELTA_VMENU], ah                          ; 08EA3  0x2E, 0x88, 0x26, 0xD7, 0x1F
+  mov [cs:crt_mode_ah], ah                          ; 08EA3  0x2E, 0x88, 0x26, 0xD7, 0x1F
   mov dx, 0x4f                                 ; 08EA8  0xBA, 0x4F, 0x00
   cmp ah, 2                                    ; 08EAB  0x80, 0xFC, 0x02
   jne loc_08EB3                                ; 08EAE  0x75, 0x03
@@ -2957,7 +3042,7 @@ loc_08EE0:                                     ; 08EE0
   mov es, [cs:0x2bf1 + DELTA_TABLES]                          ; 08EE0  0x2E, 0x8E, 0x06, 0xF1, 0x2B
   xor_si_si                                    ; 08EE5  xor si, si
   mov dx, 0                                    ; 08EE7  0xBA, 0x00, 0x00
-  cmp byte [cs:0x1fd7 + DELTA_VMENU], 1                      ; 08EEA  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x01
+  cmp byte [cs:crt_mode_ah], 1                          ; 08EEA  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x01
   je loc_08EF5                                 ; 08EF0  0x74, 0x03
   mov dx, 0x4000                               ; 08EF2  0xBA, 0x00, 0x40
 
@@ -2983,7 +3068,7 @@ loc_08EFC:                                     ; 08EFC
   mov ax, 0x1240                               ; 08F1F  0xB8, 0x40, 0x12
 
 loc_08F22:                                     ; 08F22
-  cmp byte [cs:0x1fd7 + DELTA_VMENU], 2                      ; 08F22  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
+  cmp byte [cs:crt_mode_ah], 2                          ; 08F22  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
   je loc_08F30                                 ; 08F28  0x74, 0x06
   mov al, [bx + 0x7f]                          ; 08F2A  0x8A, 0x47, 0x7F
   ror al, 4                                    ; 08F2D  0xC0, 0xC8, 0x04
@@ -3280,7 +3365,7 @@ xios_int28_fn_31_palette:                    ; 09172
   pop ds                                       ; 09189  0x1F
   test byte [bx + 0x6b], 2                     ; 0918A  0xF6, 0x47, 0x6B, 0x02
   jne loc_091A5                                ; 0918E  0x75, 0x15
-  cmp byte [cs:0x1fd7 + DELTA_VMENU], 2                      ; 09190  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
+  cmp byte [cs:crt_mode_ah], 2                          ; 09190  0x2E, 0x80, 0x3E, 0xD7, 0x1F, 0x02
   jne loc_0919D                                ; 09196  0x75, 0x05
   mov ah, 3                                    ; 09198  0xB4, 0x03
   call xios_crt_trigger_ca                     ; 0919A  0xE8, 0x64, 0x04
@@ -4149,7 +4234,7 @@ sub_09588:                                     ; 09588
   call sub_09621                               ; 095B5  0xE8, 0x69, 0x00
   xor byte [cs:0x5fa6 + DELTA_TAIL], 0x80                   ; 095B8  0x2E, 0x80, 0x36, 0xA6, 0x5F, 0x80
 mov word [cs:0x5fbe + DELTA_TAIL], 0xffff
-  mov word [bx + 0x5e], 0x1560 + DELTA_VMENU                 ; 095C5  0xC7, 0x47, 0x5E, 0x60, 0x15
+  mov word [bx + 0x5e], crt_esc_dispatch_reset              ; 095C5  0xC7, 0x47, 0x5E, 0x60, 0x15
 
 loc_095CA:                                     ; 095CA
   ret                                          ; 095CA  0xC3
