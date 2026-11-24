@@ -971,8 +971,43 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
     - Digital Researchs RASM-86 assembler (brugt til det originale XIOS) genererer modsat direction-bit (`d=1`) for to-registers 8086-instruktioner i forhold til NASMs standard (`d=0`).
     - Oprettet `tasks/rc759-xios/rasm86.inc` med symbolske makroer for register-register instruktioner (`add_bp_bx`, `add_dx_bx`, `sub_cx_dx`, `sub_bx_dx`, `cmp_ch_al`, `mov_bp_dx`, `xor_di_di`, osv.).
     - Erstattet 240 rå `db 0x..` instruktioner i `xios_code.asm` med disse symbolske makroer, så koden fremstår som regulære assembly-instruktioner.
-    - **Arkitekturmål for dispatch-tabeller**: Når samtlige sektioner (inkl. Sektion 6 & 7) er forenede, skal `int28h_jump_table` og CCP/M-86 dispatch-tabellen være 100% fri for `%if` og udelukkende pege på de symbolske funktionslabels, som NASM automatisk relokerer for henholdsvis XIOS1 og XIOS4.
     - Fuld verifikation:
       - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+
+17. **Komplet Eliminering af Samtlige DELTA-Makroer & Fuld Symbolisering (2026-11-24)**:
+    - **Opgør med syntetiske adresseforskydninger**:
+      Samtlige 8 midlertidige delta-makroer er nu **100% elimineret** fra kildekoden:
+      * `DELTA_VMENU_PROLOGUE` (50) & `DELTA_VMENU_TBL` (71)
+      * `DELTA_VMENU` (74)
+      * `DELTA_WINDOW` (451)
+      * `DELTA_VIDTBL` (789)
+      * `DELTA_49FA` (906)
+      * `DELTA_TABLES` (909)
+      * `DELTA_TAIL_PRE` (3665) & `DELTA_TAIL` (3668)
+    - **Systematisk symbolisering af 179 tabeller, buffere og datastrukturer**:
+      * **Group 4C (CS:2BF1..2D18)**: Tastatur-buffer, musetilstand, CCB-felter.
+      * **Group 1 & FDC ISR (CS:2F59..2F5E, CS:33BA..3729)**: Floppy controller- og ISR-adresser.
+      * **Group A (CS:373B..3933)**: 40 floppyparametre og drevkonfigurationsblokke.
+      * **Group B & C (CS:3A82..3CBE)**: DPB, BCB, NMI og seriel/AUX buffere.
+      * **Group D & E (CS:3D3C..4256)**: Printer-, CRT- og timer-tabeller.
+      * **Hooks & Stack (CS:4324..4428)**: RTM timer/hook-adresser.
+      * **Group F (CS:4573..497E)**: Diagnostic strings og VMenu strukturer.
+      * **Tail & Queues (CS:593B..6228)**: RTM MX-køer, linjebuffere og skrifttypetabeller.
+    - **Refaktorisering af Betingede Labels og Dispatch-tabeller**:
+      * Fjernet utilsigtede duplikerede labels (`loc_0B79D`).
+      * Placerede funktions-labels (`io_auxist`, `io_setblank`, `xios_clip_draw_char`) uden for `%if`-blokke, så de kun defineres ét sted.
+      * Omdøbt disassembler-adresser til selvforklarende navne:
+        - `loc_07D2D` $\rightarrow$ `xios_handle_con_switch_key`
+        - `loc_07D2F` $\rightarrow$ `xios_handle_vir_con_switch`
+        - `sub_09333` $\rightarrow$ `xios_clip_repaint_windows`
+        - `sub_0946F` $\rightarrow$ `xios_clip_draw_char`
+      * Dispatch-tabellen (`int28h_function_table`) refererer nu direkte til `io_auxist` under begge konfigurationer.
+    - **Slutresultat for XIOS-foreningen**:
+      * `tasks/rc759-xios/xios_code.asm` er nu en **100% ægte symbolsk master-source** for både XIOS1 og XIOS4 uden hårdkodede forskydninger.
+      * NASM relokerer alle adresser automatisk ved blot at definere `-DNUM_VIR_CONS=1` eller `-DNUM_VIR_CONS=4`.
+    - **Verifikation (0 bytes diff)**:
+      * `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      * `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      * `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original via `./tasks/rc759-xios/rebuild_and_verify.sh`.
