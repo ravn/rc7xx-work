@@ -8196,11 +8196,7 @@ loc_0BDDA:                                     ; 0BDDA
   db 0x8B, 0xF8                                ; 0BDDC  mov di, ax
   mov es, ax                                   ; 0BDDE  0x8E, 0xC0
   mov bx, cs                                   ; 0BDE0  0x8C, 0xCB
-%if NUM_VIR_CONS == 4
-  mov ax, 0x7090                               ; Start af int3 padding i XIOS4
-%else
-  mov ax, 0x6230                               ; Start af int3 padding i XIOS1
-%endif
+  mov ax, xios_int3_padding                    ; Start af int3 padding
   mov cl, 4                                    ; 0BDE5  0xB1, 0x04
   shr ax, cl                                   ; 0BDE7  0xD3, 0xE8
   db 0x03, 0xD8                                ; 0BDE9  add bx, ax
@@ -9656,9 +9652,7 @@ sub_0CB3C:                                     ; 0CB3C
   call sub_0CB18                               ; 0CB3C  0xE8, 0xD9, 0xFF
   call sub_0CA82                               ; 0CB3F  0xE8, 0x40, 0xFF
   ret                                          ; 0CB42  0xC3
-%if NUM_VIR_CONS == 1
-  db 0x00
-%endif
+  align 2, db 0
   db 0x01, 0x03, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x03, 0x2F, 0x29, 0x06, 0x29, 0x06, 0x00, 0x00
@@ -9713,4 +9707,5 @@ vmenu_screen_line_table:
   times 6 dw 0x0000
 %endif
 
+xios_int3_padding:
   times 256 db 0xCC                            ; int3 padding
