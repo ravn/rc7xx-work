@@ -28,11 +28,7 @@
 ; Fælles driver-kode for både XIOS1.CON (1 konsol) og XIOS4.CON (4 konsoller)
 ; =============================================================================
 
-%if NUM_VIR_CONS == 4
-  jmp near loc_05407                           ; 00000000  jmp near xios_init
-%else
-  jmp near loc_0BD52                           ; 077A0  jmp near xios_init
-%endif
+  jmp near xios_init_entry                     ; 00000000 / 077A0  jmp near xios_init
   jmp near loc_077DA                           ; 077A3  jmp near xios_entry
   dw 0x0000                                    ; SYSDAT segment (unlinked)
   dw 0x0000                                    ; SYSDAT entry offset (unlinked)
@@ -8876,6 +8872,7 @@ sub_0BD44:                                     ; 0BD44
   out dx, al                                   ; 0BD50  0xEE
   ret                                          ; 0BD51  0xC3
 
+xios_init_entry:
 loc_0BD52:                                     ; 0BD52
   cli                                          ; 0BD52  0xFA
   cld                                          ; 0BD53  0xFC
@@ -11636,6 +11633,7 @@ sub_0CB3C:                                     ; 0CB3C
   db 0x0A, 0xC4                ; 00005403  or al,ah
   db 0xEE                      ; 00005405  out dx,al
   db 0xC3                      ; 00005406  ret
+xios_init_entry:
 loc_05407:
   db 0xFA                      ; 00005407  cli
   db 0xFC                      ; 00005408  cld
