@@ -1314,7 +1314,7 @@ loc_0806B:                                     ; 0806B
   jb loc_080BA                                 ; 08095  0x72, 0x23
 ; --- Chunk 3: Virtuel konsol-opslag for skærmposition (CS:14F6, +3 B) ---
 %if NUM_VIR_CONS == 4
-  mov al, [cs:si + 0x4f9f]                     ; 0000093E
+  mov al, [cs:si + xios4_clip_map]                     ; 0000093E
 %else
   mov al, 1                                    ; 08097
 %endif
@@ -3551,7 +3551,7 @@ loc_0929B:                                     ; 0929B
   mov [di], dl                                 ; 092A3  0x88, 0x15
 
 sub_092A5:                                     ; 092A5
-  mov di, 0x2b5b + DELTA_WINDOW
+  mov di, window_zorder_list
   mov al, [bx + 0x4e]                          ; 092A8  0x8A, 0x47, 0x4E
   mov ah, 0                                    ; 092AB  0xB4, 0x00
 %if NUM_VIR_CONS == 4
@@ -3600,7 +3600,7 @@ loc_092ED:                                     ; 092ED
   ret                                          ; 092F0  0xC3
 %if NUM_VIR_CONS == 4
 xios4_clip_setup:
-  mov di, 0x4f9f
+  mov di, xios4_clip_map
   mov cx, 0x780
   mov al, [bx + 0x4e]
   not al
@@ -3630,7 +3630,7 @@ xios4_clip_setup:
 .loc_2824:
   call sub_092FE
   xchg ax, di
-  add di, 0x4f9f
+  add di, xios4_clip_map
   sub_cx_dx                                    ; sub cx, dx
   add cx, 0x101
   mov al, [bx + 0x4e]
@@ -3670,7 +3670,7 @@ sub_092FE:                                     ; 092FE
 
 sub_0930B:                                     ; 0930B
   push bx                                      ; 0930B  0x53
-  mov bx, 0x2b5b + DELTA_WINDOW
+  mov bx, window_zorder_list
   xlatb                                        ; 0930F  0xD7
   pop bx                                       ; 09310  0x5B
   ret                                          ; 09311  0xC3
@@ -3713,7 +3713,7 @@ sub_x4_clip_repaint_entry:
   mov_bp_dx                                    ; mov bp, dx
   call sub_092FE
   xchg ax, di
-  add di, 0x4f9f
+  add di, xios4_clip_map
   mov cx, [bx + 0x44]
 .loc_28b7:
   mov al, [es:di]
@@ -3764,7 +3764,7 @@ sub_x4_clip_repaint_entry:
 sub_09333:
   call near sub_x4_clip_repaint_entry
   push es
-  mov si, 0x4f9f
+  mov si, xios4_clip_map
   mov es, [cs:0x2bf1 + DELTA_TABLES]
   xor_di_di                                    ; xor di, di
   mov cx, 0x780
@@ -3983,7 +3983,7 @@ xios_char_mode_byte:
 %if NUM_VIR_CONS == 4
 sub_0946F:
   push ax
-  mov al, [cs:si + 0x4f9f]
+  mov al, [cs:si + xios4_clip_map]
   inc si
   call sub_0930B
   cmp al, [bx + 0x34]
@@ -4323,6 +4323,7 @@ loc_096F0:                                     ; 096F0
   db 0x00, 0x00                                ; 096F6
   pop bp                                       ; 096F8  0x5D
   db 0x2B, 0xFF                                ; 096F9  sub di, di
+window_zorder_list:
   db 0x00, 0x00                                ; 096FB
 ccb_console_0:
   db 0x00, 0x00                                ; 096FD
@@ -4600,6 +4601,7 @@ loc_098E3:                                     ; 098E3
   db 0x03, 0x02                ; 00002116  add ax,[bp+si]
   db 0x01, 0x00                ; 00002118  add [bx+si],ax
   db 0x00, 0x2E, 0x2D, 0xFF    ; 0000211A  add [0xff2d],ch
+window_zorder_list:
   db 0x00, 0x00                ; 0000211E  add [bx+si],al
   db 0x00, 0x00                ; 00002120  add [bx+si],al
   db 0x00, 0x00                ; 00002122  add [bx+si],al
@@ -8374,7 +8376,9 @@ loc_0B79D:                                     ; 0B79D
 
 loc_0B79D:
 %if NUM_VIR_CONS == 4
-  times 3300 db 0
+  times 71 db 0
+xios4_clip_map:
+  times (3300 - 71) db 0
 %else
   times 500 db 0
 %endif
@@ -8568,22 +8572,22 @@ mov ax, [cs:0x5fdc + DELTA_TAIL]                          ; 0BB1D  0x2E, 0xA1, 0
   push ds                                      ; 0BB2C  0x1E
   pop es                                       ; 0BB2D  0x07
 %if NUM_VIR_CONS == 4
-  mov di, 0x4f9f
+  mov di, xios4_clip_map
   mov cx, 0x780
   mov al, 0xf
   rep stosb
-  mov di, 0x2d1e
-  mov cx, 0x10
+  mov di, window_zorder_list
+  mov cx, 16
   xor_al_al
   rep stosb
-  mov di, 0x2d1e
-  mov dx, 0x3
+  mov di, window_zorder_list
+  mov dx, 3
 %else
-  mov di, 0x2b5b                               ; 0BB2E
+  mov di, window_zorder_list                   ; 0BB2E
   mov cx, 2
   xor_al_al
   rep stosb
-  mov di, 0x2b5b
+  mov di, window_zorder_list
   mov dx, 0
 %endif
 
