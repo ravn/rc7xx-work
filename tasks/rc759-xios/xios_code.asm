@@ -4186,7 +4186,7 @@ sub_09643:                                     ; 09643
   push ds                                      ; 0964C  0x1E
   pop es                                       ; 0964D  0x07
   lea di, [bx + 0x84]                          ; 0964E  0x8D, 0xBF, 0x84, 0x00
-  mov si, 0x2ad4 + DELTA_WINDOW                               ; 09652  0xBE, 0xD4, 0x2A
+  mov si, mouse_cursor_char_table                               ; 09652  0xBE, 0xD4, 0x2A
   mov cx, 0x10                                 ; 09655  0xB9, 0x10, 0x00
   mov [bx + 0x81], cx                          ; 09658  0x89, 0x8F, 0x81, 0x00
   rep movsb                                    ; 0965C  0xF3, 0xA4
@@ -4212,7 +4212,7 @@ sub_09694:                                     ; 09694
   push es                                      ; 096A2  0x06
   push di                                      ; 096A3  0x57
   push cx                                      ; 096A4  0x51
-  mov di, 0x2ad4 + DELTA_WINDOW                               ; 096A5  0xBF, 0xD4, 0x2A
+  mov di, mouse_cursor_char_table                               ; 096A5  0xBF, 0xD4, 0x2A
   push cs                                      ; 096A8  0x0E
   pop es                                       ; 096A9  0x07
   mov cx, 0x10                                 ; 096AA  0xB9, 0x10, 0x00
