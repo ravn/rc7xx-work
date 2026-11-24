@@ -926,3 +926,18 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
       - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+
+14. **Forening af Sektion 4B: Fælles Mus- og CRT-driver (CS:2980..2BD0 / CS:2B43..2D93, 2026-11-24)**:
+    - Omfatter musens BIOS INT 28h funktion 30 handler (`xios_int28_fn_30_mouse`), 5-byte muse-tilstandsmaskinen (`sub_094EB`), CRT trigger & command wait (`xios_crt_trigger_ca`, `crt_post_cmd_wait`), paletterutiner og display list refresh (`sub_09621`, `sub_09623`, `sub_09630`, `sub_09643`, `sub_09694`, `sub_096B8`, `sub_096CF` til `loc_096F0: ret`).
+    - Nøjagtig 593 bytes kode i både XIOS1 og XIOS4 (100% strukturelt symmetrisk).
+    - Forenet 55 adresse-forskelle:
+      - 37 adresser parametriseret med `DELTA_WINDOW = 451` (`0x2913..0x2b58`).
+      - 10 tail-adresser parametriseret med `DELTA_TAIL = 3668` (`0x5fa4`, `0x5fa6`, `0x5fbe`, `0x5fdc`, `0x5ff2`, `0x5ff6`, `0x61ec`).
+      - 5 buffer-adresser parametriseret med `DELTA_TABLES = 909` (`0x2bf1..0x2bff`).
+      - 1 terminal-parameter parametriseret med `DELTA_VMENU = 74` (`0x1560`).
+      - Rekonstrueret musens 4-word jump table (`0x2928`, `0x292c`, `0x292b`, `0x2932`), som tidligere var afkodet som rå `sub`/`xor` instruktioner.
+    - Resultat: Yderligere **225 redundante linjer rå disassembly** elimineret fra XIOS4-blokken (i alt > 5.200 linjer fjernet på tværs af projektet).
+    - Fuld verifikation:
+      - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
