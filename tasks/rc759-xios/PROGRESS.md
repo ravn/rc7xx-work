@@ -910,3 +910,19 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
       - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+
+13. **Forening af Sektion 5: Floppydisk Driver (CS:2D7B..4081 / CS:3108..440E, 2026-11-24)**:
+    - Omfatter hele diskettedriveren for NEC µPD765 / WD FDC controlleren samt NetCon netværksterminal-support (4.932 bytes kode og datatabeller).
+    - Driveren er 100% strukturelt symmetrisk mellem XIOS1 og XIOS4 (nøjagtig samme længde på 4.932 bytes).
+    - Samtlige 267 forskelle er forenet via parametrisering:
+      - **DPH & ALV/CSV datatabeller**: Rekonstrueret Drive A og Drive B disk-parameter headers og checksum-vektorer, som tidligere var fejlagtigt afkodet som tilfældige instruktioner (`add [bp + di - 0x3dc5], dh`, `ret 0x3b`, osv.).
+      - **NetCon (Network Console Driver)**: Rekonstrueret `"NetConI "` (Network Console Input) og `"NetConO "` (Network Console Output) dispatch-strukturer.
+      - **Funktion 18 & FDC dispatch-tabeller**: Rekonstrueret word-pointer arrays (`0x3cbe`, `0x3cbd`, `0x3c74`, `0x402f`, `0x4058`, `0x3e22`, `0x3d46`, osv.).
+      - **Tabel- og I/O-adresser**: Parametriseret med `DELTA_TABLES = 909` for alle buffer- og controller-adresser (`0x2F59..0x4256`).
+      - **Tail-adresser**: Parametriseret med `DELTA_TAIL = 3668` (`0x5fa4`) og `DELTA_TAIL_PRE = 3669` (`0x5e42`, `0x5999`, `0x59c5`).
+      - Omskrevet 10 rå `db 0x2E`-instruktioner med hardkodede adresser (`0x373b`, `0x3c4c`, `0x3c72`, `0x3d44`) til ægte symbolske instruktioner.
+    - Resultat: **2.141 redundante linjer rå disassembly** elimineret fra XIOS4-blokken (i alt næsten 5.000 redundante linjer fjernet på tværs af projektet).
+    - Fuld verifikation:
+      - `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
+      - `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original.
