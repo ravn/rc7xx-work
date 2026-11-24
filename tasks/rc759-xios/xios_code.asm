@@ -3310,85 +3310,91 @@ io_setblank:
 %else
 io_auxist:
 xios4_fn_19_auxist:
-  db 0x80, 0xF9, 0x03          ; 00001A45  cmp cl,0x3
-  db 0x73, 0x11                ; 00001A48  jnc 0x1a5b
-  db 0x2E, 0x88, 0x0E, 0x14, 0x2D ; 00001A4A  mov [cs:xios4_vir_con_mode], cl
-  db 0x80, 0xF9, 0x02          ; 00001A4F  cmp cl,0x2
-  db 0x74, 0x21                ; 00001A52  jz 0x1a75
-  db 0x2E, 0xC7, 0x06, 0x41, 0x10, 0x05, 0x00 ; 00001A54  mov word [cs:0x1041],0x5
-  mov_al_dl                                    ; 00001A5B  mov al,dl
-  db 0x3C, 0x04                ; 00001A5D  cmp al,0x4
-  db 0x73, 0x14                ; 00001A5F  jnc 0x1a75
-  db 0x04, 0x70                ; 00001A61  add al,0x70
-  db 0xB4, 0xFF                ; 00001A63  mov ah,0xff
-  db 0x2E, 0xA3, 0x3E, 0x10    ; 00001A65  mov [cs:0x103e],ax
-  db 0xBA, 0x05, 0x00          ; 00001A69  mov dx,0x5
-  db 0xE8, 0xB1, 0xE6          ; 00001A6C  call 0x120
-  db 0x9C                      ; 00001A6F  pushf
-  db 0x2E, 0xFF, 0x1E, 0x38, 0x00 ; 00001A70  call far [cs:0x38]
-  db 0xC3                      ; 00001A75  ret
+  cmp cl, 3                                    ; 00001A45
+  jnc .loc_1a5b                                ; 00001A48
+  mov [cs:xios4_vir_con_mode], cl              ; 00001A4A
+  cmp cl, 2                                    ; 00001A4F
+  jz .loc_1a75                                 ; 00001A52
+  mov word [cs:0x1041], 5                      ; 00001A54
+
+.loc_1a5b:
+  mov_al_dl                                    ; 00001A5B  mov al, dl
+  cmp al, 4                                    ; 00001A5D
+  jnc .loc_1a75                                ; 00001A5F
+  add al, 0x70                                 ; 00001A61
+  mov ah, 0xff                                 ; 00001A63
+  mov [cs:0x103e], ax                          ; 00001A65
+  mov dx, 5                                    ; 00001A69
+  call rtm_call_helper                         ; 00001A6C
+  pushf                                        ; 00001A6F
+  call far [cs:0x38]                           ; 00001A70
+
+.loc_1a75:
+  ret                                          ; 00001A75
 
 xios4_fn_20_window_set:
-  db 0x50                      ; 00001A76  push ax
-  db 0xE8, 0xCE, 0x01          ; 00001A77  call 0x1c48
-  db 0xE8, 0xAE, 0x00          ; 00001A7A  call 0x1b2b
-  db 0x8B, 0x47, 0x36          ; 00001A7D  mov ax,[bx+0x36]
-  db 0x89, 0x47, 0x3A          ; 00001A80  mov [bx+0x3a],ax
-  db 0x8B, 0x47, 0x38          ; 00001A83  mov ax,[bx+0x38]
-  db 0x89, 0x47, 0x3C          ; 00001A86  mov [bx+0x3c],ax
-  db 0x89, 0x4F, 0x36          ; 00001A89  mov [bx+0x36],cx
-  db 0x59                      ; 00001A8C  pop cx
-  db 0x89, 0x4F, 0x38          ; 00001A8D  mov [bx+0x38],cx
-  db 0x06                      ; 00001A90  push es
-  db 0x1E                      ; 00001A91  push ds
-  db 0x07                      ; 00001A92  pop es
-  db 0xE8, 0x22, 0x01          ; 00001A93  call 0x1bb8
-  db 0xE8, 0x36, 0x01          ; 00001A96  call 0x1bcf
-  db 0xE8, 0x51, 0x01          ; 00001A99  call 0x1bed
-  db 0x07                      ; 00001A9C  pop es
-  db 0x2E, 0x8B, 0x1E, 0x1B, 0x2D ; 00001A9D  mov bx,[cs:0x2d1b]
-  db 0xE8, 0x00, 0xFA          ; 00001AA2  call 0x14a5
-  db 0xC3                      ; 00001AA5  ret
+  push ax                                      ; 00001A76
+  call sub_092F2                               ; 00001A77 (slå vindues-CCB op for konsol)
+  call sub_0922F                               ; 00001A7A
+  mov ax, [bx + 0x36]                          ; 00001A7D
+  mov [bx + 0x3a], ax                          ; 00001A80
+  mov ax, [bx + 0x38]                          ; 00001A83
+  mov [bx + 0x3c], ax                          ; 00001A86
+  mov [bx + 0x36], cx                          ; 00001A89
+  pop cx                                       ; 00001A8C
+  mov [bx + 0x38], cx                          ; 00001A8D
+  push es                                      ; 00001A90
+  push ds                                      ; 00001A91
+  pop es                                       ; 00001A92
+  call sub_092BC                               ; 00001A93 (beregn vinduesstørrelse)
+  call sub_092D3                               ; 00001A96 (tjek vinduesgrænser)
+  call xios4_clip_setup                        ; 00001A99 (genberegn klippekort)
+  pop es                                       ; 00001A9C
+  mov bx, [cs:xios4_cur_window_ptr]            ; 00001A9D
+  call sub_08BFB                               ; 00001AA2
+  ret                                          ; 00001AA5
 
 xios4_fn_21_window_config:
-  db 0xE8, 0x9F, 0x01          ; 00001AA6  call 0x1c48
-  db 0xE8, 0x70, 0x00          ; 00001AA9  call 0x1b1c
-  db 0x88, 0x77, 0x4C          ; 00001AAC  mov [bx+0x4c],dh
-  db 0x89, 0x4F, 0x40          ; 00001AAF  mov [bx+0x40],cx
-  db 0xE8, 0x1A, 0x01          ; 00001AB2  call 0x1bcf
-  db 0xE8, 0x8E, 0x02          ; 00001AB5  call 0x1d46
-  db 0xE8, 0x14, 0xF4          ; 00001AB8  call 0xecf
-  db 0xC6, 0x47, 0x35, 0x00    ; 00001ABB  mov byte [bx+0x35],0x0
-  db 0xC3                      ; 00001ABF  ret
+  call sub_092F2                               ; 00001AA6
+  call sub_09220                               ; 00001AA9
+  mov [bx + 0x4c], dh                          ; 00001AAC
+  mov [bx + 0x40], cx                          ; 00001AAF
+  call sub_092D3                               ; 00001AB2
+  call sub_09334                               ; 00001AB5
+  call sub_08625                               ; 00001AB8
+  mov byte [bx + 0x35], 0                      ; 00001ABB
+  ret                                          ; 00001ABF
 
 xios4_fn_22_window_mode:
-  db 0xE8, 0x85, 0x01          ; 00001AC0  call 0x1c48
-  db 0x88, 0x4F, 0x4D          ; 00001AC3  mov [bx+0x4d],cl
-  db 0xC3                      ; 00001AC6  ret
+  call sub_092F2                               ; 00001AC0
+  mov [bx + 0x4d], cl                          ; 00001AC3
+  ret                                          ; 00001AC6
 
 xios4_fn_23_window_select:
 sub_01AC7:
-  db 0x52                      ; 00001AC7  push dx
-  db 0xE8, 0x7D, 0x01          ; 00001AC8  call 0x1c48
-  db 0xB9, 0x00, 0x00          ; 00001ACB  mov cx,0x0
-  db 0x8A, 0x67, 0x48          ; 00001ACE  mov ah,[bx+0x48]
-  db 0xFE, 0xCC                ; 00001AD1  dec ah
-  db 0xB0, 0x4F                ; 00001AD3  mov al,0x4f
-  db 0x39, 0x4F, 0x36          ; 00001AD5  cmp [bx+0x36],cx
-  db 0x75, 0x0B                ; 00001AD8  jnz 0x1ae5
-  db 0x39, 0x47, 0x38          ; 00001ADA  cmp [bx+0x38],ax
-  db 0x75, 0x06                ; 00001ADD  jnz 0x1ae5
-  db 0x8B, 0x4F, 0x3A          ; 00001ADF  mov cx,[bx+0x3a]
-  db 0x8B, 0x47, 0x3C          ; 00001AE2  mov ax,[bx+0x3c]
-  db 0x5A                      ; 00001AE5  pop dx
-  db 0xE9, 0x8D, 0xFF          ; 00001AE6  jmp 0x1a76
+  push dx                                      ; 00001AC7
+  call sub_092F2                               ; 00001AC8
+  mov cx, 0                                    ; 00001ACB
+  mov ah, [bx + 0x48]                          ; 00001ACE
+  dec ah                                       ; 00001AD1
+  mov al, 0x4f                                 ; 00001AD3
+  cmp [bx + 0x36], cx                          ; 00001AD5
+  jnz .loc_1ae5                                ; 00001AD8
+  cmp [bx + 0x38], ax                          ; 00001ADA
+  jnz .loc_1ae5                                ; 00001ADD
+  mov cx, [bx + 0x3a]                          ; 00001ADF
+  mov ax, [bx + 0x3c]                          ; 00001AE2
+
+.loc_1ae5:
+  pop dx                                       ; 00001AE5
+  jmp near xios4_fn_20_window_set              ; 00001AE6
 
 xios4_fn_24_window_ret:
-  db 0xC3                      ; 00001AE9  ret
+  ret                                          ; 00001AE9
 
 io_setblank:
-  db 0xB8, 0x01, 0x50          ; 00001AEA  mov ax,0x5001
-  db 0xC3                      ; 00001AED  ret
+  mov ax, 0x5001                               ; 00001AEA
+  ret                                          ; 00001AED
 %endif
 sub_091F2:                                     ; 091F2
   mov ax, [bx + 0x4a]                          ; 091F2  0x8B, 0x47, 0x4A
@@ -3518,6 +3524,8 @@ loc_092B6:                                     ; 092B6
   inc di                                       ; 092B8  0x47
   loop loc_092B0                               ; 092B9  0xE2, 0xF5
   ret                                          ; 092BB  0xC3
+
+sub_092BC:                                     ; Beregn vinduesstørrelse (bredde/højde i dx)
   mov al, [bx + 0x39]                          ; 092BC  0x8A, 0x47, 0x39
   sub al, [bx + 0x37]                          ; 092BF  0x2A, 0x47, 0x37
   db 0x98                                      ; 092C2  cwde
@@ -3529,6 +3537,8 @@ loc_092B6:                                     ; 092B6
   inc ax                                       ; 092CE  0x40
   mov [bx + 0x44], ax                          ; 092CF  0x89, 0x47, 0x44
   ret                                          ; 092D2  0xC3
+
+sub_092D3:                                     ; Tjek vinduesgrænser mod skærmstørrelse
   mov dx, [bx + 0x40]                          ; 092D3  0x8B, 0x57, 0x40
   mov al, [bx + 0x48]                          ; 092D6  0x8A, 0x47, 0x48
   sub al, [bx + 0x42]                          ; 092D9  0x2A, 0x47, 0x42
@@ -4550,6 +4560,7 @@ xios4_vir_con_mode:
   db 0x03, 0x02                ; 00002116  add ax,[bp+si]
   db 0x01, 0x00                ; 00002118  add [bx+si],ax
 xios4_active_vir_con equ xios4_vir_con_mode + 5
+xios4_cur_window_ptr equ xios4_vir_con_mode + 7
   db 0x00, 0x2E, 0x2D, 0xFF    ; 0000211A  add [0xff2d],ch
 window_zorder_list:
   db 0x00, 0x00                ; 0000211E  add [bx+si],al
