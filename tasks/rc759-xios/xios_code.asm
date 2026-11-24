@@ -7,7 +7,7 @@
   %define DELTA_TABLES  909
   %define DELTA_TAIL    3668
 %define DELTA_TAIL_PRE 3669
-  %define DELTA_VIDTBL  2907
+  %define xios_screen_state_buf (xios4_clip_map + 0x780)
   %define DELTA_49FA    859
 %else
   %define XT_ALLOC_PARAS 0x01F4                 ; 500 paragraffer unlinked bufferplads til 1 konsol
@@ -15,7 +15,7 @@
   %define DELTA_TABLES  0
   %define DELTA_TAIL    0
 %define DELTA_TAIL_PRE 0
-  %define DELTA_VIDTBL  0
+  %define xios_screen_state_buf xios1_screen_state_buf
   %define DELTA_49FA    0
 %endif
 
@@ -1748,11 +1748,11 @@ loc_08484:                                     ; 08484
   ret                                          ; 084C1  0xC3
   crt_esc_C_sub:
   mov si, [bx + 0x76]                          ; 084C2  0x8B, 0x77, 0x76
-  mov di, 0x4bc4 + DELTA_VIDTBL                               ; 084C5  0xBF, 0xC4, 0x4B
+  mov di, xios_screen_state_buf                             ; 084C5  0xBF, 0xC4, 0x4B
   jmp short loc_084D0                          ; 084C8  0xEB, 0x06
   crt_esc_H_sub:
   mov di, [bx + 0x76]                          ; 084CA  0x8B, 0x7F, 0x76
-  mov si, 0x4bc4 + DELTA_VIDTBL                               ; 084CD  0xBE, 0xC4, 0x4B
+  mov si, xios_screen_state_buf                             ; 084CD  0xBE, 0xC4, 0x4B
 
 loc_084D0:                                     ; 084D0
   mov cx, 0x1c8                                ; 084D0  0xB9, 0xC8, 0x01
@@ -7756,6 +7756,7 @@ xios_boot_banner:
   db_dk "Numerisk Regneenhed installeret"
   db 0x0D, 0x0A, 0
   db_dk "Winchester disk  X er ikke initialiseret"  ; 0B73A
+xios1_screen_state_buf:
   db 0x0D, 0x0A, 0
   db_dk "Winchester disk  x har dårlig konfigurations sektor"  ; 0B765
   db 0x0D, 0x0A, 0
@@ -7978,7 +7979,7 @@ mov bx, [cs:bx + 0x2bf3 + DELTA_TABLES]                     ; 0BB42  0x2E, 0x8B,
   call sub_092A5                               ; 0BB47  0xE8, 0x5B, 0xD7
   dec dl                                       ; 0BB4A  0xFE, 0xCA
   jns loc_0BB3E                                ; 0BB4C  0x79, 0xF0
-mov di, 0x4bc4 + DELTA_VIDTBL                               ; 0BB4E  0xBF, 0xC4, 0x4B
+mov di, xios_screen_state_buf                             ; 0BB4E  0xBF, 0xC4, 0x4B
   push di                                      ; 0BB51  0x57
   db 0x33, 0xC0                                ; 0BB52  xor ax, ax
   mov cx, 0x1c8                                ; 0BB54  0xB9, 0xC8, 0x01
