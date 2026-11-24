@@ -648,54 +648,15 @@ loc_07C46:
   call eoi_helper                              ; 07C4B
   jmp near loc_0AF3E                           ; 07C4E
 
-; --- Special- og funktionstast scanningstabel (0x3B..0x7E) ---
-  db 0x00, 0x00, 0x00, 0x00                    ; 07C51
-  cmp di, [si]                                 ; 07C55  0x3B, 0x3C
-  cmp ax, 0x3f3e                               ; 07C57  0x3D, 0x3E, 0x3F
-  inc ax                                       ; 07C5A  0x40
-  inc cx                                       ; 07C5B  0x41
-  inc dx                                       ; 07C5C  0x42
-  inc bx                                       ; 07C5D  0x43
-  inc sp                                       ; 07C5E  0x44
-  inc bp                                       ; 07C5F  0x45
-  inc si                                       ; 07C60  0x46
-  inc di                                       ; 07C61  0x47
-  dec ax                                       ; 07C62  0x48
-  dec cx                                       ; 07C63  0x49
-  dec dx                                       ; 07C64  0x4A
-  dec bx                                       ; 07C65  0x4B
-  dec sp                                       ; 07C66  0x4C
-  dec bp                                       ; 07C67  0x4D
-  dec si                                       ; 07C68  0x4E
-  dec di                                       ; 07C69  0x4F
-  push ax                                      ; 07C6A  0x50
-  push cx                                      ; 07C6B  0x51
-  push dx                                      ; 07C6C  0x52
-  push bx                                      ; 07C6D  0x53
-  push bp                                      ; 07C6E  0x55
-  push si                                      ; 07C6F  0x56
-  push di                                      ; 07C70  0x57
-  pop ax                                       ; 07C71  0x58
-  pop cx                                       ; 07C72  0x59
-  pop dx                                       ; 07C73  0x5A
-  pop bx                                       ; 07C74  0x5B
-  pop sp                                       ; 07C75  0x5C
-  pop bp                                       ; 07C76  0x5D
-  pop si                                       ; 07C77  0x5E
-  db 0x61                                      ; 07C78  popa
-  db 0x62, 0x63, 0x64                          ; 07C79  bound sp, dword [bp + di + 0x64]
-  db 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C  ; 07C7C  push 0x6c6b6a69
-  db 0x6D                                      ; 07C84  insw
-  db 0x6E                                      ; 07C85  outsb
-  db 0x6F                                      ; 07C86  outsw
-  db 0x70, 0x71                                ; 07C87  jo 0x7cfa
-  jb loc_07CFE                                 ; 07C89  0x72, 0x73
-  db 0x74, 0x75                                ; 07C8B  je 0x7d02
-  db 0x76, 0x77                                ; 07C8D  jbe 0x7d06
-  db 0x78, 0x79                                ; 07C8F  js 0x7d0a
-  db 0x7A, 0x7B                                ; 07C91  jp 0x7d0e
-  jl loc_07D12                                 ; 07C93  0x7C, 0x7D
-  jle loc_07CEB                                ; 07C95  0x7E, 0x54 (spring til loc_07CEB)
+; --- Special- og funktionstast scanningstabel (CS:10B1..10F6, 70 bytes) ---
+; Tastenummer-opslagstabel til tastatur-dekodning (scannes med repne scasb ved CS:17E2)
+  db 0x00, 0x00, 0x00, 0x00                    ; 07C51 (CS:10B1: tastatur-status flag)
+key_scan_code_table:                           ; 07C55 (CS:10B5: 66 taster, scannes med cx=0x42)
+  db 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A
+  db 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B
+  db 0x5C, 0x5D, 0x5E, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D
+  db 0x6E, 0x6F, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D
+  db 0x7E, 0x54
 
 sub_7c97:                                      ; 07C97
   mov si, [bx + 0x76]                          ; 07C97
@@ -1787,7 +1748,7 @@ loc_0854D:                                     ; 0854D
   call sub_85d3                                ; 0855E  0xE8, 0x72, 0x00
   jmp short loc_08597                          ; 08561  0xEB, 0x34
   xchg al, cl                                  ; 08563  86 C1
-  mov di, 0x10b5                               ; 08565  0xBF, 0xB5, 0x10
+  mov di, key_scan_code_table                  ; CS:10B5 (start af funktionstast-tabel, 66 bytes)
   mov_dx_di                                    ; 08568  mov dx, di
   mov cx, 0x42                                 ; 0856A  0xB9, 0x42, 0x00
   repne scasb                                  ; 0856D  0xF2, 0xAE
