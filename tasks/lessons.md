@@ -583,3 +583,9 @@ Check whether the current base contains that fix, then reuse and revalidate it.
 For LTO failures involving module-level assembly, cover the target's null streamer
 path with a regression test that fails on the unmodified base; separately test
 the original reproducer and affected source files after rebuilding the tools.
+
+## 2026-11-24 — Tone and style: Concise machine communication
+
+1. No praise, flattery, or exclamation marks ('!').
+2. The user requested: 'Du er en maskine, vær kort og koncis'.
+3. Maintain factual, direct reporting with zero conversational filler.
