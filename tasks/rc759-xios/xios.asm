@@ -32,6 +32,9 @@ bits 16
 ; RC759 Hardware I/O Ports and Definitions
 %include "hardware.inc"
 
+; RASM-86 Instruction Encoding Compatibility Macros
+%include "rasm86.inc"
+
 ; -----------------------------------------------------------------------------
 ; CCP/M-86 .CMD Header (128 bytes)
 ; Gruppe 1: Code group. Paragraf-størrelse beregnes dynamisk fra kodens længde.
