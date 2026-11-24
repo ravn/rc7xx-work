@@ -2,6 +2,7 @@
 ; Kumulative adresseforskydninger mellem XIOS1 og XIOS4
 ; =============================================================================
 %if NUM_VIR_CONS == 4
+  %define XT_ALLOC_PARAS 0x0500                 ; 1280 paragraffer unlinked bufferplads til 4 konsoller
   %define DELTA_VMENU_PROLOGUE 50
   %define DELTA_VMENU_TBL 71
   %define DELTA_VMENU   74
@@ -12,6 +13,7 @@
   %define DELTA_VIDTBL  2907
   %define DELTA_49FA    859
 %else
+  %define XT_ALLOC_PARAS 0x01F4                 ; 500 paragraffer unlinked bufferplads til 1 konsol
   %define DELTA_VMENU_PROLOGUE 0
   %define DELTA_VMENU_TBL 0
   %define DELTA_VMENU   0
@@ -56,11 +58,7 @@ xios_config_table:
   dw 0x0000, 0x0000                            ; Drev K, L
   dw dph_drive_m                               ; Drev M (Memory Disk / M-Disk DPH)
   dw 0x0000, 0x0000, 0x0000                    ; Drev N, O, P
-%if NUM_VIR_CONS == 4
-  dw 0x0500                                    ; xt_alloc (unlinked 1280 paras)
-%else
-  dw 0x01F4                                    ; xt_alloc (unlinked 500 paras)
-%endif
+  dw XT_ALLOC_PARAS                            ; xt_alloc (unlinked bufferplads: 500 paras i XIOS1, 1280 paras i XIOS4)
 
 loc_077DA:
   cld                                          ; 077DA  0xFC
@@ -979,11 +977,11 @@ sub_7e11:                                      ; 07E11
   mov bx, ccb_console_0                        ; Konsol 0 CCB
   mov [bx + 0x83], al
 %if NUM_VIR_CONS == 4
-  mov bx, 0x2dc2                               ; Konsol 1 CCB
+  mov bx, ccb_console_1                        ; Konsol 1 CCB
   mov [bx + 0x83], al
-  mov bx, 0x2e56                               ; Konsol 2 CCB
+  mov bx, ccb_console_2                        ; Konsol 2 CCB
   mov [bx + 0x83], al
-  mov bx, 0x2eea                               ; Konsol 3 CCB
+  mov bx, ccb_console_3                        ; Konsol 3 CCB
   mov [bx + 0x83], al
 %endif
   mov_bx_ax                                    ; 07E2E  mov bx, ax
@@ -4687,6 +4685,7 @@ ccb_console_0:
   db 0x00, 0x00                ; 000021BC  add [bx+si],al
   db 0x00, 0x00                ; 000021BE  add [bx+si],al
   db 0x00, 0x00                ; 000021C0  add [bx+si],al
+ccb_console_1:
   db 0x00, 0x00                ; 000021C2  add [bx+si],al
   db 0x00, 0x00                ; 000021C4  add [bx+si],al
   db 0x00, 0x00                ; 000021C6  add [bx+si],al
@@ -4764,6 +4763,7 @@ ccb_console_0:
   db 0x00, 0x00                ; 00002250  add [bx+si],al
   db 0x00, 0x00                ; 00002252  add [bx+si],al
   db 0x00, 0x00                ; 00002254  add [bx+si],al
+ccb_console_2:
   db 0x00, 0x00                ; 00002256  add [bx+si],al
   db 0x00, 0x00                ; 00002258  add [bx+si],al
   db 0x00, 0x00                ; 0000225A  add [bx+si],al
@@ -4839,6 +4839,7 @@ ccb_console_0:
   db 0x00, 0x00                ; 000022E4  add [bx+si],al
   db 0x00, 0x00                ; 000022E6  add [bx+si],al
   db 0x00, 0x00                ; 000022E8  add [bx+si],al
+ccb_console_3:
   db 0x00, 0x00                ; 000022EA  add [bx+si],al
   db 0x00, 0x00                ; 000022EC  add [bx+si],al
   db 0x00, 0x00                ; 000022EE  add [bx+si],al
