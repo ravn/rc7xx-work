@@ -3655,7 +3655,7 @@ sub_09312:                                     ; 09312
 %if NUM_VIR_CONS == 4
 sub_x4_clip_repaint_entry:
   push bx
-  mov si, 0x4da3
+  mov si, xios_boot_banner
   mov byte [cs:.xios4_clip_v2], 3
 .loc_288f:
   mov dl, [cs:.xios4_clip_v2]
@@ -3737,7 +3737,7 @@ sub_09333:
   inc di
   inc si
   loop .loc_2920
-  mov si, 0x2d16
+  mov si, xios4_vir_con_mode + 2
   mov cx, NUM_VIR_CONS
 .loc_2932:
   push si
@@ -7591,6 +7591,7 @@ sub_0B341:                                     ; 0B341
 ; =============================================================================
 ; RC759 Piccoline Boot Banner & Hardware Rapport (0x0B5E1 - 0x0B79D)
 ; =============================================================================
+xios_boot_banner:
   db_dk "PICCOLINE XIOS version 2.3 - Marts 1985 "  ; 0B5E1
   db 0x0D, 0x0A, 0x0A
   db_dk "      K bytes hoved lager"            ; 0B613
