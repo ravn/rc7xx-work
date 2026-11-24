@@ -706,17 +706,7 @@ loc_07CCC:
   cmp al, 0x7a                                 ; 07CE4
   je loc_07D2D                                 ; 07CE6
   cmp al, 0x7b                                 ; 07CE8
-  db 0x74                                      ; 07CEA  je opcode (overlap: 'je loc_07D2F')
-loc_07CEB:
-  ; Bemærk: Dette er et bevidst bytecode-overlap trick:
-  ; - Hvis der hoppes hertil via 'jle loc_07CEB', udføres 0x4B ('dec bx' i XIOS4)
-  ;   hhv. 0x43 ('inc bx' i XIOS1) før der faldes igennem til 'cmp al, 0x7d'.
-  ; - Hvis 'cmp al, 0x7b' ovenfor matcher, udføres 'je loc_07D2F' (0x74 0x4B i XIOS4 / 0x74 0x43 i XIOS1).
-%if NUM_VIR_CONS == 4
-  dec bx                                       ; 0000054B (0x4B: displacement til loc_07D2F / 'dec bx')
-%else
-  inc bx                                       ; 07CEB    (0x43: displacement til loc_07D2F / 'inc bx')
-%endif
+  je loc_07D2F                                 ; 07CEA (spring til virtuel konsol omskifter)
   cmp al, 0x7d                                 ; 07CEC
   je loc_07D35                                 ; 07CEE (je target_7d)
   cmp al, 0x7e                                 ; 07CF0
