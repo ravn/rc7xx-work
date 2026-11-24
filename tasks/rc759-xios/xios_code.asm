@@ -451,12 +451,12 @@ kbd_handler:                                   ; 07A93 / 000002F3
   pop es
   call eoi_helper                              ; Send EOI til 8259 PIC
   in al, PORT_KBD_DATA                         ; Læs scancode fra tastatur-port (0x20)
-  mov [cs:0x1044], al                          ; Gem rå scancode
-  cmp byte [cs:0x1047], 0xff
+  mov [cs:kbd_raw_scancode], al                          ; Gem rå scancode
+  cmp byte [cs:kbd_prefix_flag], 0xff
   jne loc_07ACF
   test al, 0x80
   jne loc_07B0E
-  mov byte [cs:0x1047], 0
+  mov byte [cs:kbd_prefix_flag], 0
   mov bx, 0x2c52 + DELTA_TABLES                ; kbd_translate_table
   xlatb
   mov [cs:0x1040], al
@@ -465,24 +465,24 @@ kbd_handler:                                   ; 07A93 / 000002F3
   jmp near loc_07BA5
 
 loc_07ACF:
-  cmp byte [cs:0x1048], 0xff
+  cmp byte [cs:kbd_alt_flag], 0xff
   jne loc_07AE3
-  mov byte [cs:0x1048], 0
+  mov byte [cs:kbd_alt_flag], 0
   call sub_094EB
   jmp near loc_07BA5
 
 loc_07AE3:
   cmp al, 0xe3
   jne loc_07AF0
-  mov byte [cs:0x1048], 0xff
+  mov byte [cs:kbd_alt_flag], 0xff
   jmp near loc_07BA5
 
 loc_07AF0:
   cmp al, 0x0e
   jne loc_07B0E
-  test byte [cs:0x1045], 2
+  test byte [cs:kbd_shift_state], 2
   je loc_07B0E
-  test byte [cs:0x1045], 0x10
+  test byte [cs:kbd_shift_state], 0x10
   je loc_07B0E
   mov bx, 0x5fa4 + DELTA_TAIL
   jmp near loc_0B24F
@@ -498,7 +498,7 @@ loc_07B0E:
 loc_07B17:
   mov cx, 5
   mov ah, 2
-  mov bx, 0x1049
+  mov bx, kbd_special_keys_table
 
 loc_07B1F:
   cmp al, [bx]
@@ -509,17 +509,17 @@ loc_07B26:
   shl ah, 1
   inc bx
   loop loc_07B1F
-  mov al, [cs:0x1044]
+  mov al, [cs:kbd_raw_scancode]
   or_al_al                                     ; 07B2F  or al, al
   jns loc_07B36
   jmp near loc_07BA5
 
 loc_07B36:
   mov bx, 0x2d18 + DELTA_TABLES                ; kbd_shift_translate_table
-  test byte [cs:0x1045], 2
+  test byte [cs:kbd_shift_state], 2
   jne loc_07B4F
   mov bx, 0x2cb5 + DELTA_TABLES                ; kbd_ctrl_translate_table
-  test byte [cs:0x1045], 0x0c
+  test byte [cs:kbd_shift_state], 0x0c
   jne loc_07B4F
   mov bx, 0x2c52 + DELTA_TABLES                ; kbd_translate_table
 
@@ -529,7 +529,7 @@ loc_07B4F:
   je loc_07BA5
   cbw
   mov [cs:0x103f], ah
-  test byte [cs:0x1046], 0x20
+  test byte [cs:kbd_lock_state], 0x20
   je loc_07B74
   cmp al, 0x7e
   ja loc_07B74
@@ -545,7 +545,7 @@ loc_07B72:
 
 loc_07B74:
   and al, 0x7f
-  test byte [cs:0x1045], 0x10
+  test byte [cs:kbd_shift_state], 0x10
   je loc_07B8E
   test ah, ah
   jns loc_07B8C
@@ -559,11 +559,11 @@ loc_07B8C:
   or al, 0x80
 
 loc_07B8E:
-  mov [cs:0x103e], al
-  mov dx, [cs:0x1041]
+  mov [cs:kbd_char_buffer], al
+  mov dx, [cs:kbd_con_dest]
   cmp dx, 0x18
   jne loc_07BA2
-  mov byte [cs:0x1043], 0xff
+  mov byte [cs:kbd_event_flag], 0xff
 
 loc_07BA2:
   call rtm_call_helper
@@ -574,20 +574,20 @@ loc_07BA5:
 loc_07BA8:
   cmp al, 0x28
   je loc_07BC4
-  test byte [cs:0x1044], 0x80
+  test byte [cs:kbd_raw_scancode], 0x80
   je loc_07BBD
   not ah
-  and [cs:0x1045], ah
+  and [cs:kbd_shift_state], ah
   jmp short loc_07BDC
 
 loc_07BBD:
-  or [cs:0x1045], ah
+  or [cs:kbd_shift_state], ah
   jmp short loc_07BDC
 
 loc_07BC4:
-  test byte [cs:0x1044], 0x80
+  test byte [cs:kbd_raw_scancode], 0x80
   jne loc_07BDC
-  xor [cs:0x1046], ah
+  xor [cs:kbd_lock_state], ah
   cmp byte [cs:0x224e + DELTA_VMENU], 0xff
   je loc_07BDC
   call sub_08C5F
@@ -596,18 +596,25 @@ loc_07BDC:
   jmp short loc_07BA5
 
 ; --- Tastatur- og konsoldata (CS:0x103E..0x1059) ---
-  db 0x00, 0x00, 0x00                          ; 07BDE
-  add ax, strict word 0                        ; 07BE1  05 00 00
-  db 0x00, 0x00                                ; 07BE4
-  db 0x00, 0x00                                ; 07BE6
-  add [di], bl                                 ; 07BE8  0x00, 0x1D
-  sub dh, [ss:bx]                              ; 07BEA  0x36, 0x2A, 0x37
-  sub [bp + di], ah                            ; 07BED  0x28, 0x23
-  and al, 0x25                                 ; 07BEF  0x24, 0x25
-  db 0x26, 0x27                                ; 07BF1  daa
-  sub [bx + di], ch                            ; 07BF3  0x28, 0x29
-  sub ch, [bp + di]                            ; 07BF5  0x2A, 0x2B
-  sub al, 0x1d                                 ; 07BF7  0x2C, 0x1D
+kbd_char_buffer:
+  dw 0x0000
+  db 0x00
+kbd_con_dest:
+  dw 0x0005
+kbd_event_flag:
+  db 0x00
+kbd_raw_scancode:
+  db 0x00
+kbd_shift_state:
+  db 0x00
+kbd_lock_state:
+  db 0x00
+kbd_prefix_flag:
+  db 0x00
+kbd_alt_flag:
+  db 0x00
+kbd_special_keys_table:
+  db 0x1D, 0x36, 0x2A, 0x37, 0x28, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x1D
 
 ; -----------------------------------------------------------------------------
 ; CRT Afbrydelsesrutine (IRST, Vektor 0x88)
@@ -702,7 +709,7 @@ loc_07CCC:
   pop bx                                       ; 07CD3
   mov ax, [cs:0x2a5c + DELTA_WINDOW]           ; 07CD4
   mov [cs:0x2a5e + DELTA_WINDOW], ax           ; 07CD8
-  mov ax, [cs:0x103e]                          ; 07CDC
+  mov ax, [cs:kbd_char_buffer]                          ; 07CDC
   test ah, ah                                  ; 07CE0
   je loc_07CFD                                 ; 07CE2
   cmp al, 0x7a                                 ; 07CE4
@@ -768,8 +775,8 @@ loc_07D2F:                                     ; 00000597 (XIOS4 virtuel konsol 
   jnz .skip_switch
   mov byte [cs:xios4_vir_con_mode], 2
   mov dx, 0x18
-  mov [cs:0x1041], dx
-  mov byte [cs:0x1043], 0xff
+  mov [cs:kbd_con_dest], dx
+  mov byte [cs:kbd_event_flag], 0xff
   call rtm_call_helper
   pushf
   call far [cs:0x38]
@@ -852,7 +859,7 @@ loc_07D92:                                     ; 07D92
   mov cx, 8                                    ; 07DA5  0xB9, 0x08, 0x00
   mov al, 0x20                                 ; 07DA8  0xB0, 0x20
   rep stosw                                    ; 07DAA  0xF3, 0xAB
-  mov dx, [cs:0x1041]                          ; 07DAC  0x2E, 0x8B, 0x16, 0x41, 0x10
+  mov dx, [cs:kbd_con_dest]                          ; 07DAC  0x2E, 0x8B, 0x16, 0x41, 0x10
   push bx                                      ; 07DB1  0x53
   mov es, bp                                   ; 07DB2  0x8E, 0xC5
   call rtm_timer_wait                          ; 07DB4  0xE8, 0x1A, 0xFB
@@ -862,7 +869,7 @@ loc_07D92:                                     ; 07D92
   pop bx                                       ; 07DBB  0x5B
   pop di                                       ; 07DBC  0x5F
   pop si                                       ; 07DBD  0x5E
-  mov ax, [cs:0x103e]                          ; 07DBE  0x2E, 0xA1, 0x3E, 0x10
+  mov ax, [cs:kbd_char_buffer]                          ; 07DBE  0x2E, 0xA1, 0x3E, 0x10
   cmp ax, 0xff7d                               ; 07DC2  0x3D, 0x7D, 0xFF
   je loc_07DE1                                 ; 07DC5  0x74, 0x1A
   cmp ax, strict word 0x1b                     ; 07DC7  3D 1B 00
@@ -1145,7 +1152,7 @@ loc_07F9D:                                     ; 07F9D
 
 xios_fn_17_check_console_event:
   xor_ah_ah                                    ; 07FAA  xor ah, ah
-  mov al, [cs:0x1043]                          ; 07FAC  0x2E, 0xA0, 0x43, 0x10
+  mov al, [cs:kbd_event_flag]                          ; 07FAC  0x2E, 0xA0, 0x43, 0x10
   cmp cl, 0xfe                                 ; 07FB0  0x80, 0xF9, 0xFE
   je loc_07FCB                                 ; 07FB3  0x74, 0x16
   jb loc_07FBB                                 ; 07FB5  0x72, 0x04
@@ -1155,8 +1162,8 @@ xios_fn_17_check_console_event:
 loc_07FBB:                                     ; 07FBB
   mov dx, 0x18                                 ; 07FBB  0xBA, 0x18, 0x00
   call rtm_timer_wait                          ; 07FBE  0xE8, 0x10, 0xF9
-  mov byte [cs:0x1043], 0                      ; 07FC1  0x2E, 0xC6, 0x06, 0x43, 0x10, 0x00
-  mov ax, [cs:0x103e]                          ; 07FC7  0x2E, 0xA1, 0x3E, 0x10
+  mov byte [cs:kbd_event_flag], 0                      ; 07FC1  0x2E, 0xC6, 0x06, 0x43, 0x10, 0x00
+  mov ax, [cs:kbd_char_buffer]                          ; 07FC7  0x2E, 0xA1, 0x3E, 0x10
 
 loc_07FCB:                                     ; 07FCB
   ret                                          ; 07FCB  0xC3
@@ -2744,7 +2751,7 @@ loc_08D6B:                                     ; 08D6B
   stosw                                        ; 08D6F  0xAB
   inc di                                       ; 08D70  0x47
   loop loc_08D6B                               ; 08D71  0xE2, 0xF8
-  mov al, [cs:0x1046]                          ; 08D73  0x2E, 0xA0, 0x46, 0x10
+  mov al, [cs:kbd_lock_state]                          ; 08D73  0x2E, 0xA0, 0x46, 0x10
   test al, 0x20                                ; 08D77  0xA8, 0x20
   je loc_08D86                                 ; 08D79  0x74, 0x0B
   mov si, 0x48b5 + DELTA_TABLES                               ; 08D7B  0xBE, 0xB5, 0x48
@@ -2852,7 +2859,7 @@ sub_08DF1:                                     ; 08DF1
   push bx                                      ; 08E27  0x53
   call sub_08C61                               ; 08E28  0xE8, 0x36, 0xFE
   inc byte [cs:0x10b1]                         ; 08E2B  0x2E, 0xFE, 0x06, 0xB1, 0x10
-  mov byte [cs:0x1047], 0xff                   ; 08E30  0x2E, 0xC6, 0x06, 0x47, 0x10, 0xFF
+  mov byte [cs:kbd_prefix_flag], 0xff                   ; 08E30  0x2E, 0xC6, 0x06, 0x47, 0x10, 0xFF
   mov dx, 0x13                                 ; 08E36  0xBA, 0x13, 0x00
   call rtm_timer_wait                          ; 08E39  0xE8, 0x95, 0xEA
   mov cx, 0xffff                               ; 08E3C  0xB9, 0xFF, 0xFF
@@ -3315,7 +3322,7 @@ xios4_fn_19_auxist:
   mov [cs:xios4_vir_con_mode], cl              ; 00001A4A
   cmp cl, 2                                    ; 00001A4F
   jz .loc_1a75                                 ; 00001A52
-  mov word [cs:0x1041], 5                      ; 00001A54
+  mov word [cs:kbd_con_dest], 5                      ; 00001A54
 
 .loc_1a5b:
   mov_al_dl                                    ; 00001A5B  mov al, dl
@@ -3323,7 +3330,7 @@ xios4_fn_19_auxist:
   jnc .loc_1a75                                ; 00001A5F
   add al, 0x70                                 ; 00001A61
   mov ah, 0xff                                 ; 00001A63
-  mov [cs:0x103e], ax                          ; 00001A65
+  mov [cs:kbd_char_buffer], ax                          ; 00001A65
   mov dx, 5                                    ; 00001A69
   call rtm_call_helper                         ; 00001A6C
   pushf                                        ; 00001A6F
