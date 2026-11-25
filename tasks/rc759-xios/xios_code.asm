@@ -6045,44 +6045,61 @@ dph_drive_m:
 	dw 0				; HASH / reserveret
 
 	times 60 db 0			; Bufferområde for M-disk
+; =============================================================================
+; RC759 Piccoline DPB (Disk Parameter Block) — 17 bytes
+; Standard CCP/M-86 15-byte DPB + psh (fysisk sektorskift) + pmk (maske)
+; Reference: DRI xioscb.def §Disk I/O Data + Piccoline Programmers Guide §8
+; =============================================================================
+; spt, bsh, blm, exm, dsm, drm, al0, al1, cks, off, psh, pmk
+%macro RC759_DPB 12
+	dw %1	; spt  (sektorer/track, 128-byte logiske)
+	db %2	; bsh  (block shift)
+	db %3	; blm  (block mask = 2^bsh - 1)
+	db %4	; exm  (extent mask)
+	dw %5	; dsm  (blokantal - 1)
+	dw %6	; drm  (directory-indgange - 1)
+	db %7	; al0  (allokering 0)
+	db %8	; al1  (allokering 1)
+	dw %9	; cks  (checksum-vektor størrelse)
+	dw %10	; off  (reserverede tracks)
+	db %11	; psh  (fysisk sektorskift)
+	db %12	; pmk  (fysisk sektormask = 2^psh - 1)
+%endmacro
+
 fdc_dpb_drive_a:
-	or [bx + si], al
-	add al, 0xf
-	add [bx + 2], dl
-	inc word [bx + di]
-	inc word [bx + si]
-	db 0x80, 0x80, 0x04, 0x00, 0x03	; 0A62D  add byte [bx + si + 4], 3
-	pop es
-	or [bx + si], al
-	add al, 0xf
-	add [bx + 2], dl
-	inc word [bx + di]
-	inc word [bx + si]
-	db 0x80, 0x80, 0x04, 0x00, 0x03	; 0A63E  add byte [bx + si + 4], 3
-	pop es
-fdc_dpb_drive_b:
-	adc al, [bx + si]
-	add ax, 0x11f
-	mov al, 0xa
-	inc word [si]
-	inc ax				; 0A64D
-	db 0x00, 0x80, 0x04, 0x00	; 0A64F  add byte [bx + si + 4], al
-	add al, [bp + di]
-	adc al, [bx + si]
-	add ax, strict word 0x1f	; 0A657  05 1F 00
-	mov al, 0xa
-	inc word [si]
-	inc ax				; 0A65E
-	db 0x00, 0x80, 0x04, 0x00	; 0A660  add byte [bx + si + 4], al
-	add al, [bp + di]
-	times 152 db 0			; 0A666..0A6FC (152 bytes padding)
+	RC759_DPB 8, 4, 0x0F, 0, 0x0257, 0x01FF, 0xFF, 0, 0x8080, 4, 3, 7
+	RC759_DPB 8, 4, 0x0F, 0, 0x0257, 0x01FF, 0xFF, 0, 0x8080, 4, 3, 7
+
+fdc_dpb_drive_b:			; 16-byte DPB-variant (uden pmk)
+	dw 0x0012	; spt=18
+	db 5, 0x1F, 1	; bsh, blm, exm=1 (enkel tæthed)
+	dw 0x0AB0	; dsm
+	dw 0x04FF	; drm
+	db 0x40, 0	; al0, al1
+	dw 0x0480	; cks
+	dw 0x0200	; off
+	db 3		; psh
+	dw 0x0012	; spt=18
+	db 5, 0x1F, 0	; bsh, blm, exm=0 (dobbelt tæthed)
+	dw 0x0AB0	; dsm
+	dw 0x04FF	; drm
+	db 0x40, 0	; al0, al1
+	dw 0x0480	; cks
+	dw 0x0200	; off
+	db 3		; psh
+	times 152 db 0			; CSV/ALV buffer-plads
 	db 0x00
+
 fdc_dpb_drive_m:
-	db 0x08, 0x00, 0x03, 0x07, 0x00
+	dw 8		; spt=8
+	db 3, 7, 0	; bsh, blm, exm
 fdc_dpb_m_param:
-	db 0x00, 0x00, 0x3f
-	add al, al
-	times 74 db 0			; 0A709..0A751 (74 bytes padding)
+	dw 0x0000	; dsm (overskrives af INIT efter RAM-test)
+	dw 0x003F	; drm=63
+	db 0xC0, 0	; al0=0xC0, al1=0
+	dw 0, 0		; cks=0 (fast disk), off=0
+	db 0, 0		; psh=0, pmk=0
+	times 67 db 0	; CSV/ALV buffer-plads
 fdc_dirbcb_drive_a:
 	times 15 db 0
 fdc_dtabcb_drive_a:
