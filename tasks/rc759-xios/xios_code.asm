@@ -22,17 +22,48 @@ KBD_SHIFT_ALT       equ 0x10		; Alt key active
 KBD_LOCK_CAPS       equ 0x20		; Caps Lock active
 
 ; =============================================================================
-; Piccoline Autoconfig Table Offsets (INT 28h Func 4 / xios_autoconfig_table)
-; Kilde: EPROM initialisering ved 0000:0050 kopieret til xios_autoconfig_table
+; Piccoline Auto Configuration Map (INT 28h Func 4 / xios_autoconfig_table)
+; Reference: Piccoline Programmer's Guide v2, Section 3.1 (side 15-16 / 184)
+; Initialiseres af Boot-EPROM ved 0000:0050h og kopieres til xios_autoconfig_table ved boot.
 ; =============================================================================
-AUTOCONF_MAIN_MEM_PTR	equ 0x00		; Far pointer til toppen af primær hukommelse
-AUTOCONF_CRT_BUF_OFFSET	equ 0x08		; Offset for CRT hardware display buffer
-AUTOCONF_CRT_BUF_SEG	equ 0x0A		; Segment for CRT hardware display buffer
-AUTOCONF_RTC_PRESENT	equ 0x0C		; 0xFF hvis Real-Time Clock er installeret
-AUTOCONF_LAN_INSTALLED	equ 0x0D		; 0xFF hvis Lokalnet (LAN) adaptor er installeret
-AUTOCONF_DISPLAY_MODE	equ 0x12		; Bit 0: 0=Farveskærm, 1=Monokrom
-AUTOCONF_NUM_FLOPPIES	equ 0x13		; Antal installerede floppydrev (0..4)
-AUTOCONF_SYS_TYPE	equ 0x17		; Systemtype (0x50 = RC759 Piccoline)
+AUTOCONF_MAIN_MEM_SIZE	equ 0x00		; Dword: Primær RAM-størrelse i bytes (main memory size)
+AUTOCONF_TOTAL_MEM_SIZE	equ 0x04		; Dword: Total RAM i bytes inkl. CRT pixel/VRAM hukommelse
+AUTOCONF_CRT_BUF_OFFSET	equ 0x08		; Word: Offset for CRT hardware display buffer (reserveret i manual)
+AUTOCONF_CRT_BUF_SEG	equ 0x0A		; Word: Segment for CRT hardware display buffer (reserveret i manual)
+AUTOCONF_RTC_PRESENT	equ 0x0C		; Byte: 0xFF hvis RTC 1-sekunds kilde er installeret, ellers 0
+AUTOCONF_LAN_INSTALLED	equ 0x0D		; Byte: 0xFF hvis Lokalnet (LAN) controller er installeret, ellers 0
+AUTOCONF_ISBX_INSTALLED	equ 0x0E		; Byte: 0xFF hvis iSBX modul er installeret, ellers 0
+AUTOCONF_DPA_INSTALLED	equ 0x0F		; Byte: 0xFF hvis Disk/Printer Adaptor (DPA/DPC) er installeret, ellers 0
+AUTOCONF_RESERVED_16	equ 0x10		; Word: Reserveret
+AUTOCONF_MONITOR_TYPE	equ 0x12		; Byte: Monitortype (0=15.6kHz farve, 1=15.6kHz mono, 2=22kHz farve, 3=22kHz mono)
+AUTOCONF_DISPLAY_MODE	equ 0x12		; Byte: Alias for monitor type (bit 0: 0=farve, 1=monokrom)
+AUTOCONF_NUM_FLOPPIES	equ 0x13		; Byte: Antal tilkoblede floppydrev (0..4)
+AUTOCONF_RESERVED_20	equ 0x14		; Word: Reserveret
+AUTOCONF_KBD_NATIONALITY	equ 0x16		; Byte: Tastatur nationalitetskode / dip switch (0..15)
+AUTOCONF_SYS_TYPE	equ 0x17		; Byte: Systemtype (0x50 = RC759 Piccoline)
+
+; =============================================================================
+; Piccoline Non-Volatile Memory (NVRAM) Layout (INT 28h Func 3 / xios_nvram_table)
+; Reference: Piccoline Programmer's Guide v2, Section 3.2 (side 16-19 / 184)
+; 256x4 bit batteribackup CMOS RAM. Konfigureres af KONFIG/OKONFIG / KDEF.SYS.
+; =============================================================================
+NVM_CHECKSUM		equ 0x00		; Byte 0: Checksum over NVRAM indhold
+NVM_TYPE_NUM		equ 0x01		; Byte 1-2: Maskinens typenummer
+NVM_SERIAL_NUM		equ 0x05		; Byte 5-6: Serienummer
+NVM_ISBX_BAUD_MODE	equ 0x0D		; Byte 13: iSBX351/V24 baudrate (high nibble) og kanal-funktion (low)
+NVM_STOP_PARITY		equ 0x0E		; Byte 14: Stopbits og paritet for seriel port
+NVM_RTS_INITIAL		equ 0x0F		; Byte 15: Initial værdi for RTS linie
+NVM_CHAR_BITS		equ 0x11		; Byte 17: Databits pr. tegn (bits 6-7: 0=5, 1=6, 2=7, 3=8)
+NVM_SCROLL_MODE		equ 0x12		; Byte 18: High nibble = CRT scroll mode (0=jump, 1=soft scroll)
+NVM_CURSOR_REPR	equ 0x13		; Byte 19: High nibble = cursor højde (1..10), low = blink (0=fast, 1=blink)
+NVM_FLOPPY_TIMEOUT	equ 0x14		; Byte 20: Inaktive sekunder før floppy motor stopper / release (min. 2)
+NVM_DEFAULT_FG_COLOR	equ 0x16		; Byte 22: Standard forgrundsfarve (bit 0=blå, 1=gul, 2=rød, 3=intensitet)
+NVM_LAST_POWER_MONTH	equ 0x17		; Byte 23: Sidste tænding: Måned (BCD 0x01..0x12)
+NVM_CURRENT_YEAR	equ 0x18		; Byte 24: Nuværende år (BCD 0x78..0x99, f.eks. 0x84 = 1984)
+NVM_BOOT_DEVICE		equ 0x19		; Byte 25: Boot-enhed ('A', 'B', 'N'=Netværk, 'P'=PROM)
+NVM_DISK_BUFFERS	equ 0x1A		; Byte 26: Antal diskbuffere allokeret (0..255)
+NVM_MDISK_SIZE		equ 0x1B		; Byte 27: M-disk (RAM-disk) størrelse (0=0KB, 1=64KB, 2=128KB, 3=192KB, 4=256KB)
+NVM_PRINTER_TYPE	equ 0x1C		; Byte 28: Printertype (0=filtrér uprintbare, 1=transparent 8-bit)
 
 ; =============================================================================
 ; Digital Research CCP/M-86 Process Descriptor (PD) Offsets
@@ -1119,7 +1150,7 @@ printer_out_char:			; 07F88
 	cmp dl, 1
 	je .filter_special_char
 	mov bx, xios_nvram_table
-	test [cs:bx + 0x1c], cl
+	test [cs:bx + NVM_PRINTER_TYPE], cl
 	je .do_output_char
 
 .filter_special_char:			; 07F9B
@@ -2882,7 +2913,7 @@ io_statline:
 	rep movsw
 
 .check_status_bits:			; 08CE4
-	mov cx, [bx + 0xe]
+	mov cx, [bx + NVM_STOP_PARITY]
 	test cx, 0x80
 	je .check_other_status
 	mov word [cs:vmenu_buf_status_flags], 0x5392
@@ -4730,7 +4761,7 @@ io_read:
 	mov bx, [si + 8]
 	mov ax, [bx]
 	mov [cs:fdc_cur_spt], ax
-	mov al, [bx + 0xf]
+	mov al, [bx + NVM_RTS_INITIAL]
 	mov [cs:fdc_cur_sector_shift], al
 	mov ax, [bp + 8]
 	mov bx, [bp + 6]
@@ -4816,7 +4847,7 @@ io_write:
 	mov bx, [si + 8]
 	mov ax, [bx]
 	mov [cs:fdc_cur_spt], ax
-	mov al, [bx + 0xf]
+	mov al, [bx + NVM_RTS_INITIAL]
 	mov [cs:fdc_cur_sector_shift], al
 	mov ax, [bp + 8]
 	mov bx, [bp + 6]
@@ -5147,7 +5178,7 @@ fdc_motor_timeout_tick:
 	push bx
 	push ax
 	mov bx, xios_nvram_table
-	mov al, [bx + 0x14]
+	mov al, [bx + NVM_FLOPPY_TIMEOUT]
 	cmp al, 5
 	pop ax
 	pop bx
@@ -5184,7 +5215,7 @@ fdc_deselect_drive_unit:		; 09DA4
 fdc_load_drive_timing_byte:		; 09DBB
 	cli
 	mov bx, xios_nvram_table
-	mov al, [bx + 0x14]
+	mov al, [bx + NVM_FLOPPY_TIMEOUT]
 	mov [cs:fdc_motor_timeout_counter], al
 	sti
 	ret
@@ -6075,16 +6106,16 @@ xios_nmi_handler:
 	mov [bx + 8], bp
 	mov [bx + 0xa], si
 	mov [bx + 0xc], di
-	mov [bx + 0xe], sp
+	mov [bx + NVM_STOP_PARITY], sp
 	mov [bx + 0x10], cs
 	mov ax, [cs:xios_auxin_ds]
-	mov [bx + 0x12], ax
-	mov [bx + 0x14], ss
-	mov [bx + 0x16], es
+	mov [bx + NVM_SCROLL_MODE], ax
+	mov [bx + NVM_FLOPPY_TIMEOUT], ss
+	mov [bx + NVM_DEFAULT_FG_COLOR], es
 	pop ax
-	mov [bx + 0x18], ax
+	mov [bx + NVM_CURRENT_YEAR], ax
 	pop ax
-	mov [bx + 0x1A], ax
+	mov [bx + NVM_DISK_BUFFERS], ax
 	pop ax
 	mov [bx + 0x1C], ax
 	mov byte [0x67], 0x50
@@ -6175,8 +6206,8 @@ sio_auxin_read_char:
 	call sio_check_rx_status
 	jne .aux_ret_check
 	push bx
-	or byte [bx + 0x1A], 4
-	mov dx, [bx + 0x14]
+	or byte [bx + NVM_DISK_BUFFERS], 4
+	mov dx, [bx + NVM_FLOPPY_TIMEOUT]
 	call rtm_timer_wait
 	pop bx
 
@@ -6187,8 +6218,8 @@ sio_auxin_read_char:
 	jne .aux_ret_done
 	cmp byte [bx + 0x1d], 1
 	jne .aux_ret_done
-	or byte [bx + 0x1b], 0x20
-	test byte [bx + 0x1b], 1
+	or byte [bx + NVM_MDISK_SIZE], 0x20
+	test byte [bx + NVM_MDISK_SIZE], 1
 	je .aux_ret_done
 	call sio_tx_byte_from_buffer
 
@@ -6300,12 +6331,12 @@ xios_prn_isr:
 	call sio_get_channel_b_struct
 	pushf
 	cli
-	cmp word [bx + 0x12], 0
+	cmp word [bx + NVM_SCROLL_MODE], 0
 	jne .prn_isr_eoi
 	push bx
 	push cx
-	or byte [bx + 0x1b], 4
-	mov dx, [bx + 0x16]
+	or byte [bx + NVM_MDISK_SIZE], 4
+	mov dx, [bx + NVM_DEFAULT_FG_COLOR]
 	call rtm_timer_wait
 	pop cx
 	pop bx
@@ -6320,8 +6351,8 @@ xios_prn_isr:
 	mov ax, [bx + 0xc]
 	dec ax
 	and [bx + 0x10], ax
-	dec word [bx + 0x12]
-	test byte [bx + 0x1b], 1
+	dec word [bx + NVM_SCROLL_MODE]
+	test byte [bx + NVM_MDISK_SIZE], 1
 	je .prn_isr_done
 	call sio_tx_byte_from_buffer
 
@@ -6348,13 +6379,13 @@ int28_fn_25_reserved:			; 0A9FE
 	pushf
 	cli
 	mov [bx + 0x1C], cl
-	or byte [bx + 0x1b], 8
-	test byte [bx + 0x1b], 1
+	or byte [bx + NVM_MDISK_SIZE], 8
+	test byte [bx + NVM_MDISK_SIZE], 1
 	je .timer_hook_done
 	call sio_tx_byte_from_buffer
 
 .timer_hook_done:			; 0AA27
-	mov dx, [bx + 0x18]
+	mov dx, [bx + NVM_CURRENT_YEAR]
 	call rtm_timer_wait
 	popf
 	ret
@@ -6370,12 +6401,12 @@ xios_timer_isr_poll:			; 0AA3D
 	mov dx, [bx + 0x25]
 	call pic_send_eoi_command
 	call sio_tx_byte_from_buffer
-	cmp word [bx + 0x12], 0
+	cmp word [bx + NVM_SCROLL_MODE], 0
 	je .timer_isr_done
-	test byte [bx + 0x1b], 4
+	test byte [bx + NVM_MDISK_SIZE], 4
 	je .timer_isr_done
-	and byte [bx + 0x1b], 0xfb
-	mov dx, [bx + 0x16]
+	and byte [bx + NVM_MDISK_SIZE], 0xfb
+	mov dx, [bx + NVM_DEFAULT_FG_COLOR]
 	call rtm_set_flag
 	jmp near xios_isr_exit_dispatch
 
@@ -6383,64 +6414,64 @@ xios_timer_isr_poll:			; 0AA3D
 	jmp near xios_isr_exit_iret
 
 sio_tx_byte_from_buffer:		; 0AA62
-	test byte [bx + 0x1b], 8
+	test byte [bx + NVM_MDISK_SIZE], 8
 	je .sio_tx_check_empty
 	mov al, [bx + 0x1C]
 	call sio_write_tx_data_reg
-	and byte [bx + 0x1b], 0xf7
+	and byte [bx + NVM_MDISK_SIZE], 0xf7
 	push bx
-	mov dx, [bx + 0x18]
+	mov dx, [bx + NVM_CURRENT_YEAR]
 	call rtm_set_flag
 	pop bx
 	ret
 
 .sio_tx_check_empty:			; 0AA7B
-	test byte [bx + 0x1b], 0x10
+	test byte [bx + NVM_MDISK_SIZE], 0x10
 	je .sio_tx_load_next
 	mov al, 0x13
 	call sio_write_tx_data_reg
-	and byte [bx + 0x1b], 0xef
+	and byte [bx + NVM_MDISK_SIZE], 0xef
 	ret
 
 .sio_tx_load_next:			; 0AA8B
-	test byte [bx + 0x1b], 0x20
+	test byte [bx + NVM_MDISK_SIZE], 0x20
 	je .sio_tx_update_ptrs
 	mov al, 0x11
 	call sio_write_tx_data_reg
-	and byte [bx + 0x1b], 0xdf
+	and byte [bx + NVM_MDISK_SIZE], 0xdf
 	ret
 
 .sio_tx_update_ptrs:			; 0AA9B
-	test byte [bx + 0x1b], 2
+	test byte [bx + NVM_MDISK_SIZE], 2
 	je .sio_tx_advance_tail
-	or byte [bx + 0x1b], 1
+	or byte [bx + NVM_MDISK_SIZE], 1
 	ret
 
 .sio_tx_advance_tail:			; 0AAA6
-	mov ax, [bx + 0x12]
+	mov ax, [bx + NVM_SCROLL_MODE]
 	cmp ax, [bx + 0xc]
 	jne .sio_tx_done
-	or byte [bx + 0x1b], 1
+	or byte [bx + NVM_MDISK_SIZE], 1
 	ret
 
 .sio_tx_done:				; 0AAB3
-	mov si, [bx + 0xe]
+	mov si, [bx + NVM_STOP_PARITY]
 	push es
 	mov es, [bx + 0xa]
 	mov al, [es:si]
 	pop es
-	inc word [bx + 0xe]
+	inc word [bx + NVM_STOP_PARITY]
 	mov dx, [bx + 0xc]
 	dec dx
-	and [bx + 0xe], dx
-	inc word [bx + 0x12]
+	and [bx + NVM_STOP_PARITY], dx
+	inc word [bx + NVM_SCROLL_MODE]
 	call sio_write_tx_data_reg
 	ret
 
 sio_write_tx_data_reg:			; 0AACF
 	mov dx, [bx + 0x23]
 	out dx, al
-	and byte [bx + 0x1b], 0xfe
+	and byte [bx + NVM_MDISK_SIZE], 0xfe
 	ret
 	call xios_switch_to_priv_stack
 	mov bx, sio_chan_b_ctrl_block
@@ -6479,7 +6510,7 @@ xios_sio_isr_rx_check:			; 0AB06
 	cmp al, 0x13
 	pop ax
 	jne .sio_isr_rx_store
-	or byte [bx + 0x1b], 2
+	or byte [bx + NVM_MDISK_SIZE], 2
 
 .sio_isr_rx_read:			; 0AB22
 	jmp near xios_isr_exit_iret
@@ -6487,10 +6518,10 @@ xios_sio_isr_rx_check:			; 0AB06
 .sio_isr_rx_store:			; 0AB25
 	cmp al, 0x11
 	jne .sio_isr_rx_advance
-	test byte [bx + 0x1b], 2
+	test byte [bx + NVM_MDISK_SIZE], 2
 	je .sio_isr_rx_read
-	and byte [bx + 0x1b], 0xfd
-	test byte [bx + 0x1b], 1
+	and byte [bx + NVM_MDISK_SIZE], 0xfd
+	test byte [bx + NVM_MDISK_SIZE], 1
 	je .sio_isr_rx_read
 	call sio_tx_byte_from_buffer
 	jmp short .sio_isr_rx_read
@@ -6498,8 +6529,8 @@ xios_sio_isr_rx_check:			; 0AB06
 .sio_isr_rx_advance:			; 0AB3E
 	cmp word [bx + 8], 0x21
 	jne .sio_isr_rx_signal
-	or byte [bx + 0x1b], 0x10
-	test byte [bx + 0x1b], 1
+	or byte [bx + NVM_MDISK_SIZE], 0x10
+	test byte [bx + NVM_MDISK_SIZE], 1
 	je .sio_isr_rx_signal
 	push ax
 	push dx
@@ -6530,13 +6561,13 @@ xios_sio_isr_rx_check:			; 0AB06
 	dec ax
 	and [bx + 6], ax
 	dec word [bx + 8]
-	test byte [bx + 0x1A], 4
+	test byte [bx + NVM_DISK_BUFFERS], 4
 	je .sio_isr_rx_read
-	mov dx, [bx + 0x14]
+	mov dx, [bx + NVM_FLOPPY_TIMEOUT]
 	push bx
 	call rtm_set_flag
 	pop bx
-	and byte [bx + 0x1A], 0xfb
+	and byte [bx + NVM_DISK_BUFFERS], 0xfb
 	jmp near xios_isr_exit_dispatch
 	call xios_switch_to_priv_stack
 	mov bx, sio_chan_b_ctrl_block
@@ -6596,7 +6627,7 @@ sio_chan_b_tx_buf_size:
 	add [bx + di], al
 	add [bx + si], ax
 	db 0x00, 0x00			; 0AC15
-	add [bx + 0x14], bh
+	add [bx + NVM_FLOPPY_TIMEOUT], bh
 	db 0x00, 0x00			; 0AC1A
 	add ax, [bp + si]
 	add ax, [bp + si]
@@ -6729,7 +6760,7 @@ prn_dpc_out:
 	push ds
 	mov ds, [cs:xios_sysdat_segment_val]
 	mov bx, xios_nvram_table
-	mov al, [bx + 0x14]
+	mov al, [bx + NVM_FLOPPY_TIMEOUT]
 	cmp al, 5
 	jae .prn_dpc_poll
 	mov al, 5
@@ -6788,7 +6819,7 @@ io_listst:
 	push ds
 	mov ds, [cs:xios_sysdat_segment_val]
 	mov bx, xios_nvram_table
-	mov al, [bx + 0x14]
+	mov al, [bx + NVM_FLOPPY_TIMEOUT]
 	cmp al, 5
 	jae .listst_poll_ret
 	mov al, 5
@@ -7185,10 +7216,10 @@ diag_format_error_record:		; 0B06E
 	mov [di + 4], ah
 	mov byte [di + 5], 5
 	mov byte [di + 6], 4
-	mov al, [bx + 0xe]
+	mov al, [bx + NVM_STOP_PARITY]
 	mov [di + 7], al
 	mov byte [di + 8], 5
-	mov al, [bx + 0xf]
+	mov al, [bx + NVM_RTS_INITIAL]
 	mov [di + 9], al
 	mov byte [di + 0xa], 2
 	mov byte [di + 0xb], 0x40
@@ -7196,7 +7227,7 @@ diag_format_error_record:		; 0B06E
 	mov al, [bx + 0x10]
 	mov [di + 0xd], al
 	mov byte [di + 0xe], 3
-	mov al, [bx + 0x11]
+	mov al, [bx + NVM_CHAR_BITS]
 	mov [di + 0xf], al
 	ret
 
@@ -7244,19 +7275,19 @@ xios_init:				; 0B169
 	inc di
 	cmp al, 3
 	jne .init_fdc_drives
-	mov [bx + 0x11], ah
+	mov [bx + NVM_CHAR_BITS], ah
 	jmp short .init_drive_params
 
 .init_fdc_drives:			; 0B17A
 	cmp al, 4
 	jne .init_next_drive
-	mov [bx + 0xe], ah
+	mov [bx + NVM_STOP_PARITY], ah
 	jmp short .init_drive_params
 
 .init_next_drive:			; 0B183
 	cmp al, 5
 	jne .init_drive_params
-	mov [bx + 0xf], ah
+	mov [bx + NVM_RTS_INITIAL], ah
 
 .init_drive_params:			; 0B18A
 	loop xios_init
@@ -7273,8 +7304,8 @@ xios_init:				; 0B169
 	add al, 0x40
 	out dx, al
 	push bx
-	mov al, [bx + 0xe]
-	mov bl, [bx + 0x11]
+	mov al, [bx + NVM_STOP_PARITY]
+	mov bl, [bx + NVM_CHAR_BITS]
 	mov cl, 6
 	shr bl, cl
 	cmp bl, 1
@@ -7296,10 +7327,10 @@ xios_init:				; 0B169
 	or_al_bl			; 0B1C2
 	out dx, al
 	pop bx
-	mov al, [bx + 0x11]
+	mov al, [bx + NVM_CHAR_BITS]
 	mov cl, 2
 	shl al, cl
-	mov bl, [bx + 0xf]
+	mov bl, [bx + NVM_RTS_INITIAL]
 	test bl, 0x80
 	je .init_drive_check_step
 	or al, 2
@@ -7762,7 +7793,7 @@ crt_mode_switch:			; 0B9B7
 	mov byte [cs:xios_is_color_display], 0xff
 	mov byte [cs:xios_default_fg_color], 0x38
 	mov bx, xios_nvram_table
-	mov al, [bx + 0x16]
+	mov al, [bx + NVM_DEFAULT_FG_COLOR]
 	mov cl, 4
 	rol al, cl
 	and al, 0xf0
@@ -7796,7 +7827,7 @@ crt_mode_switch:			; 0B9B7
 	sub_ah_dl			; 0BAB6
 	mov [cs:fdc_dpb_current_format], ax
 	mov al, 0
-	test byte [bx + 0x12], 0xf0
+	test byte [bx + NVM_SCROLL_MODE], 0xf0
 	je .setup_screen_width
 	mov al, 1
 
@@ -8304,10 +8335,10 @@ xios_init_entry:
 .init_date_loop:			; 0BEF3
 	mov word [cs:rtc_day_of_year], 0	; 0BEF3  mov word [cs:0x5067], 0
 	mov bx, xios_nvram_table
-	mov al, [bx + 0x18]
+	mov al, [bx + NVM_CURRENT_YEAR]
 	call bcd_to_binary_byte
 	mov [cs:rtc_cur_year], al
-	mov al, [bx + 0x17]
+	mov al, [bx + NVM_LAST_POWER_MONTH]
 	call bcd_to_binary_byte
 	cmp al, [cs:rtc_cur_month]
 	jb .init_check_rtc_month
@@ -8315,7 +8346,7 @@ xios_init_entry:
 	inc byte [cs:rtc_cur_year]
 	mov al, [cs:rtc_cur_year]
 	call binary_to_bcd_byte
-	mov [bx + 0x18], al
+	mov [bx + NVM_CURRENT_YEAR], al
 	mov_cl_al			; 0BF25
 	mov ah, 0
 	mov al, 0x18
@@ -8536,7 +8567,7 @@ fdc_dma_scroll_cmd:			; 0C08A
 	mov [cs:sysdat_tempdisk], al
 	mov bx, xios_nvram_table
 	mov ax, [cs:xios_mx_mem_avail]
-	mov bl, [bx + 0x1b]
+	mov bl, [bx + NVM_MDISK_SIZE]
 	mov bh, 0
 	mov cl, 6
 	shl bx, cl
@@ -8558,7 +8589,7 @@ fdc_dma_scroll_cmd:			; 0C08A
 	shl ax, cl
 	mov [cs:fdc_dma_buf_seg], ax
 	mov bx, xios_nvram_table
-	mov al, [bx + 0x1b]
+	mov al, [bx + NVM_MDISK_SIZE]
 	or_al_al			; 0C166
 	je .init_mdisk_done
 	xor_ah_ah			; 0C16A
@@ -8632,7 +8663,7 @@ fdc_dma_scroll_cmd:			; 0C08A
 	mov ax, [cs:xios_mx_mem_avail]
 	mov cl, 6
 	shl ax, cl
-	mov [bx + 0x12], ax
+	mov [bx + NVM_SCROLL_MODE], ax
 	mov ax, [cs:xios_mx_alloc_ptr]
 	mov [bx + 0xc], ax
 	push bx
@@ -8656,7 +8687,7 @@ fdc_dma_scroll_cmd:			; 0C08A
 	mov dl, [cs:rtc_time_buf_val]
 	mov word [cs:xios_mx_mem_limit], 0x420	; 0C22F  mov word [cs:0x594f], 0x420
 	mov bx, xios_nvram_table
-	mov cl, [bx + 0x1A]
+	mov cl, [bx + NVM_DISK_BUFFERS]
 	mov ch, 0
 	push cx
 	mov bx, [cs:sysdat_endseg]
