@@ -9895,14 +9895,16 @@ crt_82730_buf1_hdr:
 	times 4 db 0
 crt_dma_line_buf_0:
 	times 125 db 0
-	db 0x84, 0x00, 0x88, 0x00, 0x85, 0x00, 0x88
+	db 0x84, 0x00, 0x88, 0x00, 0x85, 0x00, 0x88	; Sentinel (XIOS-intern): uden for max_dma_count=80
 crt_82730_buf2_hdr:
 	times 4 db 0
 crt_dma_line_buf_1:
 	times 125 db 0
-	db 0x84, 0x00, 0x88, 0x00, 0x85, 0x00, 0x88
-crt_82730_buf_tail_desc:
-	db 0x00, 0x8E, 0x00, 0x00, 0x01, 0x83
+	db 0x84, 0x00, 0x88, 0x00, 0x85, 0x00, 0x88	; Sentinel (XIOS-intern): uden for max_dma_count=80
+crt_82730_buf_tail_desc:		; 82730 display list (3 ord = 6 bytes), Handbook Vol.2 kap.7 p.7-34
+	dw 0x8E00		; cmd=0x8E SET_FIELD_ATTRIB, param=0x00
+	dw 0x0000		; tegn-data: char=0x00, attr=0x00
+	dw 0x8301		; cmd=0x83 FULROWDESCRPT, param=0x01
 ; Intel 82730 CRT Text Coprocessor DMA Descriptors
 crt_dma_desc_count:
 	dw 0x0009			; Antal aktive scanlinjer pr. tegnrække (tekst: 9, grafik: 15)
@@ -9911,12 +9913,13 @@ crt_dma_desc_buf_ptr:
 crt_dma_desc_attr_ptr:
 	dw 0x8800			; Attribut-deskriptor adresse
 
-; 82730 General Command Block (CB) / Line Parameter Block
+; 82730 General Command Block (GCB) — 8 bytes, Handbook Vol.2 kap.7 p.7-34
+; GCB format: byte[0]=status, byte[1]=command, word[2]=flags, word[4]=max_dma_count, word[6]=link
 crt_dma_desc_block:
-	dw 0x8301			; Display mode command / status (80 tegn/linje, text mode)
-	dw 0x0400			; Scanlinjer og tegnrække-konfiguration
-	dw 0x8A50			; Linjeattributter og burst-parametre
-	dw 0x0000			; Link pointer til næste deskriptor (0 = kædeslut)
+	dw 0x8301			; byte[0]=busy(0x83), byte[1]=cmd 0x01 START DISPLAY
+	dw 0x0400			; word[2]: flags (list_switch=bit7, auto_lf=bit6)
+	dw 0x8A50			; word[4]: max_dma_count=0x50=80 tegn/linje
+	dw 0x0000			; word[6]: link pointer (0 = kædeslut)
 
 vmenu_line_render_buffer:
 	times 60 db 0			; Venstre del af skærmens linjebuffer
@@ -9924,10 +9927,14 @@ vmenu_line_render_buf_mid:
 	times 50 db 0			; Midterste del af skærmens linjebuffer
 vmenu_line_render_buf_end:
 	times 50 db 0			; Højre del af skærmens linjebuffer
-xios_crt_mode_line_table:
-	db 0x00, 0x81
-crt_dma_line_table_entry:
-	db 0x52, 0x87, 0xFF, 0x0C, 0x50, 0x8A, 0x20, 0x08, 0x00, 0x81
+xios_crt_mode_line_table:		; 82730 Line Mode Table header (2 bytes)
+	dw 0x8100			; cmd=0x81 EOF (end of frame), param=0x00
+crt_dma_line_table_entry:		; 82730 Line Table entry (10 bytes = 5 ord)
+	dw 0x8752			; cmd=0x87 LD_MAX_DMA_COUNT, param=0x52=82
+	dw 0x0CFF			; cmd=0x0C (char data: char=0xFF, attr=0x0C)
+	dw 0x8A50			; cmd=0x8A REPEAT, param=0x50=80
+	dw 0x0820			; cmd=0x08 (char data: char=0x20=SPACE, attr=0x08)
+	dw 0x8100			; cmd=0x81 EOF
 xios_vmenu_line_offsets:		; Byte-offset pr. skærmlinje (13 rækker × 80 tegn × 2 bytes)
 	dw 0*160, 1*160, 2*160, 3*160, 4*160, 5*160, 6*160
 	dw 7*160, 8*160, 9*160, 10*160, 11*160, 12*160
