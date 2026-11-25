@@ -214,6 +214,19 @@ PORT_PCB_DMA1_CON       equ 0xFFDA      ; DMA 1 Control word register
   %endrep
 %endmacro
 
+; -----------------------------------------------------------------------------
+; db_pstr konverterer en UTF-8 streng til en Pascal-streng i 7-bit ISO-646-DK
+; med automatisk foranstillet længdebyte:
+; Eksempel:
+;   db_pstr 'Venter på fælles skriver'  ->  db 24, "Venter p} f{lles skriver"
+; -----------------------------------------------------------------------------
+%macro db_pstr 1
+  db (%%pstr_end - %%pstr_start)
+  %%pstr_start:
+    db_dk %1
+  %%pstr_end:
+%endmacro
+
 %endif ; _HARDWARE_INC_
 
 

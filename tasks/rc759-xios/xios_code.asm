@@ -3546,7 +3546,7 @@ io_auxist:
 	pop ds
 	mov si, [cs:sysdat_rlr]
 	mov es, [si + PD_UDA]
-	mov si, 0x499b
+	mov si, boot_msg_single_con_no_wm
 	call con_puts
 	mov si, [cs:sysdat_rlr]
 	mov es, [si + PD_UDA]
@@ -7623,33 +7623,32 @@ vmenu_buf_msg_prompt:
 	db_dk "- Tryk på en tast            "	; 0B48C
 vmenu_line_buffer:
 	times 80 db 0			; 0B4A9
-xios_boot_msg_dollar:
-	db "$ **"			; 0B4F9
 
 ; =============================================================================
-; RC759 Piccoline XIOS Status- og Fejlbeskeder (0x0B4FD - 0x0B5E0)
+; RC759 Piccoline XIOS Status- og Fejlbeskeder (Pascal-strenge med længdebyte)
 ; =============================================================================
-	db_dk " Venter på fælles diskettestation"	; 0B4FD
-xios_boot_msg_shared_prn1:
-%if NUM_VIR_CONS == 4
-	db 0x1C
-	db_dk " ** Venter på fælles skriver"
-%else
-	db 0x1C				; 0B521
-	db_dk " ** Venter på fælles skriver1"
-	db_dk "** Kun 1 konsol - Vinduesstyring ikke installeret"	; 0B53E
+xios_msg_shared_fdc:
+	db_pstr " ** Venter på fælles diskettestation"	; 0B4F9 (længde 36 / 0x24)
+
+xios_msg_shared_prn:
+	db_pstr " ** Venter på fælles skriver"		; 0B51E (længde 28 / 0x1C)
+
+%if NUM_VIR_CONS == 1
+boot_msg_single_con_no_wm:
+	db_pstr "** Kun 1 konsol - Vinduesstyring ikke installeret"	; CS:499B / 0B53E (længde 49 / 0x31)
 %endif
+
 boot_msg_printer_not_ready:
-	db 0x15				; 0B570
-	db_dk " ** Skriver ikke klar"
+	db_pstr " ** Skriver ikke klar"			; 0B570 (længde 21 / 0x15)
+
 boot_msg_printer_reserved:
-	db 0x16				; 0B586
-	db_dk " ** Skriver Reserveret"
+	db_pstr " ** Skriver Reserveret"			; 0B586 (længde 22 / 0x16)
+
 boot_msg_graphics_reserved:
-	db 0x1A				; 0B59D
-	db_dk " ** Grafikskærm reserveret"
+	db_pstr " ** Grafikskærm reserveret"		; 0B59D (længde 26 / 0x1A)
+
 boot_msg_printer_retry:
-	db_dk "2 ** Skriver ikke klar. 1=gentag,2=afbryd,3=ignorer"	; 0B5B6
+	db_pstr " ** Skriver ikke klar. 1=gentag,2=afbryd,3=ignorer"	; 0B5B6 (længde 50 / 0x32)
 
 ; =============================================================================
 ; RC759 Piccoline Boot Banner & Hardware Rapport (0x0B5E1 - 0x0B79D)
@@ -9587,7 +9586,7 @@ dpc_reserve_printer:			; 0CA1E
 	pop ds
 	mov si, [cs:sysdat_rlr]
 	mov es, [si + PD_UDA]
-	mov si, xios_boot_msg_shared_prn1
+	mov si, xios_msg_shared_prn
 	call vmenu_clear_line_buffer
 	pop dx
 	pop cx
@@ -9670,7 +9669,7 @@ dpc_reserve_fdc:			; 0CAD1
 	pop ds
 	mov si, [cs:sysdat_rlr]
 	mov es, [si + PD_UDA]
-	mov si, xios_boot_msg_dollar
+	mov si, xios_msg_shared_fdc
 	call vmenu_clear_line_buffer
 	pop dx
 	pop cx
