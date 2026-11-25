@@ -32,11 +32,16 @@ PD_CNS              equ 0x20                   ; Default console index (0..3)
 ; =============================================================================
 ; Console Control Block Flags Bitmasks (CCB_FLAGS)
 ; =============================================================================
-CCB_FLG_RAW         equ 0x0001                 ; Raw console mode
-CCB_FLG_BLINK       equ 0x0002                 ; Blink attribute active
-CCB_FLG_CURSOR      equ 0x0004                 ; Hardware cursor visible/enabled
-CCB_FLG_CHARCONV    equ 0x0800                 ; Character translation active (ESC B / ESC D)
-CCB_FLG_NONDISP     equ 0x1000                 ; Non-display mode active (ESC i / ESC x)
+CCB_FLG_SCROLL_LOCK equ 0x0001                 ; Bit 0: Scroll-lås / bufferopdatering aktiv
+CCB_FLG_INACTIVE    equ 0x0002                 ; Bit 1: Baggrundskonsol (1=inaktiv/skjult, 0=aktiv)
+CCB_FLG_WINDOW      equ 0x0004                 ; Bit 2: Virtuelt vindue aktivt (1=vindue, 0=fuld skærm)
+CCB_FLG_ATTR_DIRTY  equ 0x0008                 ; Bit 3: Attribut ændret (afventer genberegning)
+CCB_FLG_CLIPPED     equ 0x0010                 ; Bit 4: Vindue mindre end fuld skærm (clippet)
+CCB_FLG_NOWRAP      equ 0x0100                 ; Bit 8: Kassér tegn ved linjeslut (ESC w / ESC v)
+CCB_FLG_CUR_OFF     equ 0x0200                 ; Bit 9: Cursor skjult/deaktiveret (ESC f / ESC e)
+CCB_FLG_REVERSE     equ 0x0400                 ; Bit 10: Invers video aktiv (ESC p / ESC q)
+CCB_FLG_CHARCONV    equ 0x0800                 ; Bit 11: Funktionstast oversættelse (ESC 6 / ESC 7)
+CCB_FLG_NONDISP     equ 0x1000                 ; Bit 12: Non-display mode / skjult tekst (ESC i / ESC x)
 
 ; =============================================================================
 ; Digital Research CCP/M-86 & RC759 Console Control Block (CCB / vc structure)
@@ -87,7 +92,7 @@ CCB_PALETTE          equ 0x84                   ; Farvepalet / attribut-tabel fo
 ; =============================================================================
 
 	jmp near xios_init_entry                     ; 00000000 / 077A0
-	jmp near loc_077DA                           ; 077A3
+	jmp near xios_fn_dispatch_entry                           ; 077A3
 
 xios_sysdat_segment_val:
 	dw 0x0000                                    ; SYSDAT segment (unlinked, sat af CCP/M loader ved CS:0C06)
@@ -132,7 +137,7 @@ xt_dphtab:
 xt_alloc:
 	dw XT_ALLOC_PARAS                            ; xt_alloc (unlinked bufferplads: 500 paras i XIOS1, 1280 paras i XIOS4)
 
-loc_077DA:
+xios_fn_dispatch_entry:
 	cld
 	cbw                                          ; 077DB
 	shl al, 1
@@ -275,11 +280,10 @@ rtm_call_helper:                               ; 078C0
 	call xios_rtm_svc_call
 	pop dx
 	test ax, ax
-	je loc_078D0
+	je .ret
 	cmp cl, 0x2a
 	je rtm_call_helper
-
-loc_078D0:                                     ; 078D0
+.ret:                                     ; 078D0
 	ret
 
 rtm_timer_wait:                                ; 078D1
@@ -356,7 +360,7 @@ kbd_handler:                                   ; 07A93 / 000002F3
 	call xios_switch_to_priv_stack               ; Skift til intern XIOS stak
 	cmp byte [cs:kbd_disabled_flag], 0xff       ; Tastatur deaktiveret?
 	jne .kbd_not_disabled
-	call sub_095CB                               ; Nulstil buffer
+	call crt_reset_blink_state                               ; Nulstil buffer
 
 .kbd_not_disabled:
 	push ds
@@ -365,147 +369,147 @@ kbd_handler:                                   ; 07A93 / 000002F3
 	in al, PORT_KBD_DATA                         ; Læs scancode fra tastatur-port (0x20)
 	mov [cs:kbd_raw_scancode], al                          ; Gem rå scancode
 	cmp byte [cs:kbd_prefix_flag], 0xff
-	jne loc_07ACF
+	jne .check_mouse_packet
 	test al, 0x80
-	jne loc_07B0E
+	jne .check_scancode_valid
 	mov byte [cs:kbd_prefix_flag], 0
 	mov bx, kbd_translate_table                ; kbd_translate_table
 	xlatb
 	mov [cs:kbd_prefix_char], al
 	mov dx, 0x13
 	call rtm_call_helper
-	jmp near loc_07BA5
+	jmp near .exit
 
-loc_07ACF:
+.check_mouse_packet:
 	cmp byte [cs:kbd_alt_flag], 0xff
-	jne loc_07AE3
+	jne .check_mouse_prefix
 	mov byte [cs:kbd_alt_flag], 0
-	call sub_094EB
-	jmp near loc_07BA5
+	call mouse_process_packet_byte
+	jmp near .exit
 
-loc_07AE3:
+.check_mouse_prefix:
 	cmp al, 0xe3
-	jne loc_07AF0
+	jne .check_diag_keys
 	mov byte [cs:kbd_alt_flag], 0xff
-	jmp near loc_07BA5
+	jmp near .exit
 
-loc_07AF0:
+.check_diag_keys:
 	cmp al, 0x0e
-	jne loc_07B0E
+	jne .check_scancode_valid
 	test byte [cs:kbd_shift_state], KBD_SHIFT_CTRL
-	je loc_07B0E
+	je .check_scancode_valid
 	test byte [cs:kbd_shift_state], KBD_SHIFT_ALT
-	je loc_07B0E
+	je .check_scancode_valid
 	mov bx, fdc_drive_type_0
 	jmp near loc_0B24F
 	db 0xCC                                      ; int3 padding
-	jmp near loc_07BA5
+	jmp near .exit
 
-loc_07B0E:
+.check_scancode_valid:
 	and al, 0x7f
 	cmp al, 0x62
-	jle loc_07B17
-	jmp near loc_07BA5
+	jle .check_special_keys
+	jmp near .exit
 
-loc_07B17:
+.check_special_keys:
 	mov cx, 5
 	mov ah, 2
 	mov bx, kbd_special_keys_table
 
-loc_07B1F:
+.special_keys_loop:
 	cmp al, [bx]
-	jne loc_07B26
-	jmp near loc_07BA8
+	jne .next_special_key
+	jmp near .handle_special_modifier
 
-loc_07B26:
+.next_special_key:
 	shl ah, 1
 	inc bx
-	loop loc_07B1F
+	loop .special_keys_loop
 	mov al, [cs:kbd_raw_scancode]
 	or_al_al                                     ; 07B2F
-	jns loc_07B36
-	jmp near loc_07BA5
+	jns .translate_normal_key
+	jmp near .exit
 
-loc_07B36:
+.translate_normal_key:
 	mov bx, kbd_ctrl_translate_table                ; kbd_shift_translate_table
 	test byte [cs:kbd_shift_state], KBD_SHIFT_CTRL
-	jne loc_07B4F
+	jne .do_translate
 	mov bx, kbd_shift_translate_table                ; kbd_ctrl_translate_table
 	test byte [cs:kbd_shift_state], KBD_SHIFT_SHIFTS
-	jne loc_07B4F
+	jne .do_translate
 	mov bx, kbd_translate_table                ; kbd_translate_table
 
-loc_07B4F:
+.do_translate:
 	xlatb
 	cmp al, 0xff
-	je loc_07BA5
+	je .exit
 	cbw
 	mov [cs:kbd_char_buffer_hi], ah
 	test byte [cs:kbd_lock_state], KBD_LOCK_CAPS
-	je kbd_check_alt_modifier
+	je .check_alt_modifier
 	cmp al, '~'
-	ja kbd_check_alt_modifier
+	ja .check_alt_modifier
 	cmp al, 'a'
-	jae kbd_toggle_caps_case
+	jae .toggle_caps_case
 	cmp al, '^'
-	ja kbd_check_alt_modifier
+	ja .check_alt_modifier
 	cmp al, 'A'
-	jb kbd_check_alt_modifier
+	jb .check_alt_modifier
 
-kbd_toggle_caps_case:
+.toggle_caps_case:
 	xor al, 0x20
 
-kbd_check_alt_modifier:
+.check_alt_modifier:
 	and al, 0x7f
 	test byte [cs:kbd_shift_state], KBD_SHIFT_ALT
-	je loc_07B8E
+	je .store_char
 	test ah, ah
-	jns loc_07B8C
+	jns .set_alt_bit
 	cmp al, 0x0b
-	ja loc_07B8E
+	ja .store_char
 	mov bx, 0x104e
 	xlatb
-	jmp short loc_07B8E
+	jmp short .store_char
 
-loc_07B8C:
+.set_alt_bit:
 	or al, 0x80
 
-loc_07B8E:
+.store_char:
 	mov [cs:kbd_char_buffer], al
 	mov dx, [cs:kbd_con_dest]
 	cmp dx, 0x18
-	jne loc_07BA2
+	jne .send_char_event
 	mov byte [cs:kbd_event_flag], 0xff
 
-loc_07BA2:
+.send_char_event:
 	call rtm_call_helper
 
-loc_07BA5:
-	jmp near loc_0AF3E
+.exit:
+	jmp near xios_isr_exit_dispatch
 
-loc_07BA8:
+.handle_special_modifier:
 	cmp al, 0x28
-	je loc_07BC4
+	je .handle_caps_lock
 	test byte [cs:kbd_raw_scancode], 0x80
-	je loc_07BBD
+	je .set_shift_modifier
 	not ah
 	and [cs:kbd_shift_state], ah
-	jmp short loc_07BDC
+	jmp short .done_modifier
 
-loc_07BBD:
+.set_shift_modifier:
 	or [cs:kbd_shift_state], ah
-	jmp short loc_07BDC
+	jmp short .done_modifier
 
-loc_07BC4:
+.handle_caps_lock:
 	test byte [cs:kbd_raw_scancode], 0x80
-	jne loc_07BDC
+	jne .done_modifier
 	xor [cs:kbd_lock_state], ah
 	cmp byte [cs:vmenu_active_flag], 0xff
-	je loc_07BDC
-	call sub_08C5F
+	je .done_modifier
+	call io_statline_clear
 
-loc_07BDC:
-	jmp short loc_07BA5
+.done_modifier:
+	jmp short .exit
 
 ; --- Tastatur- og konsoldata (CS:0x103E..0x1059) ---
 kbd_char_buffer:
@@ -546,31 +550,31 @@ crt_init_irst_ca:                              ; 07BFE
 	out dx, ax                                   ; 07C05
 	inc byte [cs:crt_vsync_counter]                         ; 07C06
 	cmp byte [cs:crt_timer_flag], 0                      ; 07C0B
-	je loc_07C38                                 ; 07C11
+	je .check_system_tick                                 ; 07C11
 	mov dx, PORT_PCB_T1_CON                      ; 07C13
 	cmp byte [cs:crt_timer_divider], 0                      ; 07C16
-	jne loc_07C28                                ; 07C1C
+	jne .dec_timer_divider                                ; 07C1C
 	mov byte [cs:crt_timer_divider], 8                      ; 07C1E
 	mov ax, 0xc003                               ; 07C24
 	out dx, ax                                   ; 07C27
 
-loc_07C28:
+.dec_timer_divider:
 	dec byte [cs:crt_timer_divider]                         ; 07C28
-	jne loc_07C38                                ; 07C2D
+	jne .check_system_tick                                ; 07C2D
 	mov ax, 0xc002                               ; 07C2F
 	out dx, ax                                   ; 07C32
 	dec byte [cs:crt_timer_flag]                         ; 07C33
 
-loc_07C38:
+.check_system_tick:
 	cmp byte [cs:xt_tick], 0                       ; 07C38
-	je loc_07C46                                 ; 07C3E
+	je .call_timer_hook                                 ; 07C3E
 	mov dx, 1                                    ; 07C40
 	call rtm_call_helper                         ; 07C43
 
-loc_07C46:
+.call_timer_hook:
 	call far [cs:xios_hook_timer_off]          ; 07C46
 	call eoi_helper                              ; 07C4B
-	jmp near loc_0AF3E                           ; 07C4E
+	jmp near xios_isr_exit_dispatch                           ; 07C4E
 
 ; --- Special- og funktionstast scanningstabel (CS:10B1..10F6, 70 bytes) ---
 ; Tastenummer-opslagstabel til tastatur-dekodning (scannes med repne scasb ved CS:17E2)
@@ -588,16 +592,16 @@ key_scan_code_table:                           ; 07C55 (CS:10B5: 66 ASCII-tegn t
 	db "abcdefghijklmnopqrstuvwxyz"
 	db "{|}~T"
 
-sub_7c97:                                      ; 07C97
+fkey_get_str_ptr:                                      ; 07C97
 	mov si, [bx + CCB_FKEY_TABLE]                          ; 07C97
 	mov cl, 0x14                                 ; 07C9A
 	cmp al, 0x0c                                 ; 07C9C
-	jb loc_07CA8                                 ; 07C9E
+	jb .calc_str_offset                                 ; 07C9E
 	sub al, 0x0c                                 ; 07CA0
 	add si, 0xf0                                 ; 07CA2
 	mov cl, 4                                    ; 07CA6
 
-loc_07CA8:
+.calc_str_offset:
 	mul cl                                       ; 07CA8  F6 E1
 	add_si_ax                                    ; 07CAA
 	ret                                          ; 07CAC
@@ -610,7 +614,7 @@ int28_fn_15_reserved:                     ; 07CAD
 	ret                                          ; 07CB5
 
 io_const:                                      ; 07CB6
-	jmp near sub_0A8A9                           ; 07CB6
+	jmp near sio_check_rx_status                           ; 07CB6
 
 io_conin:
 	cmp dl, NUM_VIR_CONS                         ; 07CB9
@@ -620,9 +624,9 @@ io_conin:
 conin_valid_con:
 	mov bx, [cs:xios4_cur_window_ptr]           ; 07CC1
 	cmp byte [bx + 0x7a], 0                      ; 07CC6
-	jne loc_07D18                                ; 07CCA
+	jne .read_fkey_char                                ; 07CCA
 
-conin_wait_key:
+.wait_key:
 	push bx                                      ; 07CCC
 	mov dx, 5                                    ; 07CCD
 	call rtm_timer_wait                          ; 07CD0
@@ -631,51 +635,51 @@ conin_wait_key:
 	mov [cs:kbd_buf_tail], ax                   ; 07CD8
 	mov ax, [cs:kbd_char_buffer]                          ; 07CDC
 	test ah, ah                                  ; 07CE0
-	je loc_07CFD                                 ; 07CE2
+	je .ret                                 ; 07CE2
 	cmp al, 'z'                                  ; 07CE4
 	je xios_handle_con_switch_key                                 ; 07CE6
 	cmp al, '{'                                  ; 07CE8
 	je xios_handle_vir_con_switch                                 ; 07CEA (spring til virtuel konsol omskifter)
 	cmp al, '}'                                  ; 07CEC
-	je loc_07D35                                 ; 07CEE (je target_7d)
+	je vmenu_display_menu_entry                                 ; 07CEE (je target_7d)
 	cmp al, '~'                                  ; 07CF0
 	jne .skip_7e                                 ; 07CF2
 	jmp near loc_07EEC                           ; 07CF4 (jmp near target_7e)
 
 .skip_7e:
 	cmp al, 'p'                                  ; 07CF7
-	jb loc_07CFE                                 ; 07CF9
+	jb .check_charconv                                 ; 07CF9
 	and al, NUM_VIR_CONS - 1                     ; 07CFB
 
-loc_07CFD:
+.ret:
 	ret                                          ; 07CFD
 
-loc_07CFE:
+.check_charconv:
 	test word [bx + CCB_FLAGS], CCB_FLG_CHARCONV                 ; 07CFE
-	je loc_07D0F                                 ; 07D03
+	je .get_fkey_def                                 ; 07D03
 	mov bx, key_scan_code_table                               ; 07D05
 	xlatb                                        ; 07D08
 	xor_ah_ah                                    ; 07D09
 	or al, 0x80                                  ; 07D0B
-	jmp short loc_07CFD                          ; 07D0D
+	jmp short .ret                          ; 07D0D
 
-loc_07D0F:
-	call sub_7c97                                ; 07D0F
+.get_fkey_def:
+	call fkey_get_str_ptr                                ; 07D0F
 
-loc_07D12:
+.store_fkey_ptr:
 	mov [bx + 0x78], si                          ; 07D12
 	mov [bx + 0x7a], cl                          ; 07D15
 
-loc_07D18:
+.read_fkey_char:
 	mov si, [bx + 0x78]                          ; 07D18
 	lodsb                                        ; 07D1B
 	mov [bx + 0x78], si                          ; 07D1C
 	dec byte [bx + 0x7a]                         ; 07D1F
 	xor_ah_ah                                    ; 07D22
 	or_al_al                                     ; 07D24
-	jne loc_07CFD                                ; 07D26
+	jne .ret                                ; 07D26
 	mov [bx + 0x7a], al                          ; 07D28
-	jmp short conin_wait_key                          ; 07D2B
+	jmp short conin_valid_con.wait_key                          ; 07D2B
 
 ; -----------------------------------------------------------------------------
 ; Sektion 3B.1: Konsol-switch (Chunk 1), Skærmtrimning og Konsol-opdatering (Chunk 2)
@@ -686,12 +690,12 @@ loc_07D18:
 xios_handle_con_switch_key:                                     ; 0000058D (XIOS4 konsol switch-tast)
 	mov dl, [cs:xios4_active_vir_con]
 	call ww_full_window
-	jmp short conin_wait_key
+	jmp short conin_valid_con.wait_key
 
 xios_handle_vir_con_switch:                                     ; 00000597 (XIOS4 virtuel konsol omskifter)
 	cmp byte [cs:xios4_vir_con_mode], 1
 	jc .skip_switch
-	call sub_08C56
+	call ccb_check_background_active
 	jnz .skip_switch
 	mov byte [cs:xios4_vir_con_mode], 2
 	mov dx, 0x18
@@ -701,26 +705,26 @@ xios_handle_vir_con_switch:                                     ; 00000597 (XIOS
 	pushf
 	call far [cs:sysdat_dispatcher]
 .skip_switch:
-	jmp near conin_wait_key
+	jmp near conin_valid_con.wait_key
 %else
 xios_handle_con_switch_key:                                     ; 07D2D
-	jmp short conin_wait_key
+	jmp short conin_valid_con.wait_key
 
 xios_handle_vir_con_switch:                                     ; 07D2F
-	jmp near conin_wait_key
+	jmp near conin_valid_con.wait_key
 %endif
 
-loc_07D32:                                     ; Fælles retur til menu-genopfriskning
+vmenu_retry_delay:                                     ; Fælles retur til menu-genopfriskning
 	call rtm_delay_1_tick
 
 ; -----------------------------------------------------------------------------
 ; Skærmtrimningsmenu (VMenu / Display Trim Menu)
 ; -----------------------------------------------------------------------------
-loc_07D35:                                     ; 07D35 / 000005C7
+vmenu_display_menu_entry:                                     ; 07D35 / 000005C7
 	mov al, 0xff
 	xchg [cs:vmenu_active_flag], al           ; 07D37
 	cmp al, 0xff
-	je loc_07D32
+	je vmenu_retry_delay
 	mov [cs:vmenu_saved_bx], bx            ; 07D40
 	mov [cs:vmenu_active_flag], al            ; 07D45
 	mov bp, es
@@ -735,22 +739,22 @@ loc_07D35:                                     ; 07D35 / 000005C7
 	pop di
 	mov si, xios_vmenu_title                ; 07D5B (vmenu titeltekst)
 	lodsb
-	call sub_07DFE
+	call vmenu_render_string
 
-loc_07D62:                                     ; 07D62
+.restart_items:                                     ; 07D62
 	mov si, vmenu_item_table                     ; 07D62 (pointer til menupunkt-tabel)
 
-loc_07D65:                                     ; 07D65
+.next_item:                                     ; 07D65
 	lodsw
 	or_ax_ax                                     ; 07D66
-	je loc_07D62
+	je .restart_items
 	xchg di, ax
 	push si
 	push di
 	mov si, [di - 4]
 	lodsb
 	mov di, xios_con_line_buffer_6186                  ; 07D71
-	call sub_07DFE
+	call vmenu_render_string
 	mov cx, 0x14
 	mov al, 0x20
 	rep stosw
@@ -761,21 +765,21 @@ loc_07D65:                                     ; 07D65
 	xor_bh_bh                                    ; 07D89
 	shl bx, 1
 	pop si
-	jmp short loc_07D92
+	jmp short .show_value
 
-loc_07D90:                                     ; 07D90
+.wrap_value_zero:                                     ; 07D90
 	xor_bx_bx                                    ; 07D90
 
-loc_07D92:                                     ; 07D92
+.show_value:                                     ; 07D92
 	mov ax, [bx + di]
 	or_ax_ax                                     ; 07D94
-	je loc_07D90
+	je .wrap_value_zero
 	push si
 	push di
 	mov_si_ax                                    ; 07D9A
 	mov al, [di - 7]
 	mov di, xios_con_line_buffer_61b8                  ; 07D9F
-	call sub_07DFE
+	call vmenu_render_string
 	mov cx, 8
 	mov al, 0x20
 	rep stosw
@@ -791,30 +795,30 @@ loc_07D92:                                     ; 07D92
 	pop si
 	mov ax, [cs:kbd_char_buffer]
 	cmp ax, 0xff7d
-	je loc_07DE1
+	je .apply_item_and_exit
 	cmp ax, strict word 0x1b                     ; 07DC7  3D 1B 00
-	je loc_07D65
+	je .next_item
 	cmp ax, strict word 0xd                      ; 07DCC  3D 0D 00
-	je loc_07DDB
+	je .apply_item_next
 	cmp ax, strict word 0x20                     ; 07DD1  3D 20 00
-	jne loc_07D92
+	jne .show_value
 	inc bx
 	inc bx
-	jmp near loc_07D92
+	jmp near .show_value
 
-loc_07DDB:                                     ; 07DDB
-	call sub_07DF0
-	jmp near loc_07D65
+.apply_item_next:                                     ; 07DDB
+	call vmenu_exec_action
+	jmp near .next_item
 
-loc_07DE1:                                     ; 07DE1
-	call sub_07DF0
+.apply_item_and_exit:                                     ; 07DE1
+	call vmenu_exec_action
 	mov es, bp
 	mov cx, 0xffff
 	call io_statline
 	pop cx
 	jmp near io_conin
 
-sub_07DF0:                                     ; 07DF0
+vmenu_exec_action:                                     ; 07DF0
 	shr bx, 1
 	xchg bx, ax
 	push si
@@ -823,32 +827,32 @@ sub_07DF0:                                     ; 07DF0
 	pop si
 	ret
 
-sub_07DFE:                                     ; 07DFE
+vmenu_render_string:                                     ; 07DFE
 	cbw
 	xchg cx, ax
 	mov ah, 8
 
-loc_07E02:                                     ; 07E02
+.char_loop:                                     ; 07E02
 	lodsb
 	stosw
-	loop loc_07E02
+	loop .char_loop
 	ret
 
 vmenu_action_item_1:
 	mov [bx + CCB_BLINK_FLAG], al
-	jmp near sub_096CF                           ; 07E0A
+	jmp near crt_load_cursor_hardware_regs                           ; 07E0A
 
 vmenu_action_item_2:
 	mov_ch_al                                    ; 07E0D
 	mov cl, 0xa
 
-sub_7e11:                                      ; 07E11
+vmenu_set_cursor_lines:                                      ; 07E11
 	mov [bx + CCB_CURSOR_LINES], cx
-	jmp near sub_096CF                           ; 07E14
+	jmp near crt_load_cursor_hardware_regs                           ; 07E14
 
 vmenu_action_item_3:
 	mov [bx + CCB_SCROLL_MODE], al
-	mov [cs:xios_con_var_2c08], al           ; 07E1A
+	mov [cs:xios_crt_font_alt_flag], al           ; 07E1A
 	ret
 
 vmenu_action_item_4:
@@ -1009,7 +1013,7 @@ vmenu_num_str_15:     db "15"
 vmenu_num_str_space:  db 0x9B, 0x20
 
 loc_07EEC:                                     ; 07EEC
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	je loc_07EF5
 	jmp near conin_valid_con
 
@@ -1033,7 +1037,7 @@ loc_07EF5:                                     ; 07EF5
 	or_al_al                                     ; 07F18
 	je loc_07F59
 	mov cl, 0xc
-	call sub_07F88
+	call printer_out_char
 	mov bx, [cs:xios4_cur_window_ptr]
 	mov cx, [bx + CCB_SCROLL_BOTTOM]
 	test byte [cs:xios4_window_clip_flag], 0xff
@@ -1047,7 +1051,7 @@ loc_07F37:                                     ; 07F37
 	push cx
 	push ds
 	mov ds, [cs:xios_sysdat_segment_ptr]
-	call sub_07F5E
+	call printer_print_line
 	pop ds
 	pop cx
 	pop bx
@@ -1055,7 +1059,7 @@ loc_07F37:                                     ; 07F37
 	inc bx
 	loop loc_07F37
 	mov si, xios_con_line_buffer_614a
-	call sub_07F5E
+	call printer_print_line
 
 loc_07F51:                                     ; 07F51
 	mov cl, 0x9f
@@ -1066,7 +1070,7 @@ loc_07F59:                                     ; 07F59
 	call con_puts
 	jmp short loc_07F51
 
-sub_07F5E:                                     ; 07F5E
+printer_print_line:                                     ; 07F5E
 	mov cx, 0x51
 	mov_bx_si                                    ; 07F61
 	add bx, 0xa0
@@ -1084,19 +1088,19 @@ loc_07F71:                                     ; 07F71
 	push cx
 	push si
 	mov_cl_al                                    ; 07F74
-	call sub_07F88
+	call printer_out_char
 	pop si
 	pop cx
 	loop loc_07F71
 
 loc_07F7D:                                     ; 07F7D
 	mov cl, 0xd
-	call sub_07F88
+	call printer_out_char
 	mov cl, 0xa
-	call sub_07F88
+	call printer_out_char
 	ret
 
-sub_07F88:                                     ; 07F88
+printer_out_char:                                     ; 07F88
 	test cl, 0x80
 	je loc_07F9D
 	cmp dl, 1
@@ -1169,15 +1173,15 @@ loc_07FFA:                                     ; 07FFA
 loc_08002:                                     ; 08002
 	cmp cl, 0xa
 	jne loc_0801C
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne loc_08013
 	call crt_cursor_down
 	jmp near crt_update_cursor
 
 loc_08013:                                     ; 08013
-	call sub_8a54
+	call crt_hide_cursor_graphics
 	call crt_cursor_down
-	jmp near sub_8a95
+	jmp near crt_draw_cursor_graphics
 
 loc_0801C:                                     ; 0801C
 	cmp cl, 8
@@ -1202,17 +1206,16 @@ loc_08037:                                     ; 08037
 loc_08042:                                     ; 08042
 	cmp cl, 7
 	jne loc_08053
-	test byte [bx + CCB_FLAGS], 2
-	jne loc_08052
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
+	jne .ret
 	inc byte [cs:crt_timer_flag]
-
-loc_08052:                                     ; 08052
+.ret:                                     ; 08052
 	ret
 
 loc_08053:                                     ; 08053
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne short loc_080C5
-	test byte [bx + CCB_FLAGS], 8
+	test byte [bx + CCB_FLAGS], CCB_FLG_ATTR_DIRTY
 	je loc_08062
 	call crt_get_char_attr
 
@@ -1229,13 +1232,13 @@ loc_0806B:                                     ; 0806B
 	mov [es:di], cx
 	test byte [cs:xios4_window_clip_flag], 0xff
 	jne loc_080BE
-	call sub_09220
+	call ccb_acquire_lock
 	mov dh, [bx + CCB_COL]
 	mov dl, [bx + CCB_ROW]
 	call crt_calc_screen_offset
 	add ax, [bx + 0x46]
 	xchg si, ax
-	call sub_091F2
+	call window_check_point_inside
 	jb loc_080BA
 ; --- Chunk 3: Virtuel konsol-opslag for skærmposition (CS:14F6, +3 B) ---
 %if NUM_VIR_CONS == 4
@@ -1243,13 +1246,13 @@ loc_0806B:                                     ; 0806B
 %else
 	mov al, 1                                    ; Konsol 0 er altid synlig og fuld skærm i XIOS1
 %endif
-	call sub_0930B
+	call window_zorder_lookup
 	cmp al, [bx + CCB_CON_IDX]
 	jne loc_080BA
 	shl si, 1
-	test byte [bx + CCB_FLAGS], 2
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
 	je loc_080B7
-	cmp byte [cs:xios_con_var_2bfb], 0xff
+	cmp byte [cs:xios_is_color_display], 0xff
 	jne loc_080B7
 	and ch, 0x87
 	or ch, 8
@@ -1263,17 +1266,17 @@ loc_080BA:                                     ; 080BA
 
 loc_080BE:                                     ; 080BE
 	pop es
-	call sub_080D4
-	jmp near sub_085ED
+	call crt_cursor_advance_col
+	jmp near crt_update_hw_cursor
 
 loc_080C5:                                     ; 080C5
 	mov ax, [bx + CCB_COL]
 	mov dx, [bx + CCB_ROW]
-	call sub_08985
-	call sub_080D4
-	jmp near sub_8a95
+	call crt_render_char_bitmap
+	call crt_cursor_advance_col
+	jmp near crt_draw_cursor_graphics
 
-sub_080D4:                                     ; 080D4
+crt_cursor_advance_col:                                     ; 080D4
 	add word [bx + CCB_LINE_TABLE], 2
 	mov ax, [bx + CCB_ROW]
 	inc ax
@@ -1281,11 +1284,11 @@ sub_080D4:                                     ; 080D4
 	jb loc_080FC
 	sub word [bx + CCB_LINE_TABLE], 2
 	dec ax
-	test word [bx + CCB_FLAGS], 0x100
+	test word [bx + CCB_FLAGS], CCB_FLG_NOWRAP
 	jne loc_080FC
 	call crt_cursor_down
 
-sub_080F0:                                     ; 080F0
+crt_cursor_col_zero:                                     ; 080F0
 	mov si, [bx + CCB_COL]
 	shl si, 1
 	mov si, [bx + si]
@@ -1297,7 +1300,7 @@ loc_080FC:                                     ; 080FC
 	ret
 
 crt_esc_dispatch_reset:
-	call sub_095CB
+	call crt_reset_blink_state
 	mov word [bx + CCB_ESC_HANDLER], crt_char_handler
 	jmp near crt_char_handler
 
@@ -1305,7 +1308,7 @@ crt_esc_dispatch_normal:
 	mov word [bx + CCB_ESC_HANDLER], crt_char_handler
 	mov di, crt_esc_table
 	mov_al_cl                                    ; 08113
-	call sub_08B79
+	call crt_dispatch_esc_char
 crt_esc_jump_table:
 	; --- Escape sequence jump table (62 word pointers) ---
 	dw crt_esc_default_ret, crt_esc_254_rest_fkeys, crt_esc_253_save_fkeys, crt_esc_7_fkey_exp_on, crt_esc_6_fkey_exp_off, crt_esc_247_underl_on, crt_esc_246_underl_off, crt_esc_245_line_scroll
@@ -1355,16 +1358,16 @@ crt_esc_I_rev_index:
 	mov si, [bx + CCB_COL]
 	test si, si
 	jne crt_esc_A_up
-	call sub_086EF
+	call crt_scroll_lines_down
 
 loc_08203:                                     ; 08203
 	jmp near crt_update_cursor
 
 ; ESC E - Clear Screen, Cursor Home (s. 51 / App. F): Ryd skærm og sæt cursor til (0,0)
 crt_esc_E_cls:
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne loc_08216
-	call sub_09643
+	call palette_init_default_colors
 	mov al, [bx + CCB_CHAR_ATTR]
 	call crt_set_char_attr
 
@@ -1378,7 +1381,7 @@ crt_esc_J_erase_eos:
 	cmp si, [bx + CCB_SCROLL_BOTTOM]
 	je .loc_1688
 	mov dx, [bx + CCB_SCROLL_BOTTOM]
-	call sub_0865F                               ; call 0x1ABF / 0x1B09
+	call crt_clear_line_loop                               ; call 0x1ABF / 0x1B09
 .loc_1688:
 ; ESC K - Erase to End of Line (s. 51 / App. F): Slet fra cursor til linjens slutning
 crt_esc_K_erase_eol:
@@ -1388,23 +1391,23 @@ crt_esc_K_erase_eol:
 
 ; ESC L - Insert Line (s. 52 / App. F): Indsæt blank linje ved cursorposition
 crt_esc_L_ins_line:
-	call sub_8a54                                ; call 0x1EB4 / 0x1EFE
+	call crt_hide_cursor_graphics                                ; call 0x1EB4 / 0x1EFE
 	mov si, [bx + CCB_COL]
-	call sub_086EF                               ; call 0x1B4F / 0x1B99
-	call sub_080F0                               ; call 0x1550 / 0x159A
-	jmp near sub_08625                           ; jmp 0x1A85 / 0x1ACF
+	call crt_scroll_lines_down                               ; call 0x1B4F / 0x1B99
+	call crt_cursor_col_zero                               ; call 0x1550 / 0x159A
+	jmp near crt_update_cursor_dispatch                           ; jmp 0x1A85 / 0x1ACF
 
 ; ESC M - Delete Line (s. 52 / App. F): Slet linjen ved cursorposition
 crt_esc_M_del_line:
-	call sub_8a54                                ; call 0x1EB4 / 0x1EFE
+	call crt_hide_cursor_graphics                                ; call 0x1EB4 / 0x1EFE
 	mov si, [bx + CCB_COL]
-	call sub_086C6                               ; call 0x1B26 / 0x1B70
-	call sub_080F0                               ; call 0x1550 / 0x159A
-	jmp near sub_08625                           ; jmp 0x1A85 / 0x1ACF
+	call crt_scroll_lines_up                               ; call 0x1B26 / 0x1B70
+	call crt_cursor_col_zero                               ; call 0x1550 / 0x159A
+	jmp near crt_update_cursor_dispatch                           ; jmp 0x1A85 / 0x1ACF
 
 ; ESC O - Insert Character (s. 52 / App. F): Indsæt mellemrum ved cursor, skub linjen til højre
 crt_esc_O_ins_char:
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne loc_08297
 	mov si, [bx + CCB_COL]
 	shl si, 1
@@ -1420,7 +1423,7 @@ crt_esc_O_ins_char:
 
 ; ESC N - Delete Character (s. 52 / App. F): Slet tegn ved cursor, træk resten til venstre
 crt_esc_N_del_char:
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne loc_08297
 	mov si, [bx + CCB_LINE_TABLE]
 	mov_di_si                                    ; 08273
@@ -1439,7 +1442,7 @@ loc_08277:                                     ; 08277
 	stosw
 	pop es
 	cld
-	jmp near sub_09334
+	jmp near window_repaint_contents
 
 ; ESC P - Select Alternative Character Set (s. 51 / App. F): Vælg alternativt tegnsæt
 crt_esc_P_alt_cset:
@@ -1474,7 +1477,7 @@ crt_esc_d_erase_bos:
 	mov dx, [bx + CCB_COL]
 	or_dx_dx                                     ; 082B4
 	je crt_esc_o_erase_bol
-	call sub_0865F
+	call crt_clear_line_loop
 
 ; ESC o - Erase Beginning of Line (s. 56 / App. F): Slet fra linjestart til cursor
 crt_esc_o_erase_bol:
@@ -1484,18 +1487,18 @@ crt_esc_o_erase_bol:
 
 ; ESC e / ESC m - Enable Cursor (s. 54, 55 / App. F): Gør tekstcursoren synlig
 crt_esc_e_cur_on:
-	test word [bx + CCB_FLAGS], 0x200
+	test word [bx + CCB_FLAGS], CCB_FLG_CUR_OFF
 	je loc_082EE
-	and word [bx + CCB_FLAGS], 0xfdff
-	jmp near sub_08625
+	and word [bx + CCB_FLAGS], ~CCB_FLG_CUR_OFF & 0xffff
+	jmp near crt_update_cursor_dispatch
 
 ; ESC f / ESC n - Disable Cursor (s. 54, 56 / App. F): Skjul tekstcursoren
 crt_esc_f_cur_off:
-	test word [bx + CCB_FLAGS], 0x200
+	test word [bx + CCB_FLAGS], CCB_FLG_CUR_OFF
 	jne loc_082EE
-	call sub_8a54
-	or word [bx + CCB_FLAGS], 0x200
-	test byte [bx + CCB_FLAGS], 2
+	call crt_hide_cursor_graphics
+	or word [bx + CCB_FLAGS], CCB_FLG_CUR_OFF
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
 	jne loc_082EE
 	mov word [cs:fdc_drive_cyl_0], 0xffff
 
@@ -1520,7 +1523,7 @@ crt_esc_k_restore_cursor:
 ; ESC l - Erase Line (s. 55 / App. F): Slet hele den aktuelle linje
 crt_esc_l_erase_line:
 	mov si, [bx + CCB_COL]
-	jmp near sub_0865C
+	jmp near crt_clear_line_range
 
 ; ESC g - Enter Underline Mode (s. 55 / App. F): Aktiver understregning
 crt_esc_g_underline_on:
@@ -1534,12 +1537,12 @@ crt_esc_h_underline_off:
 
 ; ESC p - Enter Reverse Video Mode (s. 56 / App. F): Aktiver invers video
 crt_esc_p_reverse_on:
-	or word [bx + CCB_FLAGS], 0x400
+	or word [bx + CCB_FLAGS], CCB_FLG_REVERSE
 	jmp short loc_08323
 
 ; ESC q - Exit Reverse Video Mode (s. 56 / App. F): Deaktiver invers video
 crt_esc_q_reverse_off:
-	and word [bx + CCB_FLAGS], 0xfbff
+	and word [bx + CCB_FLAGS], ~CCB_FLG_REVERSE & 0xffff
 
 loc_08323:                                     ; 08323
 	mov al, [bx + CCB_CHAR_ATTR]
@@ -1567,13 +1570,13 @@ crt_esc_x_nondisp_off:
 
 ; ESC z - Reset Attributes (s. 57 / App. F): Nulstil alle visningsattributter til standard
 crt_esc_z_reset_attrs:
-	and word [bx + CCB_FLAGS], 0xe0ff
+	and word [bx + CCB_FLAGS], ~(CCB_FLG_NOWRAP | CCB_FLG_CUR_OFF | CCB_FLG_REVERSE | CCB_FLG_CHARCONV | CCB_FLG_NONDISP) & 0xffff
 	and byte [bx + CCB_ATTR], ~(CCB_ATTR_UNDERLINE | CCB_ATTR_ALT_CHARSET | CCB_ATTR_BLINK) & 0xff
 	mov byte [bx + 0x75], 0xf8
 	mov al, [bx + 0x7f]
 	ror al, 4
 	call crt_set_char_attr
-	jmp near sub_08625
+	jmp near crt_update_cursor_dispatch
 
 ; ESC r - Enter Intensify Mode (s. 56 / App. F): Aktiver fremhævet / høj intensitet
 crt_esc_r_intensify_on:
@@ -1587,20 +1590,20 @@ crt_esc_u_intensify_off:
 	and al, 0x7f
 	jmp short crt_set_char_attr
 
-sub_08369:                                     ; 08369
+crt_set_color_attr:                                     ; 08369
 	mov al, [bx + CCB_CHAR_ATTR]
 	and al, 0xf
 	or_al_cl                                     ; 0836F
 
 crt_set_char_attr:                                     ; 08371
 	mov [bx + CCB_CHAR_ATTR], al
-	or byte [bx + CCB_FLAGS], 8
+	or byte [bx + CCB_FLAGS], CCB_FLG_ATTR_DIRTY
 	ret
 
 crt_get_char_attr:                                     ; 0837A
-	and byte [bx + CCB_FLAGS], 0xf7
+	and byte [bx + CCB_FLAGS], ~CCB_FLG_ATTR_DIRTY & 0xff
 	mov al, [bx + CCB_CHAR_ATTR]
-	test word [bx + CCB_FLAGS], 0x400
+	test word [bx + CCB_FLAGS], CCB_FLG_REVERSE
 	je loc_0838C
 	ror al, 4
 
@@ -1624,16 +1627,16 @@ loc_0838C:                                     ; 0838C
 	xchg si, ax
 	mov al, [bx + si + CCB_PALETTE]
 	mov [bx + CCB_CHAR_ATTR], al
-	and word [bx + CCB_FLAGS], 0xfbff
+	and word [bx + CCB_FLAGS], ~CCB_FLG_REVERSE & 0xffff
 	jmp short loc_083EB
 
 loc_083BF:                                     ; 083BF
 	inc dx
 	mov [di], al
 	inc word [bx + 0x81]
-	test byte [bx + CCB_FLAGS], 2
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
 	jne loc_083DE
-	call sub_09694
+	call palette_translate_mono_color
 	mov_cx_dx                                    ; 083CF
 	shl dx, 2
 	add dx, 0x180
@@ -1657,12 +1660,12 @@ loc_083EB:                                     ; 083EB
 
 ; ESC v - Wrap at End of Line (s. 57 / App. F): Aktiver automatisk linjeskift ved kant
 crt_esc_v_wrap_on:
-	and word [bx + CCB_FLAGS], 0xfeff
+	and word [bx + CCB_FLAGS], ~CCB_FLG_NOWRAP & 0xffff
 	ret
 
 ; ESC w - Discard at End of Line (s. 57 / App. F): Kassér tegn ud over højre margin
 crt_esc_w_wrap_off:
-	or word [bx + CCB_FLAGS], 0x100
+	or word [bx + CCB_FLAGS], CCB_FLG_NOWRAP
 	ret
 
 ; ESC < - Scroll Window Up (s. 61 / App. F): Rul angivet vinduesudsnit op
@@ -1681,17 +1684,17 @@ loc_08406:                                     ; 08406
 ; ESC 0 - Status Line Off / 25 Line Mode (s. 58 / App. F): 25-linjers skærmtilstand
 crt_esc_0_25_lines:
 	mov si, 0x18
-	call sub_0865C
-	call sub_09220
+	call crt_clear_line_range
+	call ccb_acquire_lock
 	call rtm_delay_1_tick
 	mov ax, 0x19
-	call sub_08444
+	call crt_update_scroll_bottom
 	mov byte [bx + CCB_ACTIVE], 0
 	ret
 
 ; ESC 1 - Status Line On / 24 Line Mode (s. 58 / App. F): 24-linjers skærmtilstand
 crt_esc_1_24_lines:
-	call sub_09220
+	call ccb_acquire_lock
 	call rtm_delay_1_tick
 	cmp word [bx + CCB_COL], 0x18
 	jne loc_08439
@@ -1701,19 +1704,18 @@ crt_esc_1_24_lines:
 
 loc_08439:                                     ; 08439
 	mov ax, 0x18
-	call sub_08444
+	call crt_update_scroll_bottom
 	mov byte [bx + CCB_ACTIVE], 0
 	ret
 
-sub_08444:                                     ; 08444
+crt_update_scroll_bottom:                                     ; 08444
 	mov [bx + CCB_SCROLL_BOTTOM], ax
-	test byte [bx + CCB_FLAGS], 0x16
-	jne loc_08459
-	call sub_0893E
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE | CCB_FLG_WINDOW | CCB_FLG_CLIPPED
+	jne .ret
+	call crt_refresh_all_lines
 	xor byte [cs:fdc_drive_flags_0], 0x80
 	call rtm_delay_1_tick
-
-loc_08459:                                     ; 08459
+.ret:                                     ; 08459
 	ret
 
 ; ESC 2 - Save Current Attributes (s. 58 / App. F): Gem aktuelle attributter i CCB
@@ -1733,13 +1735,13 @@ crt_esc_3_restore_attrs:
 	mov [bx + CCB_FLAGS], ax
 	mov al, [bx + CCB_SAVED_ATTR]
 	call crt_set_char_attr
-	test byte [bx + CCB_FLAGS], 2
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
 	je loc_08484
 	ret
 
 loc_08484:                                     ; 08484
 	mov word [cs:fdc_drive_cyl_0], 0xffff
-	jmp near sub_08625
+	jmp near crt_update_cursor_dispatch
 
 ; ESC 241 (0xF1) - Set Blinking Cursor (s. 62 / App. F): Sæt cursoren til at blinke
 crt_esc_241_cur_blink:
@@ -1769,12 +1771,12 @@ crt_esc_245_line_scroll:
 ; ESC 246 (0xF6) - Disable Underline Attribute (s. 63 / App. F): Slå understregning fra
 crt_esc_246_underl_off:
 	mov byte [bx + 0x75], 0xff
-	jmp near sub_096CF
+	jmp near crt_load_cursor_hardware_regs
 
 ; ESC 247 (0xF7) - Enable Underline Attribute (s. 63 / App. F): Slå understregning til
 crt_esc_247_underl_on:
 	mov byte [bx + 0x75], 0xf8
-	jmp near sub_096CF
+	jmp near crt_load_cursor_hardware_regs
 
 ; ESC 6 / ESC 0xFB (251) - Function Key Expansion Off / Cursor Left (s. 58 / App. F)
 crt_esc_6_fkey_exp_off:
@@ -1819,7 +1821,7 @@ crt_esc_default_ret:
 ; Underhandler for ESC > (Scroll Window Down): Modtager start- og slutrække
 crt_esc_sub_1943:
 	shl cl, 4
-	call sub_08369
+	call crt_set_color_attr
 	jmp near crt_esc_sub_19f7
 
 ; Underhandler for ESC < (Scroll Window Up): Modtager start- og slutrække
@@ -1855,11 +1857,11 @@ rtm_al80_poll_console:                         ; 08517
 rtm_al87_blocking_read:                        ; 0851E
 	push si
 	push di
-	call sub_8a54
+	call crt_hide_cursor_graphics
 	pop di
 	pop si
 	call word [bx + CCB_ESC_PARAM_FN]
-	call sub_8a95
+	call crt_draw_cursor_graphics
 	call crt_update_cursor
 	jmp near crt_esc_sub_19f7
 
@@ -1867,7 +1869,7 @@ rtm_al87_blocking_read:                        ; 0851E
 crt_esc_sub_1991:
 	ror cx, 4
 	ror ch, 4
-	call sub_7e11
+	call vmenu_set_cursor_lines
 	jmp near crt_esc_sub_19f7
 
 ; Underhandler for ESC Y (Position Cursor) trin 1: Modtager række (row + 32)
@@ -1902,7 +1904,7 @@ crt_esc_sub_19c3:
 	dec di
 	sub_di_dx                                    ; 08572
 	xchg di, ax
-	call sub_7c97
+	call fkey_get_str_ptr
 	mov [bx + CCB_ESC_PARAM_FN], si
 	mov [bx + CCB_ESC_PARAM_BUF], cl
 	mov word [bx + CCB_ESC_HANDLER], crt_esc_sub_19e4
@@ -1931,27 +1933,25 @@ crt_cursor_down:                                     ; 0859D
 	cmp si, [bx + CCB_SCROLL_BOTTOM]
 	jne loc_085AD
 	mov si, 0
-	call sub_086C6
+	call crt_scroll_lines_up
 	ret
 
 loc_085AD:                                     ; 085AD
 	mov [bx + CCB_COL], si
 	cmp byte [bx + CCB_TRACKING_MODE], 0
-	je loc_085B9
-	call sub_09334
-
-loc_085B9:                                     ; 085B9
+	je .ret
+	call window_repaint_contents
+.ret:                                     ; 085B9
 	ret
 
 loc_085BA:                                     ; 085BA
 	mov dx, [bx + CCB_COL]
 	inc dx
 	cmp dx, [bx + CCB_SCROLL_BOTTOM]
-	je loc_085C8
+	je .ret
 	mov [bx + CCB_COL], dx
 	jmp short crt_update_cursor
-
-loc_085C8:                                     ; 085C8
+.ret:                                     ; 085C8
 	ret
 
 crt_cursor_home:                                     ; 085C9
@@ -1968,41 +1968,40 @@ crt_update_cursor:                                      ; 085D3
 	shl di, 1
 	add_dx_di                                    ; 085DF
 	mov [bx + CCB_LINE_TABLE], dx
-	test byte [bx + CCB_FLAGS], 4
-	je sub_085ED
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
+	je crt_update_hw_cursor
 	jmp near loc_08A92
 
-sub_085ED:                                     ; 085ED
-	test word [bx + CCB_FLAGS], 0x203
-	jne loc_0861C
+crt_update_hw_cursor:                                     ; 085ED
+	test word [bx + CCB_FLAGS], CCB_FLG_SCROLL_LOCK | CCB_FLG_INACTIVE | CCB_FLG_CUR_OFF
+	jne .ret
 	mov dh, [bx + CCB_COL]
 	mov dl, [bx + CCB_ROW]
-	test byte [bx + CCB_FLAGS], 0x10
-	je loc_08617
+	test byte [bx + CCB_FLAGS], CCB_FLG_CLIPPED
+	je .store
 	sub dh, [bx + CCB_MASK]
-	jb loc_0861D
+	jb .invalid
 	sub dl, [bx + 0x4a]
-	jb loc_0861D
+	jb .invalid
 	cmp dh, [bx + CCB_ROWS]
-	jae loc_0861D
+	jae .invalid
 	cmp dl, [bx + CCB_COLS]
-	jae loc_0861D
+	jae .invalid
 	add dx, [bx + CCB_WIN_LEFT]
 
-loc_08617:                                     ; 08617
+.store:
 	mov [cs:fdc_drive_cyl_0], dx
-
-loc_0861C:                                     ; 0861C
+.ret:
 	ret
 
-loc_0861D:                                     ; 0861D
+.invalid:
 	mov word [cs:fdc_drive_cyl_0], 0xffff
 	ret
 
-sub_08625:                                     ; 08625
-	test byte [bx + CCB_FLAGS], 4
-	je sub_085ED
-	jmp near sub_8a95
+crt_update_cursor_dispatch:                                     ; 08625
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
+	je crt_update_hw_cursor
+	jmp near crt_draw_cursor_graphics
 
 loc_0862E:                                     ; 0862E
 	mov si, [bx + CCB_COL]
@@ -2013,9 +2012,9 @@ loc_0862E:                                     ; 0862E
 	add_di_dx                                    ; 08639
 	sub_cx_dx                                    ; 0863B
 	inc cx
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne loc_08649
-	call sub_08686
+	call crt_fill_line_spaces
 	jmp short loc_0866B
 
 loc_08649:                                     ; 08649
@@ -2026,46 +2025,45 @@ loc_0864B:                                     ; 0864B
 	push dx
 	push cx
 	mov cl, 0x20
-	call sub_08985
+	call crt_render_char_bitmap
 	pop cx
 	pop dx
 	pop ax
 	inc dx
 	loop loc_0864B
-	jmp near sub_8a95
+	jmp near crt_draw_cursor_graphics
 
-sub_0865C:                                     ; 0865C
+crt_clear_line_range:                                     ; 0865C
 	mov_dx_si                                    ; 0865C
 	inc dx
 
-sub_0865F:                                     ; 0865F
+crt_clear_line_loop:                                     ; 0865F
 	push si
 	push dx
-	call sub_08677
+	call crt_clear_single_line
 	pop dx
 	pop si
 	inc si
 	cmp_dx_si                                    ; 08667
-	jne sub_0865F
+	jne crt_clear_line_loop
 
 loc_0866B:                                     ; 0866B
 	test byte [cs:xios4_window_clip_flag], 0xff
-	jne loc_08676
-	call sub_09334
-
-loc_08676:                                     ; 08676
+	jne .ret
+	call window_repaint_contents
+.ret:                                     ; 08676
 	ret
 
-sub_08677:                                     ; 08677
-	test byte [bx + CCB_FLAGS], 4
+crt_clear_single_line:                                     ; 08677
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne loc_0869E
 	shl si, 1
 	mov di, [bx + si]
 	shr si, 1
 	mov cx, 0x50
 
-sub_08686:                                     ; 08686
-	test byte [bx + CCB_FLAGS], 8
+crt_fill_line_spaces:                                     ; 08686
+	test byte [bx + CCB_FLAGS], CCB_FLG_ATTR_DIRTY
 	je loc_0868F
 	call crt_get_char_attr
 
@@ -2085,7 +2083,7 @@ loc_0869E:                                     ; 0869E
 	mul ah                                        ; 086A3
 	mov_di_ax                                    ; 086A5
 	shl di, 1
-	call sub_08B5E
+	call vram_setup_page_segments
 	push ds
 	pop es
 	xor_ax_ax                                    ; 086AE
@@ -2102,12 +2100,12 @@ loc_086B3:                                     ; 086B3
 	mov byte [bx + CCB_ACTIVE], 0
 	ret
 
-sub_086C6:                                     ; 086C6
+crt_scroll_lines_up:                                     ; 086C6
 	mov di, [bx + CCB_SCROLL_BOTTOM]
 	dec di
 ; Hjælperutine for vinduesrulning (ESC < og ESC >)
 crt_esc_sub_1b2a:
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	je loc_086D3
 	jmp near loc_08AEE
 
@@ -2129,12 +2127,12 @@ loc_086D3:                                     ; 086D3
 	mov di, 0
 	jmp short loc_08716
 
-sub_086EF:                                     ; 086EF
+crt_scroll_lines_down:                                     ; 086EF
 	mov di, [bx + CCB_SCROLL_BOTTOM]
 	dec di
 ; Hjælperutine for farveberegning (ESC b forgrund / ESC c baggrund)
 crt_esc_sub_1b53:
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	je loc_086FA
 	ret
 
@@ -2159,28 +2157,28 @@ loc_086FA:                                     ; 086FA
 
 loc_08716:                                     ; 08716
 	push ax
-	call sub_09220
+	call ccb_acquire_lock
 	pop ax
-	test byte [bx + CCB_FLAGS], 0x12
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE | CCB_FLG_CLIPPED
 	jne loc_0873E
 	cmp byte [bx + CCB_SCROLL_MODE], 0
 	je loc_08743
 	cmp_cx_dx                                    ; 08727
 	jne loc_08754
-	call sub_0865C
-	call sub_0893E
+	call crt_clear_line_range
+	call crt_refresh_all_lines
 	xor byte [cs:fdc_drive_flags_0], 0x80
 	mov ah, 0
 	call xios_crt_trigger_ca
 	jmp short loc_0874F
 
 loc_0873E:                                     ; 0873E
-	call sub_0865C
+	call crt_clear_line_range
 	jmp short loc_0874F
 
 loc_08743:                                     ; 08743
-	call sub_0865C
-	call sub_0893E
+	call crt_clear_line_range
+	call crt_refresh_all_lines
 	xor byte [cs:fdc_drive_flags_0], 0x80
 
 loc_0874F:                                     ; 0874F
@@ -2189,14 +2187,14 @@ loc_0874F:                                     ; 0874F
 
 loc_08754:                                     ; 08754
 	push di
-	or byte [bx + CCB_FLAGS], 1
-	call sub_087FD
-	mov byte [cs:xios_con_var_2c06], 0xff
-	call sub_087F4
-	mov byte [cs:xios_con_var_2c06], 0
+	or byte [bx + CCB_FLAGS], CCB_FLG_SCROLL_LOCK
+	call scroll_save_registers
+	mov byte [cs:xios_scroll_dir_up_flag], 0xff
+	call rtm_wait_scroll_delay
+	mov byte [cs:xios_scroll_dir_up_flag], 0
 	pop ax
-	mov [cs:xios_con_var_2c07], al
-	mov [cs:xios_con_var_2c00], bx
+	mov [cs:xios_scroll_step_counter], al
+	mov [cs:xios_scroll_ccb_ptr], bx
 	push bx
 	mov dx, 4
 	call rtm_call_helper
@@ -2208,32 +2206,32 @@ loc_08754:                                     ; 08754
 	ret
 
 crt_scroll_sub_1be9:
-	call sub_0880E
-	inc word [cs:xios_con_var_2c04]
+	call scroll_restore_registers
+	inc word [cs:xios_scroll_row_end]
 	push ax
-	call sub_0865C
+	call crt_clear_line_range
 	mov_si_bx                                    ; 08795
-	mov di, xios_con_buf_2c13
+	mov di, xios_scroll_line_save_buf
 	mov cx, [bx + CCB_SCROLL_BOTTOM]
 	rep movsw
-	call sub_08825
+	call scroll_shift_line_pointers
 	pop ax
-	mov di, [cs:xios_con_var_2c04]
+	mov di, [cs:xios_scroll_row_end]
 	add di, 3
 	mov cl, 1
 	jmp near loc_087CD
 
 crt_scroll_sub_1c10:
-	call sub_0880E
+	call scroll_restore_registers
 	push ax
-	call sub_0865C
+	call crt_clear_line_range
 	mov_si_bx                                    ; 087B7
-	mov di, xios_con_buf_2c13
+	mov di, xios_scroll_line_save_buf
 	mov cx, [bx + CCB_SCROLL_BOTTOM]
 	rep movsw
-	call sub_08825
+	call scroll_shift_line_pointers
 	pop ax
-	mov di, [cs:xios_con_var_2c02]
+	mov di, [cs:xios_scroll_row_start]
 	inc di
 	mov cl, 7
 
@@ -2245,20 +2243,20 @@ loc_087CD:                                     ; 087CD
 	shl di, 1
 	add_di_bx                                    ; 087DC
 	mov dx, [cs:xios_sysdat_segment_ptr]
-	call sub_09623
+	call crt_dma_store_phys_desc
 	mov word [cs:fdc_drive_cyl_0], 0xffff
 	xor byte [cs:fdc_drive_flags_0], 0x80
 	ret
 
-sub_087F4:                                     ; 087F4
+rtm_wait_scroll_delay:                                     ; 087F4
 	push bx
 	mov dx, 0xa
 	call rtm_timer_wait
 	pop bx
 	ret
 
-sub_087FD:                                     ; 087FD
-	mov di, xios_con_var_2c09
+scroll_save_registers:                                     ; 087FD
+	mov di, xios_scroll_temp_offset
 	stosw
 	mov_ax_bx                                    ; 08801
 	stosw
@@ -2270,45 +2268,45 @@ sub_087FD:                                     ; 087FD
 	stosw
 	ret
 
-sub_0880E:                                     ; 0880E
-	mov si, xios_con_buf_2c0b
+scroll_restore_registers:                                     ; 0880E
+	mov si, xios_scroll_param_block
 	lodsw
 	mov_bx_ax                                    ; 08812
 	lodsw
-	mov [cs:xios_con_var_2c02], ax
+	mov [cs:xios_scroll_row_start], ax
 	lodsw
-	mov [cs:xios_con_var_2c04], ax
+	mov [cs:xios_scroll_row_end], ax
 	mov si, [si]
-	mov ax, [cs:xios_con_var_2c09]
+	mov ax, [cs:xios_scroll_temp_offset]
 	ret
 
-sub_08825:                                     ; 08825
+scroll_shift_line_pointers:                                     ; 08825
 	mov cx, [bx + CCB_SCROLL_BOTTOM]
-	mov dx, [cs:xios_con_var_2c04]
+	mov dx, [cs:xios_scroll_row_end]
 	sub_cx_dx                                    ; 0882D
 	shl cx, 1
 	push cx
-	mov cx, [cs:xios_con_var_2c02]
+	mov cx, [cs:xios_scroll_row_start]
 	sub_dx_cx                                    ; 08837
 	shl dx, 1
 	push dx
 	shl cx, 1
-	call sub_08972
+	call crt_swap_active_line_buffers
 	rep movsw
 	lea ax, [bx + 0x7c]
-	call sub_09621
+	call crt_dma_make_phys_desc
 	mov ax, fdc_param_6140
-	call sub_09621
+	call crt_dma_make_phys_desc
 	pop cx
 	rep movsw
 	lea ax, [bx + CCB_CHAR_ATTR]
-	call sub_09621
+	call crt_dma_make_phys_desc
 	mov ax, fdc_param_6140
-	call sub_09621
+	call crt_dma_make_phys_desc
 	pop cx
 	rep movsw
 	push bx
-	mov bx, [cs:xios_con_var_2c00]
+	mov bx, [cs:xios_scroll_ccb_ptr]
 	mov cx, [bx + CCB_SCROLL_BOTTOM]
 	pop bx
 	jmp near loc_08960
@@ -2321,84 +2319,83 @@ crt_scroll_sub_1cd3:
 	mov al, 3
 
 loc_08875:                                     ; 08875
-	call sub_08972
+	call crt_swap_active_line_buffers
 	mov cx, 0x3e
 	rep movsw
 	mov [cs:bx + 0x80], al
 	inc al
 	mov [cs:bx + 0x7c], al
-	mov di, [cs:xios_con_var_2c02]
+	mov di, [cs:xios_scroll_row_start]
 	shl di, 1
 	shl di, 1
 	add_di_bx                                    ; 08891
 	lea ax, [bx + 0x7c]
-	call sub_09621
-	mov di, [cs:xios_con_var_2c04]
+	call crt_dma_make_phys_desc
+	mov di, [cs:xios_scroll_row_end]
 	inc di
 	inc di
 	shl di, 1
 	shl di, 1
 	add_di_bx                                    ; 088A4
 	lea ax, [bx + CCB_CHAR_ATTR]
-	call sub_09621
+	call crt_dma_make_phys_desc
 	xor byte [cs:fdc_drive_flags_0], 0x80
 	ret
 
 crt_scroll_sub_1d14:
-	call sub_08972
+	call crt_swap_active_line_buffers
 	add byte [cs:bx + 0x7c], 4
 	add byte [cs:bx + 0x80], 4
 	xor byte [cs:fdc_drive_flags_0], 0x80
 	ret
 
 crt_scroll_sub_1d29:
-	call sub_08972
+	call crt_swap_active_line_buffers
 	sub byte [cs:bx + 0x7c], 4
 	sub byte [cs:bx + 0x80], 4
 	xor byte [cs:fdc_drive_flags_0], 0x80
 	ret
 
 crt_scroll_sub_1d3e:
-	mov bx, [cs:xios_con_var_2c00]
+	mov bx, [cs:xios_scroll_ccb_ptr]
 	mov cx, [bx + CCB_SCROLL_BOTTOM]
 	push bx
-	mov bx, xios_con_buf_2c13
-	call sub_08941
+	mov bx, xios_scroll_line_save_buf
+	call crt_refresh_lines_loop
 	xor byte [cs:fdc_drive_flags_0], 0x80
 	pop bx
 	mov byte [bx + CCB_ACTIVE], 0
 	ret
 
 crt_scroll_sub_1d59:
-	mov bx, [cs:xios_con_var_2c00]
-	mov al, [cs:xios_con_var_2c06]
+	mov bx, [cs:xios_scroll_ccb_ptr]
+	mov al, [cs:xios_scroll_dir_up_flag]
 	or_al_al                                     ; 08902
-	jne loc_0890F
-	and byte [bx + CCB_FLAGS], 0xfe
-	call sub_085ED
+	jne .ret
+	and byte [bx + CCB_FLAGS], ~CCB_FLG_SCROLL_LOCK & 0xff
+	call crt_update_hw_cursor
 	xor_al_al                                    ; 0890D
-
-loc_0890F:                                     ; 0890F
+.ret:                                     ; 0890F
 	ret
 
 int28_fn_02_scroll_step:                ; 08910
 	push ds
 	pop es
-	mov bl, [cs:xios_con_var_2c07]
+	mov bl, [cs:xios_scroll_step_counter]
 	xor_bh_bh                                    ; 08917
 	shl bx, 1
 	call word [cs:bx + crt_state_jump_table]
-	inc byte [cs:xios_con_var_2c07]
+	inc byte [cs:xios_scroll_step_counter]
 	ret
 
 crt_state_jump_table:
 	; --- State jump table (12 word pointers) ---
 	dw crt_scroll_sub_1be9, crt_scroll_sub_1cd3, crt_scroll_sub_1d14, crt_scroll_sub_1d14, crt_scroll_sub_1d3e, crt_scroll_sub_1d59
 	dw crt_scroll_sub_1c10, crt_scroll_sub_1ccf, crt_scroll_sub_1d29, crt_scroll_sub_1d29, crt_scroll_sub_1d3e, crt_scroll_sub_1d59
-sub_0893E:                                     ; 0893E
+crt_refresh_all_lines:                                     ; 0893E
 	mov cx, [bx + CCB_SCROLL_BOTTOM]
 
-sub_08941:                                     ; 08941
+crt_refresh_lines_loop:                                     ; 08941
 	push cx
 	mov_si_bx                                    ; 08942
 	mov di, fdc_drive_1_dpb_ptr
@@ -2410,7 +2407,7 @@ loc_08952:                                     ; 08952
 	push cx
 	lodsw
 	mov dx, [cs:xios_sysdat_segment_ptr]
-	call sub_09623
+	call crt_dma_store_phys_desc
 	pop cx
 	loop loc_08952
 	pop cx
@@ -2419,14 +2416,14 @@ loc_08960:                                     ; 08960
 	cmp cx, 0x18
 	ja loc_0896B
 	mov ax, xios_con_line_buffer_614a
-	call sub_09621
+	call crt_dma_make_phys_desc
 
 loc_0896B:                                     ; 0896B
 	mov ax, xios_crt_mode_line_table
-	call sub_09621
+	call crt_dma_make_phys_desc
 	ret
 
-sub_08972:                                     ; 08972
+crt_swap_active_line_buffers:                                     ; 08972
 	mov si, fdc_drive_1_dpb_ptr
 	mov di, fdc_drive_2_dpb_ptr
 	test byte [cs:fdc_drive_flags_0], 0x80
@@ -2437,17 +2434,17 @@ loc_08982:                                     ; 08982
 	mov_bx_di                                    ; 08982
 	ret
 
-sub_08985:                                     ; 08985
+crt_render_char_bitmap:                                     ; 08985
 	mov bp, [bx + CCB_FLAGS]
 	mov [cs:crt_state_flags], bp
 	push bx
 	push ds
-	call sub_08B5E
+	call vram_setup_page_segments
 	xor_ch_ch                                    ; 08992
 	mov_bx_cx                                    ; 08994
 	mov cl, 5
 	shl bx, cl
-	call sub_08B27
+	call vram_calc_char_offset
 	cmp byte [cs:crt_mode_ah], 2
 	je loc_089AC
 	mov bp, 0x1ff
@@ -2485,7 +2482,7 @@ loc_089DB:                                     ; 089DB
 	je loc_089F8
 	push cx
 	mov cx, 8
-	call sub_08A49
+	call crt_bitmap_expand_pixels
 	mov_ax_dx                                    ; 089F5
 	pop cx
 
@@ -2511,10 +2508,10 @@ loc_08A18:                                     ; 08A18
 	and [si + 0x200], dl
 	push cx
 	mov cx, 4
-	call sub_08A49
+	call crt_bitmap_expand_pixels
 	push dx
 	mov cx, 8
-	call sub_08A49
+	call crt_bitmap_expand_pixels
 	pop ax
 	pop cx
 	or [si], al
@@ -2535,7 +2532,7 @@ loc_08A38:                                     ; 08A38
 	mov byte [bx + CCB_ACTIVE], 0
 	ret
 
-sub_08A49:                                     ; 08A49
+crt_bitmap_expand_pixels:                                     ; 08A49
 	xor_dx_dx                                    ; 08A49
 
 loc_08A4B:                                     ; 08A4B
@@ -2545,13 +2542,13 @@ loc_08A4B:                                     ; 08A4B
 	loop loc_08A4B
 	ret
 
-sub_8a54:                                      ; 08A54
-	test byte [bx + CCB_FLAGS], 4
+crt_hide_cursor_graphics:                                      ; 08A54
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	je loc_08A91
-	test word [bx + CCB_FLAGS], 0x200
+	test word [bx + CCB_FLAGS], CCB_FLG_CUR_OFF
 	jne loc_08A91
 	push ds
-	call sub_08B5E
+	call vram_setup_page_segments
 	mov dx, [cs:crt_cursor_dx]
 	mov si, [cs:crt_cursor_si]
 	mov di, [cs:crt_cursor_di]
@@ -2574,16 +2571,16 @@ loc_08A91:                                     ; 08A91
 	ret
 
 loc_08A92:                                     ; 08A92
-	call sub_8a54
+	call crt_hide_cursor_graphics
 
-sub_8a95:                                      ; 08A95
-	test word [bx + CCB_FLAGS], 0x200
+crt_draw_cursor_graphics:                                      ; 08A95
+	test word [bx + CCB_FLAGS], CCB_FLG_CUR_OFF
 	jne loc_08A91
 	mov ax, [bx + CCB_COL]
 	mov dx, [bx + CCB_ROW]
 	push ds
-	call sub_08B5E
-	call sub_08B27
+	call vram_setup_page_segments
+	call vram_calc_char_offset
 	add si, 0x12
 	add di, 0x12
 	cmp byte [cs:crt_mode_ah], 2
@@ -2627,7 +2624,7 @@ loc_08AEE:                                     ; 08AEE
 	shl ax, 1
 	mov_di_ax                                    ; 08B02
 	mov dx, 0x23
-	call sub_08B5E
+	call vram_setup_page_segments
 	push ds
 	pop es
 
@@ -2645,9 +2642,9 @@ loc_08B0C:                                     ; 08B0C
 	pop ds
 	pop si
 	mov byte [bx + CCB_ACTIVE], 0
-	jmp near sub_0865C
+	jmp near crt_clear_line_range
 
-sub_08B27:                                     ; 08B27
+vram_calc_char_offset:                                     ; 08B27
 	mov ah, 0xa
 	mul ah                                        ; 08B29
 	mov_si_ax                                    ; 08B2B
@@ -2677,12 +2674,12 @@ loc_08B59:                                     ; 08B59
 	and cx, strict word 7                        ; 08B59  81 E1 07 00
 	ret
 
-sub_08B5E:                                     ; 08B5E
+vram_setup_page_segments:                                     ; 08B5E
 	push ax
-	call sub_09220
+	call ccb_acquire_lock
 	pop ax
-	mov es, [cs:xios_video_seg_2c4e]
-	mov ds, [cs:xios_video_offset_2c50]
+	mov es, [cs:xios_vram_active_page]
+	mov ds, [cs:xios_vram_back_page]
 	ret
 
 crt_state_flags:
@@ -2700,7 +2697,7 @@ crt_mode_ah:
 crt_screen_attr:
 	db 0x00
 
-sub_08B79:                                     ; 08B79
+crt_dispatch_esc_char:                                     ; 08B79
 	xor_cx_cx                                    ; 08B79
 	mov cl, [di]
 	inc di
@@ -2718,7 +2715,7 @@ io_switch:
 
 loc_08B90:                                     ; 08B90
 	mov bx, [cs:xios4_cur_window_ptr]
-	call sub_08C56
+	call ccb_check_background_active
 	je loc_08B9B
 	ret
 
@@ -2728,21 +2725,21 @@ loc_08B9B:                                     ; 08B9B
 	mov byte [cs:crt_timer_flag], 1
 
 loc_08BA9:                                     ; 08BA9
-	call sub_0922F
-	test byte [bx + CCB_FLAGS], 1
+	call ccb_acquire_all_locks
+	test byte [bx + CCB_FLAGS], CCB_FLG_SCROLL_LOCK
 	je loc_08BB5
 	call rtm_delay_1_tick
 
 loc_08BB5:                                     ; 08BB5
-	or byte [bx + CCB_FLAGS], 2
+	or byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
 	mov cl, [bx + 0x70]
 	call get_ccb_by_index
 	mov [cs:xios4_cur_window_ptr], bx
-	and byte [bx + CCB_FLAGS], 0xfd
+	and byte [bx + CCB_FLAGS], ~CCB_FLG_INACTIVE & 0xff
 	cmp cl, [bx + 0x70]
-	je sub_08BFB
+	je crt_switch_active_window
 	push es
-	les si, [cs:xios_video_offset_2c49]
+	les si, [cs:xios_graphics_gcb_offset]
 
 loc_08BD3:                                     ; 08BD3
 	mov al, 0xff
@@ -2757,29 +2754,29 @@ loc_08BE1:                                     ; 08BE1
 	push es
 	mov ah, 3
 	call xios_crt_trigger_ca
-	call sub_08FE7
+	call crt_set_display_mode_timings
 	pop es
 	pop si
-	mov dx, [cs:xios_video_offset_2c50]
+	mov dx, [cs:xios_vram_back_page]
 	mov [es:si + 1], dx
 	mov byte [es:si], 0
 	pop es
 
-sub_08BFB:                                     ; 08BFB
+crt_switch_active_window:                                     ; 08BFB
 	push es
 	push ds
 	pop es
 	mov dl, [bx + CCB_CON_IDX]
-	call sub_0928E
+	call window_zorder_promote_top
 	mov word [cs:fdc_drive_cyl_0], 0xffff
-	call sub_096B8
-	call sub_0920B
+	call palette_load_hardware_regs
+	call window_update_clipped_flag
 	mov cx, [bx + CCB_SCROLL_BOTTOM]
 	push bx
 	mov byte [cs:xios4_window_clip_flag], 0xff
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne loc_08C36
-	test byte [bx + CCB_FLAGS], 0x10
+	test byte [bx + CCB_FLAGS], CCB_FLG_CLIPPED
 	je loc_08C36
 	mov byte [cs:xios4_window_clip_flag], 0
 	call xios_clip_repaint_windows
@@ -2787,41 +2784,41 @@ sub_08BFB:                                     ; 08BFB
 	mov cx, 0x18
 
 loc_08C36:                                     ; 08C36
-	call sub_08941
+	call crt_refresh_lines_loop
 	pop bx
 	xor byte [cs:fdc_drive_flags_0], 0x80
-	call sub_096CF
+	call crt_load_cursor_hardware_regs
 	mov ah, 1
 	call xios_crt_trigger_ca
-	test byte [bx + CCB_FLAGS], 4
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne loc_08C51
-	call sub_085ED
+	call crt_update_hw_cursor
 
 loc_08C51:                                     ; 08C51
-	call sub_09243
+	call ccb_release_all_locks
 	pop es
 	ret
 
-sub_08C56:                                     ; 08C56
+ccb_check_background_active:                                     ; 08C56
 	mov si, [bx + 0x5c]
 	test word [si + 0xe], 8
 	ret
 
-sub_08C5F:                                     ; 08C5F
+io_statline_clear:                                     ; 08C5F
 	xor_cx_cx                                    ; 08C5F
 
 io_statline:
 	mov bx, vmenu_screen_buffer_b
 
-loc_08C64:                                     ; 08C64
+.acquire_lock:                                     ; 08C64
 	mov al, 0xff
 	xchg [cs:vmenu_active_flag], al
 	cmp al, 0xff
-	jne loc_08C74
+	jne .setup_buffer
 	call rtm_delay_1_tick
-	jmp short loc_08C64
+	jmp short .acquire_lock
 
-loc_08C74:                                     ; 08C74
+.setup_buffer:                                     ; 08C74
 	cld
 	push es
 	push ds
@@ -2829,22 +2826,22 @@ loc_08C74:                                     ; 08C74
 	mov ax, cs
 	mov es, ax
 	mov al, 0xff
-	jcxz loc_08C85
+	jcxz .check_saved_mode
 	mov [cs:vmenu_saved_bx], cx
 
-loc_08C85:                                     ; 08C85
+.check_saved_mode:                                     ; 08C85
 	cmp word [cs:vmenu_saved_bx], -1
-	je loc_08C9A
-	jcxz loc_08C96
+	je .render_default_line
+	jcxz .exit_pop
 	mov ds, dx
 	mov_si_cx                                    ; 08C91
-	jmp near loc_08DB2
+	jmp near .render_to_line_buffer
 
-loc_08C96:                                     ; 08C96
+.exit_pop:                                     ; 08C96
 	pop bx
-	jmp near loc_08DC2
+	jmp near .release_and_exit
 
-loc_08C9A:                                     ; 08C9A
+.render_default_line:                                     ; 08C9A
 	mov di, xios_vmenu_buf_484d
 	mov al, 0x20
 	mov cx, xios_vmenu_str_printer
@@ -2862,50 +2859,50 @@ loc_08C9A:                                     ; 08C9A
 	mov bx, [bx + 0x5c]
 	mov si, [bx]
 	test si, si
-	je loc_08CE4
+	je .check_status_bits
 	mov al, [si + 0x24]
-	call sub_08DDE
+	call vmenu_format_two_digits
 	mov [cs:xios_vmenu_buf_4884], ax
 	lea si, [si + PD_NAME]
 	mov di, xios_vmenu_buf_4858
 	mov cx, 4
 	rep movsw
 
-loc_08CE4:                                     ; 08CE4
+.check_status_bits:                                     ; 08CE4
 	mov cx, [bx + 0xe]
 	test cx, 0x80
-	je loc_08CF6
+	je .check_other_status
 	mov word [cs:xios_vmenu_buf_4873], 0x5392
-	jmp short loc_08D03
+	jmp short .check_printer_status
 
-loc_08CF6:                                     ; 08CF6
+.check_other_status:                                     ; 08CF6
 	test cx, 0x100
-	je loc_08D03
+	je .check_printer_status
 	mov word [cs:xios_vmenu_buf_4873], 0x4f92
 
-loc_08D03:                                     ; 08D03
+.check_printer_status:                                     ; 08D03
 	test cx, 0x200
-	je loc_08D1D
+	je .select_window_opt_str
 	mov di, xios_vmenu_buf_4876
 	mov word [di], 0x5092
 	mov byte [di + 2], '='
 	mov al, [bx + 8]
-	call sub_08DDE
+	call vmenu_format_two_digits
 	mov [di + 3], ax
 
-loc_08D1D:                                     ; 08D1D
+.select_window_opt_str:                                     ; 08D1D
 	mov si, xios_vmenu_opt_locked
 	test cx, 8
-	jne loc_08D3B
+	jne .render_disk_drive_letters
 	mov si, xios_vmenu_opt_dynamic
 	test cx, 1
-	je loc_08D3B
+	je .render_disk_drive_letters
 	mov si, xios_vmenu_opt_buffered
 	test cx, 4
-	je loc_08D3B
+	je .render_disk_drive_letters
 	mov si, xios_vmenu_opt_buffer
 
-loc_08D3B:                                     ; 08D3B
+.render_disk_drive_letters:                                     ; 08D3B
 	mov di, xios_vmenu_buf_484f
 	mov cx, 8
 	rep movsb
@@ -2915,77 +2912,77 @@ loc_08D3B:                                     ; 08D3B
 	mov dx, [cs:sysdat_nlstdev]
 	mov di, xios_vmenu_buf_4862
 
-loc_08D52:                                     ; 08D52
+.drive_letter_loop:                                     ; 08D52
 	shr dx, 1
-	jae loc_08D5D
+	jae .skip_drive_letter
 	xchg ah, al                                  ; 08D56  86 E0
 	stosb
 	xchg ah, al                                  ; 08D59  86 E0
-	jmp short loc_08D5E
+	jmp short .next_drive_letter
 
-loc_08D5D:                                     ; 08D5D
+.skip_drive_letter:                                     ; 08D5D
 	stosb
 
-loc_08D5E:                                     ; 08D5E
+.next_drive_letter:                                     ; 08D5E
 	inc ah
-	loop loc_08D52
+	loop .drive_letter_loop
 	mov si, 0x80
 	mov di, xios_vmenu_str_time
 	mov cx, 3
 
-loc_08D6B:                                     ; 08D6B
+.time_digits_loop:                                     ; 08D6B
 	lodsb
-	call sub_08DD5
+	call vmenu_format_single_digit
 	stosw
 	inc di
-	loop loc_08D6B
+	loop .time_digits_loop
 	mov al, [cs:kbd_lock_state]
 	test al, 0x20
-	je loc_08D86
+	je .check_window_mode_flag
 	mov si, xios_vmenu_opt_lock
 	mov di, xios_vmenu_buf_4887
 	mov cx, 4
 	rep movsb
 
-loc_08D86:                                     ; 08D86
+.check_window_mode_flag:                                     ; 08D86
 	cmp byte [cs:xios4_vir_con_mode], 0
-	je loc_08D94
+	je .check_window_titles
 	mov byte [cs:xios_vmenu_buf_4861], 7
 
-loc_08D94:                                     ; 08D94
+.check_window_titles:                                     ; 08D94
 	test byte [cs:xios4_window_clip_flag], 0xff
-	jne loc_08DAF
+	jne .load_console_str
 	mov cx, NUM_VIR_CONS
 	mov si, xios_ccb_table
 
-loc_08DA2:                                     ; 08DA2
+.window_title_loop:                                     ; 08DA2
 	lodsw
 	xchg bx, ax
 	push cx
 	push si
 	push es
-	call sub_09473
+	call window_draw_title
 	pop es
 	pop si
 	pop cx
-	loop loc_08DA2
+	loop .window_title_loop
 
-loc_08DAF:                                     ; 08DAF
+.load_console_str:                                     ; 08DAF
 	mov si, xios_vmenu_str_console
 
-loc_08DB2:                                     ; 08DB2
+.render_to_line_buffer:                                     ; 08DB2
 	mov di, xios_con_line_buffer_614a
 	mov ah, 8
 	mov cx, 0x50
 	pop bx
 
-loc_08DBB:                                     ; 08DBB
+.output_char_loop:                                     ; 08DBB
 	call bx
 	stosw
-	loop loc_08DBB
+	loop .output_char_loop
 	xor_al_al                                    ; 08DC0
 
-loc_08DC2:                                     ; 08DC2
+.release_and_exit:                                     ; 08DC2
 	mov byte [cs:vmenu_active_flag], 0
 	pop ds
 	pop es
@@ -3001,24 +2998,23 @@ vmenu_screen_buffer_d:
 
 ww_statline:
 	mov bx, vmenu_screen_buffer_d
-	jmp near loc_08C64
+	jmp near io_statline.acquire_lock
 
-sub_08DD5:                                     ; 08DD5
+vmenu_format_single_digit:                                     ; 08DD5
 	mov ah, '3'
 	ror ax, 4
 	ror ah, 4
 	ret
 
-sub_08DDE:                                     ; 08DDE
+vmenu_format_two_digits:                                     ; 08DDE
 	aam 10                                       ; 08DDE
 	add ax, 0x3030
 	xchg al, ah                                  ; 08DE3  86 C4
 	cmp al, '0'
-	jne loc_08DED
+	jne .ret
 	mov al, 0x20
 	xchg al, ah                                  ; 08DEB  86 C4
-
-loc_08DED:                                     ; 08DED
+.ret:                                     ; 08DED
 	ret
 
 vmenu_active_flag:
@@ -3041,12 +3037,12 @@ con_puts:                                     ; 08DF1
 	pop di
 	rep movsb
 	mov bx, [cs:xios4_cur_window_ptr]
-	call sub_09220
+	call ccb_acquire_lock
 	call rtm_delay_1_tick
 	mov word [cs:fdc_drive_cyl_0], 0xffff
 	push word [bx + CCB_SCROLL_BOTTOM]
 	mov ax, 0x18
-	call sub_08444
+	call crt_update_scroll_bottom
 	pop ax
 	pop cx
 	mov dx, cs
@@ -3063,9 +3059,9 @@ con_puts:                                     ; 08DF1
 	pop bx
 	pop ax
 	push es
-	call sub_08444
+	call crt_update_scroll_bottom
 	mov byte [bx + CCB_ACTIVE], 0
-	call sub_08625
+	call crt_update_cursor_dispatch
 	pop es
 	mov al, [cs:kbd_prefix_char]
 	ret
@@ -3074,10 +3070,10 @@ int28_fn_00_graphics_mode:              ; 08E55
 	mov es, dx
 	xchg si, cx                                  ; 08E57  87 F1
 	call get_cur_process_ccb
-	cmp word [cs:xios_video_offset_2c4b], 0
-	je loc_08E79
-	cmp dl, [cs:xios_video_flag_2c4d]
-	je loc_08E79
+	cmp word [cs:xios_graphics_gcb_segment], 0
+	je .check_window_mode
+	cmp dl, [cs:xios_graphics_owner_con]
+	je .check_window_mode
 	mov si, boot_msg_graphics_reserved
 	call con_puts
 	mov cl, 0
@@ -3085,135 +3081,135 @@ int28_fn_00_graphics_mode:              ; 08E55
 	mov al, 0xff
 	ret
 
-loc_08E79:                                     ; 08E79
-	test byte [bx + CCB_FLAGS], 4
-	je loc_08E8B
-	mov dx, [cs:xios_video_offset_2c50]
+.check_window_mode:                                     ; 08E79
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
+	je .init_graphics_ccb
+	mov dx, [cs:xios_vram_back_page]
 	mov [es:si + 1], dx
-	jmp near loc_08F5E
+	jmp near .exit_ok
 
-loc_08E8B:                                     ; 08E8B
-	mov [cs:xios_video_flag_2c4d], dl
-	mov [cs:xios_video_offset_2c49], si
-	mov [cs:xios_video_offset_2c4b], es
+.init_graphics_ccb:                                     ; 08E8B
+	mov [cs:xios_graphics_owner_con], dl
+	mov [cs:xios_graphics_gcb_offset], si
+	mov [cs:xios_graphics_gcb_segment], es
 	mov dx, [es:si + 1]
-	mov [cs:xios_video_offset_2c47], dx
+	mov [cs:xios_graphics_saved_buf_seg], dx
 	mov [cs:crt_mode_ah], ah
 	mov dx, 0x4f
 	cmp ah, 2
-	jne loc_08EB3
+	jne .setup_screen_cols
 	mov dx, 0x27
 
-loc_08EB3:                                     ; 08EB3
+.setup_screen_cols:                                     ; 08EB3
 	mov [bx + CCB_MAX_COL], dx
 	inc dx
 	mov [bx + CCB_WRAP_COL], dl
-	call sub_0922F
+	call ccb_acquire_all_locks
 	call rtm_delay_1_tick
-	or byte [bx + CCB_FLAGS], 4
+	or byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	mov byte [bx + 0x70], 0xc
-	mov dx, [cs:xios_video_offset_2c47]
-	mov [cs:xios_video_offset_2c50], dx
-	test byte [bx + CCB_FLAGS], 2
-	jne loc_08EE0
+	mov dx, [cs:xios_graphics_saved_buf_seg]
+	mov [cs:xios_vram_back_page], dx
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
+	jne .setup_display_list
 	mov ah, 3
 	call xios_crt_trigger_ca
-	call sub_08FEE
+	call crt_set_graphics_timings
 
-loc_08EE0:                                     ; 08EE0
+.setup_display_list:                                     ; 08EE0
 	mov es, [cs:xios_sysdat_segment_ptr]
 	xor_si_si                                    ; 08EE5
 	mov dx, 0
 	cmp byte [cs:crt_mode_ah], 1
-	je loc_08EF5
+	je .fill_display_list_loop
 	mov dx, 0x4000
 
-loc_08EF5:                                     ; 08EF5
+.fill_display_list_loop:                                     ; 08EF5
 	mov di, [bx + si]
 	mov_ax_dx                                    ; 08EF7
 	mov cx, 0x23
 
-loc_08EFC:                                     ; 08EFC
+.fill_entry_words:                                     ; 08EFC
 	stosw
 	add ax, strict word 0x10                     ; 08EFD  05 10 00
-	loop loc_08EFC
+	loop .fill_entry_words
 	mov word [es:di], 0x8200
 	inc si
 	inc si
 	inc dx
 	cmp dl, 0x10
-	jb loc_08EF5
+	jb .fill_display_list_loop
 	mov word [es:di], 0x8100
 	mov ax, 0xccc0
-	cmp byte [cs:xios_con_var_2bfb], 0xff
-	jne loc_08F22
+	cmp byte [cs:xios_is_color_display], 0xff
+	jne .setup_palette
 	mov ax, 0x1240
 
-loc_08F22:                                     ; 08F22
+.setup_palette:                                     ; 08F22
 	cmp byte [cs:crt_mode_ah], 2
-	je loc_08F30
+	je .clear_vram_and_done
 	mov al, [bx + 0x7f]
 	ror al, 4
 
-loc_08F30:                                     ; 08F30
+.clear_vram_and_done:                                     ; 08F30
 	lea si, [bx + CCB_PALETTE]
 	mov [si], al
 	mov [si + 8], ah
-	mov ax, [cs:xios_video_offset_2c50]
-	les si, [cs:xios_video_offset_2c49]
+	mov ax, [cs:xios_vram_back_page]
+	les si, [cs:xios_graphics_gcb_offset]
 	mov [es:si + 1], ax
 	mov es, ax
 	mov cx, 0x4000
 	xor_ax_ax                                    ; 08F4B
 	xor_di_di                                    ; 08F4D
 	rep stosw
-	or word [bx + CCB_FLAGS], 0x200
+	or word [bx + CCB_FLAGS], CCB_FLG_CUR_OFF
 	mov bx, [cs:xios4_cur_window_ptr]
-	call sub_08BFB
+	call crt_switch_active_window
 
-loc_08F5E:                                     ; 08F5E
+.exit_ok:                                     ; 08F5E
 	lea bx, [bx + CCB_ACTIVE]
 	mov dx, [cs:xios_sysdat_segment_val]
 	ret
 
 int28_fn_01_char_mode:                  ; 08F67
-	cmp word [cs:xios_video_offset_2c4b], 0
-	je loc_08FDB
+	cmp word [cs:xios_graphics_gcb_segment], 0
+	je .ret
 	call get_cur_process_ccb
-	cmp dl, [cs:xios_video_flag_2c4d]
-	jne loc_08FDB
-	les si, [cs:xios_video_offset_2c49]
-	mov word [cs:xios_video_offset_2c4b], 0
-	mov ax, [cs:xios_video_offset_2c47]
+	cmp dl, [cs:xios_graphics_owner_con]
+	jne .ret
+	les si, [cs:xios_graphics_gcb_offset]
+	mov word [cs:xios_graphics_gcb_segment], 0
+	mov ax, [cs:xios_graphics_saved_buf_seg]
 	mov [es:si + 1], ax
 	mov byte [es:si], 0
-	test byte [bx + CCB_FLAGS], 4
-	je loc_08FDB
-	and byte [bx + CCB_FLAGS], 0xfb
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
+	je .ret
+	and byte [bx + CCB_FLAGS], ~CCB_FLG_WINDOW & 0xff
 	mov byte [bx + 0x70], 0xd
-	call sub_09643
+	call palette_init_default_colors
 	mov ax, [bx + CCB_PALETTE]
 	mov [bx + CCB_CHAR_ATTR], ah
 	mov byte [bx + CCB_ATTR], 8
-	test byte [bx + CCB_FLAGS], 2
-	jne loc_08FBF
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
+	jne .restore_screen_size
 	mov ah, 3
 	call xios_crt_trigger_ca
-	call sub_09001
+	call crt_set_text_timings_and_flip
 %if NUM_VIR_CONS == 1
-	call sub_09079
+	call crt_copy_vram_page_1con
 %endif
 
-loc_08FBF:                                     ; 08FBF
+.restore_screen_size:                                     ; 08FBF
 	mov byte [bx + CCB_WRAP_COL], 0x50
 	mov word [bx + CCB_MAX_COL], 0x4f
 	call crt_esc_E_cls
-	and word [bx + CCB_FLAGS], 0xfdff
-	call sub_0922F
+	and word [bx + CCB_FLAGS], ~CCB_FLG_CUR_OFF & 0xffff
+	call ccb_acquire_all_locks
 	mov bx, [cs:xios4_cur_window_ptr]
-	call sub_08BFB
+	call crt_switch_active_window
 
-loc_08FDB:                                     ; 08FDB
+.ret:                                     ; 08FDB
 	ret
 
 get_cur_process_ccb:                                     ; 08FDC
@@ -3221,26 +3217,26 @@ get_cur_process_ccb:                                     ; 08FDC
 	mov dl, [bx + PD_CNS]
 	jmp near get_ccb_by_index
 
-sub_08FE7:                                     ; 08FE7
+crt_set_display_mode_timings:                                     ; 08FE7
 	cmp byte [cs:bx + 0x70], 0xd
-	je sub_09001
+	je crt_set_text_timings_and_flip
 
-sub_08FEE:                                     ; 08FEE
+crt_set_graphics_timings:                                     ; 08FEE
 	mov word [cs:fdc_param_613c], 0x000f
 	mov word [cs:fdc_param_613e], 0x8723
 	mov si, fdc_dpb_alternate
 	jmp short loc_09012
 
-sub_09001:                                     ; 09001
+crt_set_text_timings_and_flip:                                     ; 09001
 	mov word [cs:fdc_param_613c], 0x0009
 	mov word [cs:fdc_param_613e], 0x8750
 	mov si, fdc_dpb_standard
 
 loc_09012:                                     ; 09012
-	mov ax, [cs:xios_video_offset_2c50]
-	mov dx, [cs:xios_video_seg_2c4e]
-	mov [cs:xios_video_seg_2c4e], ax
-	mov [cs:xios_video_offset_2c50], dx
+	mov ax, [cs:xios_vram_back_page]
+	mov dx, [cs:xios_vram_active_page]
+	mov [cs:xios_vram_active_page], ax
+	mov [cs:xios_vram_back_page], dx
 	push ds
 	push si
 	xor_bp_bp                                    ; 09026
@@ -3252,17 +3248,17 @@ loc_0902B:                                     ; 0902B
 	xor_di_di                                    ; 0902E
 	mov ds, ax
 	mov es, [cs:xios_sysdat_segment_ptr]
-	call sub_09073
+	call vram_copy_1k_words
 	mov_si_bp                                    ; 0903A
 	mov_di_si                                    ; 0903C
 	mov ds, dx
 	mov es, ax
-	call sub_09073
+	call vram_copy_1k_words
 	mov_di_bp                                    ; 09045
 	xor_si_si                                    ; 09047
 	mov ds, [cs:xios_sysdat_segment_ptr]
 	mov es, dx
-	call sub_09073
+	call vram_copy_1k_words
 	add bp, 0x800
 	pop cx
 	loop loc_0902B
@@ -3274,25 +3270,25 @@ loc_0902B:                                     ; 0902B
 	out dx, al
 	mov di, fdc_drive_0_dpb_ptr
 	mov_ax_si                                    ; 09067
-	call sub_09621
+	call crt_dma_make_phys_desc
 	mov ah, 4
 	call xios_crt_trigger_ca
 	pop bx
 	ret
 
-sub_09073:                                     ; 09073
+vram_copy_1k_words:                                     ; 09073
 	mov cx, 0x400
 	rep movsw
 	ret
 
 %if NUM_VIR_CONS == 1
-sub_09079:                                     ; 09079
+crt_copy_vram_page_1con:                                     ; 09079
 	push ds
 	push es
 	push si
 	push di
 	push cx
-	mov ax, [cs:xios_video_d000_seg]
+	mov ax, [cs:xios_vram_base_seg]
 	mov ds, ax
 	mov es, ax
 	mov di, 0x2000
@@ -3313,7 +3309,7 @@ int28_fn_35_write_str:                  ; 09096
 	push cx
 	push si
 	call get_cur_process_ccb
-	test byte [bx + CCB_FLAGS], 8
+	test byte [bx + CCB_FLAGS], CCB_FLG_ATTR_DIRTY
 	je loc_090AA
 	push ds
 	pop es
@@ -3350,11 +3346,11 @@ loc_090CE:                                     ; 090CE
 	inc dx
 	loop loc_090CE
 	pop ds
-	jmp near sub_09334
+	jmp near window_repaint_contents
 
 int28_fn_39_update_screen:              ; 090DC
 	call get_cur_process_ccb
-	jmp near sub_09334
+	jmp near window_repaint_contents
 
 int28_fn_20_def_alt_char:               ; 090E2
 	mov_bp_sp                                    ; 090E2
@@ -3362,7 +3358,7 @@ int28_fn_20_def_alt_char:               ; 090E2
 	mov ch, 2
 	push cx
 	push dx
-	call sub_090F8
+	call vram_upload_font_char
 	pop cx
 	pop dx
 	or ch, 1
@@ -3370,12 +3366,12 @@ int28_fn_52_def_font:                   ; 090F3
 	mov_bp_sp                                    ; 090F3
 	mov bp, [bp + 2]
 
-sub_090F8:                                     ; 090F8
+vram_upload_font_char:                                     ; 090F8
 	xchg si, dx                                  ; 090F8  87 F2
 	xchg di, cx                                  ; 090FA  87 F9
-	call sub_09123
+	call vram_get_row_dest_ptr
 	shl di, 5
-	call sub_09131
+	call vram_copy_16_words
 	mov byte [bx + CCB_ACTIVE], 0
 	ret
 
@@ -3385,21 +3381,21 @@ int28_fn_51_get_font:                   ; 0910A
 	shl cx, 5
 	xchg si, cx                                  ; 09112  87 F1
 	xchg di, dx                                  ; 09114  87 FA
-	call sub_09123
+	call vram_get_row_dest_ptr
 	xchg dx, bp                                  ; 09119  87 D5
-	call sub_09131
+	call vram_copy_16_words
 	mov byte [bx + CCB_ACTIVE], 0
 	ret
 
-sub_09123:                                     ; 09123
+vram_get_row_dest_ptr:                                     ; 09123
 	call get_cur_process_ccb
-	call sub_09220
+	call ccb_acquire_lock
 	push bx
-	mov dx, [cs:xios_video_seg_2c4e]
+	mov dx, [cs:xios_vram_active_page]
 	pop bx
 	ret
 
-sub_09131:                                     ; 09131
+vram_copy_16_words:                                     ; 09131
 	mov cx, 0x10
 	push ds
 	mov ds, bp
@@ -3455,19 +3451,18 @@ int28_fn_31_palette:                    ; 09172
 	rep movsw
 	push cs
 	pop ds
-	test byte [bx + CCB_FLAGS], 2
-	jne loc_091A5
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
+	jne .ret
 	cmp byte [cs:crt_mode_ah], 2
-	jne loc_0919D
+	jne .trigger_ca
 	mov ah, 3
 	call xios_crt_trigger_ca
 
-loc_0919D:                                     ; 0919D
-	call sub_096B8
+.trigger_ca:
+	call palette_load_hardware_regs
 	mov ah, 1
 	call xios_crt_trigger_ca
-
-loc_091A5:                                     ; 091A5
+.ret:
 	ret
 
 ww_pointer:
@@ -3544,7 +3539,7 @@ xios4_fn_19_auxist:
 ww_new_window:
 	push ax                                      ; 00001A76
 	call get_ccb_by_index                               ; 00001A77 (slå vindues-CCB op for konsol)
-	call sub_0922F                               ; 00001A7A
+	call ccb_acquire_all_locks                               ; 00001A7A
 	mov ax, [bx + CCB_WIN_LEFT]                          ; 00001A7D
 	mov [bx + CCB_LAST_TOP_LEFT], ax                          ; 00001A80
 	mov ax, [bx + CCB_WIN_TOP]                          ; 00001A83
@@ -3555,22 +3550,22 @@ ww_new_window:
 	push es                                      ; 00001A90
 	push ds                                      ; 00001A91
 	pop es                                       ; 00001A92
-	call sub_092BC                               ; 00001A93 (beregn vinduesstørrelse)
-	call sub_092D3                               ; 00001A96 (tjek vinduesgrænser)
+	call window_calc_dimensions                               ; 00001A93 (beregn vinduesstørrelse)
+	call window_clamp_to_screen                               ; 00001A96 (tjek vinduesgrænser)
 	call xios4_clip_setup                        ; 00001A99 (genberegn klippekort)
 	pop es                                       ; 00001A9C
 	mov bx, [cs:xios4_cur_window_ptr]            ; 00001A9D
-	call sub_08BFB                               ; 00001AA2
+	call crt_switch_active_window                               ; 00001AA2
 	ret                                          ; 00001AA5
 
 ww_cursor_view:
 	call get_ccb_by_index                               ; 00001AA6
-	call sub_09220                               ; 00001AA9
+	call ccb_acquire_lock                               ; 00001AA9
 	mov [bx + CCB_TRACKING_MODE], dh                          ; 00001AAC
 	mov [bx + 0x40], cx                          ; 00001AAF
-	call sub_092D3                               ; 00001AB2
-	call sub_09334                               ; 00001AB5
-	call sub_08625                               ; 00001AB8
+	call window_clamp_to_screen                               ; 00001AB2
+	call window_repaint_contents                               ; 00001AB5
+	call crt_update_cursor_dispatch                               ; 00001AB8
 	mov byte [bx + CCB_ACTIVE], 0                      ; 00001ABB
 	ret                                          ; 00001ABF
 
@@ -3605,61 +3600,58 @@ io_setblank:
 	mov ax, 0x5001                               ; 00001AEA / 091EE
 	ret                                          ; 00001AED / 091F1
 
-sub_091F2:                                     ; 091F2
+window_check_point_inside:                                     ; 091F2
 	mov ax, [bx + 0x4a]
 	cmp_dl_al                                    ; 091F5
-	jb loc_0920A
+	jb .ret
 	cmp_dh_ah                                    ; 091F9
-	jb loc_0920A
+	jb .ret
 	add al, [bx + CCB_COLS]
 	add ah, [bx + CCB_ROWS]
 	cmp_dl_al                                    ; 09203
-	jae loc_09209
+	jae .cmc
 	cmp_dh_ah                                    ; 09207
 
-loc_09209:                                     ; 09209
+.cmc:
 	cmc
-
-loc_0920A:                                     ; 0920A
+.ret:
 	ret
 
-sub_0920B:                                     ; 0920B
-	or byte [bx + CCB_FLAGS], 0x10
+window_update_clipped_flag:                                     ; 0920B
+	or byte [bx + CCB_FLAGS], CCB_FLG_CLIPPED
 	cmp byte [bx + CCB_ROWS], 0x18
-	jb loc_0921F
+	jb .ret
 	cmp byte [bx + CCB_COLS], 0x50
-	jne loc_0921F
-	xor byte [bx + CCB_FLAGS], 0x10
-
-loc_0921F:                                     ; 0921F
+	jne .ret
+	xor byte [bx + CCB_FLAGS], CCB_FLG_CLIPPED
+.ret:                                     ; 0921F
 	ret
 
-sub_09220:                                     ; 09220
+ccb_acquire_lock:                                     ; 09220
 	mov al, 0xff
 	xchg [bx + CCB_ACTIVE], al
 	test al, al
-	je loc_0922E
+	je .ret
 	call rtm_delay_1_tick
-	jmp short sub_09220
-
-loc_0922E:                                     ; 0922E
+	jmp short ccb_acquire_lock
+.ret:                                     ; 0922E
 	ret
 
-sub_0922F:                                     ; 0922F
+ccb_acquire_all_locks:                                     ; 0922F
 	push bx
 	push cx
 	mov bx, ccb_console_0                        ; Konsol 0 CCB
 	mov cx, NUM_VIR_CONS
 
 loc_09237:                                     ; 09237
-	call sub_09220
+	call ccb_acquire_lock
 	add bx, 0x94
 	loop loc_09237
 	pop cx
 	pop bx
 	ret
 
-sub_09243:                                     ; 09243
+ccb_release_all_locks:                                     ; 09243
 	push bx
 	push cx
 	mov bx, ccb_console_0                        ; Konsol 0 CCB
@@ -3673,7 +3665,7 @@ loc_0924B:                                     ; 0924B
 	pop bx
 	ret
 
-sub_09258:                                     ; 09258
+window_calc_tracking_offset:                                     ; 09258
 	cmp byte [bx + CCB_TRACKING_MODE], 0
 	je loc_09276
 	mov ah, [bx + CCB_COL]
@@ -3702,12 +3694,12 @@ loc_09276:                                     ; 09276
 	mov [bx + 0x46], dx
 	ret
 
-sub_0928E:                                     ; 0928E
+window_zorder_promote_top:                                     ; 0928E
 	mov di, xios4_vir_con_mode_p2
 	mov cx, NUM_VIR_CONS
 	mov_al_dl                                    ; 09294
 	repne scasb
-	jcxz sub_092A5
+	jcxz window_zorder_update_table
 	dec di
 
 loc_0929B:                                     ; 0929B
@@ -3717,7 +3709,7 @@ loc_0929B:                                     ; 0929B
 	loop loc_0929B
 	mov [di], dl
 
-sub_092A5:                                     ; 092A5
+window_zorder_update_table:                                     ; 092A5
 	mov di, window_zorder_list
 	mov al, [bx + 0x4e]
 	mov ah, 0
@@ -3734,7 +3726,7 @@ loc_092B6:                                     ; 092B6
 	loop loc_092B0
 	ret
 
-sub_092BC:                                     ; Beregn vinduesstørrelse (bredde/højde i dx)
+window_calc_dimensions:                                     ; Beregn vinduesstørrelse (bredde/højde i dx)
 	mov al, [bx + 0x39]
 	sub al, [bx + 0x37]
 	cbw                                          ; 092C2
@@ -3747,7 +3739,7 @@ sub_092BC:                                     ; Beregn vinduesstørrelse (bredd
 	mov [bx + CCB_COLS], ax
 	ret
 
-sub_092D3:                                     ; Tjek vinduesgrænser mod skærmstørrelse
+window_clamp_to_screen:                                     ; Tjek vinduesgrænser mod skærmstørrelse
 	mov dx, [bx + 0x40]
 	mov al, [bx + CCB_SCROLL_BOTTOM]
 	sub al, [bx + CCB_ROWS]
@@ -3835,7 +3827,7 @@ crt_calc_screen_offset:                                     ; 092FE
 	add_di_di                                    ; 09308
 	ret
 
-sub_0930B:                                     ; 0930B
+window_zorder_lookup:                                     ; 0930B
 	push bx
 	mov bx, window_zorder_list
 	xlatb
@@ -3892,7 +3884,7 @@ sub_x4_clip_repaint_entry:
 .loc_28c2:
 	mov_bx_di
 	sub_bx_dx
-	call sub_0930B
+	call window_zorder_lookup
 	cmp al, [cs:.xios4_clip_v2]
 	jnz .loc_28ea
 	cmp dx, [cs:.xios4_clip_v1]
@@ -3955,8 +3947,8 @@ xios_clip_repaint_windows:
 	push cx
 	mov dl, [si]
 	call get_ccb_by_index
-	call sub_093A3
-	call sub_09334
+	call window_draw_borders
+	call window_repaint_contents
 	pop cx
 	pop si
 	inc si
@@ -3970,10 +3962,10 @@ xios_clip_repaint_windows:
 	ret
 %endif
 
-sub_09334:                                     ; 09334
+window_repaint_contents:                                     ; 09334
 	test byte [cs:xios4_window_clip_flag], 0xff
 	jne loc_093A2
-	call sub_09258
+	call window_calc_tracking_offset
 	shl dx, 1
 	mov si, [bx + 0x58]
 	push ds
@@ -4010,7 +4002,7 @@ loc_0934E:                                     ; 0934E
 loc_09380:                                     ; 09380
 	test byte [cs:bx + 0x6b], 2
 	je loc_0939B
-	cmp byte [cs:xios_con_var_2bfb], 0xff
+	cmp byte [cs:xios_is_color_display], 0xff
 	jne loc_0939B
 
 loc_0938F:                                     ; 0938F
@@ -4035,7 +4027,7 @@ loc_093A0:                                     ; 093A0
 loc_093A2:                                     ; 093A2
 	ret
 
-sub_093A3:
+window_draw_borders:
 	mov word [bx + 0x5a], 0xffff
 	mov dx, [bx + CCB_WIN_LEFT]
 	mov cx, [bx + CCB_COLS]
@@ -4043,7 +4035,7 @@ sub_093A3:
 	js loc_093BE
 	mov byte [cs:xios_char_mode_byte], 0xac
 	mov ax, 0xccbc
-	call sub_093F6
+	call window_draw_horiz_border
 
 loc_093BE:                                     ; 093BE
 	mov dh, [bx + 0x39]
@@ -4052,7 +4044,7 @@ loc_093BE:                                     ; 093BE
 	je loc_093D4
 	mov byte [cs:xios_char_mode_byte], 0xd0
 	mov ax, 0xdad5
-	call sub_093F6
+	call window_draw_horiz_border
 
 loc_093D4:                                     ; 093D4
 	mov dx, [bx + CCB_WIN_LEFT]
@@ -4060,7 +4052,7 @@ loc_093D4:                                     ; 093D4
 	dec dl
 	js loc_093E3
 	mov al, 0xb5
-	call sub_09457
+	call window_draw_vert_border
 
 loc_093E3:                                     ; 093E3
 	mov dl, [bx + CCB_WIN_TOP]
@@ -4068,13 +4060,13 @@ loc_093E3:                                     ; 093E3
 	cmp dl, 0x50
 	je loc_093F2
 	mov al, 0xca
-	call sub_09457
+	call window_draw_vert_border
 
 loc_093F2:                                     ; 093F2
-	call sub_09473
+	call window_draw_title
 	ret
 
-sub_093F6:                                     ; 093F6
+window_draw_horiz_border:                                     ; 093F6
 	push dx
 	push cx
 	push ax
@@ -4106,7 +4098,7 @@ loc_0940C:                                     ; 0940C
 	mov al, ':'
 	call xios_clip_draw_char
 	mov [bx + 0x5a], si
-	call sub_09473
+	call window_draw_title
 	mov al, 0x20
 	call xios_clip_draw_char
 	pop cx
@@ -4133,7 +4125,7 @@ loc_09454:                                     ; 09454
 	pop dx
 	ret
 
-sub_09457:                                     ; 09457
+window_draw_vert_border:                                     ; 09457
 	push cx
 	push ax
 	call crt_calc_screen_offset
@@ -4156,7 +4148,7 @@ xios_clip_draw_char:
 	push ax
 	mov al, [cs:si + xios4_clip_map]
 	inc si
-	call sub_0930B
+	call window_zorder_lookup
 	cmp al, [bx + CCB_CON_IDX]
 	pop ax
 	jnz .loc_2a93
@@ -4173,7 +4165,7 @@ xios_clip_draw_char:
 	inc di
 	ret
 %endif
-sub_09473:                                     ; 09473
+window_draw_title:                                     ; 09473
 	mov es, [cs:xios_sysdat_segment_ptr]
 	mov si, [bx + 0x5c]
 	mov si, [si]
@@ -4253,7 +4245,7 @@ mouse_fn_read:
 	popf
 	ret
 
-sub_094EB:                                     ; 094EB
+mouse_process_packet_byte:                                     ; 094EB
 	mov_ah_al                                    ; 094EB
 	cmp byte [cs:mouse_counter], 5
 	jne loc_0952E
@@ -4323,30 +4315,29 @@ loc_0955D:                                     ; 0955D
 
 loc_0957F:                                     ; 0957F
 	mov byte [cs:mouse_counter], 5
-	jmp near sub_094EB
+	jmp near mouse_process_packet_byte
 
-sub_09588:                                     ; 09588
+crt_check_cursor_blink_tick:                                     ; 09588
 	mov bx, [cs:xios4_cur_window_ptr]
 	cmp byte [bx + CCB_COLOR_MODE], 0
-	je loc_095CA
-	test byte [bx + CCB_FLAGS], 4
-	jne loc_095CA
+	je .ret
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
+	jne .ret
 	cmp byte [cs:kbd_disabled_flag], 0xff
-	je loc_095CA
+	je .ret
 	dec word [cs:kbd_buf_tail]
-	jne loc_095CA
+	jne .ret
 	mov byte [cs:kbd_disabled_flag], 0xff
-	call sub_08972
+	call crt_swap_active_line_buffers
 	mov ax, xios_crt_line_entry_61ec
-	call sub_09621
+	call crt_dma_make_phys_desc
 	xor byte [cs:fdc_drive_flags_0], 0x80
 mov word [cs:fdc_drive_cyl_0], 0xffff
 	mov word [bx + CCB_ESC_HANDLER], crt_esc_dispatch_reset
-
-loc_095CA:                                     ; 095CA
+.ret:                                     ; 095CA
 	ret
 
-sub_095CB:                                     ; 095CB
+crt_reset_blink_state:                                     ; 095CB
 	push bx
 	mov bx, [cs:xios4_cur_window_ptr]
 	cmp byte [bx + CCB_COLOR_MODE], 0
@@ -4360,7 +4351,7 @@ loc_095DA:                                     ; 095DA
 	push dx
 	xor byte [cs:fdc_drive_flags_0], 0x80
 	mov bx, [cs:xios4_cur_window_ptr]
-	call sub_08625
+	call crt_update_cursor_dispatch
 	pop dx
 	pop bx
 	mov byte [cs:kbd_disabled_flag], 0
@@ -4387,14 +4378,14 @@ loc_0960B:                                     ; 0960B
 	mov word [cs:fdc_drive_type_0], 0x900
 	ret
 	mov dx, [cs:xios_sysdat_segment_ptr]
-	jmp short sub_09623
+	jmp short crt_dma_store_phys_desc
 
-sub_09621:                                     ; 09621
+crt_dma_make_phys_desc:                                     ; 09621
 	mov dx, cs
 
-sub_09623:                                     ; 09623
+crt_dma_store_phys_desc:                                     ; 09623
 	cld
-	call sub_09630
+	call crt_calc_20bit_phys_addr
 	mov dx, cs
 	mov es, dx
 	stosw
@@ -4402,7 +4393,7 @@ sub_09623:                                     ; 09623
 	stosw
 	ret
 
-sub_09630:                                     ; 09630
+crt_calc_20bit_phys_addr:                                     ; 09630
 	mov cl, 4
 	rol dx, cl
 	mov_cx_dx                                    ; 09634
@@ -4412,8 +4403,8 @@ sub_09630:                                     ; 09630
 	adc cx, 0
 	ret
 
-sub_09643:                                     ; 09643
-	cmp byte [cs:xios_con_var_2bfb], 0xff
+palette_init_default_colors:                                     ; 09643
+	cmp byte [cs:xios_is_color_display], 0xff
 	je loc_09660
 	push es
 	push ds
@@ -4427,8 +4418,8 @@ sub_09643:                                     ; 09643
 	ret
 
 loc_09660:                                     ; 09660
-	mov al, [cs:xios_con_var_2bfe]
-	mov ah, [cs:xios_con_var_2bff]
+	mov al, [cs:xios_default_fg_color]
+	mov ah, [cs:xios_default_bg_color]
 	mov [bx + CCB_PALETTE], ax
 	mov word [bx + 0x81], 2
 	ret
@@ -4437,11 +4428,11 @@ mouse_cursor_char_table:
 	db 0x48, 0x40, 0x00, 0x04, 0x08, 0x0C, 0x44, 0x4C, 0x80, 0x84, 0x88, 0x8C, 0xC0, 0xC4, 0xC8, 0xCC
 	db 0x0C, 0xC0, 0x00, 0x0C, 0x0C, 0x0C, 0xCC, 0x0C, 0xC0, 0xC0, 0xCC, 0x0C, 0xC0, 0xC0, 0xC0, 0xCC
 
-sub_09694:                                     ; 09694
-	cmp byte [cs:xios_con_var_2bfb], 0xff
-	je loc_096B7
-	test byte [bx + CCB_FLAGS], 4
-	jne loc_096B7
+palette_translate_mono_color:                                     ; 09694
+	cmp byte [cs:xios_is_color_display], 0xff
+	je .ret
+	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
+	jne .ret
 	push es
 	push di
 	push cx
@@ -4455,18 +4446,17 @@ sub_09694:                                     ; 09694
 	pop cx
 	pop di
 	pop es
-
-loc_096B7:                                     ; 096B7
+.ret:                                     ; 096B7
 	ret
 
-sub_096B8:                                     ; 096B8
+palette_load_hardware_regs:                                     ; 096B8
 	lea si, [bx + CCB_PALETTE]
 	mov dx, PORT_PALETTE_BASE
 	mov cx, 0x10
 
 loc_096C2:                                     ; 096C2
 	lodsb
-	call sub_09694
+	call palette_translate_mono_color
 	out dx, al
 	inc dx
 	inc dx
@@ -4476,9 +4466,9 @@ loc_096C2:                                     ; 096C2
 	loop loc_096C2
 	ret
 
-sub_096CF:                                     ; 096CF
-	test byte [bx + CCB_FLAGS], 2
-	jne loc_096F0
+crt_load_cursor_hardware_regs:                                     ; 096CF
+	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
+	jne .ret
 	mov al, [bx + 0x75]
 	mov [cs:fdc_dpb_std_al0], al
 	mov al, [bx + 0x74]
@@ -4487,8 +4477,7 @@ sub_096CF:                                     ; 096CF
 	mov [cs:fdc_dpb_current_format], cx
 	mov ah, 4
 	call xios_crt_trigger_ca
-
-loc_096F0:                                     ; 096F0
+.ret:                                     ; 096F0
 	ret
 
 ; =============================================================================
@@ -4554,47 +4543,47 @@ xios_ccb_table:
 	dw ccb_console_0, ccb_console_1, ccb_console_2, ccb_console_3
 %endif
 
-xios_con_var_2bfb:
+xios_is_color_display:
 	db 0x00
-xios_con_var_2bfc:
+xios_font_height_scanlines:
 	db 0x09
-xios_con_var_2bfd:
+xios_crt_50hz_60hz_flag:
 	db 0x01
-xios_con_var_2bfe:
+xios_default_fg_color:
 	db 0xc0
-xios_con_var_2bff:
+xios_default_bg_color:
 	db 0xc0
-xios_con_var_2c00:
+xios_scroll_ccb_ptr:
 	dw 0x0000
-xios_con_var_2c02:
+xios_scroll_row_start:
 	dw 0x0000
-xios_con_var_2c04:
+xios_scroll_row_end:
 	dw 0x0000
-xios_con_var_2c06:
+xios_scroll_dir_up_flag:
 	db 0x00
-xios_con_var_2c07:
+xios_scroll_step_counter:
 	db 0xff
-xios_con_var_2c08:
+xios_crt_font_alt_flag:
 	db 0x01
-xios_con_var_2c09:
+xios_scroll_temp_offset:
 	dw 0x0000
-xios_con_buf_2c0b:
+xios_scroll_param_block:
 	times 8 db 0
-xios_con_buf_2c13:
+xios_scroll_line_save_buf:
 	times 50 db 0
-xios_video_d000_seg:
+xios_vram_base_seg:
 	dw 0xd000
-xios_video_offset_2c47:
+xios_graphics_saved_buf_seg:
 	dw 0x0000
-xios_video_offset_2c49:
+xios_graphics_gcb_offset:
 	dw 0x0000
-xios_video_offset_2c4b:
+xios_graphics_gcb_segment:
 	dw 0x0000
-xios_video_flag_2c4d:
+xios_graphics_owner_con:
 	db 0x00
-xios_video_seg_2c4e:
+xios_vram_active_page:
 	dw 0xd000
-xios_video_offset_2c50:
+xios_vram_back_page:
 	dw 0x0000
 
 kbd_translate_table:
@@ -4690,7 +4679,7 @@ io_read:
 loc_09984:                                     ; 09984
 	mov al, [bp + 0xe]
 	mov bx, fdc_param_3785
-	call sub_09CD7
+	call fdc_inc_stats_counter
 	mov al, [bp + 0xe]
 	mov_cl_al                                    ; 09990
 	mov bx, fdc_scratch_3932
@@ -4732,7 +4721,7 @@ loc_099B0:                                     ; 099B0
 	mov [cs:fdc_param_3777], al
 	mov ax, [bp + 8]
 	mov bx, [bp + 6]
-	call sub_0A222
+	call fdc_calc_phys_address_pair
 mov word [cs:fdc_param_373b], 0xae66
 	pop ax
 	and al, 0xf0
@@ -4752,14 +4741,14 @@ loc_09A11:                                     ; 09A11
 	jae loc_09A29
 	mov al, [bp + 0xe]
 	mov bx, fdc_param_3805
-	call sub_09CD7
+	call fdc_inc_stats_counter
 	inc byte [cs:fdc_param_377e]
 	jmp short loc_09A11
 
 loc_09A29:                                     ; 09A29
 	mov al, [bp + 0xe]
 	mov bx, fdc_param_37c5
-	call sub_09CD7
+	call fdc_inc_stats_counter
 
 loc_09A32:                                     ; 09A32
 	mov al, [cs:fdc_param_3756]
@@ -4776,7 +4765,7 @@ io_write:
 loc_09A44:                                     ; 09A44
 	mov al, [bp + 0xe]
 	mov bx, fdc_param_37a5
-	call sub_09CD7
+	call fdc_inc_stats_counter
 	mov al, [bp + 0xe]
 	mov_cl_al                                    ; 09A50
 	mov bx, fdc_scratch_3932
@@ -4818,7 +4807,7 @@ loc_09A70:                                     ; 09A70
 	mov [cs:fdc_param_3777], al
 	mov ax, [bp + 8]
 	mov bx, [bp + 6]
-	call sub_0A222
+	call fdc_calc_phys_address_pair
 mov word [cs:fdc_param_373b], 0x76a6
 	pop ax
 	and al, 0xf0
@@ -4838,14 +4827,14 @@ loc_09AD1:                                     ; 09AD1
 	jae loc_09AE9
 	mov al, [bp + 0xe]
 	mov bx, fdc_param_3825
-	call sub_09CD7
+	call fdc_inc_stats_counter
 	inc byte [cs:fdc_param_377e]
 	jmp short loc_09AD1
 
 loc_09AE9:                                     ; 09AE9
 	mov al, [bp + 0xe]
 	mov bx, fdc_param_37e5
-	call sub_09CD7
+	call fdc_inc_stats_counter
 
 loc_09AF2:                                     ; 09AF2
 	mov al, [cs:fdc_param_3757]
@@ -4862,7 +4851,7 @@ fdc_op_2f5e:
 	inc word [bp + 0xa]
 	mov byte [cs:fdc_param_3781], 1
 	mov ah, [bp + 0xe]
-	call sub_09D1B
+	call fdc_select_drive_unit
 	mov byte [cs:fdc_param_3767], 0
 
 loc_09B13:                                     ; 09B13
@@ -4876,7 +4865,7 @@ loc_09B13:                                     ; 09B13
 	mov [cs:fdc_param_3778], ax
 	sub_dx_ax                                    ; 09B28
 	push dx
-	call sub_09B59
+	call fdc_exec_command_check
 	pop dx
 	jb loc_09B4C
 	mov [bp + 0xf], dl
@@ -4887,18 +4876,18 @@ loc_09B13:                                     ; 09B13
 
 loc_09B44:                                     ; 09B44
 	mov [cs:fdc_param_3778], dx
-	call sub_09B59
+	call fdc_exec_command_check
 
 loc_09B4C:                                     ; 09B4C
 	mov ah, [bp + 0xe]
-	call sub_09DBB
+	call fdc_load_drive_timing_byte
 	mov byte [cs:fdc_param_3781], 0
 	ret
 
-sub_09B59:                                     ; 09B59
+fdc_exec_command_check:                                     ; 09B59
 	call xios_fdc_test_busy
 	jae loc_09B62
-	call sub_09CC9
+	call fdc_set_error_flags
 	ret
 
 loc_09B62:                                     ; 09B62
@@ -4917,7 +4906,7 @@ loc_09B7E:                                     ; 09B7E
 	and [cs:fdc_param_377c], ax
 	call xios_fdc_restore_track0
 	jae loc_09B8E
-	call sub_09CC9
+	call fdc_set_error_flags
 	ret
 
 loc_09B8E:                                     ; 09B8E
@@ -4927,10 +4916,10 @@ loc_09B8E:                                     ; 09B8E
 	mov [cs:fdc_param_377a], ax
 	mov dx, PORT_FDC_DATA
 	mov si, fdc_param_375b
-	call sub_0A1E2
+	call fdc_setup_dma_transfer_size
 	call fdc_seek_track
 	jae loc_09BF2
-	call sub_09CC9
+	call fdc_set_error_flags
 	ret
 
 loc_09BB0:                                     ; 09BB0
@@ -4944,7 +4933,7 @@ loc_09BB0:                                     ; 09BB0
 	mov [cs:fdc_param_377a], ax
 	mov dx, PORT_FDC_DATA
 	mov si, fdc_param_375b
-	call sub_0A1E2
+	call fdc_setup_dma_transfer_size
 	and byte [cs:fdc_param_3768], 8
 	jne loc_09BE9
 	test word [bp + 0xc], 1
@@ -4953,7 +4942,7 @@ loc_09BB0:                                     ; 09BB0
 loc_09BE9:                                     ; 09BE9
 	call xios_fdc_step_in
 	jae loc_09BF2
-	call sub_09CC9
+	call fdc_set_error_flags
 	ret
 
 loc_09BF2:                                     ; 09BF2
@@ -4991,19 +4980,19 @@ loc_09C52:                                     ; 09C52
 	push cx
 	cmp cx, 5
 	jne loc_09C65
-	call sub_09E25
+	call fdc_set_motor_enable
 	call fdc_seek_track
 	jae loc_09C65
 	pop cx
-	call sub_09CC9
+	call fdc_set_error_flags
 	ret
 
 loc_09C65:                                     ; 09C65
 	cli
-	call sub_09DD0
+	call fdc_seek_track_zero
 	sti
 	xor_al_al                                    ; 09C6A
-	call sub_0A257
+	call fdc_wait_dma_channel_ready
 	xor_al_al                                    ; 09C6F
 	call xios_dma_chan_ctrl
 	mov ah, 4
@@ -5011,13 +5000,13 @@ loc_09C65:                                     ; 09C65
 	call xios_dma_mask_reg
 	mov si, fdc_param_375b
 	xor_al_al                                    ; 09C7E
-	call sub_0A23C
+	call fdc_send_dma_param_block
 cmp word [cs:fdc_param_373b], 0xae66
 	jne loc_09C9F
 	call xios_fdc_cmd_read_sector
 	mov al, 0
-	call sub_0A276
-	call sub_09FA0
+	call fdc_release_dma_channel
+	call fdc_check_status_register
 	mov bx, fdc_param_3805
 	jb loc_09CB2
 	jmp near loc_09CC4
@@ -5025,15 +5014,15 @@ cmp word [cs:fdc_param_373b], 0xae66
 loc_09C9F:                                     ; 09C9F
 	call xios_fdc_read_track_reg
 	mov al, 0
-	call sub_0A276
-	call sub_09FC5
+	call fdc_release_dma_channel
+	call fdc_check_completion_status
 	mov bx, fdc_param_3825
 	jb loc_09CB2
 	jmp near loc_09CC4
 
 loc_09CB2:                                     ; 09CB2
 	mov al, [bp + 0xe]
-	call sub_09CD7
+	call fdc_inc_stats_counter
 	inc byte [cs:fdc_param_377e]
 	pop cx
 	dec cx
@@ -5049,27 +5038,26 @@ loc_09CC7:                                     ; 09CC7
 	stc
 	ret
 
-sub_09CC9:                                     ; 09CC9
+fdc_set_error_flags:                                     ; 09CC9
 	mov byte [cs:fdc_param_3756], 1
 	mov byte [cs:fdc_param_3757], 1
 	stc
 	ret
 
-sub_09CD7:                                     ; 09CD7
+fdc_inc_stats_counter:                                     ; 09CD7
 	mov_cl_al                                    ; 09CD7
 	mov ax, 1
 	shl ax, cl
 	test [cs:fdc_param_377f], ax
-	je loc_09CED
+	je .ret
 	shl cl, 1
 	xor_ch_ch                                    ; 09CE7
 	mov_si_cx                                    ; 09CE9
 	inc word [bx + si]
-
-loc_09CED:                                     ; 09CED
+.ret:                                     ; 09CED
 	ret
 
-sub_09CEE:                                     ; 09CEE
+fdc_clear_stats_counters:                                     ; 09CEE
 	mov cl, [bp + 0xe]
 	mov_al_cl                                    ; 09CF1
 	mov ax, 1
@@ -5095,7 +5083,7 @@ loc_09D13:                                     ; 09D13
 loc_09D1A:                                     ; 09D1A
 	ret
 
-sub_09D1B:                                     ; 09D1B
+fdc_select_drive_unit:                                     ; 09D1B
 	cli
 	push ax
 	call dpc_reserve_fdc
@@ -5124,14 +5112,13 @@ fdc_fcr_setup:                                 ; 09D4E
 	mov dx, PORT_FDC_CTRL
 	out dx, al
 	cmp ch, 0
-	jne loc_09D61
+	jne .ret
 	mov dx, 0x3c
 	mov cl, 0x8d
 	pusha                                        ; 09D5C  60
 	call rtm_timer_wait2
 	popa                                         ; 09D60  61
-
-loc_09D61:                                     ; 09D61
+.ret:                                     ; 09D61
 	ret
 
 ; -----------------------------------------------------------------------------
@@ -5153,9 +5140,9 @@ fdc_motor_timeout_tick:
 	pop bx
 	jb loc_09D89
 	mov ah, 0
-	call sub_09DA4
+	call fdc_deselect_drive_unit
 	mov ah, 1
-	call sub_09DA4
+	call fdc_deselect_drive_unit
 
 loc_09D89:                                     ; 09D89
 	mov byte [cs:xt_door], 0xff
@@ -5168,7 +5155,7 @@ loc_09D89:                                     ; 09D89
 loc_09DA3:                                     ; 09DA3
 	ret
 
-sub_09DA4:                                     ; 09DA4
+fdc_deselect_drive_unit:                                     ; 09DA4
 	mov al, 0xfd
 	and ah, 1
 	je loc_09DAD
@@ -5181,7 +5168,7 @@ loc_09DAD:                                     ; 09DAD
 	out dx, al
 	ret
 
-sub_09DBB:                                     ; 09DBB
+fdc_load_drive_timing_byte:                                     ; 09DBB
 	cli
 	mov bx, xios_crt_table_4256
 	mov al, [bx + 0x14]
@@ -5189,11 +5176,11 @@ sub_09DBB:                                     ; 09DBB
 	sti
 	ret
 
-sub_09DC8:                                     ; 09DC8
+fdc_recalibrate_all_drives:                                     ; 09DC8
 	cmp byte [cs:fdc_param_3781], 1
 	je loc_09E04
 
-sub_09DD0:                                     ; 09DD0
+fdc_seek_track_zero:                                     ; 09DD0
 	test byte [cs:fdc_scratch_3932], 0xf
 	je loc_09DE6
 	mov di, dph_drive_a
@@ -5223,21 +5210,20 @@ loc_09E04:                                     ; 09E04
 
 xios_fdc_select_drive:                         ; 09E05
 	test ah, al
-	je loc_09E24
+	je .ret
 	mov dx, PORT_FDC_CTRL
 	out dx, al
 	mov dx, PORT_FDC_CMD
 	in al, dx
 	test al, 0x80
-	je loc_09E24
+	je .ret
 	mov byte [cs:xt_door], 0xff
 	mov byte [di + 5], 0xff
 	xor [cs:fdc_param_376c], ah
-
-loc_09E24:                                     ; 09E24
+.ret:                                     ; 09E24
 	ret
 
-sub_09E25:                                     ; 09E25
+fdc_set_motor_enable:                                     ; 09E25
 	mov ah, 0xfd
 	cmp byte [bp + 0xe], 0
 	je loc_09E2F
@@ -5272,10 +5258,9 @@ xios_fdc_restore_track0:                       ; 09E48
 loc_09E6A:                                     ; 09E6A
 	clc
 	test byte [cs:fdc_param_3782], 0x10
-	je loc_09E74
+	je .ret
 	stc
-
-loc_09E74:                                     ; 09E74
+.ret:                                     ; 09E74
 	ret
 
 ; -----------------------------------------------------------------------------
@@ -5317,15 +5302,14 @@ loc_09E98:                                     ; 09E98
 	test byte [cs:fdc_param_3782], 0x99
 	clc
 	pop cx
-	je loc_09EC9
+	je .ret
 	mov byte [cs:bx + fdc_param_3771], 0xff
 	push cx
-	call sub_09E25
+	call fdc_set_motor_enable
 	pop cx
 	loop loc_09E78
 	stc
-
-loc_09EC9:                                     ; 09EC9
+.ret:                                     ; 09EC9
 	ret
 
 xios_fdc_step_in:                              ; 09ECA
@@ -5338,12 +5322,11 @@ xios_fdc_step_in:                              ; 09ECA
 	inc byte [cs:bx + fdc_param_3771]
 	test byte [cs:fdc_param_3782], 0x99
 	clc
-	je loc_09EF2
+	je .ret
 	mov byte [cs:bx + fdc_param_3771], 0xff
 	call xios_fdc_restore_track0
 	call fdc_seek_track
-
-loc_09EF2:                                     ; 09EF2
+.ret:                                     ; 09EF2
 	ret
 
 xios_fdc_cmd_read_sector:                      ; 09EF3
@@ -5428,20 +5411,19 @@ loc_09F70:                                     ; 09F70
 	call rtm_call_helper
 
 loc_09F92:                                     ; 09F92
-	jmp near loc_0AF3E
+	jmp near xios_isr_exit_dispatch
 
 xios_fdc_test_busy:                            ; 09F95
 	mov dx, PORT_FDC_CMD
 	in al, dx
 	and al, 0x81
 	clc
-	je loc_09F9F
+	je .ret
 	stc
-
-loc_09F9F:                                     ; 09F9F
+.ret:                                     ; 09F9F
 	ret
 
-sub_09FA0:                                     ; 09FA0
+fdc_check_status_register:                                     ; 09FA0
 	mov byte [cs:fdc_param_3756], 0
 	mov al, [cs:fdc_param_3782]
 	test al, 0xbf
@@ -5453,12 +5435,12 @@ sub_09FA0:                                     ; 09FA0
 
 loc_09FB8:                                     ; 09FB8
 	mov bx, fdc_param_3845
-	call sub_09CEE
+	call fdc_clear_stats_counters
 	inc byte [cs:fdc_param_3756]
 	stc
 	ret
 
-sub_09FC5:                                     ; 09FC5
+fdc_check_completion_status:                                     ; 09FC5
 	mov byte [cs:fdc_param_3757], 0
 	mov al, [cs:fdc_param_3782]
 	test al, 0xff
@@ -5470,7 +5452,7 @@ sub_09FC5:                                     ; 09FC5
 
 loc_09FDD:                                     ; 09FDD
 	mov bx, fdc_param_3865
-	call sub_09CEE
+	call fdc_clear_stats_counters
 	mov byte [cs:fdc_param_3757], 1
 	mov al, [cs:fdc_param_3782]
 	test al, 0x40
@@ -5485,7 +5467,7 @@ int28_fn_05_recalibrate:                ; 09FF9
 	mov byte [cs:fdc_param_3781], 1
 	mov_bp_sp                                    ; 09FFF
 	mov ah, [bp + 0x14]
-	call sub_09D1B
+	call fdc_select_drive_unit
 	mov al, 0xc
 	and al, 0xfb
 
@@ -5505,7 +5487,7 @@ int28_fn_08_step_in:                    ; 0A017
 	mov byte [cs:fdc_param_3781], 1
 	mov_bp_sp                                    ; 0A01D
 	mov ah, [bp + 0x14]
-	call sub_09D1B
+	call fdc_select_drive_unit
 	mov al, 0x5c
 	and al, 0xfb
 	mov dx, PORT_FDC_CMD
@@ -5521,17 +5503,17 @@ int28_fn_10_write_track:                ; 0A034
 	mov_bp_sp                                    ; 0A03A
 	mov ax, [bp + 0xc]
 	mov bx, [bp + 0xa]
-	call sub_0A222
+	call fdc_calc_phys_address_pair
 mov word [cs:fdc_param_373b], 0x76a6
 	xor_al_al                                    ; 0A04C
-	call sub_0A257
+	call fdc_wait_dma_channel_ready
 	xor_al_al                                    ; 0A051
 	call xios_dma_chan_ctrl
 	mov ah, 4
 	xor_al_al                                    ; 0A058
 	call xios_dma_mask_reg
 	mov ah, [bp + 0x14]
-	call sub_09D1B
+	call fdc_select_drive_unit
 	mov byte [cs:fdc_param_3757], 1
 	call xios_fdc_test_busy
 	jae loc_0A071
@@ -5541,7 +5523,7 @@ loc_0A071:                                     ; 0A071
 	mov ax, [bp + 0xe]
 	mov dx, PORT_FDC_DATA
 	mov si, fdc_param_375b
-	call sub_0A1EC
+	call fdc_setup_dma_descriptor
 	mov byte [cs:fdc_param_376b], 0
 	mov byte [cs:fdc_param_3769], 0
 	mov byte [cs:fdc_param_376a], 0
@@ -5552,13 +5534,13 @@ loc_0A071:                                     ; 0A071
 loc_0A09B:                                     ; 0A09B
 	mov si, fdc_param_375b
 	xor_al_al                                    ; 0A09E
-	call sub_0A23C
+	call fdc_send_dma_param_block
 	mov al, 0xf4
 	call xios_fdc_send_cmd_wait
 
 loc_0A0A8:                                     ; 0A0A8
 	xor_al_al                                    ; 0A0A8
-	call sub_0A276
+	call fdc_release_dma_channel
 	jmp near loc_0A13C
 
 xios_fdc_send_cmd_wait:                        ; 0A0B0
@@ -5575,17 +5557,17 @@ int28_fn_11_read_track:                 ; 0A0BF
 	mov_bp_sp                                    ; 0A0C5
 	mov ax, [bp + 0xc]
 	mov bx, [bp + 0xa]
-	call sub_0A222
+	call fdc_calc_phys_address_pair
 mov word [cs:fdc_param_373b], 0xae66
 	xor_al_al                                    ; 0A0D7
-	call sub_0A257
+	call fdc_wait_dma_channel_ready
 	xor_al_al                                    ; 0A0DC
 	call xios_dma_chan_ctrl
 	mov ah, 4
 	xor_al_al                                    ; 0A0E3
 	call xios_dma_mask_reg
 	mov ah, [bp + 0x14]
-	call sub_09D1B
+	call fdc_select_drive_unit
 	mov byte [cs:fdc_param_3757], 1
 	call xios_fdc_test_busy
 	jae loc_0A0FC
@@ -5595,7 +5577,7 @@ loc_0A0FC:                                     ; 0A0FC
 	mov ax, [bp + 0xe]
 	mov dx, PORT_FDC_DATA
 	mov si, fdc_param_375b
-	call sub_0A1EC
+	call fdc_setup_dma_descriptor
 	mov byte [cs:fdc_param_376b], 0
 	mov byte [cs:fdc_param_3769], 0
 	mov byte [cs:fdc_param_376a], 0
@@ -5606,19 +5588,19 @@ loc_0A0FC:                                     ; 0A0FC
 loc_0A126:                                     ; 0A126
 	mov si, fdc_param_375b
 	xor_al_al                                    ; 0A129
-	call sub_0A23C
+	call fdc_send_dma_param_block
 	mov al, 0xe4
 	call xios_fdc_send_cmd_wait
 
 loc_0A133:                                     ; 0A133
 	xor_al_al                                    ; 0A133
-	call sub_0A276
+	call fdc_release_dma_channel
 	jmp near loc_0A13C
 	ret
 
 loc_0A13C:                                     ; 0A13C
 	mov ah, [bp + 0x14]
-	call sub_09DBB
+	call fdc_load_drive_timing_byte
 	mov al, [cs:fdc_param_3782]
 	mov byte [cs:fdc_param_3781], 0
 	ret
@@ -5635,7 +5617,7 @@ fdc_dma_buffer_ptr_35b7:
 	db 0x00, 0x00                                ; 0A157  ..
 
 loc_0A159:                                     ; 0A159
-	call sub_0A17F
+	call fdc_calc_dma_buffer_offset
 	push es
 	les di, [bp + 6]
 	xor_si_si                                    ; 0A160
@@ -5648,7 +5630,7 @@ loc_0A159:                                     ; 0A159
 	ret
 
 loc_0A16C:                                     ; 0A16C
-	call sub_0A17F
+	call fdc_calc_dma_buffer_offset
 	push es
 	mov es, bx
 	xor_di_di                                    ; 0A172
@@ -5660,7 +5642,7 @@ loc_0A16C:                                     ; 0A16C
 	xor_ax_ax                                    ; 0A17C
 	ret
 
-sub_0A17F:                                     ; 0A17F
+fdc_calc_dma_buffer_offset:                                     ; 0A17F
 	mov bx, [bp + 0xc]
 	mov cl, 3
 	shl bx, cl
@@ -5682,7 +5664,7 @@ fdc_dma_buffer_ptr_3602:
 	inc ax
 
 loc_0A1A4:                                     ; 0A1A4
-	call sub_0A1BF
+	call fdc_calc_dma_alt_buffer_offset
 	push es
 	les di, [bp + 6]
 	xor_si_si                                    ; 0A1AB
@@ -5703,7 +5685,7 @@ loc_0A1BB:                                     ; 0A1BB
 	mov ax, 1
 	ret
 
-sub_0A1BF:                                     ; 0A1BF
+fdc_calc_dma_alt_buffer_offset:                                     ; 0A1BF
 	mov bx, [bp + 0xc]
 	mov cl, 3
 	shl bx, cl
@@ -5720,12 +5702,12 @@ sub_0A1BF:                                     ; 0A1BF
 	cld
 	ret
 
-sub_0A1E2:                                     ; 0A1E2
+fdc_setup_dma_transfer_size:                                     ; 0A1E2
 	mov cl, [cs:fdc_param_3777]
 	add cl, 7
 	shl ax, cl
 
-sub_0A1EC:                                     ; 0A1EC
+fdc_setup_dma_descriptor:                                     ; 0A1EC
 	mov [si + 8], ax
 	mov ax, [cs:fdc_param_373b]
 	mov [si + 0xa], ax
@@ -5747,7 +5729,7 @@ loc_0A214:                                     ; 0A214
 	mov [si + 6], dx
 	ret
 
-sub_0A222:                                     ; 0A222
+fdc_calc_phys_address_pair:                                     ; 0A222
 	mov cl, 4
 	rol ax, cl
 	mov_ch_al                                    ; 0A226
@@ -5759,7 +5741,7 @@ sub_0A222:                                     ; 0A222
 	mov [cs:fdc_param_375a], ch
 	ret
 
-sub_0A23C:                                     ; 0A23C
+fdc_send_dma_param_block:                                     ; 0A23C
 	cli
 	mov di, fdc_param_373d
 	test al, 1
@@ -5781,7 +5763,7 @@ loc_0A24A:                                     ; 0A24A
 	sti
 	ret
 
-sub_0A257:                                     ; 0A257
+fdc_wait_dma_channel_ready:                                     ; 0A257
 	mov dx, xios_mx_dma0_msg
 	or_al_al                                     ; 0A25A
 	je loc_0A261
@@ -5800,7 +5782,7 @@ loc_0A261:                                     ; 0A261
 	sti
 	ret
 
-sub_0A276:                                     ; 0A276
+fdc_release_dma_channel:                                     ; 0A276
 	cli
 	mov ah, 1
 	mov_cl_al                                    ; 0A279
@@ -6136,7 +6118,7 @@ mov word [cs:xios_aux_state_word], xios_aux_fn_3c93
 xios_aux_fn_3c93:
 	cmp byte [cs:xios_prn_flag_3d92], 0
 	je loc_0A83E
-	call sub_0A923
+	call printer_wait_completion
 
 loc_0A83E:                                     ; 0A83E
 	mov cl, 0x89
@@ -6156,7 +6138,7 @@ xios_aux_ret_3cbd:
 
 xios_aux_ret_3cbe:
 	cli
-	call sub_0A8A9
+	call sio_check_rx_status
 	jne loc_0A870
 	push bx
 	or byte [bx + 0x1A], 4
@@ -6174,7 +6156,7 @@ loc_0A870:                                     ; 0A870
 	or byte [bx + 0x1b], 0x20
 	test byte [bx + 0x1b], 1
 	je loc_0A88E
-	call sub_0AA62
+	call sio_tx_byte_from_buffer
 
 loc_0A88E:                                     ; 0A88E
 	mov si, [bx + 4]
@@ -6191,21 +6173,21 @@ loc_0A88E:                                     ; 0A88E
 	sti
 	ret
 
-sub_0A8A9:                                     ; 0A8A9
+sio_check_rx_status:                                     ; 0A8A9
 	cmp dl, 8
-	je loc_0A8C2
-	call sub_0ABBD
+	je .ret
+	call sio_get_channel_b_struct
 	mov ax, [bx + 2]
 	cmp [bx + 8], ax
 	mov ax, 0
-	je loc_0A8BF
+	je .done
 	mov ax, 0xff
 
-loc_0A8BF:                                     ; 0A8BF
+.done:
 	or_ax_ax                                     ; 0A8BF
 	ret
 
-loc_0A8C2:                                     ; 0A8C2
+.ret:
 	ret
 	dec ax
 	ret
@@ -6255,12 +6237,12 @@ xios_prn_fn_3d66:
 	inc bx
 	mov [cs:xios_prn_flag_3d92], bl
 	cmp cl, 0xd
-	je sub_0A923
+	je printer_wait_completion
 	cmp bx, 0x7f
-	je sub_0A923
+	je printer_wait_completion
 	ret
 
-sub_0A923:                                     ; 0A923
+printer_wait_completion:                                     ; 0A923
 	mov dx, xios_prn_buf_3e12
 	mov cl, 0x8b
 	call rtm_timer_wait2
@@ -6277,7 +6259,7 @@ xios_prn_buf_3e12:
 		db "NetConO "
 
 xios_prn_isr:
-	call sub_0ABBD
+	call sio_get_channel_b_struct
 	pushf
 	cli
 	cmp word [bx + 0x12], 0
@@ -6303,7 +6285,7 @@ loc_0A9DB:                                     ; 0A9DB
 	dec word [bx + 0x12]
 	test byte [bx + 0x1b], 1
 	je loc_0A9FC
-	call sub_0AA62
+	call sio_tx_byte_from_buffer
 
 loc_0A9FC:                                     ; 0A9FC
 	popf
@@ -6314,25 +6296,24 @@ int28_fn_25_reserved:                   ; 0A9FE
 
 loc_0AA01:                                     ; 0AA01
 	adc cl, [si]
-	jae loc_0AA11
+	jae .ret
 	mov_bl_dl                                    ; 0AA05
 	sub bl, 4
 	xor_bh_bh                                    ; 0AA0A
 	cmp bx, 2
 	jb loc_0AA12
-
-loc_0AA11:                                     ; 0AA11
+.ret:                                     ; 0AA11
 	ret
 
 loc_0AA12:                                     ; 0AA12
-	call sub_0ABBD
+	call sio_get_channel_b_struct
 	pushf
 	cli
 	mov [bx + 0x1C], cl
 	or byte [bx + 0x1b], 8
 	test byte [bx + 0x1b], 1
 	je loc_0AA27
-	call sub_0AA62
+	call sio_tx_byte_from_buffer
 
 loc_0AA27:                                     ; 0AA27
 	mov dx, [bx + 0x18]
@@ -6349,8 +6330,8 @@ xios_timer_isr:
 
 loc_0AA3D:                                     ; 0AA3D
 	mov dx, [bx + 0x25]
-	call sub_0ABB5
-	call sub_0AA62
+	call pic_send_eoi_command
+	call sio_tx_byte_from_buffer
 	cmp word [bx + 0x12], 0
 	je loc_0AA5F
 	test byte [bx + 0x1b], 4
@@ -6358,16 +6339,16 @@ loc_0AA3D:                                     ; 0AA3D
 	and byte [bx + 0x1b], 0xfb
 	mov dx, [bx + 0x16]
 	call rtm_call_helper
-	jmp near loc_0AF3E
+	jmp near xios_isr_exit_dispatch
 
 loc_0AA5F:                                     ; 0AA5F
-	jmp near loc_0AF50
+	jmp near xios_isr_exit_iret
 
-sub_0AA62:                                     ; 0AA62
+sio_tx_byte_from_buffer:                                     ; 0AA62
 	test byte [bx + 0x1b], 8
 	je loc_0AA7B
 	mov al, [bx + 0x1C]
-	call sub_0AACF
+	call sio_write_tx_data_reg
 	and byte [bx + 0x1b], 0xf7
 	push bx
 	mov dx, [bx + 0x18]
@@ -6379,7 +6360,7 @@ loc_0AA7B:                                     ; 0AA7B
 	test byte [bx + 0x1b], 0x10
 	je loc_0AA8B
 	mov al, 0x13
-	call sub_0AACF
+	call sio_write_tx_data_reg
 	and byte [bx + 0x1b], 0xef
 	ret
 
@@ -6387,7 +6368,7 @@ loc_0AA8B:                                     ; 0AA8B
 	test byte [bx + 0x1b], 0x20
 	je loc_0AA9B
 	mov al, 0x11
-	call sub_0AACF
+	call sio_write_tx_data_reg
 	and byte [bx + 0x1b], 0xdf
 	ret
 
@@ -6415,10 +6396,10 @@ loc_0AAB3:                                     ; 0AAB3
 	dec dx
 	and [bx + 0xe], dx
 	inc word [bx + 0x12]
-	call sub_0AACF
+	call sio_write_tx_data_reg
 	ret
 
-sub_0AACF:                                     ; 0AACF
+sio_write_tx_data_reg:                                     ; 0AACF
 	mov dx, [bx + 0x23]
 	out dx, al
 	and byte [bx + 0x1b], 0xfe
@@ -6437,8 +6418,8 @@ loc_0AAE7:                                     ; 0AAE7
 	out dx, al
 
 loc_0AAF1:                                     ; 0AAF1
-	call sub_0ABB5
-	jmp near loc_0AF50
+	call pic_send_eoi_command
+	jmp near xios_isr_exit_iret
 	call xios_switch_to_priv_stack
 	mov bx, xios_crt_buf_402f
 	jmp near loc_0AB06
@@ -6451,7 +6432,7 @@ loc_0AB06:                                     ; 0AB06
 	mov dx, [bx + 0x23]
 	in al, dx
 	push ax
-	call sub_0ABB5
+	call pic_send_eoi_command
 	pop ax
 	cmp byte [bx + 0x1d], 1
 	jne loc_0AB5D
@@ -6463,7 +6444,7 @@ loc_0AB06:                                     ; 0AB06
 	or byte [bx + 0x1b], 2
 
 loc_0AB22:                                     ; 0AB22
-	jmp near loc_0AF50
+	jmp near xios_isr_exit_iret
 
 loc_0AB25:                                     ; 0AB25
 	cmp al, 0x11
@@ -6473,7 +6454,7 @@ loc_0AB25:                                     ; 0AB25
 	and byte [bx + 0x1b], 0xfd
 	test byte [bx + 0x1b], 1
 	je loc_0AB22
-	call sub_0AA62
+	call sio_tx_byte_from_buffer
 	jmp short loc_0AB22
 
 loc_0AB3E:                                     ; 0AB3E
@@ -6491,7 +6472,7 @@ loc_0AB53:                                     ; 0AB53
 	and al, 1
 	je loc_0AB53
 	pop dx
-	call sub_0AA62
+	call sio_tx_byte_from_buffer
 	pop ax
 
 loc_0AB5D:                                     ; 0AB5D
@@ -6518,7 +6499,7 @@ loc_0AB6A:                                     ; 0AB6A
 	call rtm_call_helper
 	pop bx
 	and byte [bx + 0x1A], 0xfb
-	jmp near loc_0AF3E
+	jmp near xios_isr_exit_dispatch
 	call xios_switch_to_priv_stack
 	mov bx, xios_crt_buf_402f
 	jmp near loc_0ABA5
@@ -6535,13 +6516,13 @@ loc_0ABA5:                                     ; 0ABA5
 	out dx, al
 	jmp near loc_0AAF1
 
-sub_0ABB5:                                     ; 0ABB5
+pic_send_eoi_command:                                     ; 0ABB5
 	mov dx, PORT_PCB_EOI
 	mov ax, 0x8000
 	out dx, ax
 	ret
 
-sub_0ABBD:                                     ; 0ABBD
+sio_get_channel_b_struct:                                     ; 0ABBD
 	mov dx, 2
 	mov bx, xios_crt_param_4058
 	ret
@@ -6814,10 +6795,9 @@ con_status_poll:                               ; 0AD8E
 	in al, dx
 	test al, 0x80
 	mov ax, 0xffff
-	jne loc_0AD9A
+	jne .ret
 	inc ax
-
-loc_0AD9A:                                     ; 0AD9A
+.ret:                                     ; 0AD9A
 	ret
 
 i_printer:
@@ -6829,7 +6809,7 @@ xios_crt_isr_41fb:
 	call eoi_helper
 	mov dx, 0xc
 	call rtm_call_helper
-	jmp near loc_0AF3E
+	jmp near xios_isr_exit_dispatch
 
 xios_crt_isr:
 	call xios_switch_to_priv_stack
@@ -6839,7 +6819,7 @@ xios_crt_isr:
 	call eoi_helper
 	mov dx, 0x19
 	call rtm_call_helper
-	jmp near loc_0AF3E
+	jmp near xios_isr_exit_dispatch
 
 xios_crt_table_4225:
 	db 0x00, 0x00, 0x04, 0x00, 0x00, 0x80, 0x04, 0x00
@@ -6931,9 +6911,9 @@ i_tick:
 ; -----------------------------------------------------------------------------
 rtc_1sec_isr:
 	mov byte [cs:crt_vsync_counter], 0
-	call sub_09588
+	call crt_check_cursor_blink_tick
 	call fdc_motor_timeout_tick
-	call sub_09DC8
+	call fdc_recalibrate_all_drives
 	call dpc_release_shared_devices
 	mov bx, xios_crt_table_4225
 	cmp byte [bx + 0xc], 0xff
@@ -6945,13 +6925,13 @@ rtc_1sec_isr:
 loc_0AEFE:                                     ; 0AEFE
 	mov al, 7
 	mov ah, 0xc4
-	call sub_0AFCA
+	call rtc_write_reg_direct
 
 loc_0AF05:                                     ; 0AF05
 	call eoi_helper
 	mov dx, 2
 	call rtm_call_helper
-	jmp near loc_0AF50
+	jmp near xios_isr_exit_iret
 
 ; -----------------------------------------------------------------------------
 ; Fælles End-Of-Interrupt (EOI) Hjælperutine
@@ -6979,7 +6959,7 @@ xios_switch_to_priv_stack:                     ; 0AF1D
 	mov ds, [cs:xios_sysdat_segment_val]
 	jmp word [cs:xios_tick_subcount]
 
-loc_0AF3E:                                     ; 0AF3E
+xios_isr_exit_dispatch:                                     ; 0AF3E
 	popa                                         ; 0AF3E  61
 	pop es
 	pop ds
@@ -6987,7 +6967,7 @@ loc_0AF3E:                                     ; 0AF3E
 	mov sp, [cs:xios_saved_sp]
 	jmp far [cs:sysdat_dispatcher]
 
-loc_0AF50:                                     ; 0AF50
+xios_isr_exit_iret:                                     ; 0AF50
 	popa                                         ; 0AF50  61
 	pop es
 	pop ds
@@ -7013,7 +6993,7 @@ xios_tick_low:
 xios_tick_high:
 	dw 0x0000
 
-sub_0AFCA:                                     ; 0AFCA
+rtc_write_reg_direct:                                     ; 0AFCA
 	mov dx, PORT_RTC_ADDR
 	and al, 0x1f
 	out dx, al
@@ -7108,15 +7088,14 @@ loc_0B04F:                                     ; 0B04F
 
 loc_0B056:                                     ; 0B056
 	test bl, 0x80
-	je loc_0B05D
+	je .ret
 	or al, 8
-
-loc_0B05D:                                     ; 0B05D
+.ret:                                     ; 0B05D
 	ret
 
 int28_fn_50_isbx_reset:                 ; 0B05E
 	mov al, 1
-	call sub_0B06E
+	call diag_format_error_record
 	push cs
 	push di
 	mov ax, 0x18
@@ -7124,7 +7103,7 @@ int28_fn_50_isbx_reset:                 ; 0B05E
 	add sp, 4
 	ret
 
-sub_0B06E:                                     ; 0B06E
+diag_format_error_record:                                     ; 0B06E
 	mov di, xios_diag_buf_4573
 	mov [di], al
 	mov bx, xios_crt_table_4256
@@ -7423,15 +7402,15 @@ xios_int3_handler:
 	pop ax
 	sub ax, strict word 1                        ; 0B2D9  2D 01 00
 	mov di, xios_diag_slot_int_num
-	call sub_0B330
+	call hex_to_ascii_word
 	pop ax
 	pop ax
 	pop ax
 	mov di, xios_diag_slot_ip
-	call sub_0B330
+	call hex_to_ascii_word
 	pop ax
 	mov di, xios_diag_slot_cs
-	call sub_0B330
+	call hex_to_ascii_word
 	mov si, xios_diag_str_interrupt
 	mov es, bp
 	call con_puts
@@ -7452,21 +7431,21 @@ xios_diag_slot_cs:
 xios_diag_slot_ip:
 	db "    "
 
-sub_0B330:                                     ; 0B330
+hex_to_ascii_word:                                     ; 0B330
 	cld
 	push ax
 	mov_al_ah                                    ; 0B332
-	call sub_0B338
+	call hex_to_ascii_byte
 	pop ax
 
-sub_0B338:                                     ; 0B338
+hex_to_ascii_byte:                                     ; 0B338
 	push ax
 	mov cl, 4
 	shr al, cl
-	call sub_0B341
+	call hex_to_ascii_nibble
 	pop ax
 
-sub_0B341:                                     ; 0B341
+hex_to_ascii_nibble:                                     ; 0B341
 	and al, 0xf
 	add al, 0x90
 	daa                                          ; 0B345
@@ -7640,7 +7619,7 @@ xios4_clip_map:
 	times 500 db 0
 %endif
 
-sub_0B991:                                     ; 0B991
+crt_init_hardware_display:                                     ; 0B991
 	push cs
 	pop ds
 	cld
@@ -7653,7 +7632,7 @@ mov bx, xios_crt_table_4225
 	mov byte [es:di + 1], 5
 	mov dx, cs
 mov ax, fdc_drive_type_0
-	call sub_09630
+	call crt_calc_20bit_phys_addr
 	add di, 0xe
 	stosw
 	mov_ax_cx                                    ; 0B9B4
@@ -7666,29 +7645,29 @@ crt_mode_switch:                               ; 0B9B7
 	pop es
 mov di, fdc_drive_dph_0
 mov ax, fdc_drive_dph_1
-	call sub_09621
+	call crt_dma_make_phys_desc
 mov ax, fdc_drive_dph_2
-	call sub_09621
+	call crt_dma_make_phys_desc
 mov di, fdc_drive_0_dpb_ptr
 mov ax, fdc_dpb_standard
-	call sub_09621
+	call crt_dma_make_phys_desc
 mov ax, fdc_param_6142
-	call sub_09621
+	call crt_dma_make_phys_desc
 mov ax, fdc_dpb_3_ptr
 	push ax
 mov di, fdc_drive_dph_1
-	call sub_09621
+	call crt_dma_make_phys_desc
 	pop ax
 mov di, fdc_drive_dph_2
-	call sub_09621
-mov ax, [cs:xios_video_d000_seg]
+	call crt_dma_make_phys_desc
+mov ax, [cs:xios_vram_base_seg]
 	mov es, ax
 	xor_di_di                                    ; 0B9F2
 	mov cx, 0x4000
 	mov ax, 0xff
 	rep stosw
 	push ds
-mov ax, [cs:xios_video_d000_seg]
+mov ax, [cs:xios_vram_base_seg]
 	mov es, ax
 lds bx, [cs:xios_crt_font_ptr]
 	lds si, [bx]
@@ -7742,8 +7721,8 @@ mov dx, int_vec_backup_97
 mov bx, xios_crt_table_4225
 	test byte [bx + 0x12], 1
 	jne loc_0BA8B
-mov byte [cs:xios_con_var_2bfb], 0xff
-mov byte [cs:xios_con_var_2bfe], 0x38
+mov byte [cs:xios_is_color_display], 0xff
+mov byte [cs:xios_default_fg_color], 0x38
 mov bx, xios_crt_table_4256
 	mov al, [bx + 0x16]
 	mov cl, 4
@@ -7753,7 +7732,7 @@ mov bx, xios_crt_table_4256
 	mov al, 0x60
 
 loc_0BA85:                                     ; 0BA85
-mov [cs:xios_con_var_2bff], al
+mov [cs:xios_default_bg_color], al
 	jmp short loc_0BA92
 
 loc_0BA8B:                                     ; 0BA8B
@@ -7764,7 +7743,7 @@ mov bx, xios_crt_table_4256
 	mov al, [bx + 0x13]
 	mov_dl_al                                    ; 0BA98
 	and al, 1
-mov [cs:xios_con_var_2bfd], al
+mov [cs:xios_crt_50hz_60hz_flag], al
 	mov cl, 4
 	shr dl, cl
 	dec dl
@@ -7773,7 +7752,7 @@ mov [cs:xios_con_var_2bfd], al
 	mov dl, 9
 
 loc_0BAAD:                                     ; 0BAAD
-mov [cs:xios_con_var_2bfc], dl
+mov [cs:xios_font_height_scanlines], dl
 	mov al, 0xa
 	mov ah, 9
 	sub_ah_dl                                    ; 0BAB6
@@ -7784,7 +7763,7 @@ mov [cs:fdc_dpb_current_format], ax
 	mov al, 1
 
 loc_0BAC6:                                     ; 0BAC6
-mov [cs:xios_con_var_2c08], al
+mov [cs:xios_crt_font_alt_flag], al
 	mov dx, [cs:xt_alloc]
 mov [cs:xios_sysdat_segment_ptr], dx
 	mov es, dx
@@ -7810,15 +7789,15 @@ loc_0BAE8:                                     ; 0BAE8
 	pop cx
 	loop loc_0BAE8
 	push di
-	call sub_09643
-mov al, [cs:xios_con_var_2bff]
+	call palette_init_default_colors
+mov al, [cs:xios_default_bg_color]
 	mov [bx + CCB_CHAR_ATTR], al
-	or byte [bx + CCB_FLAGS], 8
+	or byte [bx + CCB_FLAGS], CCB_FLG_ATTR_DIRTY
 	shr al, 4
 	mov [bx + CCB_VIDEO_MODE], al
-mov al, [cs:xios_con_var_2c08]
+mov al, [cs:xios_crt_font_alt_flag]
 	mov [bx + CCB_SCROLL_MODE], al
-mov al, [cs:xios_con_var_2bfd]
+mov al, [cs:xios_crt_50hz_60hz_flag]
 	mov [bx + CCB_BLINK_FLAG], al
 mov ax, [cs:fdc_dpb_current_format]
 	mov [bx + 0x72], ax
@@ -7845,7 +7824,7 @@ loc_0BB3E:                                     ; 0BB3E
 	mov_bx_dx                                    ; 0BB3E
 	shl bx, 1
 mov bx, [cs:bx + xios_ccb_table]
-	call sub_092A5
+	call window_zorder_update_table
 	dec dl
 	jns loc_0BB3E
 mov di, xios_screen_state_buf
@@ -7867,8 +7846,8 @@ cmp byte [cs:fdc_drive_type_0], 1
 	mov ah, 6
 	call xios_crt_trigger_ca
 	mov bx, ccb_console_0                        ; Konsol 0 CCB
-	call sub_08BFB
-	call sub_08C5F
+	call crt_switch_active_window
+	call io_statline_clear
 	mov dx, PORT_PCB_T1_CON
 	mov ax, 0x200
 	sub dx, 2
@@ -7924,7 +7903,7 @@ rtc_spare_buf_5087:
 rtc_timer_params:
 	db 0x04, 0x00, 0x0C, 0x00, 0x84, 0x03        ; 0BC33 (CS:5093)
 
-sub_0BC39:                                     ; 0BC39
+rtc_read_current_date_time:                                     ; 0BC39
 	push es
 	mov ax, [cs:xios_sysdat_segment_val]
 	mov es, ax
@@ -7940,16 +7919,16 @@ sub_0BC39:                                     ; 0BC39
 	mov [es:bx + 0x80], al
 	mov al, 7
 	call rtc_write_reg
-	call sub_0BC7B
+	call bcd_to_binary_byte
 mov [cs:rtc_cur_month], al
 	mov al, 6
 	call rtc_write_reg
-	call sub_0BC7B
+	call bcd_to_binary_byte
 mov [cs:rtc_cur_day], al
 	pop es
 	ret
 
-sub_0BC7B:                                     ; 0BC7B
+bcd_to_binary_byte:                                     ; 0BC7B
 	mov_ah_al                                    ; 0BC7B
 	and ah, 0xf0
 	mov cl, 4
@@ -7958,7 +7937,7 @@ sub_0BC7B:                                     ; 0BC7B
 	aad 10                                       ; 0BC86
 	ret
 
-sub_0BC89:                                     ; 0BC89
+rtc_set_current_date_time:                                     ; 0BC89
 	push es
 	mov ax, [cs:xios_sysdat_segment_val]
 	mov es, ax
@@ -7975,29 +7954,29 @@ sub_0BC89:                                     ; 0BC89
 	mov [es:bx + 0x80], al
 	mov al, 6
 	call rtc_write_reg
-	call sub_0BC7B
+	call bcd_to_binary_byte
 mov [cs:rtc_cur_month], al
 	mov al, 5
 	call rtc_write_reg
-	call sub_0BC7B
+	call bcd_to_binary_byte
 mov [cs:rtc_cur_day], al
 	pop es
 	ret
 
-sub_0BCCD:                                     ; 0BCCD
+nvram_read_byte:                                     ; 0BCCD
 	push dx
 	push bx
 	push cx
 	push ax
-	call sub_0BD20
+	call nvram_write_byte
 	mov_bl_al                                    ; 0BCD4
 	mov ah, 0
 	mov al, 0
-	call sub_0BD20
+	call nvram_write_byte
 	mov_bh_al                                    ; 0BCDD
 	pop ax
 	push ax
-	call sub_0BD44
+	call ppi_set_nvram_bank
 	pop ax
 	mov dx, PORT_NVRAM_BASE
 	shl al, 1
@@ -8018,7 +7997,7 @@ sub_0BCCD:                                     ; 0BCCD
 	sub_bl_cl                                    ; 0BD02
 	add_bh_bl                                    ; 0BD04
 	mov ah, 0
-	call sub_0BD44
+	call ppi_set_nvram_bank
 	mov dx, PORT_NVRAM_BASE
 	mov_al_bh                                    ; 0BD0E
 	mov cl, 4
@@ -8032,11 +8011,11 @@ sub_0BCCD:                                     ; 0BCCD
 	pop dx
 	ret
 
-sub_0BD20:                                     ; 0BD20
+nvram_write_byte:                                     ; 0BD20
 	push dx
 	push cx
 	push ax
-	call sub_0BD44
+	call ppi_set_nvram_bank
 	mov dx, PORT_NVRAM_BASE
 	pop ax
 	shl al, 1
@@ -8055,7 +8034,7 @@ sub_0BD20:                                     ; 0BD20
 	pop dx
 	ret
 
-sub_0BD44:                                     ; 0BD44
+ppi_set_nvram_bank:                                     ; 0BD44
 	mov dx, PORT_PPI_PORTC
 	in al, dx
 	and al, 0xcf
@@ -8087,7 +8066,7 @@ mov di, xios_crt_table_4225
 
 loc_0BD77:                                     ; 0BD77
 	push ax
-	call sub_0BD20
+	call nvram_write_byte
 	add_bl_al                                    ; 0BD7B
 	pop ax
 	inc al
@@ -8104,7 +8083,7 @@ mov bx, xios_crt_table_4256
 
 loc_0BD98:                                     ; 0BD98
 	push ax
-	call sub_0BD20
+	call nvram_write_byte
 	mov [bx], al
 	inc bx
 	pop ax
@@ -8118,7 +8097,7 @@ loc_0BD98:                                     ; 0BD98
 
 loc_0BDAF:                                     ; 0BDAF
 	mov ah, 3
-	call sub_0BD44
+	call ppi_set_nvram_bank
 mov bx, xios_crt_table_4225
 	and byte [bx + 0x17], 0xdf
 	cmp byte [bx + 0x17], 0x50
@@ -8273,44 +8252,44 @@ mov bx, xios_crt_table_4225
 	je loc_0BEE6
 	mov ah, 4
 	mov al, 0x11
-	call sub_0AFCA
-	call sub_0BC39
+	call rtc_write_reg_direct
+	call rtc_read_current_date_time
 	jmp short loc_0BEF3
 
 loc_0BEE6:                                     ; 0BEE6
 	mov dx, PORT_RTC_ADDR
 	mov al, 7
 	mov ah, 0xc4
-	call sub_0AFCA
-	call sub_0BC89
+	call rtc_write_reg_direct
+	call rtc_set_current_date_time
 
 loc_0BEF3:                                     ; 0BEF3
 mov word [cs:rtc_day_of_year], 0; 0BEF3  mov word [cs:0x5067], 0
 mov bx, xios_crt_table_4256
 	mov al, [bx + 0x18]
-	call sub_0BC7B
+	call bcd_to_binary_byte
 mov [cs:rtc_cur_year], al
 	mov al, [bx + 0x17]
-	call sub_0BC7B
+	call bcd_to_binary_byte
 cmp al, [cs:rtc_cur_month]
 	jb loc_0BF2E
 	je loc_0BF3E
 inc byte [cs:rtc_cur_year]
 mov al, [cs:rtc_cur_year]
-	call sub_0C452
+	call binary_to_bcd_byte
 	mov [bx + 0x18], al
 	mov_cl_al                                    ; 0BF25
 	mov ah, 0
 	mov al, 0x18
-	call sub_0BCCD
+	call nvram_read_byte
 
 loc_0BF2E:                                     ; 0BF2E
 mov al, [cs:rtc_cur_month]
-	call sub_0C452
+	call binary_to_bcd_byte
 	mov_cl_al                                    ; 0BF35
 	mov ah, 0
 	mov al, 0x17
-	call sub_0BCCD
+	call nvram_read_byte
 
 loc_0BF3E:                                     ; 0BF3E
 	mov ax, 0x4e
@@ -8375,7 +8354,7 @@ mov si, xios_diag_fn_4651
 
 loc_0BFC3:                                     ; 0BFC3
 mov [cs:xios_diag_ptr_467d], si
-	call sub_0B991
+	call crt_init_hardware_display
 mov bx, xios_crt_table_4225
 	and byte [bx + 0x17], 0xdf
 	cmp byte [bx + 0x17], 0x50
@@ -8870,7 +8849,7 @@ boot_print_str:                                     ; 0C43F
 .done:                                     ; 0C451
 	ret
 
-sub_0C452:                                     ; 0C452
+binary_to_bcd_byte:                                     ; 0C452
 	push dx
 	push bx
 	push cx
@@ -9001,18 +8980,18 @@ xios_cas_block_num:
 xios_cas_state:
 	db 0x01
 int28_fn_26_cas_read_hdr:                 ; 0C6B6 (Båndoptager læs filhoved)
-	call sub_0C9D9
+	call stack_swap_context
 	mov_bx_dx                                    ; 0C6B9
 mov word [cs:xios_cas_block_num], 0; 0C6BB  mov word [cs:0x5b13], 0
 mov byte [cs:xios_cas_state], 1
 mov [cs:xios_cas_byte_count], cx
-	call sub_0C747
+	call cas_stop_motor_and_timer
 	xchg bx, dx                                  ; 0C6D0  87 DA
 	xchg bx, cx                                  ; 0C6D2  87 D9
 	ret
 
 int28_fn_27_cas_write_hdr:                ; 0C6D5 (Båndoptager skriv filhoved)
-	call sub_0C9D9
+	call stack_swap_context
 	mov_bx_dx                                    ; 0C6D8
 mov word [cs:xios_cas_block_num], 0; 0C6DA  mov word [cs:0x5b13], 0
 mov [cs:xios_cas_byte_count], cx
@@ -9022,18 +9001,18 @@ mov byte [cs:xios_cas_state], 1
 	ret
 
 int28_fn_28_cas_read_data:               ; 0C6F2 (Båndoptager læs datablok)
-	call sub_0C9D9
+	call stack_swap_context
 	mov_bx_dx                                    ; 0C6F5
 mov byte [cs:xios_cas_state], 2
 inc word [cs:xios_cas_block_num]
 mov [cs:xios_cas_byte_count], cx
-	call sub_0C747
+	call cas_stop_motor_and_timer
 	xchg bx, dx                                  ; 0C70A  87 DA
 	xchg bx, cx                                  ; 0C70C  87 D9
 	ret
 
 int28_fn_29_cas_write_data:              ; 0C70F (Båndoptager skriv datablok)
-	call sub_0C9D9
+	call stack_swap_context
 	mov_bx_dx                                    ; 0C712
 mov byte [cs:xios_cas_state], 2
 mov [cs:xios_cas_byte_count], cx
@@ -9043,7 +9022,7 @@ inc word [cs:xios_cas_block_num]
 	ret
 
 int28_fn_40_cas_write_eof:               ; 0C72A (Båndoptager skriv EOF-blok)
-	call sub_0C9D9
+	call stack_swap_context
 	mov_bx_dx                                    ; 0C72D
 mov byte [cs:xios_cas_state], 3
 mov word [cs:xios_cas_byte_count], 0; 0C735  mov word [cs:0x5b11], 0
@@ -9052,13 +9031,13 @@ inc word [cs:xios_cas_block_num]
 	mov_dx_bx                                    ; 0C744
 	ret
 
-sub_0C747:                                     ; 0C747
+cas_stop_motor_and_timer:                                     ; 0C747
 	cli
 	push bx
 	push cx
 	push si
 	mov si, 0xa
-	call sub_0C998
+	call cas_delay_motor_settle
 	mov ax, 0xffff
 	mov dx, PORT_PCB_T0_MAXA
 	out dx, ax
@@ -9195,7 +9174,7 @@ loc_0C82F:                                     ; 0C82F
 	pop ax
 	cmp ah, 1
 	cmc
-	call sub_0C9A9
+	call rtc_sync_sysdat_clock
 	sti
 	ret
 
@@ -9220,7 +9199,7 @@ loc_0C843:                                     ; 0C843
 	pop cx
 	rcl ch, 1
 	sahf
-	call sub_0C982
+	call cas_calc_crc_step
 	dec cl
 	jne loc_0C843
 	pop ax
@@ -9270,7 +9249,7 @@ cas_write_leader_and_header:                                     ; 0C898
 	out dx, ax
 	mov dx, PORT_PCB_T0_MAXB
 	out dx, ax
-	call sub_0C998
+	call cas_delay_motor_settle
 	mov ax, 1
 	out PORT_PPI_CTRL, ax
 	mov cx, 0x7e8
@@ -9345,7 +9324,7 @@ loc_0C927:                                     ; 0C927
 	mov ax, 3
 	out PORT_PPI_CTRL, ax
 	sub_ax_ax                                    ; 0C931
-	call sub_0C9A9
+	call rtc_sync_sysdat_clock
 	sti
 	ret
 
@@ -9360,7 +9339,7 @@ loc_0C93E:                                     ; 0C93E
 	pushf
 	call cas_write_bit
 	popf
-	call sub_0C982
+	call cas_calc_crc_step
 	dec cl
 	jne loc_0C93E
 	pop ax
@@ -9403,7 +9382,7 @@ loc_0C96D:                                     ; 0C96D
 	pop dx
 	ret
 
-sub_0C982:                                     ; 0C982
+cas_calc_crc_step:                                     ; 0C982
 mov ax, [cs:xios_cas_timeout_counter]
 	rcr ax, 1
 	rcl ax, 1
@@ -9417,7 +9396,7 @@ loc_0C991:                                     ; 0C991
 mov [cs:xios_cas_timeout_counter], ax
 	ret
 
-sub_0C998:                                     ; 0C998
+cas_delay_motor_settle:                                     ; 0C998
 	mov ax, 2
 	out PORT_PPI_CTRL, ax
 	mov bl, 0x96
@@ -9431,7 +9410,7 @@ loc_0C9A2:                                     ; 0C9A2
 	jne loc_0C99F
 	ret
 
-sub_0C9A9:                                     ; 0C9A9
+rtc_sync_sysdat_clock:                                     ; 0C9A9
 	push dx
 	push ax
 	push es
@@ -9454,7 +9433,7 @@ sub_0C9A9:                                     ; 0C9A9
 	pop dx
 	ret
 
-sub_0C9D9:                                     ; 0C9D9
+stack_swap_context:                                     ; 0C9D9
 	pop ax
 	pop bx
 	pop ds
@@ -9476,7 +9455,7 @@ xios_fdc_client_mode:
 xios_prn_pending_flag:
 	db 0x00                                      ; 0C9E5 (CS:5E45)
 
-sub_0C9E6:                                     ; 0C9E6
+vmenu_clear_line_buffer:                                     ; 0C9E6
 	push es
 mov di, xios_vmenu_line_buf_4909
 	push di
@@ -9526,7 +9505,7 @@ dpc_reserve_printer:                                     ; 0CA1E
 	mov si, [cs:sysdat_rlr]
 	mov es, [si + PD_UDA]
 mov si, xios_boot_msg_shared_prn1
-	call sub_0C9E6
+	call vmenu_clear_line_buffer
 	pop dx
 	pop cx
 	pop es
@@ -9562,22 +9541,21 @@ loc_0CA7E:                                     ; 0CA7E
 
 dpc_release_printer:                                     ; 0CA82
 cmp byte [cs:xios_prn_reserve_flag], 0xff
-	jne loc_0CAB4
+	jne .ret
 cmp byte [cs:xios_prn_reserve_timer], 0
-	je loc_0CA9A
+	je .release
 dec byte [cs:xios_prn_reserve_timer]
-	jmp near loc_0CAB4
+	jmp short .ret
 
-loc_0CA9A:                                     ; 0CA9A
+.release:
 cmp byte [cs:xios_prn_client_mode], 0xff
-	je loc_0CAB4
+	je .ret
 	mov dx, PORT_PRN_RELEASE
 	out dx, al
 	xor_ax_ax                                    ; 0CAA6
 mov byte [cs:xios_prn_reserve_flag], 0
 mov byte [cs:xios_prn_reserve_timer], 0
-
-loc_0CAB4:                                     ; 0CAB4
+.ret:
 	ret
 
 int28_fn_42_shared_disk:                ; 0CAB5 (Reserver/frigiv delt disk)
@@ -9601,7 +9579,7 @@ mov byte [cs:xios_fdc_reserve_flag], 0
 	out dx, al
 	in al, dx
 	and al, 0x80
-	je loc_0CB07
+	je .ret
 	push ds
 	push es
 	push cx
@@ -9611,7 +9589,7 @@ mov byte [cs:xios_fdc_reserve_flag], 0
 	mov si, [cs:sysdat_rlr]
 	mov es, [si + PD_UDA]
 mov si, xios_boot_msg_dollar
-	call sub_0C9E6
+	call vmenu_clear_line_buffer
 	pop dx
 	pop cx
 	pop es
@@ -9621,8 +9599,7 @@ mov si, xios_boot_msg_dollar
 	call rtm_timer_wait2
 	mov cx, 0xffff
 	call io_statline
-
-loc_0CB07:                                     ; 0CB07
+.ret:                                     ; 0CB07
 	ret
 
 loc_0CB08:                                     ; 0CB08
@@ -9637,19 +9614,18 @@ loc_0CB14:                                     ; 0CB14
 
 dpc_check_fdc_release:                                     ; 0CB18
 cmp byte [cs:xios_fdc_reserve_flag], 0xff
-	jne loc_0CB3B
+	jne .ret
 cmp byte [cs:xios_fdc_client_mode], 0xff
-	je loc_0CB3B
+	je .ret
 	mov ax, [cs:sysdat_nlstdev]
 	and ax, 0xefff
-	jne loc_0CB3B
+	jne .ret
 
-fdc_release:                                   ; 0CB31
+.release:
 	mov dx, PORT_FDC_RELEASE
 	out dx, al
 mov byte [cs:xios_fdc_reserve_flag], 0
-
-loc_0CB3B:                                     ; 0CB3B
+.ret:
 	ret
 
 dpc_release_shared_devices:                                     ; 0CB3C
