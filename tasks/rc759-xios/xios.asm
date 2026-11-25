@@ -79,7 +79,16 @@ sysdat_mfl:
   times (0x68 - 0x5c) db 0
 sysdat_rlr:
   dw 0
-  times (0x88 - 0x6a) db 0
+  times (0x7e - 0x6a) db 0
+sysdat_tod_day:
+  dw 0
+sysdat_tod_hr:
+  db 0
+sysdat_tod_min:
+  db 0
+sysdat_tod_sec:
+  db 0
+  times (0x88 - 0x83) db 0
 sysdat_nlstdev:
   db 0
   times (0x8c - 0x89) db 0

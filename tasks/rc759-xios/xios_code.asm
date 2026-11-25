@@ -120,7 +120,7 @@ CCB_CURSOR_HEIGHT   equ 0x73		; Cursor end scanline / height
 CCB_BLINK_FLAG      equ 0x74		; Cursor blink enable flag
 CCB_VIDEO_MODE      equ 0x7f		; Background color / video mode
 CCB_CHAR_ATTR       equ 0x80		; Character attribute byte
-CCB_COLOR_MODE      equ 0x83		; Virtual console color/mode setting
+CCB_BLANK_TIMEOUT   equ 0x83		; Screen blanking timeout in minutes (0=disabled, 1..15 min)
 CCB_MAX_COL          equ 0x60		; Maksimal kolonne (f.eks. 79 i 80-kolonnetilstand)
 CCB_SAVED_COL        equ 0x68		; Gemt cursorposition ved ESC j / ESC k
 CCB_SAVED_FLAGS      equ 0x6d		; Gemte konsolflag ved ESC 2 / ESC 3
@@ -129,6 +129,15 @@ CCB_FKEY_TABLE       equ 0x76		; Funktionstast-tabel (pointer til fkey-definitio
 CCB_ESC_PARAM_FN     equ 0x7b		; Escape-sekvens parameter handler/funktion
 CCB_ESC_PARAM_BUF    equ 0x7d		; Escape-sekvens parameter-buffer
 CCB_PALETTE          equ 0x84		; Farvepalet / attribut-tabel for konsol
+
+; =============================================================================
+; Digital Research CCP/M-86 SYSDAT Structure Offsets
+; Reference: Digital Research CCP/M-86 System Data Area (SYSDAT.A86 / SYSDAT.DAT)
+; =============================================================================
+SYSDAT_TOD_DAY       equ 0x7E		; Word: Antal dage siden 1/1/1978 (CP/M-86 epoch)
+SYSDAT_TOD_HR        equ 0x80		; Byte: Timer (00-23 BCD)
+SYSDAT_TOD_MIN       equ 0x81		; Byte: Minutter (00-59 BCD)
+SYSDAT_TOD_SEC       equ 0x82		; Byte: Sekunder (00-59 BCD)
 
 ; =============================================================================
 ; RC759 Piccoline XIOS Driver (Master Source)
@@ -402,9 +411,9 @@ xios_dummy_align_entry:			; 07A29
 i_keyboard:
 kbd_handler:				; 07A93 / 000002F3
 	call xios_switch_to_priv_stack	; Skift til intern XIOS stak
-	cmp byte [cs:kbd_disabled_flag], 0xff	; Tastatur deaktiveret?
+	cmp byte [cs:crt_is_blanked_flag], 0xff	; Skærm slukket / blanked pga. inaktivitet?
 	jne .kbd_not_disabled
-	call crt_reset_blink_state	; Nulstil buffer
+	call crt_unblank_screen		; Væk skærmen igen
 
 .kbd_not_disabled:
 	push ds
@@ -675,8 +684,8 @@ conin_valid_con:
 	mov dx, 5			; 07CCD
 	call rtm_timer_wait		; 07CD0
 	pop bx				; 07CD3
-	mov ax, [cs:kbd_buf_head]	; 07CD4
-	mov [cs:kbd_buf_tail], ax	; 07CD8
+	mov ax, [cs:crt_blank_timeout_sec]	; 07CD4
+	mov [cs:crt_blank_countdown], ax	; 07CD8 (genindlæs inaktivitetsnedtæller)
 	mov ax, [cs:kbd_char_buffer]	; 07CDC
 	test ah, ah			; 07CE0
 	je .ret				; 07CE2
@@ -911,23 +920,23 @@ vmenu_action_item_5:
 	push cx
 	xor_ah_ah			; 07E25
 	mov bx, ccb_console_0		; Konsol 0 CCB
-	mov [bx + CCB_COLOR_MODE], al
+	mov [bx + CCB_BLANK_TIMEOUT], al
 %if NUM_VIR_CONS == 4
 	mov bx, ccb_console_1		; Konsol 1 CCB
-	mov [bx + CCB_COLOR_MODE], al
+	mov [bx + CCB_BLANK_TIMEOUT], al
 	mov bx, ccb_console_2		; Konsol 2 CCB
-	mov [bx + CCB_COLOR_MODE], al
+	mov [bx + CCB_BLANK_TIMEOUT], al
 	mov bx, ccb_console_3		; Konsol 3 CCB
-	mov [bx + CCB_COLOR_MODE], al
+	mov [bx + CCB_BLANK_TIMEOUT], al
 %endif
 	mov_bx_ax			; 07E2E
 	mov cl, 4
 	shl bx, cl
-	sub_bx_ax			; 07E34
+	sub_bx_ax			; 07E34 (bx = al * 15)
 	mov cl, 2
-	shl bx, cl
-	mov [cs:kbd_buf_head], bx	; 07E3A
-	mov [cs:kbd_buf_tail], bx	; 07E3F
+	shl bx, cl			; bx = al * 60 (sekunder i timeout)
+	mov [cs:crt_blank_timeout_sec], bx	; 07E3A
+	mov [cs:crt_blank_countdown], bx	; 07E3F
 	pop cx
 	pop bx
 	ret
@@ -1016,9 +1025,9 @@ vmenu_item_4_options:
 ; Item 5: Konsol-skærmblanking / timeout
 vmenu_item_5:
 	db 0x02				; Farveattribut: Grøn (2)
-	dw CCB_COLOR_MODE		; CCB offset 0x83: Blanking / tilstand
+	dw CCB_BLANK_TIMEOUT		; CCB offset 0x83: Blanking timeout (minutter)
 	dw xios_vmenu_str_blank		; Prompt: "Blank   "
-	dw vmenu_action_item_5		; Handling: opdater CCB[CCB_COLOR_MODE]
+	dw vmenu_action_item_5		; Handling: opdater CCB[CCB_BLANK_TIMEOUT]
 vmenu_item_5_options:
 	dw vmenu_num_str_space
 	dw vmenu_num_str_1
@@ -1197,8 +1206,8 @@ io_conout:
 	shl bx, 1
 	mov bx, [cs:bx + xios_ccb_table]
 	call word [bx + CCB_ESC_HANDLER]
-	mov ax, [cs:kbd_buf_head]
-	mov [cs:kbd_buf_tail], ax
+	mov ax, [cs:crt_blank_timeout_sec]
+	mov [cs:crt_blank_countdown], ax
 	pop es
 	ret
 
@@ -1344,7 +1353,7 @@ crt_cursor_store_col:			; 080FC
 	ret
 
 crt_esc_dispatch_reset:
-	call crt_reset_blink_state
+	call crt_unblank_screen
 	mov word [bx + CCB_ESC_HANDLER], crt_char_handler
 	jmp near crt_char_handler
 
@@ -4361,17 +4370,20 @@ mouse_process_packet_byte:		; 094EB
 	mov byte [cs:mouse_counter], 5
 	jmp near mouse_process_packet_byte
 
-crt_check_cursor_blink_tick:		; 09588
+; -----------------------------------------------------------------------------
+; Skærmblanking (Screen Saver) Inaktivitetskontrol & Genopretning
+; -----------------------------------------------------------------------------
+crt_check_screen_blank_tick:		; 09588
 	mov bx, [cs:xios4_cur_window_ptr]
-	cmp byte [bx + CCB_COLOR_MODE], 0
+	cmp byte [bx + CCB_BLANK_TIMEOUT], 0
 	je .ret
 	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	jne .ret
-	cmp byte [cs:kbd_disabled_flag], 0xff
+	cmp byte [cs:crt_is_blanked_flag], 0xff
 	je .ret
-	dec word [cs:kbd_buf_tail]
+	dec word [cs:crt_blank_countdown]
 	jne .ret
-	mov byte [cs:kbd_disabled_flag], 0xff
+	mov byte [cs:crt_is_blanked_flag], 0xff
 	call crt_swap_active_line_buffers
 	mov ax, crt_dma_line_table_entry
 	call crt_dma_make_phys_desc
@@ -4381,32 +4393,32 @@ crt_check_cursor_blink_tick:		; 09588
 .ret:					; 095CA
 	ret
 
-crt_reset_blink_state:			; 095CB
+crt_unblank_screen:			; 095CB
 	push bx
 	mov bx, [cs:xios4_cur_window_ptr]
-	cmp byte [bx + CCB_COLOR_MODE], 0
-	jne .reset_buffer_tail
+	cmp byte [bx + CCB_BLANK_TIMEOUT], 0
+	jne .reset_countdown
 	pop bx
 	ret
 
-.reset_buffer_tail:			; 095DA
-	mov bx, [cs:kbd_buf_head]
-	mov [cs:kbd_buf_tail], bx
+.reset_countdown:			; 095DA
+	mov bx, [cs:crt_blank_timeout_sec]
+	mov [cs:crt_blank_countdown], bx
 	push dx
 	xor byte [cs:crt_line_buf_toggle], 0x80
 	mov bx, [cs:xios4_cur_window_ptr]
 	call crt_update_cursor_dispatch
 	pop dx
 	pop bx
-	mov byte [cs:kbd_disabled_flag], 0
+	mov byte [cs:crt_is_blanked_flag], 0
 	ret
 
-kbd_buf_head:
-	dw 0x0384
-kbd_buf_tail:
-	dw 0x0384
-kbd_disabled_flag:
-	db 0x00
+crt_blank_timeout_sec:
+	dw 0x0384			; Standard: 15 minutter (900 sekunder / 0x0384)
+crt_blank_countdown:
+	dw 0x0384			; Løbende nedtæller i sekunder
+crt_is_blanked_flag:
+	db 0x00				; 0xFF hvis skærmen er blanked/slukket
 
 xios_crt_trigger_ca:			; 09601
 	mov al, 1
@@ -6980,21 +6992,21 @@ i_tick:
 ; -----------------------------------------------------------------------------
 rtc_1sec_isr:
 	mov byte [cs:crt_vsync_counter], 0
-	call crt_check_cursor_blink_tick
+	call crt_check_screen_blank_tick
 	call fdc_motor_timeout_tick
 	call fdc_recalibrate_all_drives
 	call dpc_release_shared_devices
 	mov bx, xios_autoconfig_table
 	cmp byte [bx + AUTOCONF_RTC_PRESENT], 0xff
 	je .rtc_1sec_notify
-	mov al, 0x10
-	call rtc_write_reg
+	mov al, RTC_REG_STATUS
+	call rtc_read_reg
 	jmp short .rtc_1sec_done
 
 .rtc_1sec_notify:			; 0AEFE
-	mov al, 7
+	mov al, RTC_REG_MONTH
 	mov ah, 0xc4
-	call rtc_write_reg_direct
+	call rtc_write_reg
 
 .rtc_1sec_done:				; 0AF05
 	call eoi_helper
@@ -7062,7 +7074,10 @@ xios_tick_low:
 xios_tick_high:
 	dw 0x0000
 
-rtc_write_reg_direct:			; 0AFCA
+; -----------------------------------------------------------------------------
+; National Semiconductor MM58167A Real Time Clock (RTC) I/O Rutiner
+; -----------------------------------------------------------------------------
+rtc_write_reg:				; 0AFCA
 	mov dx, PORT_RTC_ADDR
 	and al, 0x1f
 	out dx, al
@@ -7081,7 +7096,7 @@ rtc_write_reg_direct:			; 0AFCA
 	out dx, al
 	ret
 
-rtc_write_reg:				; 0AFE6
+rtc_read_reg:				; 0AFE6
 	mov dx, PORT_RTC_ADDR
 	or al, 0x80
 	out dx, al
@@ -7977,21 +7992,21 @@ rtc_read_current_date_time:		; 0BC39
 	mov ax, [cs:xios_sysdat_segment_val]
 	mov es, ax
 	mov bx, 0
-	mov al, 2
-	call rtc_write_reg
-	mov [es:bx + 0x82], al
-	mov al, 3
-	call rtc_write_reg
-	mov [es:bx + 0x81], al
-	mov al, 4
-	call rtc_write_reg
-	mov [es:bx + 0x80], al
-	mov al, 7
-	call rtc_write_reg
+	mov al, RTC_REG_SEC
+	call rtc_read_reg
+	mov [es:bx + SYSDAT_TOD_SEC], al
+	mov al, RTC_REG_MIN
+	call rtc_read_reg
+	mov [es:bx + SYSDAT_TOD_MIN], al
+	mov al, RTC_REG_HOUR
+	call rtc_read_reg
+	mov [es:bx + SYSDAT_TOD_HR], al
+	mov al, RTC_REG_MONTH
+	call rtc_read_reg
 	call bcd_to_binary_byte
 	mov [cs:rtc_cur_month], al
-	mov al, 6
-	call rtc_write_reg
+	mov al, RTC_REG_DAY
+	call rtc_read_reg
 	call bcd_to_binary_byte
 	mov [cs:rtc_cur_day], al
 	pop es
@@ -8011,22 +8026,22 @@ rtc_set_current_date_time:		; 0BC89
 	mov ax, [cs:xios_sysdat_segment_val]
 	mov es, ax
 	mov bx, 0
-	mov al, 2
-	call rtc_write_reg
-	mov [es:bx + 0x82], al
-	mov al, 3
-	call rtc_write_reg
-	mov [es:bx + 0x81], al
-	mov al, 4
-	call rtc_write_reg
+	mov al, RTC_REG_SEC
+	call rtc_read_reg
+	mov [es:bx + SYSDAT_TOD_SEC], al
+	mov al, RTC_REG_MIN
+	call rtc_read_reg
+	mov [es:bx + SYSDAT_TOD_MIN], al
+	mov al, RTC_REG_HOUR
+	call rtc_read_reg
 	and al, 0x7f
-	mov [es:bx + 0x80], al
-	mov al, 6
-	call rtc_write_reg
+	mov [es:bx + SYSDAT_TOD_HR], al
+	mov al, RTC_REG_DAY
+	call rtc_read_reg
 	call bcd_to_binary_byte
 	mov [cs:rtc_cur_month], al
-	mov al, 5
-	call rtc_write_reg
+	mov al, RTC_REG_DAY_OF_WEEK
+	call rtc_read_reg
 	call bcd_to_binary_byte
 	mov [cs:rtc_cur_day], al
 	pop es
@@ -8320,16 +8335,16 @@ xios_init_entry:
 	cmp byte [bx + AUTOCONF_RTC_PRESENT], 0xff
 	je .init_format_date_str
 	mov ah, 4
-	mov al, 0x11
-	call rtc_write_reg_direct
+	mov al, RTC_REG_CTL
+	call rtc_write_reg
 	call rtc_read_current_date_time
 	jmp short .init_date_loop
 
 .init_format_date_str:			; 0BEE6
 	mov dx, PORT_RTC_ADDR
-	mov al, 7
+	mov al, RTC_REG_MONTH
 	mov ah, 0xc4
-	call rtc_write_reg_direct
+	call rtc_write_reg
 	call rtc_set_current_date_time
 
 .init_date_loop:			; 0BEF3
@@ -9487,15 +9502,15 @@ rtc_sync_sysdat_clock:			; 0C9A9
 	mov ax, [cs:xios_sysdat_segment_val]
 	mov es, ax
 	mov bx, 0
-	mov al, 2
-	call rtc_write_reg
-	mov [es:bx + 0x82], al
-	mov al, 3
-	call rtc_write_reg
-	mov [es:bx + 0x81], al
-	mov al, 4
-	call rtc_write_reg
-	mov [es:bx + 0x80], al
+	mov al, RTC_REG_SEC
+	call rtc_read_reg
+	mov [es:bx + SYSDAT_TOD_SEC], al
+	mov al, RTC_REG_MIN
+	call rtc_read_reg
+	mov [es:bx + SYSDAT_TOD_MIN], al
+	mov al, RTC_REG_HOUR
+	call rtc_read_reg
+	mov [es:bx + SYSDAT_TOD_HR], al
 	pop bx
 	pop es
 	pop ax

@@ -30,6 +30,28 @@ PORT_SOUND              equ 0x0056      ; Sound frequency & attenuation write
 PORT_RTC_DATA           equ 0x005A      ; RTC data write
 PORT_RTC_ADDR           equ 0x005C      ; RTC address write / data read
 
+; MM58167A Internal Register Map (0x00 - 0x1F)
+RTC_REG_MSEC_1_10       equ 0x00        ; Milliseconds (1/1000 & 1/100 sec, BCD)
+RTC_REG_MSEC_100        equ 0x01        ; Milliseconds (1/10 & tenths sec, BCD)
+RTC_REG_SEC             equ 0x02        ; Seconds (00-59, BCD)
+RTC_REG_MIN             equ 0x03        ; Minutes (00-59, BCD)
+RTC_REG_HOUR            equ 0x04        ; Hours (00-23, BCD)
+RTC_REG_DAY_OF_WEEK     equ 0x05        ; Day of week (1-7)
+RTC_REG_DAY             equ 0x06        ; Day of month (01-31, BCD)
+RTC_REG_MONTH           equ 0x07        ; Month (01-12, BCD)
+RTC_REG_RAM_BASE        equ 0x08        ; Scratchpad RAM (8 bytes, 0x08..0x0F)
+RTC_REG_STATUS          equ 0x10        ; Status bit (Ready / IRQ flag)
+RTC_REG_CTL             equ 0x11        ; Interrupt Control register
+RTC_REG_INT_STATUS      equ 0x12        ; Interrupt Status register (clears on read)
+RTC_REG_ALARM_SEC       equ 0x13        ; Alarm compare: Seconds
+RTC_REG_ALARM_MIN       equ 0x14        ; Alarm compare: Minutes
+RTC_REG_ALARM_HOUR      equ 0x15        ; Alarm compare: Hours
+RTC_REG_ALARM_DOW       equ 0x16        ; Alarm compare: Day of week
+RTC_REG_ALARM_DAY       equ 0x17        ; Alarm compare: Day of month
+RTC_REG_ALARM_MONTH     equ 0x18        ; Alarm compare: Month
+RTC_REG_COUNT_RESET     equ 0x19        ; Counter reset register
+RTC_REG_RAM_RESET       equ 0x1A        ; RAM reset register
+
 ; -----------------------------------------------------------------------------
 ; Intel 82730 Text Coprocessor (CRT)
 ; -----------------------------------------------------------------------------
