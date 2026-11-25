@@ -156,6 +156,8 @@ SYSDAT_TOD_SEC       equ 0x82		; Byte: Sekunder (00-59 BCD)
 ; =============================================================================
 ; RC759 Piccoline XIOS Driver (Master Source)
 ; Fælles driver-kode for både XIOS1.CON (1 konsol) og XIOS4.CON (4 konsoller)
+; Reference: SW1400 CCP/M-86 3.1 Piccoline XIOS Release 3.0 (scratch/rc759-xios/ddhf-cache/)
+;   SW1400_CCP_M86_3_1_PICCOLINE_XIOS_Release_3_0.pdf
 ; =============================================================================
 
 	jmp near xios_init_entry	; 00000000 / 077A0
@@ -652,6 +654,8 @@ crt_init_irst_ca:			; 07BFE
 
 ; --- Special- og funktionstast scanningstabel (CS:10B1..10F6, 70 bytes) ---
 ; Tastenummer-opslagstabel til tastatur-dekodning (scannes med repne scasb ved CS:17E2)
+; Reference: Piccoline Programmer's Guide v2, §4.1 Tastatur (p. 42-45)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=52
 crt_timer_flag:
 	db 0x00				; 0x10B1: CRT timer aktiv flag
 crt_timer_divider:
@@ -971,6 +975,8 @@ vmenu_action_item_5:
 ; =============================================================================
 ; Sektion 3B.2: Skærmtrimningsmenu Tabeller & Terminal/Konsol Output (CS:12A7..1500)
 ; Fælles for både XIOS1 og XIOS4 med parametriserede tabeller og symbolske instruktioner
+; Reference: Piccoline Programmer's Guide v2, §4.3 Skærmtrimning (p. 50-54)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=60
 ; =============================================================================
 ; =============================================================================
 ; Virtuel Menu Tabeller og Element-definitioner
