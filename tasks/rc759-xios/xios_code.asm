@@ -4,11 +4,11 @@
 %if NUM_VIR_CONS == 4
 	%define XT_ALLOC_PARAS 0x0500                 ; 1280 paragraffer unlinked bufferplads til 4 konsoller
 	%define ZORDER_LIST_SIZE 16                   ; 2^4 = 16 kombinationer for 4 konsoller
-	%define xios_screen_state_buf (xios4_clip_map + 0x780)
+	%define xios_saved_fkeys_buf (xios4_clip_map + 0x780)
 %else
 	%define XT_ALLOC_PARAS 0x01F4                 ; 500 paragraffer unlinked bufferplads til 1 konsol
 	%define ZORDER_LIST_SIZE 2                    ; 2^1 = 2 kombinationer for 1 konsol
-	%define xios_screen_state_buf xios1_screen_state_buf
+	%define xios_saved_fkeys_buf xios1_saved_fkeys_buf
 %endif
 
 ; =============================================================================
@@ -1791,13 +1791,13 @@ crt_esc_7_fkey_exp_on:
 ; ESC 253 (0xFD) - Save Function Keys (s. 63 / App. F): Gem funktionstaster i buffer (456 bytes)
 crt_esc_253_save_fkeys:
 	mov si, [bx + CCB_FKEY_TABLE]
-	mov di, xios_screen_state_buf
+	mov di, xios_saved_fkeys_buf
 	jmp short crt_esc_copy_fkeys
 
 ; ESC 254 (0xFE) - Restore Function Keys (s. 64 / App. F): Gendan funktionstaster fra buffer (456 bytes)
 crt_esc_254_rest_fkeys:
 	mov di, [bx + CCB_FKEY_TABLE]
-	mov si, xios_screen_state_buf
+	mov si, xios_saved_fkeys_buf
 
 crt_esc_copy_fkeys:                                     ; 084D0
 	mov cx, 0x1c8
@@ -1849,12 +1849,12 @@ crt_esc_scroll_end_row:
 	xor_ch_ch                                    ; 08513
 	mov_di_cx                                    ; 08515
 
-rtm_al80_poll_console:                         ; 08517
+.check_start_row:                         ; 08517
 	mov si, [bx + CCB_ESC_PARAM_BUF]
 	cmp_di_si                                    ; 0851A
 	jb crt_esc_param_ignore
 
-rtm_al87_blocking_read:                        ; 0851E
+.exec_scroll:                        ; 0851E
 	push si
 	push di
 	call crt_hide_cursor_graphics
@@ -7606,7 +7606,7 @@ boot_msg_crlf_fpu:
 	db_dk "Numerisk Regneenhed installeret"
 	db 0x0D, 0x0A, 0
 	db_dk "Winchester disk  X er ikke initialiseret"  ; 0B73A
-xios1_screen_state_buf:
+xios1_saved_fkeys_buf:
 	db 0x0D, 0x0A, 0
 	db_dk "Winchester disk  x har dårlig konfigurations sektor"  ; 0B765
 	db 0x0D, 0x0A, 0
@@ -7827,7 +7827,7 @@ mov bx, [cs:bx + xios_ccb_table]
 	call window_zorder_update_table
 	dec dl
 	jns .init_palette_loop
-mov di, xios_screen_state_buf
+mov di, xios_saved_fkeys_buf
 	push di
 	xor_ax_ax                                    ; 0BB52
 	mov cx, 0x1c8
