@@ -5847,14 +5847,32 @@ fdc_int11_handler:
 	pop dx
 	iret
 ; Floppy parameter tables & scratch buffers (CS:373B..3941)
+; Floppy disk DMA transfer configuration (Intel 80186 integreret DMA controller)
+; Port-adresser i I/O space sendes som word-par (DX) i out dx, ax (fdc_send_dma_param_block).
+; Værdierne parres med de 6 words i fdc_dma_descriptor_block (SI).
 fdc_dma_command_word:
-	db 0x00, 0x00
+	dw 0x0000			; 80186 DMA Control Word (0xAE66 = read/verify, 0x76A6 = write)
+
+; I/O portadresser for 80186 DMA kanal 0 (PCB registerblok 0xFFC0..0xFFCA)
 fdc_dma_ch0_ctrl_block:
-	db 0xc6, 0xff, 0xc4, 0xff, 0xc2, 0xff, 0xc0, 0xff, 0xc8, 0xff, 0xca, 0xff
+	dw PORT_PCB_DMA0_DSTHI		; 0xFFC6: Destinationsadresse høj (bits 16..19)
+	dw PORT_PCB_DMA0_DSTLO		; 0xFFC4: Destinationsadresse lav (bits 0..15)
+	dw PORT_PCB_DMA0_SRCHI		; 0xFFC2: Kildeadresse høj (bits 16..19)
+	dw PORT_PCB_DMA0_SRCLO		; 0xFFC0: Kildeadresse lav (bits 0..15)
+	dw PORT_PCB_DMA0_CNT		; 0xFFC8: Transfer count (antal bytes/ord)
+	dw PORT_PCB_DMA0_CON		; 0xFFCA: DMA kontrolregister / start
+
+; I/O portadresser for 80186 DMA kanal 1 (PCB registerblok 0xFFD0..0xFFDA)
 fdc_dma_ch1_ctrl_block:
-	db 0xd6, 0xff, 0xd4, 0xff, 0xd2, 0xff, 0xd0, 0xff, 0xd8, 0xff, 0xda, 0xff
+	dw PORT_PCB_DMA1_DSTHI		; 0xFFD6: Destinationsadresse høj (bits 16..19)
+	dw PORT_PCB_DMA1_DSTLO		; 0xFFD4: Destinationsadresse lav (bits 0..15)
+	dw PORT_PCB_DMA1_SRCHI		; 0xFFD2: Kildeadresse høj (bits 16..19)
+	dw PORT_PCB_DMA1_SRCLO		; 0xFFD0: Kildeadresse lav (bits 0..15)
+	dw PORT_PCB_DMA1_CNT		; 0xFFD8: Transfer count (antal bytes/ord)
+	dw PORT_PCB_DMA1_CON		; 0xFFDA: DMA kontrolregister / start
+
 fdc_dma_channel_mask:
-	db 0x03
+	db 0x03			; Bitmaske over ledige DMA-kanaler (bit 0 = Ch 0, bit 1 = Ch 1)
 fdc_read_error_code:
 	db 0x00
 fdc_write_error_code:
