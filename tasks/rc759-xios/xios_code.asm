@@ -1140,7 +1140,7 @@ vmenu_item_5_options:
 	dw vmenu_num_str_13
 	dw vmenu_num_str_14
 	dw vmenu_num_str_15
-	db 0x00, 0x00
+	db 0x00, 0x00		; Tabel-afslutning (NUL-terminator)
 
 ; Tal-strenge (" 1".."15")
 vmenu_num_str_1:      db "1 "
@@ -2830,20 +2830,21 @@ vram_setup_page_segments:		; 08B5E
 	mov ds, [cs:xios_vram_back_page]
 	ret
 
+; CRT ESC-sekvens scratch-variable (gemt/genoprettet ved ESC-dispatch):
 crt_state_flags:
-	dw 0x0000
+	dw 0x0000			; CRT tilstandsflag (bit 0 = escape aktiv, etc.)
 crt_cursor_dx:
-	dw 0x0000
+	dw 0x0000			; Gemt DX (kolonne/parameter) under ESC-behandling
 crt_cursor_al:
-	db 0x00
+	db 0x00			; Gemt AL (tegnkode) under ESC-behandling
 crt_cursor_si:
-	dw 0x0000
+	dw 0x0000			; Gemt SI under ESC-behandling
 crt_cursor_di:
-	dw 0x0000
+	dw 0x0000			; Gemt DI under ESC-behandling
 crt_mode_ah:
-	db 0x00
+	db 0x00			; Gemt AH (tilstandsbyte) under ESC-behandling
 crt_screen_attr:
-	db 0x00
+	db 0x00			; Aktuel tegnattribut til næste skærmudskrift
 
 crt_dispatch_esc_char:			; 08B79
 	xor_cx_cx			; 08B79
@@ -3166,9 +3167,9 @@ vmenu_format_two_digits:		; 08DDE
 	ret
 
 vmenu_active_flag:
-	db 0x00
+	db 0x00			; Vmenu aktiv: 0=inaktiv, non-zero=vmenu vist
 vmenu_saved_bx:
-	dw 0xffff
+	dw 0xffff			; Gemt BX under vmenu (0xFFFF = ugyldig/ikke sat)
 
 con_puts:				; 08DF1
 	push es
@@ -4367,19 +4368,19 @@ mouse_jump_table:
 	dw mouse_fn_nop
 	dw mouse_fn_read
 mouse_counter:
-	db 0x05
+	db 0x05			; 5-byte pakke-protokol tæller: starter ved 5, nul = pakke komplet
 mouse_pos_x:
-	dw 0x0000
+	dw 0x0000			; Akkumuleret muspositionsforskydning X (nulstilles ved læsning)
 mouse_delta_x:
-	dw 0x0000
+	dw 0x0000			; Delta X siden sidst (rå bevægelses-tæller)
 mouse_delta_y:
-	dw 0x0000
+	dw 0x0000			; Delta Y siden sidst (rå bevægelses-tæller)
 mouse_state:
-	dw 0x0000
+	dw 0x0000			; Museknap-status (bit 0=venstre, bit 1=højre)
 mouse_step_x:
-	dw 0x0000
+	dw 0x0000			; Musetrinstørrelse X (skalering)
 mouse_step_y:
-	dw 0x0000
+	dw 0x0000			; Musetrinstørrelse Y (skalering)
 mouse_fn_reset:
 	mov al, 0xff
 	ret
@@ -4652,16 +4653,16 @@ crt_load_cursor_hardware_regs:		; 096CF
 ;   https://archive.org/download/bitsavers_inteldataBrocessorandPeripheralHandbookVolume2_98878032/1987_Intel_Microprocessor_and_Peripheral_Handbook_Volume_2.pdf
 ; =============================================================================
 xios4_vir_con_mode:
-	db 0x00, NUM_VIR_CONS
+	db 0x00, NUM_VIR_CONS		; Virtuelt konsolmodus: [0]=tilstand (0=normal), [1]=antal konsoller
 xios4_vir_con_mode_p2:
-	db 0x03, 0x02, 0x01
+	db 0x03, 0x02, 0x01		; Konsolindeks for sekundære konsoller (3, 2, 1 — faldende rækkefølge)
 xios4_active_vir_con:
-	db 0x00
-	db 0x00
+	db 0x00			; Aktiv virtuel konsol (0=konsol 0)
+	db 0x00			; Reserveret
 xios4_cur_window_ptr:
 	dw ccb_console_0
 xios4_window_clip_flag:
-	db 0xff
+	db 0xff			; Vindues-clipping flag: 0xFF = clipping aktiv
 
 window_zorder_list:
 	times ZORDER_LIST_SIZE db 0
@@ -4684,22 +4685,22 @@ window_zorder_list:
 	db 0, 80		; +0x4C padding, +0x4D CCB_WRAP_COL=80
 	db %2
 	times 0x0b db 0
-	dw 0xffff
-	dw %3
-	dw crt_char_handler
-	db 0x4f
-	times 9 db 0
-	dw %4
-	times 4 db 0
+	dw 0xffff			; +0x5A CCB link-pointer (0xFFFF = kæde-afslutning)
+	dw %3				; +0x5C Sekundær ESC-handler adresse (konsolspecifik)
+	dw crt_char_handler		; +0x5E CCB_ESC_HANDLER: standard ESC-sekvens dispatcher
+	db 0x4f			; +0x60 CCB_MAX_COL=79 (kolonne 0–79 i 80-kolonne display)
+	times 9 db 0			; +0x61 CCB_LINE_TABLE/CCB_COL/CCB_ROW/CCB_SAVED_COL (nul ved init)
+	dw %4				; +0x6A CCB_ATTR (lo) | CCB_FLAGS (hi): initial attribut og flags
+	times 4 db 0			; +0x6C CCB_SAVED_FLAGS/CCB_SAVED_ATTR (nul ved init)
 	db 0x0D, 0x01		; +0x6F-0x70: reserveret
 	db 0x0A			; +0x71 CCB_SCROLL_MODE: scroll mode 10
 	db 0x00			; +0x72 CCB_CURSOR_LINES: cursor start = scanline 0
 	db 0x01			; +0x73 CCB_CURSOR_HEIGHT: cursor højde = 1 scanline
 	db 0xF8			; +0x74 CCB_BLINK_FLAG: blink aktiveret
 	dw %5
-	times 9 db 0
-	db 0x02, 0x00, 0x0f
-	times 16 db 0
+	times 9 db 0			; +0x77 CCB_VIDEO_MODE/CCB_ESC_PARAM_FN/CCB_ESC_PARAM_BUF (nul ved init)
+	db 0x02, 0x00, 0x0f		; +0x80 CCB_CHAR_ATTR=0x02 (alt.tegnsæt), +0x81=0, +0x82 skærmblanknings-timeout=15 min
+	times 16 db 0			; +0x83 CCB_BLANK_TIMEOUT..CCB_PALETTE+n (nul ved init)
 %endmacro
 
 ccb_console_0:
@@ -4716,7 +4717,7 @@ ccb_console_3:
 %endif
 
 xios_sysdat_segment_ptr:
-	dw 0x0000
+	dw 0x0000			; SYSDAT-segmentadresse (sættes ved boot fra SYSDAT TOD-block)
 
 xios_ccb_table:
 %if NUM_VIR_CONS == 1
@@ -4726,7 +4727,7 @@ xios_ccb_table:
 %endif
 
 xios_is_color_display:
-	db 0x00
+	db 0x00			; 0=monokrom/grøn skærm, 0xFF=farveskærm (sættes af hardware-detektion)
 xios_font_height_scanlines:
 	db 0x09			; Tegnsnitshøjde = 9 scanlinjer (0-baseret: 10 scanlinjer/tegnrække, LPR=9)
 xios_crt_50hz_60hz_flag:
@@ -6064,13 +6065,13 @@ fdc_dma_ch1_ctrl_block:
 fdc_dma_channel_mask:
 	db 0x03			; Bitmaske over ledige DMA-kanaler (bit 0 = Ch 0, bit 1 = Ch 1)
 fdc_read_error_code:
-	db 0x00
+	db 0x00			; Sidst modtaget WD2797 læsefejl-status (0=ingen fejl)
 fdc_write_error_code:
-	db 0x00
+	db 0x00			; Sidst modtaget WD2797 skrivefejl-status (0=ingen fejl)
 fdc_dma_phys_addr_low:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Fysisk DMA-adresse bits 0..15 (sættes af fdc_setup_dma_descriptor)
 fdc_dma_phys_addr_high:
-	db 0x00
+	db 0x00			; Fysisk DMA-adresse bits 16..19 (sættes af fdc_setup_dma_descriptor)
 ; Intel 80186 DMA Parameter Blok (12 bytes = 6 ord, overføres via fdc_send_dma_param_block)
 ; Udfyldes dynamisk af fdc_setup_dma_descriptor før overførsel:
 fdc_dma_descriptor_block:
@@ -6081,45 +6082,45 @@ fdc_dma_descriptor_block:
 	dw 0x0000			; +8: Transfer count (antal overførte bytes)
 	dw 0x0000			; +10: DMA Control Word (0xAE66 = read, 0x76A6 = write)
 fdc_multi_track_flag:
-	db 0x00
+	db 0x00			; Multi-track flag: 0=single track, non-zero=multi-track (begge sider)
 fdc_rw_flags:
 	db 0x08			; bit 3 = 1: læse-operation (0=skriv); sættes til 8, AND-es med statusbyte
 fdc_cmd_byte_count:
-	db 0x00
+	db 0x00			; Antal WD2797 kommandobytes i kommandosekvens
 fdc_density_flag:
-	db 0x00
+	db 0x00			; Densitet: 0=enkelt (FM/SD), non-zero=dobbelt (MFM/DD)
 fdc_sector_size_code:
-	db 0x00
+	db 0x00			; WD2797 sektorstørrelse: 0=128B, 1=256B, 2=512B, 3=1024B
 fdc_active_drive_fcr:
 	db 0x48			; FDC_CTRL_CLOCK_2MHZ|FDC_CTRL_PRECOMP_EN: 2MHz ur + forhåndskomp., motor=off, drev A
 fdc_motor_timeout_counter:
-	db 0x00
+	db 0x00			; Motor auto-sluk nedtæller (dekr. pr. VRTC-tick, 0=sluk)
 fdc_wait_flag:
-	db 0x00, 0x00, 0x00
+	db 0x00, 0x00, 0x00	; ISR synkroniseringsflags: [0]=afvent DRQ, [1]=afvent int, [2]=status
 fdc_drive_cur_cyl_table:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Aktuel cylinder for drev A og B (én byte pr. drev)
 fdc_cur_dpb_ptr:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Offset til aktiv DPB (Disk Parameter Block) i dph_drive_a-tabel
 fdc_cur_spt:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Sektorer pr. spor på aktiv disk (sættes fra DPB)
 fdc_cur_sector_shift:
-	db 0x00
+	db 0x00			; Sektorstørrelse skiftfaktor (1=256B, 2=512B, 3=1024B)
 fdc_sectors_to_transfer:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Antal sektorer i igangværende DMA-overførsel
 fdc_sectors_remaining:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Resterende sektorer i igangværende læse-/skrivekommando
 fdc_active_drive_mask:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Bitmask over drev med motor i gang (bit n = drev n aktiv)
 fdc_retry_counter:
-	db 0x00
+	db 0x00			; Fejl-gentagelsestæller (initialiseret til 3 ved fejl)
 fdc_drive_ready_mask:
 	db 0xff, 0x00		; 0x00FF: alle 8 drev markeret klar ved boot
 fdc_op_in_progress:
-	db 0x00
+	db 0x00			; FDC læse-/skriveoperationsmarkør (non-zero = operation aktiv)
 fdc_status_reg_0:
-	db 0x00
+	db 0x00			; WD2797 statusregister 0 fra sidst udlæste kommandostatus
 fdc_status_reg_1_2:
-	db 0x00, 0x00
+	db 0x00, 0x00		; WD2797 statusregister 1 og 2 fra sidst udlæste kommandostatus
 fdc_stats_read_ops:
 	times 32 db 0			; 16 drev x 1 word statistik-tællere
 fdc_stats_write_ops:
@@ -6143,9 +6144,9 @@ fdc_error_state_a:
 fdc_error_state_b:
 	times 4  db 0				; FDC drev B fejl-tilstand (4 bytes)
 fdc_isr_saved_ax:
-	db 0x00, 0x00, 0x00
+	db 0x00, 0x00, 0x00	; Gemt AX (3 bytes: AL=status, AH=cmd, +1=padding) fra FDC ISR
 fdc_drive_unit_map:
-	db 0x00
+	db 0x00			; Enhedskort for drev A (bit-indeks til fysisk FDC-enhed)
 fdc_drive_b_unit_map:
 	times 15 db 0
 
@@ -6211,7 +6212,7 @@ fdc_dpb_drive_b:
 	RC759_DPB 18, 5, 0x1F, 1, 0x0AB0, 0x04FF, 0xFF, 0xC0, 0x8000, 4, 2, 3
 	RC759_DPB 18, 5, 0x1F, 0, 0x0AB0, 0x04FF, 0xFF, 0xC0, 0x8000, 4, 2, 3
 	times 152 db 0			; CSV/ALV buffer-plads
-	db 0x00
+	db 0x00			; Justeringsbyte (align til 2-byte grænse)
 
 fdc_dpb_drive_m:
 	dw 8		; spt=8
@@ -6767,13 +6768,13 @@ sio_chan_b_ctrl_block:
 	db 0x00			; kanal B WR0 high
 	db 0x03			; kanal B init sekvens tæller
 sio_chan_a_ctrl_block:
-	dw 0x0000
+	dw 0x0000			; SIO kanal A kontrolblok-pointer (sættes ved init)
 sio_chan_a_rx_buf_size:
 	times 6 db 0
 sio_chan_a_tx_buf_size:
-	dw 0x0000
+	dw 0x0000			; SIO kanal A sendbuffer størrelse i bytes (0=ikke sat)
 sio_chan_b_rx_buf_ptr:
-	dw 0x0000
+	dw 0x0000			; SIO kanal B modtagebuffer pointer (sættes ved init)
 sio_chan_b_rx_buf_size:
 	times 6 db 0
 sio_chan_b_tx_buf_size:
@@ -7722,7 +7723,7 @@ xios_vmenu_opt_yes:
 xios_vmenu_str_console:
 	db " Konsol="
 vmenu_buf_con_num:
-	db 0x00, " "
+	db 0x00, " "		; Konsolnummer-buffer: [0]=cifre (ASCII), [1]=mellemrum separator
 vmenu_buf_mode_str:
 	times 8 db 0x00
 	db " "
@@ -7730,7 +7731,7 @@ vmenu_buf_process_name:
 	times 8 db 0x00
 	db " "
 vmenu_buf_mode_flag:
-	db 0x00
+	db 0x00			; Procesbeskrivelse type-flag (0=normal process, non-zero=system)
 vmenu_buf_drive_map:
 	times 16 db 0x00
 	db " "
@@ -7742,7 +7743,7 @@ vmenu_buf_prn_status:
 xios_vmenu_str_printer:
 	db "Skriver="
 vmenu_buf_prn_num:
-	db 0x00, 0x00, " "
+	db 0x00, 0x00, " "	; Skriver-nummer buffer: 2 ASCII-cifre + mellemrum separator
 vmenu_buf_kbd_lock:
 	times 4 db 0x00
 	db " "
@@ -7795,44 +7796,44 @@ boot_msg_printer_retry:
 ; =============================================================================
 xios_boot_banner:
 	db_dk "PICCOLINE XIOS version 2.3 - Marts 1985 "	; 0B5E1
-	db 0x0D, 0x0A, 0x0A
+	db 0x0D, 0x0A, 0x0A		; CR, LF, LF (banner-afslutning med ekstra linjeskift)
 boot_msg_main_memory:
 	db_dk "      K bytes hoved lager"	; 0B613
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 boot_msg_user_memory:
 	db_dk "      K bytes bruger lager"	; 0B62F
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 boot_msg_floppy_drives:
 	db_dk "      Diskette station(er)"	; 0B64C
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 boot_msg_winchester_drives:
 	db_dk "      Winchester disk station(er)"	; 0B669
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 boot_msg_data_buffers:
 	db_dk "      Data buffer(e)"	; 0B68D
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 boot_msg_dir_buffers:
 	db_dk "      Katalog buffer(e)"	; 0B6A4
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 boot_msg_mdisk_kbytes:
 	db_dk "      K bytes M-disk"	; 0B6BE
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 boot_msg_mdisk_low_mem:
 	db_dk "  *** For lidt lager til M-disk"	; 0B6DA
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 boot_msg_crlf_lan:
-	db 0x0D, 0x0A			; 0B6F7
+	db 0x0D, 0x0A			; 0B6F7 CR, LF (foranstillet linjeskift)
 	db_dk "Lokalnet adaptor installeret"
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 boot_msg_crlf_fpu:
-	db 0x0D, 0x0A			; 0B718
+	db 0x0D, 0x0A			; 0B718 CR, LF (foranstillet linjeskift)
 	db_dk "Numerisk Regneenhed installeret"
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 	db_dk "Winchester disk  X er ikke initialiseret"	; 0B73A
 xios1_saved_fkeys_buf:
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 	db_dk "Winchester disk  x har dårlig konfigurations sektor"	; 0B765
-	db 0x0D, 0x0A, 0
+	db 0x0D, 0x0A, 0		; CR, LF, NUL
 .screen_state_ret:
 %if NUM_VIR_CONS == 4
 	times 71 db 0
@@ -9150,11 +9151,11 @@ boot_format_dec:			; 0C468
 
 	times 64 db 0x00
 xios_mx_mem_free:
-	dw 0x0000
+	dw 0x0000			; Antal ledige bytes i XIOS dynamisk hukommelses-pulje
 xios_mx_low_mem_reserve:
-	dw 0x0000
+	dw 0x0000			; Antal bytes reserveret til lav-hukommelse (sættes ved boot)
 xios_mx_mem_avail:
-	dw 0x0000
+	dw 0x0000			; Tilgængelig hukommelse udover reserve (mem_free - low_mem_reserve)
 xios_mx_alloc_ptr:			; Start på XIOS dynamisk hukommelsesallokering (efter XIOS-data)
 %if NUM_VIR_CONS == 4
 	dw 0x6007			; XIOS4: 0x6007 = 24583 (offset i 29440-byte XIOS4.CON)
@@ -9166,7 +9167,7 @@ xios_mx_free_ptr:
 xios_mx_div_table:			; Divisorer til decimal-output (5 × word)
 	dw 10000, 1000, 100, 10, 1
 xios_mx_mem_limit:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Øvre grænse for hukommelsesallokering (segment-par, 0=ingen grænse)
 xios_mx_sound_qcb:	RTM_MX_QCB "MXsound "
 xios_mx_sound_msg:	RTM_MX_MSG "MXsound "
 xios_mx_dma0_qcb:	RTM_MX_QCB "MXdma0  "
@@ -9852,7 +9853,7 @@ dpc_release_shared_devices:		; 0CB3C
 	ret
 	align 2, db 0
 crt_82730_cb_status:
-	db 0x01, 0x03
+	db 0x01, 0x03		; 82730 CB: byte[0]=0x01 (START DISPLAY kommandobyte), byte[1]=0x03 (parameter)
 crt_line_buf_toggle:
 	dw 0x0000			; Aktiv linjebuffer-selektor (0=buf0, skifter ved opdatering)
 	dw 0x0050			; Linjebuffer-bredde = 80 tegn
@@ -9967,6 +9968,7 @@ xios_vmenu_line_offsets:		; Byte-offset pr. skærmlinje (13 rækker × 80 tegn �
 ; Terminal Linje-Tabel & int3 Padding
 ; -----------------------------------------------------------------------------
 vmenu_screen_line_table:
+	; VRAM-offsets for linje 13-23 (13×160=2080=0x820, trin=160 bytes pr. linje à 80 tegn×2 bytes):
 	dw 0x0820, 0x08C0, 0x0960, 0x0A00, 0x0AA0, 0x0B40, 0x0BE0, 0x0C80, 0x0D20, 0x0DC0, 0x0E60
 	dw vmenu_line_render_buffer
 ; Pointer til standardskrifttype i Piccoline Boot-EPROM (0xFFF8:0000)
