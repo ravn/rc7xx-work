@@ -351,58 +351,53 @@ xios_rtm_svc_call:			; 078DC
 	mov ds, [cs:xios_sysdat_segment_val]
 	call far [cs:xios_sysdat_entry_val]
 	ret
-	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF	; 078E9  .........
-	inc word [bx + si]
-	times 4 db 0			; 078F4..078F6 (4 bytes padding)
-	add [bx + si], dl
-	times 22 db 0			; 078FA..0790E (22 bytes padding)
-	add [di + 0xd], dh
-	times 10 db 0			; 07913..0791B (10 bytes padding)
-	db 0xFF				; 0791D  .
-	inc word [bx + si]
-	add [bx + si], ax
-	add [bp + si], al
-	add [bx + si], dl
-	times 22 db 0			; 07926..0793A (22 bytes padding)
-	db 0x00, 0xA1, 0x0D, 0x00	; 0793C  add byte [bx + di + 0xd], ah
-	times 8 db 0			; 07940..07946 (8 bytes padding)
-	add bh, bh
-	inc word [bx + si]
-	db 0x02, 0x00			; 0794C  add al, byte [bx + si]
-	add [bp + si], al
-	add [bx + si], dl
-	times 22 db 0			; 07952..07966 (22 bytes padding)
-	add ch, cl
-	or ax, strict word 0		; 0796A  0D 00 00
-	times 8 db 0			; 0796D..07973 (8 bytes padding)
-	db 0xFF				; 07975  .
-	inc word [bx + si]
-	add ax, [bx + si]
-	add [bp + si], al
-	add [bx + si], dl
-	times 22 db 0			; 0797E..07992 (22 bytes padding)
-	add cl, bh
-	or ax, strict word 0		; 07996  0D 00 00
-	times 40 db 0			; 07999..079BF (40 bytes padding)
-	and ax, strict word 0xe		; 079C1  25 0E 00
-	times 40 db 0			; 079C4..079EA (40 bytes padding)
-	add [bx + di + 0xe], dl
-	times 42 db 0			; 079EF..07A17 (42 bytes padding)
-	jge xios_dummy_align_entry
-	times 14 db 0			; 07A1B..07A27 (14 bytes padding)
+; =============================================================================
+; Sektion 2B: DRI CCB-tabel (9 × 44 bytes) + LCB-tabel (3 × 10 bytes)
+; Kerne-synlige DRI CCP/M-86 strukturer, peger på af XIOS-header:
+;   xt_ccb = 0x0D49 (CS:0x078E9),  xt_nccbs = 9
+;   xt_lcb = 0x0ED5 (CS:0x07A75),  xt_nlcbs = 3
+; Reference: DRI xioscb.def, Piccoline Programmers Guide v2 §2.2
+; =============================================================================
+CSM_BACKGROUND  equ 0x0002          ; c_state: baggrundskonsol (inaktiv)
 
-xios_dummy_align_entry:			; 07A29
-	times 28 db 0			; 07A29..07A43 (28 bytes padding)
-	test ax, 0xe
-	times 52 db 0			; 07A48..07A7A (52 bytes padding)
-	add bh, bh
-	inc word [bx + si]
-	times 6 db 0			; 07A80..07A84 (6 bytes padding)
-	add bh, bh
-	inc word [bx + si]
-	times 6 db 0			; 07A8A..07A8E (6 bytes padding)
-	add bh, bh
-	db 0xFF				; 07A92  .
+; DRI CCB (Console Control Block) — 44 bytes pr. post
+; Parametre: konsolnummer, c_mimic, c_state, c_maxbufsiz, næste CCB-offset
+%macro DRI_CCB 5
+	dw 0x0000           ; +0x00 c_owner = ingen
+	times 6 db 0        ; +0x02 reserveret
+	dw %2               ; +0x08 c_mimic (0xFFFF = ingen list device mimic)
+	db 0x00             ; +0x0A reserveret
+	db %1               ; +0x0B konsolnummer (RC759-specifik)
+	dw 0x0000           ; +0x0C reserveret
+	dw %3               ; +0x0E c_state
+	dw %4               ; +0x10 c_maxbufsiz
+	times 22 db 0       ; +0x12 reserveret
+	dw %5               ; +0x28 næste CCB i kæde (0 = slut)
+	dw 0x0000           ; +0x2A reserveret
+%endmacro
+
+; DRI LCB (List Control Block) — 10 bytes pr. post
+%macro DRI_LCB 0
+	dw 0x0000           ; +0x00 l_owner = ingen
+	times 6 db 0        ; +0x02 reserveret
+	dw 0xFFFF           ; +0x08 l_mimic (0xFFFF = ingen konsolmimic)
+%endmacro
+
+ccb_table:				; 078E9 — xt_ccb
+ccb_0:	DRI_CCB 0, 0xFFFF, 0x0000,       0x0010, ccb_1	; Konsol 0: forgrund, aktiv
+ccb_1:	DRI_CCB 1, 0xFFFF, CSM_BACKGROUND, 0x0010, ccb_2	; Konsol 1: baggrund
+ccb_2:	DRI_CCB 2, 0xFFFF, CSM_BACKGROUND, 0x0010, ccb_3	; Konsol 2: baggrund
+ccb_3:	DRI_CCB 3, 0xFFFF, CSM_BACKGROUND, 0x0010, ccb_4	; Konsol 3: baggrund
+ccb_4:	DRI_CCB 0, 0x0000, 0x0000,       0x0000, ccb_5	; Ubrugt
+ccb_5:	DRI_CCB 0, 0x0000, 0x0000,       0x0000, ccb_6	; Ubrugt
+ccb_6:	DRI_CCB 0, 0x0000, 0x0000,       0x0000, ccb_7	; Ubrugt
+ccb_7:	DRI_CCB 0, 0x0000, 0x0000,       0x0000, ccb_8	; Ubrugt
+ccb_8:	DRI_CCB 0, 0x0000, 0x0000,       0x0000, 0	; Slut på CCB-kæde
+
+lcb_table:				; 07A75 — xt_lcb
+lcb_0:	DRI_LCB				; List device 0
+lcb_1:	DRI_LCB				; List device 1
+lcb_2:	DRI_LCB				; List device 2
 ; -----------------------------------------------------------------------------
 ; Sektion 3A: Tastatur-ISR, CRT-ISR, Konsol-status og Konsol-input (CS:0EF4..118D)
 ; Fælles implementering for XIOS1 og XIOS4 (666 bytes kode & datatabeller)
@@ -6615,13 +6610,10 @@ int28_fn_18_reserved:			; 0ABC4
 		dw sio_chan_b_ctrl_block
 		dw sio_chan_a_ctrl_block
 sio_chan_b_ctrl_block:
-	times 20 db 0			; 0ABCF..0ABE1 (20 bytes padding)
-	or ax, 0xe00
-	add [bx + di], dl
-	add [bx + di], al
-	add [bx + si], ax
-	db 0x00, 0x00			; 0ABEC
-	db 0x00, 0x7f, 0x14, 0x00, 0xfe, 0x02, 0x00, 0x03, 0x00, 0x03
+	times 20 db 0			; +0x00 runtime-felter (buf-ptr/-size/count)
+	db 0x0D, 0x00, 0x0E, 0x00, 0x11, 0x00, 0x01, 0x01, 0x00, 0x00	; +0x14 fælles config
+	db 0x00, 0x00, 0x7F, 0x14, 0x00
+	db 0xFE, 0x02, 0x00, 0x03, 0x00, 0x03			; +0x23 kanal B
 sio_chan_a_ctrl_block:
 	dw 0x0000
 sio_chan_a_rx_buf_size:
@@ -6634,16 +6626,9 @@ sio_chan_b_rx_buf_size:
 	times 6 db 0
 sio_chan_b_tx_buf_size:
 	db 0x00
-	add [di], cl
-	add [0x1100], cl
-	add [bx + di], al
-	add [bx + si], ax
-	db 0x00, 0x00			; 0AC15
-	add [bx + NVM_FLOPPY_TIMEOUT], bh
-	db 0x00, 0x00			; 0AC1A
-	add ax, [bp + si]
-	add ax, [bp + si]
-	db 0x03				; 0AC20
+	db 0x00, 0x0D, 0x00, 0x0E, 0x00, 0x11, 0x00, 0x01, 0x01, 0x00, 0x00	; +0x13 fælles config
+	db 0x00, 0x00, 0x7F, 0x14, 0x00
+	db 0x00, 0x03, 0x02, 0x03, 0x02, 0x03			; +0x23 kanal A
 io_poll:				; 0AC21
 	cmp dl, 2
 	jne floppy_ack_done
