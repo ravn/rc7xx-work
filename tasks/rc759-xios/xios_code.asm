@@ -6290,12 +6290,10 @@ net_auxin_char_buf:
 	dw 0x0000			; Modtaget tegn / status
 
 ; CCP/M-86 Queue Control Block (QCB) for netværks-konsol input (NetConI)
-net_auxin_queue_desc:
-	dw 0x0000			; Q_LINK: Næste QCB i systemkø (sat af RTM)
-	dw 0x0000			; Q_NET: Netværks-ID / reserveret
-	dw 0x0000			; Q_FLAGS: Kø-statusflag
-	dw net_auxin_char_buf		; Q_BUF_PTR: Pointer til databuffer (1 ord)
-	db "NetConI "			; Q_NAME: 8-tegns unikt kø-navn i CCP/M-86
+net_auxin_queue_desc:				; CCP/M-86 Queue Control Block (16 bytes)
+	dw 0x0000, 0x0000, 0x0000		; Q_LINK, Q_NET, Q_FLAGS
+	dw net_auxin_char_buf			; Q_BUF_PTR
+	db "NetConI "				; Q_NAME (8 bytes)
 net_auxin_ret:
 		ret
 
@@ -6418,12 +6416,10 @@ net_prn_line_buf:
 	times 127 db 0			; Linjebuffer for netværksprinter output (op til 127 tegn)
 
 ; CCP/M-86 Queue Control Block (QCB) for netværks-konsol output (NetConO)
-net_prn_queue_desc:
-	dw 0x0000			; Q_LINK: Næste QCB i systemkø (sat af RTM)
-	dw 0x0000			; Q_NET: Netværks-ID / reserveret
-	dw 0x0000			; Q_FLAGS: Kø-statusflag
-	dw net_prn_buf_len		; Q_BUF_PTR: Pointer til databuffer
-	db "NetConO "			; Q_NAME: 8-tegns unikt kø-navn i CCP/M-86
+net_prn_queue_desc:				; CCP/M-86 Queue Control Block (16 bytes)
+	dw 0x0000, 0x0000, 0x0000		; Q_LINK, Q_NET, Q_FLAGS
+	dw net_prn_buf_len			; Q_BUF_PTR
+	db "NetConO "				; Q_NAME (8 bytes)
 
 xios_prn_isr:
 	call sio_get_channel_b_struct
@@ -8031,17 +8027,17 @@ crt_mode_switch:			; 0B9B7
 	ret
 
 kbd_init_seq:				; 0BB8F — 3 × 16-byte rækker af 4-byte tastaturkoder
-	db 0x1B, 0x48, 0x00, 0x00	; ESC H (cursor home)
-	db 0x1B, 0x41, 0x00, 0x00	; ESC A (cursor op)
+	db 0x1B, 'H', 0x00, 0x00	; ESC H (cursor home)
+	db 0x1B, 'A', 0x00, 0x00	; ESC A (cursor op)
 	times 8 db 0
-	db 0x1B, 0x44, 0x00, 0x00	; ESC D (cursor venstre)
+	db 0x1B, 'D', 0x00, 0x00	; ESC D (cursor venstre)
 	db 0x0D, 0x00, 0x00, 0x00	; CR
-	db 0x1B, 0x43, 0x00, 0x00	; ESC C (cursor højre)
+	db 0x1B, 'C', 0x00, 0x00	; ESC C (cursor højre)
 	times 4 db 0
 	times 4 db 0
-	db 0x1B, 0x42, 0x00, 0x00	; ESC B (cursor ned)
+	db 0x1B, 'B', 0x00, 0x00	; ESC B (cursor ned)
 	db 0x09, 0x00, 0x00, 0x00	; TAB
-	db 0x7F, 0x4C, 0x00, 0x00	; DEL / 0x4C
+	db 0x7F, 'L', 0x00, 0x00	; DEL / L
 kbd_init_seq_end:
 	db 0x7F, 0x00, 0x00, 0x00	; terminator
 int_vec_backup_97:
@@ -9098,6 +9094,7 @@ boot_format_dec:			; 0C468
 	times 8 db 0		; +0x00 besked-data (nul ved init)
 	db %1			; +0x08 procesnavn (8 bytes)
 %endmacro			; Total: 16 bytes
+
 	times 64 db 0x00
 xios_mx_mem_free:
 	dw 0x0000
