@@ -92,14 +92,14 @@ CCB_FLG_NONDISP     equ 0x1000		; Bit 12: Non-display mode / skjult tekst (ESC i
 ; Reference: PICCOLINE Programmer's Guide v2, Section 4.6 (Window Handling), p. 61-63
 ; =============================================================================
 CCB_EXTRA_LINE      equ 0x34		; rw 1: Extra display line used when scrolling
-CCB_CON_IDX         equ 0x36		; rb 1: Virtual console number (0..3)
-CCB_ACTIVE          equ 0x37		; rb 1: Internal XIOS semaphore / active flag
+CCB_CON_IDX         equ 0x34		; rb 1: Virtual console number (0..3)
+CCB_ACTIVE          equ 0x35		; rb 1: Internal XIOS semaphore / active flag
 CCB_WIN_LEFT        equ 0x36		; rb 1: Left column of window (XIOS 16-bit word at 0x36)
 CCB_WIN_TOP         equ 0x38		; rb 1: Top row of window
 CCB_LAST_TOP_LEFT   equ 0x3a		; rw 1: Last top-left corner
 CCB_LAST_BOT_RIGHT  equ 0x3c		; rw 1: Last bottom-right corner
-CCB_COLS            equ 0x42		; rb 1: Actual number of columns (f.eks. 80)
-CCB_ROWS            equ 0x44		; rb 1: Actual number of rows (f.eks. 24)
+CCB_ROWS            equ 0x42		; rb 1: Actual number of rows (f.eks. 24)
+CCB_COLS            equ 0x44		; rb 1: Actual number of columns (f.eks. 80)
 CCB_SCROLL_BOTTOM   equ 0x48		; Window scroll bottom row limit
 CCB_MASK            equ 0x4b		; Console bitmask (1 << con_index)
 CCB_TRACKING_MODE   equ 0x4c		; Window cursor tracking mode (0=fixed, non-zero=tracking)
@@ -635,7 +635,7 @@ crt_vsync_counter:
 	db 0x00				; 0x10B4: reserveret / padding
 key_scan_code_table:			; 07C55 (CS:10B5: 66 ASCII-tegn til ESC-sekvenser og tegnoversættelse)
 	db ";<=>?@ABCDEFGHIJ"
-	db "KLMNOPQRSTUVWXYZ"
+	db "KLMNOPQRSUVWXYZ"
 	db "[\]^"
 	db "abcdefghijklmnopqrstuvwxyz"
 	db "{|}~T"
@@ -6070,23 +6070,9 @@ fdc_dpb_drive_a:
 	RC759_DPB 8, 4, 0x0F, 0, 0x0257, 0x01FF, 0xFF, 0, 0x8080, 4, 3, 7
 	RC759_DPB 8, 4, 0x0F, 0, 0x0257, 0x01FF, 0xFF, 0, 0x8080, 4, 3, 7
 
-fdc_dpb_drive_b:			; 16-byte DPB-variant (uden pmk)
-	dw 0x0012	; spt=18
-	db 5, 0x1F, 1	; bsh, blm, exm=1 (enkel tæthed)
-	dw 0x0AB0	; dsm
-	dw 0x04FF	; drm
-	db 0x40, 0	; al0, al1
-	dw 0x0480	; cks
-	dw 0x0200	; off
-	db 3		; psh
-	dw 0x0012	; spt=18
-	db 5, 0x1F, 0	; bsh, blm, exm=0 (dobbelt tæthed)
-	dw 0x0AB0	; dsm
-	dw 0x04FF	; drm
-	db 0x40, 0	; al0, al1
-	dw 0x0480	; cks
-	dw 0x0200	; off
-	db 3		; psh
+fdc_dpb_drive_b:
+	RC759_DPB 18, 5, 0x1F, 1, 0x0AB0, 0x04FF, 0xFF, 0xC0, 0x8000, 4, 2, 3
+	RC759_DPB 18, 5, 0x1F, 0, 0x0AB0, 0x04FF, 0xFF, 0xC0, 0x8000, 4, 2, 3
 	times 152 db 0			; CSV/ALV buffer-plads
 	db 0x00
 
@@ -9530,7 +9516,8 @@ int28_fn_41_dpc_parallel:		; 0CA03 (Reserver/frigiv DPC interface)
 	push ax
 	push es
 	call int28_fn_04_get_autoconfig
-	mov al, [es:si + AUTOCONF_NUM_FLOPPIES]
+	add si, AUTOCONF_NUM_FLOPPIES
+	mov al, [si]
 	cmp al, 0
 	pop es
 	pop ax
@@ -9595,7 +9582,7 @@ dpc_release_printer:			; 0CA82
 	cmp byte [cs:xios_prn_reserve_timer], 0
 	je .release
 	dec byte [cs:xios_prn_reserve_timer]
-	jmp short .ret
+	jmp near .ret
 
 .release:
 	cmp byte [cs:xios_prn_client_mode], 0xff
@@ -9612,7 +9599,8 @@ int28_fn_42_shared_disk:		; 0CAB5 (Reserver/frigiv delt disk)
 	push ax
 	push es
 	call int28_fn_04_get_autoconfig
-	mov al, [es:si + AUTOCONF_NUM_FLOPPIES]
+	add si, AUTOCONF_NUM_FLOPPIES
+	mov al, [es:si]
 	cmp al, 0
 	pop es
 	pop ax
