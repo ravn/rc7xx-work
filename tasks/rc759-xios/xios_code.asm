@@ -7505,7 +7505,9 @@ xios_int3_handler:
 	jmp near rtm_process_svc_call
 
 xios_diag_str_interrupt:
-	db 0x22, "Interrupt="
+	db (xios_diag_str_end - xios_diag_str_start)	; Pascal længdebyte (34 / 0x22)
+xios_diag_str_start:
+	db "Interrupt="
 xios_diag_slot_int_num:
 	times 6 db " "
 xios_diag_slot_process:
@@ -7514,6 +7516,7 @@ xios_diag_slot_cs:
 	db "    :"
 xios_diag_slot_ip:
 	db "    "
+xios_diag_str_end:
 
 hex_to_ascii_word:			; 0B330
 	cld
