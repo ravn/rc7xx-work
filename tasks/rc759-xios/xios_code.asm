@@ -9784,20 +9784,57 @@ crt_cursor_col_cache:
 	db 0xFF, 0xFF, 0xFF, 0xFF
 crt_82730_dpb_desc_table:
 	times 8 db 0
-crt_82730_text_timing_block:
-	db 0x00, 0x10, 0x03, 0x2F, 0x29, 0x06, 0x29, 0x06, 0x00, 0x00, 0x09, 0x00, 0x0A, 0x00, 0x05, 0x00
-	db 0x09, 0x06
-crt_82730_text_mode_params:
-	db 0x09, 0x00, 0x09, 0x00, 0x09, 0x09, 0x00, 0x00, 0x38, 0x01, 0x05, 0x00, 0x24, 0x00, 0x1E, 0x01
-	db 0x00, 0x00, 0x00, 0x00, 0x01, 0x47
-crt_82730_text_drm_params:
-	db 0x03, 0x47, 0x04, 0xFA
-crt_82730_text_al0_params:
-	db 0xF9, 0xFF
-crt_82730_gfx_timing_block:
-	db 0x00, 0x10, 0x03, 0x2F, 0x29, 0x06, 0x29, 0x06, 0x00, 0x00, 0x0F, 0x00, 0x10, 0x00, 0x05, 0x00
-	db 0x09, 0x06, 0x09, 0x08, 0x09, 0x00, 0x09, 0x09, 0x00, 0x00, 0x38, 0x01, 0x05, 0x00, 0x20, 0x00
-	db 0x20, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x47, 0x03, 0x47, 0x00, 0xFF, 0xFF, 0xFF
+crt_82730_text_timing_block:		; MB_INIT timing (tekst, 9 ord = 18 bytes)
+	dw 0x1000		; burst_length=16, burst_space=0
+	dw 0x2F03		; line_length=47, hsyncstp=3
+	dw 0x0629		; hfldstrt=6, hfldstp=41
+	dw 0x0629		; hbrdstrt=6, hbrdstp=41
+	dw 0x0000		; scroll_margin=0
+	dw 0x0009		; lpr=9 (10 scanlinjer/tegnrække)
+	dw 0x000A		; nrmstrt=0, nrmstp=10
+	dw 0x0005		; supstrt=0, supstp=5
+	dw 0x0609		; substrt=6, substp=9
+crt_82730_text_mode_params:		; MB_INIT mode (11 ord = 22 bytes)
+	dw 0x0009		; cur1strt=0, cur1stp=9
+	dw 0x0009		; cur2strt=0, cur2stp=9
+	dw 0x0909		; u2_line_sel=9, u1_line_sel=9
+	dw 0x0000		; field_attribute_mask=0
+	dw 0x0138		; frame_length=312
+	dw 0x0005		; vsyncstp=5
+	dw 0x0024		; vfldstrt=36
+	dw 0x011E		; vfldstp=286
+	dw 0x0000		; frame_int_count=0, cursor_blink=0
+	dw 0x0000		; char_blink=0
+	dw 0x4701		; duty_cyc_char=4, char_blink=7
+crt_82730_text_drm_params:		; Dynamic Row Mode params (2 ord = 4 bytes)
+	dw 0x4703		; DRM mode byte 0
+	dw 0xFA04		; DRM mode byte 1
+crt_82730_text_al0_params:		; AL0 params (1 ord = 2 bytes)
+	dw 0xFFF9		; AL0 config
+crt_82730_gfx_timing_block:		; MB_INIT komplet (grafik, 23 ord = 46 bytes)
+	dw 0x1000		; burst_length=16, burst_space=0
+	dw 0x2F03		; line_length=47, hsyncstp=3
+	dw 0x0629		; hfldstrt=6, hfldstp=41
+	dw 0x0629		; hbrdstrt=6, hbrdstp=41
+	dw 0x0000		; scroll_margin=0
+	dw 0x000F		; lpr=15 (16 scanlinjer/tegnrække, grafik)
+	dw 0x0010		; nrmstrt=0, nrmstp=16
+	dw 0x0005		; supstrt=0, supstp=5
+	dw 0x0609		; substrt=6, substp=9
+	dw 0x0809		; cur1strt=8, cur1stp=9
+	dw 0x0009		; cur2strt=0, cur2stp=9
+	dw 0x0909		; u2_line_sel=9, u1_line_sel=9
+	dw 0x0000		; field_attribute_mask=0
+	dw 0x0138		; frame_length=312
+	dw 0x0005		; vsyncstp=5
+	dw 0x0020		; vfldstrt=32
+	dw 0x0120		; vfldstp=288
+	dw 0x0000		; frame_int_count=0, cursor_blink=0
+	dw 0x0000		; char_blink=0
+	dw 0x4701		; duty_cyc_char=4, char_blink=7
+	dw 0x4703		; DRM params
+	dw 0xFF00		; AL0 params
+	dw 0xFFFF		; AL0 params cont.
 crt_82730_buf1_hdr:
 	times 4 db 0
 crt_dma_line_buf_0:
