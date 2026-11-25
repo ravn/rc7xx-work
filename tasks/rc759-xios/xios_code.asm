@@ -407,13 +407,13 @@ int28_stub_ret:				; 078B8
 	ret
 
 int28_fn_53_version:			; 078B9
-	mov ax, 0x8523
-	mov bx, 0x206
+	mov ax, 0x8523		; CCPM-86 version: 0x85xx = Concurrent flag, 0x23 = v2.3 i BCD (år 1985)
+	mov bx, 0x206		; BX: supplerende version/revision-information
 	ret
 
 rtm_set_flag:				; 078C0
 	push dx
-	mov cl, 0x85
+	mov cl, 0x85			; RTM supervisor call 0x85 = SET_FLAG (sæt RTM hændelse-flag DX)
 	call xios_rtm_svc_call
 	pop dx
 	test ax, ax
@@ -424,7 +424,7 @@ rtm_set_flag:				; 078C0
 	ret
 
 rtm_timer_wait:				; 078D1
-	mov cl, 0x84
+	mov cl, 0x84			; RTM supervisor call 0x84 = TIMER_WAIT (vent på timer i DX ticks)
 
 rtm_process_svc_call:			; 078D3
 	mov bx, [cs:sysdat_rlr]
