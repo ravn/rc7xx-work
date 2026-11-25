@@ -69,14 +69,20 @@ NVM_PRINTER_TYPE	equ 0x1C		; Byte 28: Printertype (0=filtrér uprintbare, 1=tran
 
 ; =============================================================================
 ; Digital Research CCP/M-86 Process Descriptor (PD) Offsets
+; Reference: DRI xios.a86 p. 7 (CCP/M Formats — Process Descriptor Format)
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
 ; =============================================================================
-PD_FLAG             equ 0x06		; Process status flags
-PD_NAME             equ 0x08		; Process name (8 ASCII characters)
-PD_UDA              equ 0x10		; User Data Area segment
-PD_CNS              equ 0x20		; Default console index (0..3)
+PD_FLAG             equ 0x06		; Process status flags      (p_flag)
+PD_NAME             equ 0x08		; Process name (8 ASCII)    (p_name)
+PD_UDA              equ 0x10		; User Data Area segment    (p_uda)
+PD_CNS              equ 0x20		; Default console index     (p_cons)
 
 ; =============================================================================
-; Console Control Block Flags Bitmasks (CCB_FLAGS)
+; Console Control Block Flags Bitmasks (CCB_FLAGS / c_state)
+; Reference: DRI xios.a86 p. 8 (CCB state flags: csm_buffered, csm_background …)
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
+; RC759-specifikke bitmønstre: Piccoline Programmer's Guide v2, §4.6 (p. 61-63)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=61
 ; =============================================================================
 CCB_FLG_SCROLL_LOCK equ 0x0001		; Bit 0: Scroll-lås / bufferopdatering aktiv
 CCB_FLG_INACTIVE    equ 0x0002		; Bit 1: Baggrundskonsol (1=inaktiv/skjult, 0=aktiv)
