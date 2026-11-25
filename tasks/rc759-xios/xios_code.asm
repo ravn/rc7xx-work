@@ -674,8 +674,8 @@ kbd_special_keys_table:
 
 ; -----------------------------------------------------------------------------
 ; CRT Afbrydelsesrutine (IRST, Vektor 0x88)
-; Intel 82730 IRST (Interrupt Request Status): 1984 Intel Microsystem Components Handbook Vol. 1, kap. 8
-;   https://github.com/mamedev/mame/blob/master/src/devices/video/i82730.cpp
+; Intel 82730 IRST: 1987 Intel Microprocessor and Peripheral Handbook Vol. 2, kap. 7 p. 7-34
+;   https://archive.org/download/bitsavers_inteldataBrocessorandPeripheralHandbookVolume2_98878032/1987_Intel_Microprocessor_and_Peripheral_Handbook_Volume_2.pdf
 ; -----------------------------------------------------------------------------
 	push ds				; 07BF9
 	call xios_switch_to_priv_stack	; 07BFA
@@ -4345,8 +4345,8 @@ window_draw_title:			; 09473
 ; Sektion 4B: Fælles Mus- og CRT-driver (CS:2980..2BD0 / CS:2B43..2D93)
 ; Optisk mus (INT 28H Func 30): Piccoline Programmer's Guide v2, Appendix A (p. 205)
 ;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=215
-; Intel 82730 Text Coprocessor: Intel 82730 Users Manual (order 231724) — ikke fundet online; feltnavne: MAME src/devices/video/i82730.cpp
-;   https://github.com/mamedev/mame/blob/master/src/devices/video/i82730.cpp
+; Intel 82730 Text Coprocessor: 1987 Intel Microprocessor and Peripheral Handbook Vol. 2, kap. 7 p. 7-34
+;   https://archive.org/download/bitsavers_inteldataBrocessorandPeripheralHandbookVolume2_98878032/1987_Intel_Microprocessor_and_Peripheral_Handbook_Volume_2.pdf
 ; =============================================================================
 int28_fn_30_mouse:			; 094A0
 	cmp cl, 4
@@ -4644,8 +4644,8 @@ crt_load_cursor_hardware_regs:		; 096CF
 ; Sektion 4C: Display Lists, Konsol-deskriptorer (CCB) & CRT Output Buffere
 ; CS:2BD0..2D7B (XIOS1: 1 virtuel konsol) / CS:2D93..3108 (XIOS4: 4 virtuelle konsoller)
 ; CCB-struktur: se equates-blok øverst (DRI xios.a86 p. 8 + p. 63)
-; Intel 82730 Display Lists: Intel 82730 Users Manual (order 231724) — ikke fundet online; feltnavne: MAME src/devices/video/i82730.cpp
-;   https://github.com/mamedev/mame/blob/master/src/devices/video/i82730.cpp
+; Intel 82730 Display Lists: 1987 Intel Microprocessor and Peripheral Handbook Vol. 2, kap. 7 p. 7-34
+;   https://archive.org/download/bitsavers_inteldataBrocessorandPeripheralHandbookVolume2_98878032/1987_Intel_Microprocessor_and_Peripheral_Handbook_Volume_2.pdf
 ; =============================================================================
 xios4_vir_con_mode:
 	db 0x00, NUM_VIR_CONS
