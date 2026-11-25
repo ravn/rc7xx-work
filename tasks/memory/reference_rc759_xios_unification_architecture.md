@@ -69,10 +69,38 @@ Originalen blev kompileret med Digital Researchs egen **RASM-86** assembler.
   - **RASM-86 standard**: Genererer ofte $d=1$ (f.eks. opcode `0x03` for `ADD`).
   - **NASM standard**: Genererer som standard $d=0$ (f.eks. opcode `0x01` for `ADD`).
 * **Løsning**: For at undgå uoverskuelige rå `db 0x..` bytes i kildekoden er der oprettet `tasks/rc759-xios/rasm86.inc`. Makroerne (`add_bp_bx`, `add_dx_bx`, `sub_cx_dx`, `cmp_ch_al`, `mov_bp_dx`, `xor_di_di` osv.) udsteder præcis de binære opcodes som RASM-86 producerede, men læses og vedligeholdes som ren assembly.
+* **JMP near vs. short**: RASM-86 genererede undertiden `JMP near` (opcode `0xE9`, 3 bytes) hvor NASM optimerer til `JMP short` (opcode `0xEB`, 2 bytes). Brug `jmp near <label>` i NASM for at tvinge 3-byte encoding. Forekomster er markeret med kommentar `; rasm86: near`.
+* **Instruktionssekvenser vs. kompakt encoding**: RASM-86 brugte undertiden længere ækvivalente sekvenser. Eksempel: `ADD SI, 0x13 / MOV AL, [SI]` (5 bytes, DS-segment) i stedet for NASM's `MOV AL, [ES:SI+0x13]` (4 bytes). Brug kun den kompakte NASM-form hvis det kan verificeres mod referencebinæren — ellers bevar RASM-86-sekvensen.
 
 ---
 
-## 4. Renhed og Label-Struktur
+## 4. RC759 Console Control Block (CCB) — verificerede feltoffsets
+
+CCB er RC759's udvidelse af DRI's standard CCB (12 bytes). Følgende offsets er verificeret byte-perfekt mod XIOS1.CON og XIOS4.CON (commit 447de6a):
+
+| Konstant | Offset | Type | Beskrivelse |
+|---|---|---|---|
+| `CCB_EXTRA_LINE` | `0x34` | rw | Extra display line ved scrolling |
+| `CCB_CON_IDX` | `0x34` | rb | Virtuel konsol-nummer (0..3) — **SAMME offset som EXTRA_LINE** |
+| `CCB_ACTIVE` | `0x35` | rb | XIOS intern semaphore / active flag |
+| `CCB_WIN_LEFT` | `0x36` | rw | Vinduets venstre kolonne (16-bit) |
+| `CCB_WIN_TOP` | `0x38` | rb | Vinduets øverste række |
+| `CCB_ROWS` | `0x42` | rb | Antal rækker (f.eks. 24) |
+| `CCB_COLS` | `0x44` | rb | Antal kolonner (f.eks. 80) |
+| `CCB_ESC_HANDLER` | `0x5E` | rw | ESC-sekvens dispatch vektor |
+| `CCB_LINE_TABLE` | `0x62` | rw | Display line table pointer |
+| `CCB_COL` | `0x64` | rw | Aktuel markørkolonne |
+| `CCB_ROW` | `0x66` | rw | Aktuel markørrække |
+| `CCB_ATTR` | `0x6A` | rb | Display-attributbyte |
+| `CCB_FLAGS` | `0x6B` | rw | Kontrolflag (se CCB_FLG_*) |
+| `CCB_ACTIVE` | `0x35` | rb | Intern semaphore |
+| `CCB_CHAR_ATTR` | `0x80` | rb | Tegnattribut |
+
+**Faldgruber**: `CCB_ROWS=0x42` og `CCB_COLS=0x44` er *ikke* hvad navnene antyder intuitivt — 0x42 er ROWS og 0x44 er COLS (DH=row sammenlignes med 0x42). Byt ikke om på dem. Disassembler-kommentarer som `0xFF, 0xC0 ; inc ax` kan ligne instruktioner, men er DPB-data (al0, al1).
+
+---
+
+## 5. Renhed og Label-Struktur
 
 For at sikre en entydig symboltabel uden duplikater gælder følgende principper:
 * **Fælles funktioner deklareres før `%if`**:
@@ -84,7 +112,7 @@ For at sikre en entydig symboltabel uden duplikater gælder følgende principper
 
 ---
 
-## 5. Verificeringsprocedure
+## 6. Verificeringsprocedure
 
 Enhver ændring i kildekoden verificeres med flertrins-oraclet:
 ```bash
