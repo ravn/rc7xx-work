@@ -50,11 +50,41 @@ KBD_KEY_DEL         equ 0x95		; Delete
 KBD_KEY_NUMDOT      equ 0x96		; Numerisk punktum
 KBD_KEY_NUMLK       equ 0x97		; Num Lock
 KBD_KEY_NUMENT      equ 0x98		; Numerisk Enter
-KBD_KEY_SF1         equ 0xFB		; Shift+F1
-KBD_KEY_SF2         equ 0xFA		; Shift+F2
-KBD_KEY_SF3         equ 0xFD		; Shift+F3
-KBD_KEY_SF6         equ 0xFE		; Shift+F6
+KBD_KEY_SF1         equ 0xFB		; Shift+F1 (ctrl-tabel variant)
+KBD_KEY_SF2         equ 0xFA		; Shift+F2 (ctrl-tabel variant)
+KBD_KEY_SF3         equ 0xFD		; Shift+F3 (ctrl-tabel variant)
+KBD_KEY_SF6         equ 0xFE		; Shift+F6 (ctrl-tabel variant)
 KBD_KEY_CTRL_BRK    equ 0xC1		; Ctrl+Break
+; Shift+F-taster (shift-tabel)
+KBD_KEY_SHF1        equ 0xAD		; Shift+F1
+KBD_KEY_SHF2        equ 0xAE		; Shift+F2
+KBD_KEY_SHF3        equ 0xAF		; Shift+F3
+KBD_KEY_SHF4        equ 0xB0		; Shift+F4
+KBD_KEY_SHF5        equ 0xB1		; Shift+F5
+KBD_KEY_SHF6        equ 0xB2		; Shift+F6
+KBD_KEY_SHF7        equ 0xB3		; Shift+F7
+KBD_KEY_SHF8        equ 0xB4		; Shift+F8
+KBD_KEY_SHF9        equ 0xB5		; Shift+F9
+KBD_KEY_SHF10       equ 0xB6		; Shift+F10
+KBD_KEY_SHF11       equ 0x9F		; Shift+F11
+KBD_KEY_SHF12       equ 0xA0		; Shift+F12
+KBD_KEY_SHUP        equ 0x99		; Shift+Pil op
+KBD_KEY_SHDOWN      equ 0x9A		; Shift+Pil ned
+KBD_KEY_SHPGDN      equ 0x9B		; Shift+Page Down
+KBD_KEY_SHINS       equ 0x9C		; Shift+Insert
+; Ctrl+F-taster (ctrl-tabel)
+KBD_KEY_CTF1        equ 0xB7		; Ctrl+F1
+KBD_KEY_CTF2        equ 0xB8		; Ctrl+F2
+KBD_KEY_CTF3        equ 0xB9		; Ctrl+F3
+KBD_KEY_CTF4        equ 0xBA		; Ctrl+F4
+KBD_KEY_CTF5        equ 0xBB		; Ctrl+F5
+KBD_KEY_CTF6        equ 0xBC		; Ctrl+F6
+KBD_KEY_CTF7        equ 0xBD		; Ctrl+F7
+KBD_KEY_CTF8        equ 0xBE		; Ctrl+F8
+KBD_KEY_CTF9        equ 0xBF		; Ctrl+F9
+KBD_KEY_CTF10       equ 0xC0		; Ctrl+F10
+KBD_KEY_CTF11       equ 0xA1		; Ctrl+F11
+KBD_KEY_CTF12       equ 0xA2		; Ctrl+F12
 
 ; =============================================================================
 ; Piccoline Auto Configuration Map (INT 28h Func 4 / xios_autoconfig_table)
@@ -4732,8 +4762,8 @@ kbd_shift_translate_table:			; Scan-kode 0..98 → ASCII (shift)
 	db KBD_KEY_NONE, 0x0C, '!','"','#','$','%','&',"'",'(',')', '_','=','@', 0x08, 0x1B
 	db 'Q','W','E','R','T','Y','U','I','O','P','[',']', 0x0D, KBD_KEY_NONE, 'A','S'
 	db 'D','F','G','H','J','K','L','+', KBD_KEY_NONE, '*', KBD_KEY_NONE, '\','Z','X','C','V'
-	db 'B','N','M','<','>','?', KBD_KEY_NONE, KBD_KEY_NONE, '^', ' ', KBD_KEY_CTRL_BRK, 0xAD, 0xAE, 0xAF, 0xB0, 0xB1
-	db 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0x9F, 0xA0, KBD_KEY_NUMLK, 0x99, 0x9A, 0x9B, 0x9C, KBD_KEY_NONE, KBD_KEY_LEFT, KBD_KEY_RIGHT, KBD_KEY_END
+	db 'B','N','M','<','>','?', KBD_KEY_NONE, KBD_KEY_NONE, '^', ' ', KBD_KEY_CTRL_BRK, KBD_KEY_SHF1, KBD_KEY_SHF2, KBD_KEY_SHF3, KBD_KEY_SHF4, KBD_KEY_SHF5
+	db KBD_KEY_SHF6, KBD_KEY_SHF7, KBD_KEY_SHF8, KBD_KEY_SHF9, KBD_KEY_SHF10, KBD_KEY_SHF11, KBD_KEY_SHF12, KBD_KEY_NUMLK, KBD_KEY_SHUP, KBD_KEY_SHDOWN, KBD_KEY_SHPGDN, KBD_KEY_SHINS, KBD_KEY_NONE, KBD_KEY_LEFT, KBD_KEY_RIGHT, KBD_KEY_END
 	db KBD_KEY_DEL, KBD_KEY_HOME, KBD_KEY_NUMENT, '7','8','9','-','+','4','5','6',',', KBD_KEY_NUMDOT, '1','2','3'
 	db KBD_KEY_PGUP, '0','.'
 
@@ -4741,8 +4771,8 @@ kbd_ctrl_translate_table:			; Scan-kode 0..98 → ASCII (ctrl)
 	db KBD_KEY_NONE, 0x09, KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE, 0x1F, KBD_KEY_NONE, 0x00, 0x7F, 0x1B
 	db 'Q'&0x1F, 'W'&0x1F, 'E'&0x1F, 'R'&0x1F, 'T'&0x1F, 'Y'&0x1F, 'U'&0x1F, 'I'&0x1F, 'O'&0x1F, 'P'&0x1F, '['&0x1F, ']'&0x1F, 'M'&0x1F, KBD_KEY_NONE, 'A'&0x1F, 'S'&0x1F
 	db 'D'&0x1F, 'F'&0x1F, 'G'&0x1F, 'H'&0x1F, 'J'&0x1F, 'K'&0x1F, 'L'&0x1F, KBD_KEY_NONE, KBD_KEY_NONE, KBD_KEY_NONE, KBD_KEY_NONE, '\'&0x1F, 'Z'&0x1F, 'X'&0x1F, 'C'&0x1F, 'V'&0x1F
-	db 'B'&0x1F, 'N'&0x1F, 'M'&0x1F, KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE, '^'&0x1F, ' ', KBD_KEY_SF6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB
-	db 0xBC, 0xBD, 0xBE, 0xBF, 0xC0, 0xA1, 0xA2, KBD_KEY_NUMLK, KBD_KEY_SF3, KBD_KEY_NONE, KBD_KEY_SF1, KBD_KEY_SF2, KBD_KEY_NONE, KBD_KEY_LEFT, KBD_KEY_RIGHT, KBD_KEY_END
+	db 'B'&0x1F, 'N'&0x1F, 'M'&0x1F, KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE, '^'&0x1F, ' ', KBD_KEY_SF6, KBD_KEY_CTF1, KBD_KEY_CTF2, KBD_KEY_CTF3, KBD_KEY_CTF4, KBD_KEY_CTF5
+	db KBD_KEY_CTF6, KBD_KEY_CTF7, KBD_KEY_CTF8, KBD_KEY_CTF9, KBD_KEY_CTF10, KBD_KEY_CTF11, KBD_KEY_CTF12, KBD_KEY_NUMLK, KBD_KEY_SF3, KBD_KEY_NONE, KBD_KEY_SF1, KBD_KEY_SF2, KBD_KEY_NONE, KBD_KEY_LEFT, KBD_KEY_RIGHT, KBD_KEY_END
 	db KBD_KEY_DEL, KBD_KEY_HOME, KBD_KEY_NUMENT, KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE,KBD_KEY_NONE, KBD_KEY_NUMDOT, 0xF1, 0xF2, 0xF3
 	db KBD_KEY_PGUP, 0xF0, KBD_KEY_NONE
 
