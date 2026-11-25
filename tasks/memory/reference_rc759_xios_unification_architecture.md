@@ -114,7 +114,12 @@ For at sikre en entydig symboltabel uden duplikater gælder følgende principper
 
 ## 6. Verificeringsprocedure
 
-Enhver ændring i kildekoden verificeres med flertrins-oraclet:
+**Pre-commit hook installeret 2026-11-25** i `.git/hooks/pre-commit`:
+Kører automatisk når `xios_code.asm`, `xios.asm`, `rasm86.inc` eller `hardware.inc` er staged.
+Afviser commit med exit 1 hvis XIOS1 eller XIOS4 differ mod referencerne.
+Hook fanger præcis den klasse af fejl der kostede 16 timer i 2026-11-24→25-hændelsen.
+
+Manuel verifikation (samme som hook kører):
 ```bash
 # 1. Byg og sammenlign begge XIOS-varianter i Docker
 docker run --rm -v /Users/ravn/z80:/work -w /work/tasks/rc759-xios rc759-nasm sh -c "
