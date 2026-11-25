@@ -22,6 +22,19 @@ KBD_SHIFT_ALT       equ 0x10		; Alt key active
 KBD_LOCK_CAPS       equ 0x20		; Caps Lock active
 
 ; =============================================================================
+; Piccoline Autoconfig Table Offsets (INT 28h Func 4 / xios_autoconfig_table)
+; Kilde: EPROM initialisering ved 0000:0050 kopieret til xios_autoconfig_table
+; =============================================================================
+AUTOCONF_MAIN_MEM_PTR	equ 0x00		; Far pointer til toppen af primær hukommelse
+AUTOCONF_CRT_BUF_OFFSET	equ 0x08		; Offset for CRT hardware display buffer
+AUTOCONF_CRT_BUF_SEG	equ 0x0A		; Segment for CRT hardware display buffer
+AUTOCONF_RTC_PRESENT	equ 0x0C		; 0xFF hvis Real-Time Clock er installeret
+AUTOCONF_LAN_INSTALLED	equ 0x0D		; 0xFF hvis Lokalnet (LAN) adaptor er installeret
+AUTOCONF_DISPLAY_MODE	equ 0x12		; Bit 0: 0=Farveskærm, 1=Monokrom
+AUTOCONF_NUM_FLOPPIES	equ 0x13		; Antal installerede floppydrev (0..4)
+AUTOCONF_SYS_TYPE	equ 0x17		; Systemtype (0x50 = RC759 Piccoline)
+
+; =============================================================================
 ; Digital Research CCP/M-86 Process Descriptor (PD) Offsets
 ; =============================================================================
 PD_FLAG             equ 0x06		; Process status flags
@@ -6941,7 +6954,7 @@ rtc_1sec_isr:
 	call fdc_recalibrate_all_drives
 	call dpc_release_shared_devices
 	mov bx, xios_autoconfig_table
-	cmp byte [bx + 0xc], 0xff
+	cmp byte [bx + AUTOCONF_RTC_PRESENT], 0xff
 	je .rtc_1sec_notify
 	mov al, 0x10
 	call rtc_write_reg
@@ -7649,11 +7662,11 @@ crt_init_hardware_display:		; 0B991
 	pop ds
 	cld
 	mov bx, xios_autoconfig_table
-	mov dx, [bx + 0xa]
+	mov dx, [bx + AUTOCONF_CRT_BUF_SEG]
 	mov cl, 0xc
 	shl dx, cl
 	mov es, dx
-	mov di, [bx + 8]
+	mov di, [bx + AUTOCONF_CRT_BUF_OFFSET]
 	mov byte [es:di + 1], 5
 	mov dx, cs
 	mov ax, fdc_drive_type_0
@@ -7744,7 +7757,7 @@ crt_mode_switch:			; 0B9B7
 	rep movsw
 	pop ds
 	mov bx, xios_autoconfig_table
-	test byte [bx + 0x12], 1
+	test byte [bx + AUTOCONF_DISPLAY_MODE], 1
 	jne .clear_vmenu_item
 	mov byte [cs:xios_is_color_display], 0xff
 	mov byte [cs:xios_default_fg_color], 0x38
@@ -7765,7 +7778,7 @@ crt_mode_switch:			; 0B9B7
 
 .setup_crt_scanlines:			; 0BA92
 	mov bx, xios_nvram_table
-	mov al, [bx + 0x13]
+	mov al, [bx + AUTOCONF_NUM_FLOPPIES]
 	mov_dl_al			; 0BA98
 	and al, 1
 	mov [cs:xios_crt_50hz_60hz_flag], al
@@ -8124,8 +8137,8 @@ xios_init_entry:
 	mov ah, 3
 	call ppi_set_nvram_bank
 	mov bx, xios_autoconfig_table
-	and byte [bx + 0x17], 0xdf
-	cmp byte [bx + 0x17], 0x50
+	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
+	cmp byte [bx + AUTOCONF_SYS_TYPE], 0x50
 	jne .init_zero_bss_buffers
 	xor_ax_ax			; 0BDC1
 	push ds
@@ -8165,8 +8178,8 @@ xios_init_entry:
 	xchg bx, ax
 	loop .init_bss_clear_loop
 	mov bx, xios_autoconfig_table
-	and byte [bx + 0x17], 0xdf
-	cmp byte [bx + 0x17], 0x50
+	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
+	cmp byte [bx + AUTOCONF_SYS_TYPE], 0x50
 	jne .init_next_ccb_ptr
 	xor_ax_ax			; 0BE04
 	mov es, ax
@@ -8183,8 +8196,8 @@ xios_init_entry:
 
 .init_next_ccb_ptr:			; 0BE16
 	mov bx, xios_autoconfig_table
-	and byte [bx + 0x17], 0xdf
-	cmp byte [bx + 0x17], 0x50
+	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
+	cmp byte [bx + AUTOCONF_SYS_TYPE], 0x50
 	je .init_dph_tables
 	mov bx, cs
 	mov di, 0xc
@@ -8273,7 +8286,7 @@ xios_init_entry:
 	mov [cs:xios_hook_sec_seg], cs
 	mov [cs:xios_hook_timer_seg], cs
 	mov bx, xios_autoconfig_table
-	cmp byte [bx + 0xc], 0xff
+	cmp byte [bx + AUTOCONF_RTC_PRESENT], 0xff
 	je .init_format_date_str
 	mov ah, 4
 	mov al, 0x11
@@ -8381,8 +8394,8 @@ xios_init_entry:
 	mov [cs:diag_timer_isr_ptr], si
 	call crt_init_hardware_display
 	mov bx, xios_autoconfig_table
-	and byte [bx + 0x17], 0xdf
-	cmp byte [bx + 0x17], 0x50
+	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
+	cmp byte [bx + AUTOCONF_SYS_TYPE], 0x50
 	jne .init_check_min_ticks
 	mov word [cs:xios_mx_low_mem_reserve], 0x18	; 0BFD8  mov word [cs:0x593d], 0x18
 	jmp short .init_check_min_ticks
@@ -8461,7 +8474,7 @@ fdc_dma_scroll_cmd:			; 0C08A
 	mov dx, PORT_PRN_RELEASE
 	out dx, al
 	mov bx, xios_autoconfig_table
-	mov cl, [bx + 0x13]
+	mov cl, [bx + AUTOCONF_NUM_FLOPPIES]
 	mov bx, 0
 
 .dma_scroll_cmd_poll:			; 0C09F
@@ -8489,7 +8502,7 @@ fdc_dma_scroll_cmd:			; 0C08A
 	mov si, xios_boot_banner
 	call boot_print_str
 	mov bx, xios_autoconfig_table
-	mov al, [bx + 0x13]
+	mov al, [bx + AUTOCONF_NUM_FLOPPIES]
 	xor_ah_ah			; 0C0E0
 	or_al_al			; 0C0E2
 	je .init_mdisk_alloc_buffers
@@ -8508,7 +8521,7 @@ fdc_dma_scroll_cmd:			; 0C08A
 	jmp near .init_mdisk_setup_dpb
 	mov bx, xios_autoconfig_table
 	mov al, [cs:rtc_time_buf_val]
-	sub al, [bx + 0x13]
+	sub al, [bx + AUTOCONF_NUM_FLOPPIES]
 	je .init_mdisk_setup_dpb
 	xor_ah_ah			; 0C10C
 	mov di, boot_msg_winchester_drives
@@ -8839,7 +8852,7 @@ fdc_dma_scroll_cmd:			; 0C08A
 .init_sysdat_done:			; 0C420
 	push ax
 	mov bx, xios_autoconfig_table
-	cmp byte [bx + 0xd], 0xff
+	cmp byte [bx + AUTOCONF_LAN_INSTALLED], 0xff
 	jne .init_banner_exit
 	mov si, boot_msg_crlf_lan
 	call boot_print_str
@@ -9504,8 +9517,7 @@ int28_fn_41_dpc_parallel:		; 0CA03 (Reserver/frigiv DPC interface)
 	push ax
 	push es
 	call int28_fn_04_get_autoconfig
-	add si, 0x13
-	mov al, [si]
+	mov al, [es:si + AUTOCONF_NUM_FLOPPIES]
 	cmp al, 0
 	pop es
 	pop ax
@@ -9587,8 +9599,7 @@ int28_fn_42_shared_disk:		; 0CAB5 (Reserver/frigiv delt disk)
 	push ax
 	push es
 	call int28_fn_04_get_autoconfig
-	add si, 0x13
-	mov al, [es:si]
+	mov al, [es:si + AUTOCONF_NUM_FLOPPIES]
 	cmp al, 0
 	pop es
 	pop ax
