@@ -142,7 +142,7 @@ xios_fn_dispatch_entry:
 	cbw                                          ; 077DB
 	shl al, 1
 	xchg bx, ax
-	call word [cs:bx + 0xc47]
+	call word [cs:bx + xios_function_table]
 	mov_bx_ax                                    ; 077E4
 	retf
 
@@ -6862,7 +6862,7 @@ int28_fn_32_reserved:                   ; 0AE88
 int28_fn_33_reserved:                   ; 0AE96
 	pushf
 	cli
-	mov ax, dummy_far_hook_ret
+	mov ax, xios_hook_far_ret
 	mov [cs:xios_hook_timer_off], ax
 	mov [cs:xios_hook_timer_seg], cs
 	popf
@@ -6877,22 +6877,22 @@ int28_fn_34_reserved:                   ; 0AEA6
 	ret
 	pushf
 	cli
-	mov ax, dummy_far_hook_ret
+	mov ax, xios_hook_far_ret
 	mov [cs:xios_hook_sec_off], ax
 	mov [cs:xios_hook_sec_seg], cs
 	popf
 	ret
 
-dummy_far_hook_ret:
+xios_hook_far_ret:
 	retf
 
 xios_hook_timer_off:
-	dw dummy_far_hook_ret
+	dw xios_hook_far_ret
 xios_fixup_target_1:
 xios_hook_timer_seg:
 	dw 0x0000                                    ; 0AEC7  Segment (fixed up at load time)
 xios_hook_sec_off:
-	dw dummy_far_hook_ret
+	dw xios_hook_far_ret
 xios_fixup_target_2:
 xios_hook_sec_seg:
 	dw 0x0000                                    ; 0AECB  Segment (fixed up at load time)
@@ -7189,14 +7189,14 @@ int28_fn_24_isbx_init:                  ; 0B123
 	xor_ch_ch                                    ; 0B156
 	add di, 6
 	cmp cx, 0
-	je xios_jmp_entry
+	je isbx_init_skip_drives
 	mov bx, xios_nvram_table
 
 xios_jmp_init:                                 ; 0B163
 	jmp near xios_init
 
-xios_jmp_entry:                                ; 0B166
-	jmp near xios_entry_0x8C
+isbx_init_skip_drives:                                ; 0B166
+	jmp near isbx_init_exit
 
 
 xios_init:                                     ; 0B169
@@ -7285,7 +7285,7 @@ xios_init:                                     ; 0B169
 	or al, 0x10
 	out dx, al
 
-xios_entry_0x8C:                               ; 0B1EF
+isbx_init_exit:                               ; 0B1EF
 	pop bp
 	ret
 
