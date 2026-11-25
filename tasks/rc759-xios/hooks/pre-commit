@@ -1,0 +1,56 @@
+#!/bin/sh
+# Pre-commit hook: byte-verifikation af RC759 XIOS hvis relevante filer er staged.
+# Kører Docker-byg + cmp for XIOS1.CON og XIOS4.CON og afviser commit ved diff.
+# Installeret via tasks/rc759-xios/hooks/install.sh
+
+XIOS_FILES="tasks/rc759-xios/xios_code.asm tasks/rc759-xios/xios.asm tasks/rc759-xios/rasm86.inc tasks/rc759-xios/hardware.inc"
+
+staged=0
+for f in $XIOS_FILES; do
+    if git diff --cached --name-only | grep -qF "$f"; then
+        staged=1
+        break
+    fi
+done
+
+if [ "$staged" = "0" ]; then
+    exit 0
+fi
+
+echo "XIOS filer staged — kører byte-verifikation..."
+
+if ! docker image inspect rc759-nasm >/dev/null 2>&1; then
+    echo "FEJL: Docker-image 'rc759-nasm' ikke fundet."
+    echo "      Byg det med: docker build -t rc759-nasm tasks/rc759-xios/docker/"
+    exit 1
+fi
+
+ROOT="$(git rev-parse --show-toplevel)"
+REF_DIR="$ROOT/tasks/rc759-xios/dist"
+if [ ! -d "$REF_DIR" ]; then
+    REF_DIR="$ROOT/scratch/tmp/dist"
+fi
+
+result=$(docker run --rm \
+    -v "$ROOT:/work" \
+    -w /work/tasks/rc759-xios \
+    rc759-nasm sh -c "
+        nasm -f bin -DNUM_VIR_CONS=1 -o /work/scratch/tmp/xios1_hook.bin xios.asm 2>&1 && \
+        cmp -s /work/scratch/tmp/xios1_hook.bin /work/tasks/rc759-xios/dist/XIOS1.CON && \
+        echo 'XIOS1 MATCH' || echo 'XIOS1 DIFFERS'; \
+        nasm -f bin -DNUM_VIR_CONS=4 -o /work/scratch/tmp/xios4_hook.bin xios.asm 2>&1 && \
+        cmp -s /work/scratch/tmp/xios4_hook.bin /work/tasks/rc759-xios/dist/XIOS4.CON && \
+        echo 'XIOS4 MATCH' || echo 'XIOS4 DIFFERS'
+    ")
+
+echo "$result"
+
+if echo "$result" | grep -q "DIFFERS\|error\|Error"; then
+    echo ""
+    echo "COMMIT AFVIST: XIOS byte-verifikation fejlede."
+    echo "Verificer manuelt: tasks/rc759-xios/build_and_verify_xios.sh"
+    exit 1
+fi
+
+echo "XIOS byte-verifikation OK."
+exit 0

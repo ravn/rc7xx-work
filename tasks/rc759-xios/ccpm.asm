@@ -28,6 +28,10 @@ ORG 0x0000
 %include "mod3_cio.asm"
 
 ; Modul 4: RC759 Hardware XIOS & SYSDAT (Flemming Kraglund)
+; ADVARSEL: mod4_xios.asm er en ÆLDRE monolitisk kopi (24883 linjer, ingen NUM_VIR_CONS).
+; Den aktive symboliserede kilde er xios_code.asm (9924 linjer, via xios.asm).
+; TODO: erstat med %define NUM_VIR_CONS 1 + relevante includes fra xios.asm,
+; men bekræft ccpm.sys byte-identitet FØR commit (se tasks/rc759-xios/HANDOFF-2026-11-25.md §4).
 %include "mod4_xios.asm"
 
 ; ===========================================================================
