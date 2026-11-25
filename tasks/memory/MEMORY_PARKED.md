@@ -8,7 +8,7 @@
 - [DRI C Programmer's Guide](reference_dri_cpm86_manuals_location.md) — DR C 1.11 ref already at cpm86-crossdev/docs/manuals/DRI_C_Programming_86.pdf
 - [emu2 workspace-sti + PTY-krav](reference_emu2_workspace_location.md) — `/Users/ravn/z80/emu2-cpm86/emu2` (macbook) + `/home/ravn/z80/emu2-cpm86/emu2` (sonnyboy); ikke et eksternt værktøj
 - [**RC759 XIOS Master Source Arkitektur**](reference_rc759_xios_unification_architecture.md) — Fuld symbolisering af XIOS1/XIOS4, 0 bytes diff (447de6a); CCB-offsets verificeret; RASM-86 near/short + sekvens-encoding faldgruber dokumenteret
-- [**RC759 XIOS Handoff 2026-11-22**](../rc759-xios/HANDOFF-2026-11-22.md) — Seneste komplette statusnotat, modulariseret ccpm.sys, 100% byte-identisk, næste skridt
+- [**RC759 XIOS Handoff 2026-11-25**](../rc759-xios/HANDOFF-2026-11-25.md) — Seneste statusnotat (df1f747); byte-perfekt genoprettet; CCB-offsets + RASM-86 encoding-regler dokumenteret
 - [**RC759 XIOS 2.3 RE** — binær-layout, RTM-konvention, io_const/io_conin/io_read](reference_rc759_xios_re_2026-11-20.md) — ccpm.sys struktur, dispatch-tabel fil 0x16A4, MODFUNC.DEF CX=(modul×256+fn), hardware-portskort
 - [**RC759 NVRAM map & checksum**](reference_rc759_nvram_map.md) — 128B layout, byte 0x12 scroll mode, byte 0x35 machine ID, sum mod 256 == 0xAA
 - [**RC759 INT 28H XIOS API (54 funktioner)**](reference_rc759_int28h_xios_api.md) — dispatcher 0x7831, tabel 0x784C (CS:0CAC), base 0x6BA0, grafik, font, FDC, iSBX, bånd, mus
