@@ -4266,7 +4266,8 @@ window_draw_title:			; 09473
 ; Sektion 4B: Fælles Mus- og CRT-driver (CS:2980..2BD0 / CS:2B43..2D93)
 ; Optisk mus (INT 28H Func 30): Piccoline Programmer's Guide v2, Appendix A (p. 205)
 ;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=215
-; Intel 82730 CRT Text Coprocessor: Intel Component Data Catalog 1984, order no. 231724
+; Intel 82730 Text Coprocessor: 1984 Intel Microsystem Components Handbook Vol. 1, kap. 8 p. 8-159
+;   https://archive.org/details/bitsavers_inteldataBystemComponentsHandbookVolume1_93773692
 ; =============================================================================
 int28_fn_30_mouse:			; 094A0
 	cmp cl, 4
@@ -4562,7 +4563,8 @@ crt_load_cursor_hardware_regs:		; 096CF
 ; Sektion 4C: Display Lists, Konsol-deskriptorer (CCB) & CRT Output Buffere
 ; CS:2BD0..2D7B (XIOS1: 1 virtuel konsol) / CS:2D93..3108 (XIOS4: 4 virtuelle konsoller)
 ; CCB-struktur: se equates-blok øverst (DRI xios.a86 p. 8 + p. 63)
-; Intel 82730 Display Lists: Intel Component Data Catalog 1984, order no. 231724
+; Intel 82730 Display Lists: 1984 Intel Microsystem Components Handbook Vol. 1, kap. 8 p. 8-159
+;   https://archive.org/details/bitsavers_inteldataBystemComponentsHandbookVolume1_93773692
 ; =============================================================================
 xios4_vir_con_mode:
 	db 0x00, NUM_VIR_CONS
@@ -4698,7 +4700,8 @@ kbd_ctrl_translate_table:
 ; Sektion 5: Floppydisk Driver (Fælles for XIOS1 og XIOS4)
 ; DRI disk I/O struktur: DRI xios.a86 p. 66-83 (Disk I/O + Disk I/O Data)
 ;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
-; WD2797 FDC: Western Digital WD2797 Floppy Disk Formatter/Controller datasheet
+; WD2797 FDC: Western Digital WD179X-01 Data Sheet (WD279X er opadkompatibel variant)
+;   http://www.bitsavers.org/components/westernDigital/FD179X-01_Data_Sheet_Oct1979.pdf
 ; RC759 diskformat: Piccoline Programmer's Guide v2, §8 (p. 97+)
 ;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=107
 ; =============================================================================
@@ -7101,6 +7104,8 @@ xios_tick_high:
 
 ; -----------------------------------------------------------------------------
 ; National Semiconductor MM58167A Real Time Clock (RTC) I/O Rutiner
+; Reference: 1989 National Real Time Clock Handbook (indeholder MM58167A datablad)
+;   http://www.bitsavers.org/components/national/_dataBooks/1989_National_Real_Time_Clock_Handbook.pdf
 ; -----------------------------------------------------------------------------
 rtc_write_reg:				; 0AFCA
 	mov dx, PORT_RTC_ADDR
@@ -7172,6 +7177,9 @@ int28_fn_19_timer:			; 0B01F
 	mov_bx_ax			; 0B02F
 	ret
 
+; Intel iSBX 351 Serial Multimodule Board (INT 28H Func 23/24/50)
+; Reference: iSBX 351 Serial Multimodule Board Hardware Reference Manual (Oct 1980)
+;   https://www.bitsavers.org/pdf/intel/iSBX/9803190B_iSBX_351_Serial_Multimodule_Board_Hardware_Reference_Manual_Oct80.pdf
 int28_fn_23_isbx_status:		; 0B032
 con_data_read:				; 0B032
 	mov dx, PORT_ISBX_MCS0_02
