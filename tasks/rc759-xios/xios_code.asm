@@ -6732,10 +6732,27 @@ sio_chan_b_rx_buf_ptr:
 sio_chan_b_rx_buf_size:
 	times 6 db 0
 sio_chan_b_tx_buf_size:
-	db 0x00
-	db 0x00, 0x0D, 0x00, 0x0E, 0x00, 0x11, 0x00, 0x01, 0x01, 0x00, 0x00	; +0x13 fælles config
-	db 0x00, 0x00, 0x7F, 0x14, 0x00
-	db 0x00, 0x03, 0x02, 0x03, 0x02, 0x03			; +0x23 kanal A
+	db 0x00			; Tx buffer størrelse (0 = ingen Tx buffer)
+	; +0x13 fælles SIO-konfiguration (kanal A — samme som kanal B)
+	db 0x00			; WR3 low byte (Rx disabled ved init)
+	db 0x0D			; WR3: Rx 8 bit/char, Rx enable
+	db 0x00			; WR3 high byte
+	db 0x0E			; WR4: 16× clock, 1 stop bit, no parity
+	db 0x00			; WR4 high byte
+	db 0x11			; WR5: Tx 8 bit/char, Tx enable, DTR
+	db 0x00			; WR5 high byte
+	db 0x01			; Tx-timeout
+	db 0x01			; Rx-timeout
+	db 0x00, 0x00		; reserveret
+	db 0x00, 0x00		; Rx buffer pointer
+	db 0x7F, 0x14, 0x00	; Rx buffer size + flags
+	; +0x23 kanal A specifikke parametre
+	db 0x00			; WR0: ingen reset (kanal A)
+	db 0x03			; WR0 register select
+	db 0x02			; kanal A adresse (port A)
+	db 0x03			; init sekvens tæller
+	db 0x02			; kanal A variant
+	db 0x03			; init sekvens slut
 io_poll:				; 0AC21
 	cmp dl, 2
 	jne floppy_ack_done
@@ -7007,16 +7024,16 @@ xios_nvram_table:
 	times 7 db 0
 	db 0x66, 0x00, 0x47, 0xAA	; 0ADFD  add byte [bx - 0x56], al
 	pop ss
-	db 0x61				; 0AE02  popa
-	db 0x60				; 0AE03  pusha
-	inc di
-	stosb
-	pop ss
-	db 0x61				; 0AE07  popa
-	db 0x10, 0xA1, 0x3C, 0x00	; 0AE08  adc byte [bx + di + 0x3c], ah
-	times 4 db 0			; 0AE0C..0AE0E (4 bytes padding)
-	db 0x02, 0x00			; 0AE10  add al, byte [bx + si]
-	inc word [bx + si]
+	popa				; 0AE02  NVRAM byte 0x0C
+	pusha				; 0AE03  NVRAM byte 0x0D: NVM_ISBX_BAUD_MODE (0x60=9600)
+	inc di				; 0AE04  NVRAM byte 0x0E: NVM_STOP_PARITY
+	stosb				; 0AE05  NVRAM byte 0x0F
+	pop ss				; 0AE06  NVRAM byte 0x10 (0x1E)
+	popa				; 0AE07  NVRAM byte 0x11
+	db 0x10, 0xA1, 0x3C, 0x00	; 0AE08  NVRAM bytes 0x12-0x15 (NVM_SCROLL_MODE=0x10)
+	times 4 db 0			; 0AE0C  NVRAM bytes 0x16-0x19
+	db 0x02, 0x00			; 0AE10  NVRAM bytes 0x1A-0x1B (NVM_MDISK_SIZE=0x02)
+	inc word [bx + si]		; 0AE12  NVRAM bytes 0x1C-0x1D (0xFF 0x00)
 	times 98 db 0			; 0AE14..0AE74 (98 bytes padding)
 int28_fn_03_get_nvram:			; 0AE76
 	mov es, [cs:xios_sysdat_segment_val]
