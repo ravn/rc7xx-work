@@ -7358,50 +7358,19 @@ isbx_init_exit:				; 0B1EF
 	pop bp
 	ret
 
-diag_dummy_isr_timer:
-	test al, 3
-	db 0x70, 0x02			; 0B1F3  jo 0xb1f7
-	stosb
-	add [bx + si], di
-	add [si + 0x4e00], bx
-	add [bx], ah
-	add [bp + di], dl
-	add [bp + si], cl
-	add [di], al
-	add [di], al
-	db 0x00				; 0B206
-diag_dummy_isr_chain:
-	db 0xE0				; 0B207 (add al, ah opcode 00 E0)
-	add al, 0x40
-	add di, [bx + si]
-	add ah, [bx + si - 0x2fff]
-	db 0x00, 0x68, 0x00		; 0B210  add byte [bx + si], ch
-	xor al, 0
-	sbb al, [bx + si]
-	or ax, 0x600
-	add [bp + di], al
-	db 0x00
-diag_timer_isr_ptr:
+diag_dummy_isr_timer:				; 0B1F0 — 11 × dw timer-perioder
+	dw 0x03A8, 0x0270, 0x01AA, 0x0138, 0x009C, 0x004E
+	dw 0x0027, 0x0013, 0x000A, 0x0005, 0x0005
+diag_dummy_isr_chain:				; 0B206 — 11 × dw kæde-perioder
+	dw 0x04E0, 0x0340, 0x0238, 0x01A0, 0x00D0, 0x0068
+	dw 0x0034, 0x001A, 0x000D, 0x0006, 0x0003
+diag_timer_isr_ptr:				; 0B21C — pointer + 11 × dw
 	dw diag_dummy_isr_timer
-	mov [bp + di], dl
-	add ax, 0xe10d
-	or [bp + di + 0x4106], al
-	add sp, [bx + si - 0x2fff]
-	db 0x00, 0x68, 0x00		; 0B22C  add byte [bx + si], ch
-	xor al, 0
-	sbb al, [bx + si]
-	db 0x0D, 0x00			; 0B233 (or ax, strict word 0 opcode 0D 00 00)
-diag_dummy_isr_stub:
-	db 0x00				; 0B235
-	add al, 0
-	add al, 0xba
-	db 0x02, 0x00			; 0B23A  add al, byte [bx + si]
-	db 0x02, 0x00			; 0B23C  add al, byte [bx + si]
-	add [bx + si + 0x4000], ax
-	add [bx + si], ah
-	add [bx + si], dl
-	add [bx + si], cl
-	db 0x00				; 0B248
+	dw 0x1388, 0x0D05, 0x08E1, 0x0683, 0x0341, 0x01A0
+	dw 0x00D0, 0x0068, 0x0034, 0x001A, 0x000D
+diag_dummy_isr_stub:				; 0B234 — 10 × dw stub-data
+	dw 0x0400, 0x0400, 0x02BA, 0x0200, 0x0100
+	dw 0x0080, 0x0040, 0x0020, 0x0010, 0x0008
 diag_fast_movsb_iret:
 	db 0xF3				; 0B249 (add bl, dh opcode 00 F3)
 	movsb
@@ -7927,26 +7896,20 @@ crt_mode_switch:			; 0B9B7
 	out dx, ax
 	ret
 
-kbd_init_seq:
-	db 0x1B, 0x48, 0x00		; 0BB90  sbb cx, word [bx + si]
-	add [bp + di], bl
-	inc cx
-	times 10 db 0			; 0BB96..0BB9E (10 bytes padding)
-	db 0x1B, 0x44, 0x00		; 0BBA0  sbb ax, word [si]
-	add [di], cl
-	db 0x00, 0x00			; 0BBA5
-	add [bp + di], bl
-	inc bx
-	times 10 db 0			; 0BBAA..0BBB2 (10 bytes padding)
-	db 0x1B, 0x42, 0x00		; 0BBB4  sbb ax, word [bp + si]
-	add [bx + di], cl
-	db 0x00, 0x00			; 0BBB9
-	add [bx + CCB_TRACKING_MODE], bh
-	db 0x00, 0x00			; 0BBBE
-	jg .kbd_init_loop
-
-.kbd_init_loop:				; 0BBC2
-	db 0x00, 0x00			; 0BBC2
+kbd_init_seq:				; 0BB8F — 3 × 16-byte rækker af 4-byte tastaturkoder
+	db 0x1B, 0x48, 0x00, 0x00	; ESC H (cursor home)
+	db 0x1B, 0x41, 0x00, 0x00	; ESC A (cursor op)
+	times 8 db 0
+	db 0x1B, 0x44, 0x00, 0x00	; ESC D (cursor venstre)
+	db 0x0D, 0x00, 0x00, 0x00	; CR
+	db 0x1B, 0x43, 0x00, 0x00	; ESC C (cursor højre)
+	times 4 db 0
+	times 4 db 0
+	db 0x1B, 0x42, 0x00, 0x00	; ESC B (cursor ned)
+	db 0x09, 0x00, 0x00, 0x00	; TAB
+	db 0x7F, 0x4C, 0x00, 0x00	; DEL / 0x4C
+kbd_init_seq_end:
+	db 0x7F, 0x00, 0x00, 0x00	; terminator
 int_vec_backup_97:
 	times 32 db 0			; 0BBC4..0BBE2 (32 bytes padding)
 int_vec_backup_98:
