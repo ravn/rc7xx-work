@@ -454,4 +454,12 @@
   db 0x2B, 0xC0
 %endmacro
 
+; CS-segment-override LODS varianter (RASM-86 brugte CS: prefix explicit)
+%macro lodsb_cs 0
+  db 0x2E, 0xAC		; CS: LODSB — load byte [cs:si] into AL, increment si
+%endmacro
+%macro lodsw_cs 0
+  db 0x2E, 0xAD		; CS: LODSW — load word [cs:si] into AX, increment si
+%endmacro
+
 %endif
