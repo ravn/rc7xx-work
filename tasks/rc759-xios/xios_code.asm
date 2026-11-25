@@ -13,6 +13,8 @@
 
 ; =============================================================================
 ; Keyboard Shift and Lock Bitmasks (kbd_shift_state / kbd_lock_state)
+; Reference: Piccoline Programmer's Guide v2, §4.1 Tastatur (p. 42-45)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=52
 ; =============================================================================
 KBD_SHIFT_CTRL      equ 0x02		; Control key active
 KBD_SHIFT_LEFTSHIFT equ 0x04		; Left shift active
@@ -421,6 +423,8 @@ lcb_2:	DRI_LCB				; List device 2
 ; -----------------------------------------------------------------------------
 ; Sektion 3A: Tastatur-ISR, CRT-ISR, Konsol-status og Konsol-input (CS:0EF4..118D)
 ; Fælles implementering for XIOS1 og XIOS4 (666 bytes kode & datatabeller)
+; DRI: xios.a86 p. 17-28 (Interrupt Handlers) + p. 28-55 (Character I/O)
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
 ; -----------------------------------------------------------------------------
 
 i_keyboard:
@@ -605,6 +609,8 @@ kbd_special_keys_table:
 
 ; -----------------------------------------------------------------------------
 ; CRT Afbrydelsesrutine (IRST, Vektor 0x88)
+; Intel 82730 IRST (Interrupt Request Status): 1984 Intel Microsystem Components Handbook Vol. 1, kap. 8
+;   https://archive.org/details/bitsavers_inteldataBystemComponentsHandbookVolume1_93773692
 ; -----------------------------------------------------------------------------
 	push ds				; 07BF9
 	call xios_switch_to_priv_stack	; 07BFA
@@ -752,6 +758,8 @@ conin_valid_con:
 ; -----------------------------------------------------------------------------
 ; Sektion 3B.1: Konsol-switch (Chunk 1), Skærmtrimning og Konsol-opdatering (Chunk 2)
 ; (CS:118D..12A6, 282 bytes i XIOS1, 353 bytes i XIOS4)
+; IO_SWITCH: DRI xios.a86 p. 49 + IO_STATLINE p. 50
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
 ; -----------------------------------------------------------------------------
 
 %if NUM_VIR_CONS == 4
@@ -787,6 +795,8 @@ vmenu_retry_delay:			; Fælles retur til menu-genopfriskning
 
 ; -----------------------------------------------------------------------------
 ; Skærmtrimningsmenu (VMenu / Display Trim Menu)
+; Reference: Piccoline Programmer's Guide v2, §4.3 Skærmtrimning (p. 50-54)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=60
 ; -----------------------------------------------------------------------------
 vmenu_display_menu_entry:		; 07D35 / 000005C7
 	mov al, 0xff
@@ -4395,6 +4405,8 @@ mouse_process_packet_byte:		; 094EB
 
 ; -----------------------------------------------------------------------------
 ; Skærmblanking (Screen Saver) Inaktivitetskontrol & Genopretning
+; Reference: Piccoline Programmer's Guide v2, §4.3 Skærmtrimning (p. 50-54)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=60
 ; -----------------------------------------------------------------------------
 crt_check_screen_blank_tick:		; 09588
 	mov bx, [cs:xios4_cur_window_ptr]
@@ -5355,6 +5367,7 @@ xios_fdc_restore_track0:		; 09E48
 ; WD2797 Søg Spor (Seek Track med op til 3 retries)
 ; Skriver målspor til PORT_FDC_DATA (0x286) og sender Type I SEEK-kommando (0x1C)
 ; til PORT_FDC_CMD (0x280) med 6 ms steprate og verifikation.
+; WD179X datasheet (WD279X kompatibel): http://www.bitsavers.org/components/westernDigital/FD179X-01_Data_Sheet_Oct1979.pdf
 ; -----------------------------------------------------------------------------
 fdc_seek_track:
 	mov cx, 3
@@ -5471,6 +5484,7 @@ fdc_wait:				; 09F4D
 ; 1. Læser FDC status fra PORT_FDC_CMD (0x280).
 ; 2. Sender Type IV FORCE INTERRUPT (0xD0) for at afslutte kommandoen.
 ; 3. Læser PORT_PCB_DMA0_CNT (0xFFC8) for at verificere fuldført DMA transfer.
+; WD179X datasheet: http://www.bitsavers.org/components/westernDigital/FD179X-01_Data_Sheet_Oct1979.pdf
 ; 4. Kvitterer med EOI via eoi_helper.
 ; 5. Vækker den ventende proces ved at signalere Flag 8 ("Floppy disk flag").
 ; -----------------------------------------------------------------------------
@@ -6779,6 +6793,8 @@ io_list:
 ; -----------------------------------------------------------------------------
 ; Ekstern DPC Parallel Printer Output
 ; Skriver tegn i CL til PORT_DPC_PRN_DATA (0x28A) og pulser STROBE via PORT_DPC_PRN_CTRL.
+; Reference: Piccoline Programmer's Guide v2, §6 Printer (p. 72+)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=82
 ; -----------------------------------------------------------------------------
 prn_dpc_out:
 	mov dx, PORT_DPC_PRN_CTRL
@@ -6825,6 +6841,8 @@ prn_dpc_done:				; 0ACFC
 ; -----------------------------------------------------------------------------
 ; Lokal Centronics Parallel Printer Output
 ; Skriver tegn i CL til PORT_PRN_DATA (0x250) og pulser STROBE lav/høj via PORT_PRN_CTRL.
+; Reference: Piccoline Programmer's Guide v2, §6 Printer (p. 72+)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=82
 ; -----------------------------------------------------------------------------
 prn_centronics_out:
 	mov dx, PORT_PRN_CTRL
@@ -7013,6 +7031,7 @@ i_tick:
 
 ; -----------------------------------------------------------------------------
 ; Realtidsur (RTC) 1-Sekunds Afbrydelsesrutine (IR3 / Vektor 0x8C)
+; MM58167A: http://www.bitsavers.org/components/national/_dataBooks/1989_National_Real_Time_Clock_Handbook.pdf
 ; Drevet af MM58167A:
 ; - Tæller floppy-motor timer ned (fdc_motor_timeout_tick / fdc_motor_timeout_tick).
 ; - Sender EOI via eoi_helper.
@@ -7046,6 +7065,8 @@ rtc_1sec_isr:
 ; Fælles End-Of-Interrupt (EOI) Hjælperutine
 ; Sender non-specific EOI (0x20) til ekstern Intel 8259A PIC (PORT_PIC_CMD 0x0000)
 ; og non-specific EOI (0x8000) til 80186 intern ICU (PORT_PCB_EOI 0xFF22).
+; Intel 8259A: https://pdos.csail.mit.edu/6.828/2017/readings/hardware/8259A.pdf
+; Intel 80186 ICU: http://www.bitsavers.org/components/intel/80186/270788-001_80186_80188_80C186_80C188_Hardware_Reference_Manual_1990.pdf
 ; -----------------------------------------------------------------------------
 eoi_helper:				; 0AF11
 	mov al, 0x20
@@ -7160,7 +7181,8 @@ int28_fn_12_sound:			; 0AFFE
 
 ; -----------------------------------------------------------------------------
 ; Bus-Genopretningsforsinkelse for langsomme NMOS/CMOS periferikredsløb
-; (MM58167A RTC og SN76494 lydgenerator kræver settling time mellem I/O-adgange).
+; (MM58167A RTC og SN76489A lydgenerator kræver settling time mellem I/O-adgange).
+; MM58167A: http://www.bitsavers.org/components/national/_dataBooks/1989_National_Real_Time_Clock_Handbook.pdf
 ; -----------------------------------------------------------------------------
 io_bus_delay:				; 0B019
 	mov cx, 0x1e
