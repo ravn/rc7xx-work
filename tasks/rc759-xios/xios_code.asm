@@ -656,20 +656,21 @@ kbd_char_buffer_hi:
 kbd_prefix_char:
 	db 0x00				; 0x1040 (prefix character)
 kbd_con_dest:
-	dw 0x0005
+	dw 0x0005			; RTM-flag destination for tastaturhændelse: 5=terminal, 0x18=diagnostik
 kbd_event_flag:
-	db 0x00
+	db 0x00			; RTM-event semafor: 0xFF=hændelse afventer, 0=ingen
 kbd_raw_scancode:
-	db 0x00
+	db 0x00			; Rå scan-kode fra tastatur (inden oversættelse)
 kbd_shift_state:
-	db 0x00
+	db 0x00			; Shift-status bitmask (bit 0=L-shift, bit 1=R-shift)
 kbd_lock_state:
-	db 0x00
+	db 0x00			; Lock-taster bitmask (bit 0=CapsLock, bit 1=NumLock)
 kbd_prefix_flag:
-	db 0x00
+	db 0x00			; Forlænger-tast ventestatus (non-zero = næste scan-kode er prefixed)
 kbd_alt_flag:
-	db 0x00
+	db 0x00			; Alt-tast trykt flag (non-zero = Alt nede)
 kbd_special_keys_table:			; RC759 special/modifier scan-kode tabel (16 bytes)
+	; 0x1D = afgrænsning; mellemliggende bytes = scan-koder for specialtaster med modifier
 	db 0x1D, '6', '*', '7', '(', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', 0x1D
 
 ; -----------------------------------------------------------------------------
@@ -4727,45 +4728,45 @@ xios_ccb_table:
 xios_is_color_display:
 	db 0x00
 xios_font_height_scanlines:
-	db 0x09
+	db 0x09			; Tegnsnitshøjde = 9 scanlinjer (0-baseret: 10 scanlinjer/tegnrække, LPR=9)
 xios_crt_50hz_60hz_flag:
-	db 0x01
+	db 0x01			; 1 = 50 Hz skærmtakt (PAL); 0 = 60 Hz (NTSC)
 xios_default_fg_color:
-	db 0xc0
+	db 0xc0			; Standard forgrundsfarve: 0xC0 → farveindeks 24 (CCB_ATTR_COLOR_MASK: attr>>3)
 xios_default_bg_color:
-	db 0xc0
+	db 0xc0			; Standard baggrundsfarve: 0xC0 → farveindeks 24
 xios_scroll_ccb_ptr:
-	dw 0x0000
+	dw 0x0000			; Pointer til CCB under aktiv rulning (nul = ingen rulning aktiv)
 xios_scroll_row_start:
-	dw 0x0000
+	dw 0x0000			; Øverste rulningsrække (pixels fra top)
 xios_scroll_row_end:
-	dw 0x0000
+	dw 0x0000			; Nederste rulningsrække (pixels fra top)
 xios_scroll_dir_up_flag:
-	db 0x00
+	db 0x00			; Rulningsretning: 0=ned, non-zero=op
 xios_scroll_step_counter:
-	db 0xff
+	db 0xff			; Blød rulning trin-tæller (0xFF = deaktiveret/max)
 xios_crt_font_alt_flag:
-	db 0x01
+	db 0x01			; 1 = alternativ skrifttype aktiv; 0 = standard EPROM skrifttype
 xios_scroll_temp_offset:
-	dw 0x0000
+	dw 0x0000			; Midlertidig rulnings-pixeloffset
 xios_scroll_param_block:
 	times 8 db 0
 xios_scroll_line_save_buf:
 	times 50 db 0
 xios_vram_base_seg:
-	dw 0xd000
+	dw 0xd000			; VRAM basis-segment = 0xD000 (fysisk adresse 0xD0000 = 832 KB)
 xios_graphics_saved_buf_seg:
-	dw 0x0000
+	dw 0x0000			; Gemt grafik-buffer segment (nul = ingen grafik aktiv)
 xios_graphics_gcb_offset:
-	dw 0x0000
+	dw 0x0000			; 82730 Graphic Command Block offset i grafik-segment
 xios_graphics_gcb_segment:
-	dw 0x0000
+	dw 0x0000			; 82730 Graphic Command Block segment
 xios_graphics_owner_con:
-	db 0x00
+	db 0x00			; Konsolnummer der ejer grafik-tilstanden (0 = ingen)
 xios_vram_active_page:
-	dw 0xd000
+	dw 0xd000			; Aktiv visningsside segment (skiftes ved side-flip)
 xios_vram_back_page:
-	dw 0x0000
+	dw 0x0000			; Bagsideuffer segment (nul = enkelt-side tilstand)
 
 kbd_translate_table:				; Scan-kode 0..98 → ASCII (normal)
 	db KBD_KEY_NONE, 0x09, '1','2','3','4','5','6','7','8','9','0','-','`', 0x08, 0x1B
@@ -6082,7 +6083,7 @@ fdc_dma_descriptor_block:
 fdc_multi_track_flag:
 	db 0x00
 fdc_rw_flags:
-	db 0x08
+	db 0x08			; bit 3 = 1: læse-operation (0=skriv); sættes til 8, AND-es med statusbyte
 fdc_cmd_byte_count:
 	db 0x00
 fdc_density_flag:
@@ -6090,7 +6091,7 @@ fdc_density_flag:
 fdc_sector_size_code:
 	db 0x00
 fdc_active_drive_fcr:
-	db 0x48
+	db 0x48			; FDC_CTRL_CLOCK_2MHZ|FDC_CTRL_PRECOMP_EN: 2MHz ur + forhåndskomp., motor=off, drev A
 fdc_motor_timeout_counter:
 	db 0x00
 fdc_wait_flag:
@@ -6112,7 +6113,7 @@ fdc_active_drive_mask:
 fdc_retry_counter:
 	db 0x00
 fdc_drive_ready_mask:
-	db 0xff, 0x00
+	db 0xff, 0x00		; 0x00FF: alle 8 drev markeret klar ved boot
 fdc_op_in_progress:
 	db 0x00
 fdc_status_reg_0:
@@ -6271,11 +6272,11 @@ xios_nmi_handler:
 	jmp near xios_diag_enter_menu
 
 xios_auxin_ds:
-	dw 0x0000
+	dw 0x0000			; Gemt DS ved auxin ISR-entry
 xios_auxin_bx:
-	dw 0x0000
+	dw 0x0000			; Gemt BX ved auxin ISR-entry
 xios_auxin_es:
-	dw 0x0000
+	dw 0x0000			; Gemt ES ved auxin ISR-entry
 xios_auxin_handler:
 	iret
 
@@ -7218,17 +7219,17 @@ xios_isr_exit_iret:			; 0AF50
 	iret
 	times 96 db 0				; 0AF5E..0AFBD ISR-stakskift guard-område
 xios_saved_stack_guard:
-	dw 0x0000
+	dw 0x0000			; ISR stakskift-markør (overskrevet ved stak-swap, kontrolleret ved retur)
 xios_saved_ss:
-	dw 0x0000
+	dw 0x0000			; Gemt SS-register (bruger-stak segment, gemmes ved ISR-entry)
 xios_saved_sp:
-	dw 0x0000
+	dw 0x0000			; Gemt SP-register (bruger-stakpeger, gemmes ved ISR-entry)
 xios_tick_subcount:
-	dw 0x0000
+	dw 0x0000			; Systemtakt deltæller (nedtæller til næste sekund-tick)
 xios_tick_low:
-	dw 0x0000
+	dw 0x0000			; Systemtakt tæller lavt ord (opdateres ved hvert sekund-tick)
 xios_tick_high:
-	dw 0x0000
+	dw 0x0000			; Systemtakt tæller højt ord (tid siden boot i timer)
 
 ; -----------------------------------------------------------------------------
 ; National Semiconductor MM58167A Real Time Clock (RTC) I/O Rutiner
@@ -7535,17 +7536,20 @@ isbx_init_exit:				; 0B1EF
 	pop bp
 	ret
 
-diag_dummy_isr_timer:				; 0B1F0 — 11 × dw timer-perioder
+; Diagnostik timer-periode tabeller (11 × dw, valgt ved boot baseret på PCB T0_MAXA):
+; Bruges til REPT-ISR frekvenstest og lydsignal; valgt i init: T0_MAXA=0x1A → chain, ellers timer.
+; Værdier er timer-genindlæsningsperioder for en eksponentiel frekvens-sweep.
+diag_dummy_isr_timer:				; 0B1F0 — 11 × dw, 50Hz-systemtakt variant
 	dw 0x03A8, 0x0270, 0x01AA, 0x0138, 0x009C, 0x004E
 	dw 0x0027, 0x0013, 0x000A, 0x0005, 0x0005
-diag_dummy_isr_chain:				; 0B206 — 11 × dw kæde-perioder
+diag_dummy_isr_chain:				; 0B206 — 11 × dw, 60Hz-systemtakt (kædet timer) variant
 	dw 0x04E0, 0x0340, 0x0238, 0x01A0, 0x00D0, 0x0068
 	dw 0x0034, 0x001A, 0x000D, 0x0006, 0x0003
-diag_timer_isr_ptr:				; 0B21C — pointer + 11 × dw
-	dw diag_dummy_isr_timer
-	dw 0x1388, 0x0D05, 0x08E1, 0x0683, 0x0341, 0x01A0
-	dw 0x00D0, 0x0068, 0x0034, 0x001A, 0x000D
-diag_dummy_isr_stub:				; 0B234 — 10 × dw stub-data
+diag_timer_isr_ptr:				; 0B21C — pointer til aktiv tabel + 11 × timer-genindlæsning
+	dw diag_dummy_isr_timer			; peger på enten timer- eller chain-tabel
+	dw 0x1388, 0x0D05, 0x08E1, 0x0683, 0x0341, 0x01A0	; timer-reload: 5000→1000Hz, 3333→1500Hz, 2273→2200Hz, 1667→3000Hz...
+	dw 0x00D0, 0x0068, 0x0034, 0x001A, 0x000D		; ...fortsat eksponentiel sweep til ~38kHz
+diag_dummy_isr_stub:				; 0B234 — 10 × dw, iSBX DMA-overførselstal (1024→8, halveret)
 	dw 0x0400, 0x0400, 0x02BA, 0x0200, 0x0100
 	dw 0x0080, 0x0040, 0x0020, 0x0010, 0x0008
 diag_fast_movsb_iret:
@@ -9151,11 +9155,11 @@ xios_mx_low_mem_reserve:
 	dw 0x0000
 xios_mx_mem_avail:
 	dw 0x0000
-xios_mx_alloc_ptr:
+xios_mx_alloc_ptr:			; Start på XIOS dynamisk hukommelsesallokering (efter XIOS-data)
 %if NUM_VIR_CONS == 4
-	dw 0x6007
+	dw 0x6007			; XIOS4: 0x6007 = 24583 (offset i 29440-byte XIOS4.CON)
 %else
-	dw 0x4F54
+	dw 0x4F54			; XIOS1: 0x4F54 = 20308 (offset i 25728-byte XIOS1.CON)
 %endif
 xios_mx_free_ptr:
 	dw xios_mx_mem_free
@@ -9182,17 +9186,17 @@ xios_mx_alt_msg:	RTM_MX_MSG "MXalt   "
 xios_mx_cass_qcb:	RTM_MX_QCB "MXcass  "
 xios_mx_cass_msg:	RTM_MX_MSG "MXcass  "
 xios_cas_timeout_counter:
-	db 0xFF, 0xFF
+	db 0xFF, 0xFF		; 0xFFFF: timeout deaktiveret ved init (max nedtæller)
 xios_cas_buf_ptr:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Pointer til bånd-databuffer
 xios_cas_last_bit:
-	db 0x00, 0x00, 0x00
+	db 0x00, 0x00, 0x00	; Sidst læste bit-state (3 bytes: state, prev, cur)
 xios_cas_byte_count:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Antal bytes overført i akt. blok
 xios_cas_block_num:
-	db 0x00, 0x00
+	db 0x00, 0x00		; Aktuel bloknummer på båndet
 xios_cas_state:
-	db 0x01
+	db 0x01			; Båndtilstand: 1=klar/initialiseret
 int28_fn_26_cas_read_hdr:		; 0C6B6 (Båndoptager læs filhoved)
 	call stack_swap_context
 	mov_bx_dx			; 0C6B9
@@ -9860,57 +9864,57 @@ crt_cursor_col_cache:
 	times 4 db 0xFF				; Markørkolonne-cache (0xFF = ugyldig/ikke-initialiseret)
 crt_82730_dpb_desc_table:
 	times 8 db 0
-crt_82730_text_timing_block:		; MB_INIT timing (tekst, 9 ord = 18 bytes)
-	dw 0x1000		; burst_length=16, burst_space=0
-	dw 0x2F03		; line_length=47, hsyncstp=3
-	dw 0x0629		; hfldstrt=6, hfldstp=41
-	dw 0x0629		; hbrdstrt=6, hbrdstp=41
-	dw 0x0000		; scroll_margin=0
-	dw 0x0009		; lpr=9 (10 scanlinjer/tegnrække)
-	dw 0x000A		; nrmstrt=0, nrmstp=10
-	dw 0x0005		; supstrt=0, supstp=5
-	dw 0x0609		; substrt=6, substp=9
-crt_82730_text_mode_params:		; MB_INIT mode (11 ord = 22 bytes)
-	dw 0x0009		; cur1strt=0, cur1stp=9
-	dw 0x0009		; cur2strt=0, cur2stp=9
-	dw 0x0909		; u2_line_sel=9, u1_line_sel=9
-	dw 0x0000		; field_attribute_mask=0
-	dw 0x0138		; frame_length=312
-	dw 0x0005		; vsyncstp=5
-	dw 0x0024		; vfldstrt=36
-	dw 0x011E		; vfldstp=286
-	dw 0x0000		; frame_int_count=0, cursor_blink=0
-	dw 0x0000		; char_blink=0
-	dw 0x4701		; duty_cyc_char=4, char_blink=7
-crt_82730_text_drm_params:		; Dynamic Row Mode params (2 ord = 4 bytes)
-	dw 0x4703		; DRM mode byte 0
-	dw 0xFA04		; DRM mode byte 1
-crt_82730_text_al0_params:		; AL0 params (1 ord = 2 bytes)
-	dw 0xFFF9		; AL0 config
-crt_82730_gfx_timing_block:		; MB_INIT komplet (grafik, 23 ord = 46 bytes)
-	dw 0x1000		; burst_length=16, burst_space=0
-	dw 0x2F03		; line_length=47, hsyncstp=3
-	dw 0x0629		; hfldstrt=6, hfldstp=41
-	dw 0x0629		; hbrdstrt=6, hbrdstp=41
-	dw 0x0000		; scroll_margin=0
-	dw 0x000F		; lpr=15 (16 scanlinjer/tegnrække, grafik)
-	dw 0x0010		; nrmstrt=0, nrmstp=16
-	dw 0x0005		; supstrt=0, supstp=5
-	dw 0x0609		; substrt=6, substp=9
-	dw 0x0809		; cur1strt=8, cur1stp=9
-	dw 0x0009		; cur2strt=0, cur2stp=9
-	dw 0x0909		; u2_line_sel=9, u1_line_sel=9
-	dw 0x0000		; field_attribute_mask=0
-	dw 0x0138		; frame_length=312
-	dw 0x0005		; vsyncstp=5
-	dw 0x0020		; vfldstrt=32
-	dw 0x0120		; vfldstp=288
-	dw 0x0000		; frame_int_count=0, cursor_blink=0
-	dw 0x0000		; char_blink=0
-	dw 0x4701		; duty_cyc_char=4, char_blink=7
-	dw 0x4703		; DRM params
-	dw 0xFF00		; AL0 params
-	dw 0xFFFF		; AL0 params cont.
+crt_82730_text_timing_block:		; MB_INIT timing (tekst, 9 ord = 18 bytes) — Fig.10 MPTR 0–16
+	dw 0x1000		; MPTR 0:  burst_length=16, burst_space=0
+	dw 0x2F03		; MPTR 2:  line_length=47, hsyncstp=3
+	dw 0x0629		; MPTR 4:  hfldstrt=6, hfldstp=41
+	dw 0x0629		; MPTR 6:  hbrdstrt=6, hbrdstp=41
+	dw 0x0000		; MPTR 8:  scroll_margin=0
+	dw 0x0009		; MPTR 10: char_row: lpr=9 (10 scanlinjer/tegnrække)
+	dw 0x000A		; MPTR 12: nrmstrt=0, nrmstp=10
+	dw 0x0005		; MPTR 14: supstrt=0, supstp=5
+	dw 0x0609		; MPTR 16: substrt=6, substp=9
+crt_82730_text_mode_params:		; MB_INIT mode (11 ord = 22 bytes) — Fig.10 MPTR 18–38
+	dw 0x0009		; MPTR 18: cur1strt=0, cur1stp=9
+	dw 0x0009		; MPTR 20: cur2strt=0, cur2stp=9
+	dw 0x0909		; MPTR 22: u2_line_sel=9, u1_line_sel=9
+	dw 0x0000		; MPTR 24: field_attribute_mask=0
+	dw 0x0138		; MPTR 26: frame_length=312
+	dw 0x0005		; MPTR 28: vsyncstp=5
+	dw 0x0024		; MPTR 30: vfldstrt=36
+	dw 0x011E		; MPTR 32: vfldstp=286
+	dw 0x0000		; MPTR 34: (RESERVED)
+	dw 0x0000		; MPTR 36: (RESERVED)
+	dw 0x4701		; MPTR 38: blink_ctrl: duty_cyc=4, cursor_blink=7, frame_int_count=1
+crt_82730_text_drm_params:		; MB_INIT blink/attr (2 ord = 4 bytes) — Fig.10 MPTR 40–42
+	dw 0x4703		; MPTR 40: duty_cyc=4, char_blink=7, flags=0x03
+	dw 0xFA04		; MPTR 42: attribute_bit_selects=0xFA04
+crt_82730_text_al0_params:		; MB_INIT underline/invisible (1 ord = 2 bytes) — Fig.10 MPTR 44
+	dw 0xFFF9		; MPTR 44: abs_line_count=0xFF, invisible_char/underline=0xF9
+crt_82730_gfx_timing_block:		; MB_INIT komplet (grafik, 23 ord = 46 bytes) — Fig.10 MPTR 0–44
+	dw 0x1000		; MPTR 0:  burst_length=16, burst_space=0
+	dw 0x2F03		; MPTR 2:  line_length=47, hsyncstp=3
+	dw 0x0629		; MPTR 4:  hfldstrt=6, hfldstp=41
+	dw 0x0629		; MPTR 6:  hbrdstrt=6, hbrdstp=41
+	dw 0x0000		; MPTR 8:  scroll_margin=0
+	dw 0x000F		; MPTR 10: char_row: lpr=15 (16 scanlinjer/tegnrække, grafik)
+	dw 0x0010		; MPTR 12: nrmstrt=0, nrmstp=16
+	dw 0x0005		; MPTR 14: supstrt=0, supstp=5
+	dw 0x0609		; MPTR 16: substrt=6, substp=9
+	dw 0x0809		; MPTR 18: cur1strt=8, cur1stp=9
+	dw 0x0009		; MPTR 20: cur2strt=0, cur2stp=9
+	dw 0x0909		; MPTR 22: u2_line_sel=9, u1_line_sel=9
+	dw 0x0000		; MPTR 24: field_attribute_mask=0
+	dw 0x0138		; MPTR 26: frame_length=312
+	dw 0x0005		; MPTR 28: vsyncstp=5
+	dw 0x0020		; MPTR 30: vfldstrt=32
+	dw 0x0120		; MPTR 32: vfldstp=288
+	dw 0x0000		; MPTR 34: (RESERVED)
+	dw 0x0000		; MPTR 36: (RESERVED)
+	dw 0x4701		; MPTR 38: blink_ctrl: duty_cyc=4, cursor_blink=7, frame_int_count=1
+	dw 0x4703		; MPTR 40: duty_cyc=4, char_blink=7, flags=0x03
+	dw 0xFF00		; MPTR 42: attribute_bit_selects=0xFF00
+	dw 0xFFFF		; MPTR 44: abs_line_count=0xFF, invisible_char/underline=0xFF (alle sæt)
 crt_82730_buf1_hdr:
 	times 4 db 0
 crt_dma_line_buf_0:
