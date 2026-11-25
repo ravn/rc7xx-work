@@ -23,7 +23,8 @@ KBD_LOCK_CAPS       equ 0x20		; Caps Lock active
 
 ; =============================================================================
 ; Piccoline Auto Configuration Map (INT 28h Func 4 / xios_autoconfig_table)
-; Reference: Piccoline Programmer's Guide v2, Section 3.1 (side 15-16 / 184)
+; Reference: Piccoline Programmer's Guide v2, §3.1 (p. 15-16)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=15
 ; Initialiseres af Boot-EPROM ved 0000:0050h og kopieres til xios_autoconfig_table ved boot.
 ; =============================================================================
 AUTOCONF_MAIN_MEM_SIZE	equ 0x00		; Dword: Primær RAM-størrelse i bytes (main memory size)
@@ -44,7 +45,8 @@ AUTOCONF_SYS_TYPE	equ 0x17		; Byte: Systemtype (0x50 = RC759 Piccoline)
 
 ; =============================================================================
 ; Piccoline Non-Volatile Memory (NVRAM) Layout (INT 28h Func 3 / xios_nvram_table)
-; Reference: Piccoline Programmer's Guide v2, Section 3.2 (side 16-19 / 184)
+; Reference: Piccoline Programmer's Guide v2, §3.2 (p. 16-19)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=16
 ; 256x4 bit batteribackup CMOS RAM. Konfigureres af KONFIG/OKONFIG / KDEF.SYS.
 ; =============================================================================
 NVM_CHECKSUM		equ 0x00		; Byte 0: Checksum over NVRAM indhold
@@ -89,7 +91,10 @@ CCB_FLG_NONDISP     equ 0x1000		; Bit 12: Non-display mode / skjult tekst (ESC i
 
 ; =============================================================================
 ; Digital Research CCP/M-86 & RC759 Console Control Block (CCB / vc structure)
-; Reference: PICCOLINE Programmer's Guide v2, Section 4.6 (Window Handling), p. 61-63
+; DRI standard CCB (44 bytes): ccb.def + xios.a86 p. 8 + p. 63
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (kern/ccb.def, xios/xios.a86)
+; RC759-specifikke felter (offset 0x2C+): Piccoline Programmer's Guide v2, §4.6 (p. 61-63)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=61
 ; =============================================================================
 CCB_EXTRA_LINE      equ 0x34		; rw 1: Extra display line used when scrolling
 CCB_CON_IDX         equ 0x34		; rb 1: Virtual console number (0..3)
@@ -132,7 +137,8 @@ CCB_PALETTE          equ 0x84		; Farvepalet / attribut-tabel for konsol
 
 ; =============================================================================
 ; Digital Research CCP/M-86 SYSDAT Structure Offsets
-; Reference: Digital Research CCP/M-86 System Data Area (SYSDAT.A86 / SYSDAT.DAT)
+; Reference: DRI xios.a86 p. 6 (CCP/M Formats — SYSDAT Format)
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86, kern/sysdat.a86)
 ; =============================================================================
 SYSDAT_TOD_DAY       equ 0x7E		; Word: Antal dage siden 1/1/1978 (CP/M-86 epoch)
 SYSDAT_TOD_HR        equ 0x80		; Byte: Timer (00-23 BCD)
@@ -201,7 +207,8 @@ xios_fn_dispatch_entry:
 
 ; =============================================================================
 ; Digital Research CCP/M-86 XIOS Function Dispatch Table (CS:0C47h, 37 entries)
-; Reference: Digital Research CCP/M-86 XIOS-86 (xios.a86)
+; Reference: DRI xios.a86 p. 14 (CCP/M Interface — ENTRY:)
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
 ; Indgang: AL = funktionsnummer (0..13 standard + udvidede funktioner)
 ; =============================================================================
 xios_function_table:
@@ -242,7 +249,8 @@ xios_function_table:
 
 ; -----------------------------------------------------------------------------
 ; INT 28H Dispatcher (RC759 Udvidet Hardware/BIOS Funktioner)
-; Reference: PICCOLINE Programmer's Guide v2, Appendix A (Funktioner 0-53)
+; Reference: Piccoline Programmer's Guide v2, Appendix A (p. 193-209)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=193
 ; Indgang: AL = funktionsnummer (0..53)
 ; Udfører tabelopslag via [cs:bx + 0xcac] og afslutter med IRET.
 ; -----------------------------------------------------------------------------
@@ -261,7 +269,8 @@ int28h_dispatcher:
 ; =============================================================================
 ; INT 28H Function Dispatch Table (54 Funktioner: 0..53)
 ; Placering: CS:0CAC (filoffset 0x0784C - 0x078B7, 108 bytes = 54 words)
-; Reference: PICCOLINE Programmer's Guide v2, Appendix A
+; Reference: Piccoline Programmer's Guide v2, Appendix A (p. 193-209)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=193
 ; =============================================================================
 int28h_jump_table:
 	dw int28_fn_00_graphics_mode	; Func  0: Changes console to graphics mode (Manual p. 193)
@@ -356,7 +365,10 @@ xios_rtm_svc_call:			; 078DC
 ; Kerne-synlige DRI CCP/M-86 strukturer, peger på af XIOS-header:
 ;   xt_ccb = 0x0D49 (CS:0x078E9),  xt_nccbs = 9
 ;   xt_lcb = 0x0ED5 (CS:0x07A75),  xt_nlcbs = 3
-; Reference: DRI xioscb.def, Piccoline Programmers Guide v2 §2.2
+; Reference: DRI xios.a86 p. 63 (CCBs) + p. 65 (LCBs) + kern/xioscb.def
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86, kern/xioscb.def)
+; Piccoline Programmer's Guide v2, §2.2
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=12
 ; =============================================================================
 CSM_BACKGROUND  equ 0x0002          ; c_state: baggrundskonsol (inaktiv)
 
@@ -6047,8 +6059,11 @@ dph_drive_m:
 	times 60 db 0			; Bufferområde for M-disk
 ; =============================================================================
 ; RC759 Piccoline DPB (Disk Parameter Block) — 17 bytes
-; Standard CCP/M-86 15-byte DPB + psh (fysisk sektorskift) + pmk (maske)
-; Reference: DRI xioscb.def §Disk I/O Data + Piccoline Programmers Guide §8
+; Standard CCP/M-86 15-byte DPB (spt..off) + psh + pmk (RC759-udvidelse)
+; DRI standard DPB: xios.a86 p. 80 (Disk I/O Data) + kern/xioscb.def
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86, kern/xioscb.def)
+; RC759-specifikke felter psh/pmk: Piccoline Programmer's Guide v2, §8 (p. 97+)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=97
 ; =============================================================================
 ; spt, bsh, blm, exm, dsm, drm, al0, al1, cks, off, psh, pmk
 %macro RC759_DPB 12
