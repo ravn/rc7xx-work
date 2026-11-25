@@ -274,7 +274,7 @@ int28_fn_53_version:                     ; 078B9
 	mov bx, 0x206
 	ret
 
-rtm_call_helper:                               ; 078C0
+rtm_set_flag:                               ; 078C0
 	push dx
 	mov cl, 0x85
 	call xios_rtm_svc_call
@@ -282,14 +282,14 @@ rtm_call_helper:                               ; 078C0
 	test ax, ax
 	je .ret
 	cmp cl, 0x2a
-	je rtm_call_helper
+	je rtm_set_flag
 .ret:                                     ; 078D0
 	ret
 
 rtm_timer_wait:                                ; 078D1
 	mov cl, 0x84
 
-rtm_timer_wait2:                               ; 078D3
+rtm_process_svc_call:                               ; 078D3
 	mov bx, [cs:sysdat_rlr]
 	mov es, [cs:bx + PD_UDA]
 
@@ -377,7 +377,7 @@ kbd_handler:                                   ; 07A93 / 000002F3
 	xlatb
 	mov [cs:kbd_prefix_char], al
 	mov dx, 0x13
-	call rtm_call_helper
+	call rtm_set_flag
 	jmp near .exit
 
 .check_mouse_packet:
@@ -482,7 +482,7 @@ kbd_handler:                                   ; 07A93 / 000002F3
 	mov byte [cs:kbd_event_flag], 0xff
 
 .send_char_event:
-	call rtm_call_helper
+	call rtm_set_flag
 
 .exit:
 	jmp near xios_isr_exit_dispatch
@@ -569,7 +569,7 @@ crt_init_irst_ca:                              ; 07BFE
 	cmp byte [cs:xt_tick], 0                       ; 07C38
 	je .call_timer_hook                                 ; 07C3E
 	mov dx, 1                                    ; 07C40
-	call rtm_call_helper                         ; 07C43
+	call rtm_set_flag                         ; 07C43
 
 .call_timer_hook:
 	call far [cs:xios_hook_timer_off]          ; 07C46
@@ -701,7 +701,7 @@ xios_handle_vir_con_switch:                                     ; 00000597 (XIOS
 	mov dx, 0x18
 	mov [cs:kbd_con_dest], dx
 	mov byte [cs:kbd_event_flag], 0xff
-	call rtm_call_helper
+	call rtm_set_flag
 	pushf
 	call far [cs:sysdat_dispatcher]
 .skip_switch:
@@ -1023,9 +1023,9 @@ screen_dump_to_printer:                                     ; 07EEC
 	mov dl, [si + 0x24]
 	push dx
 	mov cl, 0xa0
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0xa1
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	pop dx
 	mov si, boot_msg_printer_reserved
 	or_ax_ax                                     ; 07F0C
@@ -1063,7 +1063,7 @@ screen_dump_to_printer:                                     ; 07EEC
 
 .wait_and_retry:                                     ; 07F51
 	mov cl, 0x9f
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	jmp near conin_valid_con
 
 .show_error_msg:                                     ; 07F59
@@ -2197,9 +2197,9 @@ crt_scroll_lock_and_refresh:                                     ; 08716
 	mov [cs:xios_scroll_ccb_ptr], bx
 	push bx
 	mov dx, 4
-	call rtm_call_helper
+	call rtm_set_flag
 	mov cl, 0x8e
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov dx, 9
 	call rtm_timer_wait
 	pop bx
@@ -3077,7 +3077,7 @@ int28_fn_00_graphics_mode:              ; 08E55
 	mov si, boot_msg_graphics_reserved
 	call con_puts
 	mov cl, 0
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov al, 0xff
 	ret
 
@@ -3499,7 +3499,7 @@ io_auxist:
 	mov es, [si + PD_UDA]
 	mov word [si + PD_FLAG], 0
 	mov cx, 0x8f
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	pop dx
 	pop cx
 	pop es
@@ -3529,7 +3529,7 @@ xios4_fn_19_auxist:
 	mov ah, 0xff                                 ; 00001A63
 	mov [cs:kbd_char_buffer], ax                          ; 00001A65
 	mov dx, 5                                    ; 00001A69
-	call rtm_call_helper                         ; 00001A6C
+	call rtm_set_flag                         ; 00001A6C
 	pushf                                        ; 00001A6F
 	call far [cs:sysdat_dispatcher]                           ; 00001A70
 
@@ -3845,7 +3845,7 @@ rtm_delay_1_tick:                                     ; 09312
 	mov dx, 1
 	mov bx, [cs:sysdat_rlr]
 	mov es, [bx + PD_UDA]
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	pop es
 	pop di
 	pop si
@@ -5116,7 +5116,7 @@ fdc_fcr_setup:                                 ; 09D4E
 	mov dx, 0x3c
 	mov cl, 0x8d
 	pusha                                        ; 09D5C  60
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	popa                                         ; 09D60  61
 .ret:                                     ; 09D61
 	ret
@@ -5240,7 +5240,7 @@ fdc_set_motor_enable:                                     ; 09E25
 	mov dx, 0x3c
 	mov cl, 0x8d
 	pusha                                        ; 09E43  60
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	popa                                         ; 09E47  61
 
 xios_fdc_restore_track0:                       ; 09E48
@@ -5408,7 +5408,7 @@ fdc_transfer_isr:
 	jne .transfer_error
 	mov byte [cs:fdc_wait_flag], 0
 	mov dx, 8
-	call rtm_call_helper
+	call rtm_set_flag
 
 .transfer_error:                                     ; 09F92
 	jmp near xios_isr_exit_dispatch
@@ -5772,7 +5772,7 @@ fdc_wait_dma_channel_ready:                                     ; 0A257
 .dma_channel_wait_call:                                     ; 0A261
 	pusha                                        ; 0A261  60
 	mov cl, 0x89
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	popa                                         ; 0A267  61
 	cli
 	mov ah, 1
@@ -5796,7 +5796,7 @@ fdc_release_dma_channel:                                     ; 0A276
 .dma_release_ch1:                                     ; 0A28C
 	pusha                                        ; 0A28C  60
 	mov cl, 0x8b
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	popa                                         ; 0A292  61
 	sti
 	ret
@@ -6105,7 +6105,7 @@ net_auxin_init:
 	push cx
 	mov dx, net_auxin_queue_desc
 	mov cl, 0x87
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	pop cx
 	pop bx
 	test ax, ax
@@ -6123,7 +6123,7 @@ net_auxin_poll:
 .aux_fn_exit:                                     ; 0A83E
 	mov cl, 0x89
 	mov dx, net_auxin_queue_desc
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov al, [cs:net_auxin_char_buf]
 	ret
 
@@ -6220,7 +6220,7 @@ net_prn_init:
 		push cx
 	mov dx, net_prn_queue_desc
 	mov cl, 0x87
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	pop cx
 	pop bx
 	test ax, ax
@@ -6245,7 +6245,7 @@ net_prn_write_char:
 printer_wait_completion:                                     ; 0A923
 	mov dx, net_prn_queue_desc
 	mov cl, 0x8b
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov byte [cs:net_prn_buf_len], 0
 	ret
 
@@ -6338,7 +6338,7 @@ xios_timer_isr_poll:                                     ; 0AA3D
 	je .timer_isr_done
 	and byte [bx + 0x1b], 0xfb
 	mov dx, [bx + 0x16]
-	call rtm_call_helper
+	call rtm_set_flag
 	jmp near xios_isr_exit_dispatch
 
 .timer_isr_done:                                     ; 0AA5F
@@ -6352,7 +6352,7 @@ sio_tx_byte_from_buffer:                                     ; 0AA62
 	and byte [bx + 0x1b], 0xf7
 	push bx
 	mov dx, [bx + 0x18]
-	call rtm_call_helper
+	call rtm_set_flag
 	pop bx
 	ret
 
@@ -6496,7 +6496,7 @@ xios_sio_isr_rx_check:                                     ; 0AB06
 	je .sio_isr_rx_read
 	mov dx, [bx + 0x14]
 	push bx
-	call rtm_call_helper
+	call rtm_set_flag
 	pop bx
 	and byte [bx + 0x1A], 0xfb
 	jmp near xios_isr_exit_dispatch
@@ -6643,7 +6643,7 @@ io_list:
 	mov bx, [cs:sysdat_rlr]
 	mov es, [bx + PD_UDA]
 	mov cx, 0x8f
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	pop es
 	pop ds
 	ret
@@ -6808,7 +6808,7 @@ prn_strobe_isr:
 	out dx, al
 	call eoi_helper
 	mov dx, 0xc
-	call rtm_call_helper
+	call rtm_set_flag
 	jmp near xios_isr_exit_dispatch
 
 xios_crt_isr:
@@ -6818,7 +6818,7 @@ xios_crt_isr:
 	out dx, al
 	call eoi_helper
 	mov dx, 0x19
-	call rtm_call_helper
+	call rtm_set_flag
 	jmp near xios_isr_exit_dispatch
 
 xios_autoconfig_table:
@@ -6930,7 +6930,7 @@ rtc_1sec_isr:
 .rtc_1sec_done:                                     ; 0AF05
 	call eoi_helper
 	mov dx, 2
-	call rtm_call_helper
+	call rtm_set_flag
 	jmp near xios_isr_exit_iret
 
 ; -----------------------------------------------------------------------------
@@ -7418,7 +7418,7 @@ xios_int3_handler:
 	and word [bx + PD_FLAG], 0xfdfd
 	mov cx, 0x8f
 	mov dx, 0xffff
-	jmp near rtm_timer_wait2
+	jmp near rtm_process_svc_call
 
 xios_diag_str_interrupt:
 	db 0x22, "Interrupt="
@@ -8377,55 +8377,55 @@ mov bx, sio_chan_a_ctrl_block
 mov es, [cs:rtc_time_buf_seg]
 	mov cl, 0x86
 mov dx, xios_mx_sound_qcb
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x87
 mov dx, xios_mx_sound_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x8b
 mov dx, xios_mx_sound_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x86
 mov dx, xios_mx_dma0_qcb
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x87
 mov dx, xios_mx_dma0_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x8b
 mov dx, xios_mx_dma0_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x86
 mov dx, xios_mx_dma1_qcb
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x87
 mov dx, xios_mx_dma1_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x8b
 mov dx, xios_mx_dma1_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x86
 mov dx, xios_mx_cass_qcb
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x87
 mov dx, xios_mx_cass_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x8b
 mov dx, xios_mx_cass_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x86
 mov dx, xios_qcb_link_req
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x86
 mov dx, xios_qcb_xmit_req
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x86
 mov dx, xios_mx_alt_qcb
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x87
 mov dx, xios_mx_alt_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cl, 0x8b
 mov dx, xios_mx_alt_msg
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 mov al, [cs:fdc_active_drive_fcr]
 
 fdc_dma_scroll_cmd:                            ; 0C08A
@@ -9512,7 +9512,7 @@ mov si, xios_boot_msg_shared_prn1
 	pop ds
 	mov cl, 0x83
 	mov dl, 2
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 mov byte [cs:xios_prn_reserve_flag], 0xff
 	mov cx, 0xffff
 	call io_statline
@@ -9596,7 +9596,7 @@ mov si, xios_boot_msg_dollar
 	pop ds
 	mov dl, 1
 	mov cl, 0x83
-	call rtm_timer_wait2
+	call rtm_process_svc_call
 	mov cx, 0xffff
 	call io_statline
 .ret:                                     ; 0CB07
