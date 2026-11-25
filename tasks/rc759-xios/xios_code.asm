@@ -669,8 +669,8 @@ kbd_prefix_flag:
 	db 0x00
 kbd_alt_flag:
 	db 0x00
-kbd_special_keys_table:
-	db 0x1D, 0x36, 0x2A, 0x37, 0x28, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x1D
+kbd_special_keys_table:			; RC759 special/modifier scan-kode tabel (16 bytes)
+	db 0x1D, '6', '*', '7', '(', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', 0x1D
 
 ; -----------------------------------------------------------------------------
 ; CRT Afbrydelsesrutine (IRST, Vektor 0x88)
@@ -4666,7 +4666,18 @@ window_zorder_list:
 	times 0x34 db 0
 	db %1
 	times 3 db 0
-	db 0x4f, 0x17, 0x00, 0x00, 0x4f, 0x17, 0x50, 0x18, 0x00, 0x00, 0x18, 0x00, 0x50, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x50
+	; +0x38: initial vinduesgeometri (fuld 80×24 skærm)
+	db 80-1, 24-1		; +0x38 win_right=79, win_bottom=23
+	dw 0x0000		; +0x3A CCB_LAST_TOP_LEFT = (0,0)
+	db 80-1, 24-1		; +0x3C CCB_LAST_BOT_RIGHT = (col 79, row 23)
+	db 80, 24		; +0x3E vinduesdimensioner (cols=80, rows=24)
+	dw 0x0000		; +0x40 reserveret
+	db 24, 0		; +0x42 CCB_ROWS=24, padding
+	db 80, 0		; +0x44 CCB_COLS=80, padding
+	dw 0x0000		; +0x46 reserveret
+	db 24, 0		; +0x48 CCB_SCROLL_BOTTOM=24, padding
+	dw 0x0000		; +0x4A reserveret
+	db 0, 80		; +0x4C padding, +0x4D CCB_WRAP_COL=80
 	db %2
 	times 0x0b db 0
 	dw 0xffff
@@ -4676,7 +4687,11 @@ window_zorder_list:
 	times 9 db 0
 	dw %4
 	times 4 db 0
-	db 0x0d, 0x01, 0x0a, 0x00, 0x01, 0xf8
+	db 0x0D, 0x01		; +0x6F-0x70: reserveret
+	db 0x0A			; +0x71 CCB_SCROLL_MODE: scroll mode 10
+	db 0x00			; +0x72 CCB_CURSOR_LINES: cursor start = scanline 0
+	db 0x01			; +0x73 CCB_CURSOR_HEIGHT: cursor højde = 1 scanline
+	db 0xF8			; +0x74 CCB_BLINK_FLAG: blink aktiveret
 	dw %5
 	times 9 db 0
 	db 0x02, 0x00, 0x0f
@@ -9156,7 +9171,7 @@ xios_qcb_link_req:	RTM_Q_QCB "link_req", 0x000F, 0x0001
 xios_qcb_xmit_req:	RTM_Q_QCB "XMIT_REQ", 0x000F, 0x000A
 			dw xios_q_xmit_buf
 xios_q_link_buf:
-	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	times 15 db 0				; Link-kø databuffer (15 bytes)
 xios_q_xmit_buf:
 	times 150 db 0				; Transmit-kø databuffer (150 bytes)
 xios_mx_alt_qcb:	RTM_MX_QCB "MXalt   "
@@ -9832,12 +9847,14 @@ dpc_release_shared_devices:		; 0CB3C
 crt_82730_cb_status:
 	db 0x01, 0x03
 crt_line_buf_toggle:
-	db 0x00, 0x00, 0x50, 0x00
+	dw 0x0000			; Aktiv linjebuffer-selektor (0=buf0, skifter ved opdatering)
+	dw 0x0050			; Linjebuffer-bredde = 80 tegn
 crt_82730_line_desc_table:
-	times 16 db 0
-	db 0xF7, 0xFF, 0x00, 0x00
+	times 16 db 0			; 82730 line descriptor tabel (16 bytes DMA-deskriptorer)
+	dw 0xFFF7			; Linje-ende markør (0xFFF7 = 65527 = alt sæt)
+	dw 0x0000			; Link pointer = nil
 crt_cursor_col_cache:
-	db 0xFF, 0xFF, 0xFF, 0xFF
+	times 4 db 0xFF				; Markørkolonne-cache (0xFF = ugyldig/ikke-initialiseret)
 crt_82730_dpb_desc_table:
 	times 8 db 0
 crt_82730_text_timing_block:		; MB_INIT timing (tekst, 9 ord = 18 bytes)
