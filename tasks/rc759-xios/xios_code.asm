@@ -24,7 +24,7 @@ KBD_LOCK_CAPS       equ 0x20		; Caps Lock active
 ; =============================================================================
 ; Piccoline Auto Configuration Map (INT 28h Func 4 / xios_autoconfig_table)
 ; Reference: Piccoline Programmer's Guide v2, §3.1 (p. 15-16)
-;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=15
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=25
 ; Initialiseres af Boot-EPROM ved 0000:0050h og kopieres til xios_autoconfig_table ved boot.
 ; =============================================================================
 AUTOCONF_MAIN_MEM_SIZE	equ 0x00		; Dword: Primær RAM-størrelse i bytes (main memory size)
@@ -46,7 +46,7 @@ AUTOCONF_SYS_TYPE	equ 0x17		; Byte: Systemtype (0x50 = RC759 Piccoline)
 ; =============================================================================
 ; Piccoline Non-Volatile Memory (NVRAM) Layout (INT 28h Func 3 / xios_nvram_table)
 ; Reference: Piccoline Programmer's Guide v2, §3.2 (p. 16-19)
-;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=16
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=26
 ; 256x4 bit batteribackup CMOS RAM. Konfigureres af KONFIG/OKONFIG / KDEF.SYS.
 ; =============================================================================
 NVM_CHECKSUM		equ 0x00		; Byte 0: Checksum over NVRAM indhold
@@ -82,7 +82,7 @@ PD_CNS              equ 0x20		; Default console index     (p_cons)
 ; Reference: DRI xios.a86 p. 8 (CCB state flags: csm_buffered, csm_background …)
 ;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
 ; RC759-specifikke bitmønstre: Piccoline Programmer's Guide v2, §4.6 (p. 61-63)
-;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=61
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=71
 ; =============================================================================
 CCB_FLG_SCROLL_LOCK equ 0x0001		; Bit 0: Scroll-lås / bufferopdatering aktiv
 CCB_FLG_INACTIVE    equ 0x0002		; Bit 1: Baggrundskonsol (1=inaktiv/skjult, 0=aktiv)
@@ -100,7 +100,7 @@ CCB_FLG_NONDISP     equ 0x1000		; Bit 12: Non-display mode / skjult tekst (ESC i
 ; DRI standard CCB (44 bytes): ccb.def + xios.a86 p. 8 + p. 63
 ;   http://www.cpm.z80.de/download/ccpmv31.zip  (kern/ccb.def, xios/xios.a86)
 ; RC759-specifikke felter (offset 0x2C+): Piccoline Programmer's Guide v2, §4.6 (p. 61-63)
-;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=61
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=71
 ; =============================================================================
 CCB_EXTRA_LINE      equ 0x34		; rw 1: Extra display line used when scrolling
 CCB_CON_IDX         equ 0x34		; rb 1: Virtual console number (0..3)
@@ -167,7 +167,9 @@ xios_sup_para_base_val:
 	dw 0x0000			; Supervisor paragraph base (unlinked, ved CS:0C0A)
 
 ; ===========================================================================
-; SYSDAT:0x0C0C — DRI struct xios_table
+; SYSDAT:0x0C0C — DRI struct xios_table (XIOS HEADER)
+; Reference: DRI xios.a86 p. 13 (XIOS HEADER AND CCP/M INTERFACE)
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
 ; ===========================================================================
 xios_config_table:
 xt_tick:
@@ -256,7 +258,7 @@ xios_function_table:
 ; -----------------------------------------------------------------------------
 ; INT 28H Dispatcher (RC759 Udvidet Hardware/BIOS Funktioner)
 ; Reference: Piccoline Programmer's Guide v2, Appendix A (p. 193-209)
-;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=193
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=203
 ; Indgang: AL = funktionsnummer (0..53)
 ; Udfører tabelopslag via [cs:bx + 0xcac] og afslutter med IRET.
 ; -----------------------------------------------------------------------------
@@ -276,7 +278,7 @@ int28h_dispatcher:
 ; INT 28H Function Dispatch Table (54 Funktioner: 0..53)
 ; Placering: CS:0CAC (filoffset 0x0784C - 0x078B7, 108 bytes = 54 words)
 ; Reference: Piccoline Programmer's Guide v2, Appendix A (p. 193-209)
-;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=193
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=203
 ; =============================================================================
 int28h_jump_table:
 	dw int28_fn_00_graphics_mode	; Func  0: Changes console to graphics mode (Manual p. 193)
@@ -374,7 +376,7 @@ xios_rtm_svc_call:			; 078DC
 ; Reference: DRI xios.a86 p. 63 (CCBs) + p. 65 (LCBs) + kern/xioscb.def
 ;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86, kern/xioscb.def)
 ; Piccoline Programmer's Guide v2, §2.2
-;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=12
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=22
 ; =============================================================================
 CSM_BACKGROUND  equ 0x0002          ; c_state: baggrundskonsol (inaktiv)
 
@@ -3548,6 +3550,10 @@ ww_pointer_store_coords:		; 091BA
 
 ; =============================================================================
 ; Sektion 4A: Funktion 16..24, Konsolskift & Vinduesmanager
+; Reference: Piccoline Programmer's Guide v2, Appendix A (p. 199-201)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=209
+; IO_SWITCH / IO_STATLINE: DRI xios.a86 p. 49-50
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
 ; =============================================================================
 io_auxist:
 %if NUM_VIR_CONS == 1
@@ -4258,6 +4264,9 @@ window_draw_title:			; 09473
 
 ; =============================================================================
 ; Sektion 4B: Fælles Mus- og CRT-driver (CS:2980..2BD0 / CS:2B43..2D93)
+; Optisk mus (INT 28H Func 30): Piccoline Programmer's Guide v2, Appendix A (p. 205)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=215
+; Intel 82730 CRT Text Coprocessor: Intel Component Data Catalog 1984, order no. 231724
 ; =============================================================================
 int28_fn_30_mouse:			; 094A0
 	cmp cl, 4
@@ -4552,6 +4561,8 @@ crt_load_cursor_hardware_regs:		; 096CF
 ; =============================================================================
 ; Sektion 4C: Display Lists, Konsol-deskriptorer (CCB) & CRT Output Buffere
 ; CS:2BD0..2D7B (XIOS1: 1 virtuel konsol) / CS:2D93..3108 (XIOS4: 4 virtuelle konsoller)
+; CCB-struktur: se equates-blok øverst (DRI xios.a86 p. 8 + p. 63)
+; Intel 82730 Display Lists: Intel Component Data Catalog 1984, order no. 231724
 ; =============================================================================
 xios4_vir_con_mode:
 	db 0x00, NUM_VIR_CONS
@@ -4685,6 +4696,11 @@ kbd_ctrl_translate_table:
 
 ; =============================================================================
 ; Sektion 5: Floppydisk Driver (Fælles for XIOS1 og XIOS4)
+; DRI disk I/O struktur: DRI xios.a86 p. 66-83 (Disk I/O + Disk I/O Data)
+;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
+; WD2797 FDC: Western Digital WD2797 Floppy Disk Formatter/Controller datasheet
+; RC759 diskformat: Piccoline Programmer's Guide v2, §8 (p. 97+)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=107
 ; =============================================================================
 io_seldsk:
 	mov ax, 0
@@ -6069,7 +6085,7 @@ dph_drive_m:
 ; DRI standard DPB: xios.a86 p. 80 (Disk I/O Data) + kern/xioscb.def
 ;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86, kern/xioscb.def)
 ; RC759-specifikke felter psh/pmk: Piccoline Programmer's Guide v2, §8 (p. 97+)
-;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=97
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=107
 ; =============================================================================
 ; spt, bsh, blm, exm, dsm, drm, al0, al1, cks, off, psh, pmk
 %macro RC759_DPB 12
@@ -7520,6 +7536,8 @@ hex_to_ascii_nibble:			; 0B341
 	ret
 ; =============================================================================
 ; RC759 Piccoline Skærmtrimning & Diagnostic Menu (0x0B34B - 0x0B4FC)
+; Reference: Piccoline Programmer's Guide v2, §4.3 Skærmtrimning (p. 50-54)
+;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=60
 ; =============================================================================
 xios_vmenu_title:
 	db 0x14, 0x20, 0xFF		; 0B34B
