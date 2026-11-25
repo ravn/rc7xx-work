@@ -335,10 +335,10 @@ xios_rtm_svc_call:                             ; 078DC
 	times 40 db 0                                ; 079C4..079EA (40 bytes padding)
 	add [bx + di + 0xe], dl
 	times 42 db 0                                ; 079EF..07A17 (42 bytes padding)
-	jge xios_dummy_table_7a29
+	jge xios_dummy_align_entry
 	times 14 db 0                                ; 07A1B..07A27 (14 bytes padding)
 
-xios_dummy_table_7a29:                                     ; 07A29
+xios_dummy_align_entry:                                     ; 07A29
 	times 28 db 0                                ; 07A29..07A43 (28 bytes padding)
 	test ax, 0xe
 	times 52 db 0                                ; 07A48..07A7A (52 bytes padding)
@@ -731,7 +731,7 @@ vmenu_display_menu_entry:                                     ; 07D35 / 000005C7
 	push cx
 	push ds
 	pop es
-	mov di, xios_con_line_buffer_614a                  ; 07D4E
+	mov di, vmenu_line_render_buffer                  ; 07D4E
 	push di
 	mov ax, 0x820
 	mov cx, 0x50
@@ -753,7 +753,7 @@ vmenu_display_menu_entry:                                     ; 07D35 / 000005C7
 	push di
 	mov si, [di - 4]
 	lodsb
-	mov di, xios_con_line_buffer_6186                  ; 07D71
+	mov di, vmenu_line_render_buf_mid                  ; 07D71
 	call vmenu_render_string
 	mov cx, 0x14
 	mov al, 0x20
@@ -778,7 +778,7 @@ vmenu_display_menu_entry:                                     ; 07D35 / 000005C7
 	push di
 	mov_si_ax                                    ; 07D9A
 	mov al, [di - 7]
-	mov di, xios_con_line_buffer_61b8                  ; 07D9F
+	mov di, vmenu_line_render_buf_end                  ; 07D9F
 	call vmenu_render_string
 	mov cx, 8
 	mov al, 0x20
@@ -1058,7 +1058,7 @@ screen_dump_to_printer:                                     ; 07EEC
 	inc bx
 	inc bx
 	loop .print_row_loop
-	mov si, xios_con_line_buffer_614a
+	mov si, vmenu_line_render_buffer
 	call printer_print_line
 
 .wait_and_retry:                                     ; 07F51
@@ -1105,7 +1105,7 @@ printer_out_char:                                     ; 07F88
 	je .do_output_char
 	cmp dl, 1
 	je .filter_special_char
-	mov bx, xios_crt_table_4256
+	mov bx, xios_nvram_table
 	test [cs:bx + 0x1c], cl
 	je .do_output_char
 
@@ -2295,13 +2295,13 @@ scroll_shift_line_pointers:                                     ; 08825
 	rep movsw
 	lea ax, [bx + 0x7c]
 	call crt_dma_make_phys_desc
-	mov ax, fdc_param_6140
+	mov ax, crt_dma_desc_attr_ptr
 	call crt_dma_make_phys_desc
 	pop cx
 	rep movsw
 	lea ax, [bx + CCB_CHAR_ATTR]
 	call crt_dma_make_phys_desc
-	mov ax, fdc_param_6140
+	mov ax, crt_dma_desc_attr_ptr
 	call crt_dma_make_phys_desc
 	pop cx
 	rep movsw
@@ -2415,7 +2415,7 @@ crt_refresh_lines_loop:                                     ; 08941
 crt_refresh_tail_lines:                                     ; 08960
 	cmp cx, 0x18
 	ja .mode_line_entry
-	mov ax, xios_con_line_buffer_614a
+	mov ax, vmenu_line_render_buffer
 	call crt_dma_make_phys_desc
 
 .mode_line_entry:                                     ; 0896B
@@ -2842,19 +2842,19 @@ io_statline:
 	jmp near .release_and_exit
 
 .render_default_line:                                     ; 08C9A
-	mov di, xios_vmenu_buf_484d
+	mov di, vmenu_buf_con_num
 	mov al, 0x20
 	mov cx, xios_vmenu_str_printer
 	sub_cx_di                                    ; 08CA2
 	rep stosb
-	mov di, xios_vmenu_buf_4884
+	mov di, vmenu_buf_prn_num
 	mov cx, xios_vmenu_str_time
 	sub_cx_di                                    ; 08CAC
 	rep stosb
 	mov al, [cs:xios4_active_vir_con]
 	add al, 0x30
-	mov [cs:xios_vmenu_buf_484d], al
-	mov word [cs:xios_vmenu_buf_4884], 0x2030
+	mov [cs:vmenu_buf_con_num], al
+	mov word [cs:vmenu_buf_prn_num], 0x2030
 	mov bx, [cs:xios4_cur_window_ptr]
 	mov bx, [bx + 0x5c]
 	mov si, [bx]
@@ -2862,9 +2862,9 @@ io_statline:
 	je .check_status_bits
 	mov al, [si + 0x24]
 	call vmenu_format_two_digits
-	mov [cs:xios_vmenu_buf_4884], ax
+	mov [cs:vmenu_buf_prn_num], ax
 	lea si, [si + PD_NAME]
-	mov di, xios_vmenu_buf_4858
+	mov di, vmenu_buf_process_name
 	mov cx, 4
 	rep movsw
 
@@ -2872,18 +2872,18 @@ io_statline:
 	mov cx, [bx + 0xe]
 	test cx, 0x80
 	je .check_other_status
-	mov word [cs:xios_vmenu_buf_4873], 0x5392
+	mov word [cs:vmenu_buf_status_flags], 0x5392
 	jmp short .check_printer_status
 
 .check_other_status:                                     ; 08CF6
 	test cx, 0x100
 	je .check_printer_status
-	mov word [cs:xios_vmenu_buf_4873], 0x4f92
+	mov word [cs:vmenu_buf_status_flags], 0x4f92
 
 .check_printer_status:                                     ; 08D03
 	test cx, 0x200
 	je .select_window_opt_str
-	mov di, xios_vmenu_buf_4876
+	mov di, vmenu_buf_prn_status
 	mov word [di], 0x5092
 	mov byte [di + 2], '='
 	mov al, [bx + 8]
@@ -2903,14 +2903,14 @@ io_statline:
 	mov si, xios_vmenu_opt_buffer
 
 .render_disk_drive_letters:                                     ; 08D3B
-	mov di, xios_vmenu_buf_484f
+	mov di, vmenu_buf_mode_str
 	mov cx, 8
 	rep movsb
 	mov cx, 0x10
 	mov ah, 'A'
 	mov al, 0x20
 	mov dx, [cs:sysdat_nlstdev]
-	mov di, xios_vmenu_buf_4862
+	mov di, vmenu_buf_drive_map
 
 .drive_letter_loop:                                     ; 08D52
 	shr dx, 1
@@ -2940,14 +2940,14 @@ io_statline:
 	test al, 0x20
 	je .check_window_mode_flag
 	mov si, xios_vmenu_opt_lock
-	mov di, xios_vmenu_buf_4887
+	mov di, vmenu_buf_kbd_lock
 	mov cx, 4
 	rep movsb
 
 .check_window_mode_flag:                                     ; 08D86
 	cmp byte [cs:xios4_vir_con_mode], 0
 	je .check_window_titles
-	mov byte [cs:xios_vmenu_buf_4861], 7
+	mov byte [cs:vmenu_buf_mode_flag], 7
 
 .check_window_titles:                                     ; 08D94
 	test byte [cs:xios4_window_clip_flag], 0xff
@@ -2971,7 +2971,7 @@ io_statline:
 	mov si, xios_vmenu_str_console
 
 .render_to_line_buffer:                                     ; 08DB2
-	mov di, xios_con_line_buffer_614a
+	mov di, vmenu_line_render_buffer
 	mov ah, 8
 	mov cx, 0x50
 	pop bx
@@ -3024,7 +3024,7 @@ vmenu_saved_bx:
 
 con_puts:                                     ; 08DF1
 	push es
-	mov di, xios_vmenu_buf_48b9
+	mov di, vmenu_buf_msg_prompt
 	push di
 	push di
 	push ds
@@ -3222,14 +3222,14 @@ crt_set_display_mode_timings:                                     ; 08FE7
 	je crt_set_text_timings_and_flip
 
 crt_set_graphics_timings:                                     ; 08FEE
-	mov word [cs:fdc_param_613c], 0x000f
-	mov word [cs:fdc_param_613e], 0x8723
+	mov word [cs:crt_dma_desc_count], 0x000f
+	mov word [cs:crt_dma_desc_buf_ptr], 0x8723
 	mov si, fdc_dpb_alternate
 	jmp short crt_flip_page_and_copy
 
 crt_set_text_timings_and_flip:                                     ; 09001
-	mov word [cs:fdc_param_613c], 0x0009
-	mov word [cs:fdc_param_613e], 0x8750
+	mov word [cs:crt_dma_desc_count], 0x0009
+	mov word [cs:crt_dma_desc_buf_ptr], 0x8750
 	mov si, fdc_dpb_standard
 
 crt_flip_page_and_copy:                                     ; 09012
@@ -4329,7 +4329,7 @@ crt_check_cursor_blink_tick:                                     ; 09588
 	jne .ret
 	mov byte [cs:kbd_disabled_flag], 0xff
 	call crt_swap_active_line_buffers
-	mov ax, xios_crt_line_entry_61ec
+	mov ax, crt_dma_line_table_entry
 	call crt_dma_make_phys_desc
 	xor byte [cs:fdc_drive_flags_0], 0x80
 mov word [cs:fdc_drive_cyl_0], 0xffff
@@ -4620,7 +4620,7 @@ kbd_ctrl_translate_table:
 io_seldsk:
 	mov ax, 0
 	mov_al_cl                                    ; 0991E
-	mov bx, fdc_scratch_3932
+	mov bx, fdc_drive_unit_map
 	xlatb
 	cmp al, 0
 	je .seldsk_error
@@ -4629,13 +4629,13 @@ io_seldsk:
 	mov dx, 0xfffe
 	stc
 	rcl dx, cl
-	and [cs:fdc_param_377c], dx
+	and [cs:fdc_active_drive_mask], dx
 	jmp near .dph_found
 
 .calc_dph_offset:                                     ; 0993B
 	mov dx, 1
 	shl dx, cl
-	or [cs:fdc_param_377c], dx
+	or [cs:fdc_active_drive_mask], dx
 
 .dph_found:                                     ; 09945
 	and al, 0xf7
@@ -4678,11 +4678,11 @@ io_read:
 
 .read_start:                                     ; 09984
 	mov al, [bp + 0xe]
-	mov bx, fdc_param_3785
+	mov bx, fdc_stats_read_ops
 	call fdc_inc_stats_counter
 	mov al, [bp + 0xe]
 	mov_cl_al                                    ; 09990
-	mov bx, fdc_scratch_3932
+	mov bx, fdc_drive_unit_map
 	xlatb
 	cmp al, 0
 	jne .read_dma_loop
@@ -4704,54 +4704,54 @@ io_read:
 	jmp near fdc_dma_alt_buf_loop
 
 .read_transfer_done:                                     ; 099B0
-	mov byte [cs:fdc_param_3768], 8
-	and [cs:fdc_param_3768], al
+	mov byte [cs:fdc_rw_flags], 8
+	and [cs:fdc_rw_flags], al
 	and al, 0xf7
 	push ax
 	mov bx, dph_drive_a
 	mov al, 0x14
 	mul cl                                        ; 099C3
 	add_ax_bx                                    ; 099C5
-	mov [cs:fdc_param_3773], ax
+	mov [cs:fdc_cur_dpb_ptr], ax
 	mov_si_ax                                    ; 099CB
 	mov bx, [si + 8]
 	mov ax, [bx]
-	mov [cs:fdc_param_3775], ax
+	mov [cs:fdc_cur_spt], ax
 	mov al, [bx + 0xf]
-	mov [cs:fdc_param_3777], al
+	mov [cs:fdc_cur_sector_shift], al
 	mov ax, [bp + 8]
 	mov bx, [bp + 6]
 	call fdc_calc_phys_address_pair
-mov word [cs:fdc_param_373b], 0xae66
+mov word [cs:fdc_dma_command_word], 0xae66
 	pop ax
 	and al, 0xf0
 	mov bx, 0
-	mov byte [cs:fdc_param_377e], 0
+	mov byte [cs:fdc_retry_counter], 0
 	je .read_error_lookup
 	mov bx, 2
-	mov byte [cs:fdc_param_377e], 0xa
+	mov byte [cs:fdc_retry_counter], 0xa
 
 .read_error_lookup:                                     ; 09A04
-	call word [cs:bx + fdc_jump_table_2f59]
-	cmp byte [cs:fdc_param_3756], 0
+	call word [cs:bx + fdc_op_jump_table]
+	cmp byte [cs:fdc_read_error_code], 0
 	je .read_error_exit
 
 .read_retry_step:                                     ; 09A11
-	cmp byte [cs:fdc_param_377e], 0xa
+	cmp byte [cs:fdc_retry_counter], 0xa
 	jae .read_status_ok
 	mov al, [bp + 0xe]
-	mov bx, fdc_param_3805
+	mov bx, fdc_stats_read_retries
 	call fdc_inc_stats_counter
-	inc byte [cs:fdc_param_377e]
+	inc byte [cs:fdc_retry_counter]
 	jmp short .read_retry_step
 
 .read_status_ok:                                     ; 09A29
 	mov al, [bp + 0xe]
-	mov bx, fdc_param_37c5
+	mov bx, fdc_stats_read_errors
 	call fdc_inc_stats_counter
 
 .read_error_exit:                                     ; 09A32
-	mov al, [cs:fdc_param_3756]
+	mov al, [cs:fdc_read_error_code]
 	mov_bl_al                                    ; 09A36
 	ret
 
@@ -4764,11 +4764,11 @@ io_write:
 
 .write_start:                                     ; 09A44
 	mov al, [bp + 0xe]
-	mov bx, fdc_param_37a5
+	mov bx, fdc_stats_write_ops
 	call fdc_inc_stats_counter
 	mov al, [bp + 0xe]
 	mov_cl_al                                    ; 09A50
-	mov bx, fdc_scratch_3932
+	mov bx, fdc_drive_unit_map
 	xlatb
 	cmp al, 0
 	jne .write_dma_loop
@@ -4790,79 +4790,79 @@ io_write:
 	jmp near fdc_dma_alt_buf_done
 
 .write_transfer_done:                                     ; 09A70
-	mov byte [cs:fdc_param_3768], 8
-	and [cs:fdc_param_3768], al
+	mov byte [cs:fdc_rw_flags], 8
+	and [cs:fdc_rw_flags], al
 	and al, 0xf7
 	push ax
 	mov bx, dph_drive_a
 	mov al, 0x14
 	mul cl                                        ; 09A83
 	add_ax_bx                                    ; 09A85
-	mov [cs:fdc_param_3773], ax
+	mov [cs:fdc_cur_dpb_ptr], ax
 	mov_si_ax                                    ; 09A8B
 	mov bx, [si + 8]
 	mov ax, [bx]
-	mov [cs:fdc_param_3775], ax
+	mov [cs:fdc_cur_spt], ax
 	mov al, [bx + 0xf]
-	mov [cs:fdc_param_3777], al
+	mov [cs:fdc_cur_sector_shift], al
 	mov ax, [bp + 8]
 	mov bx, [bp + 6]
 	call fdc_calc_phys_address_pair
-mov word [cs:fdc_param_373b], 0x76a6
+mov word [cs:fdc_dma_command_word], 0x76a6
 	pop ax
 	and al, 0xf0
 	mov bx, 0
-	mov byte [cs:fdc_param_377e], 0
+	mov byte [cs:fdc_retry_counter], 0
 	je .write_error_lookup
 	mov bx, 2
-	mov byte [cs:fdc_param_377e], 0xa
+	mov byte [cs:fdc_retry_counter], 0xa
 
 .write_error_lookup:                                     ; 09AC4
-	call word [cs:bx + fdc_jump_table_2f59]
-	cmp byte [cs:fdc_param_3757], 0
+	call word [cs:bx + fdc_op_jump_table]
+	cmp byte [cs:fdc_write_error_code], 0
 	je .write_error_exit
 
 .write_retry_step:                                     ; 09AD1
-	cmp byte [cs:fdc_param_377e], 0xa
+	cmp byte [cs:fdc_retry_counter], 0xa
 	jae .write_status_ok
 	mov al, [bp + 0xe]
-	mov bx, fdc_param_3825
+	mov bx, fdc_stats_write_retries
 	call fdc_inc_stats_counter
-	inc byte [cs:fdc_param_377e]
+	inc byte [cs:fdc_retry_counter]
 	jmp short .write_retry_step
 
 .write_status_ok:                                     ; 09AE9
 	mov al, [bp + 0xe]
-	mov bx, fdc_param_37e5
+	mov bx, fdc_stats_write_errors
 	call fdc_inc_stats_counter
 
 .write_error_exit:                                     ; 09AF2
-	mov al, [cs:fdc_param_3757]
+	mov al, [cs:fdc_write_error_code]
 	mov_bl_al                                    ; 09AF6
 	ret
 
-fdc_jump_table_2f59:
-	dw fdc_op_2f5e
+fdc_op_jump_table:
+	dw fdc_exec_op_init
 io_flushbuf:
 	xor_al_al                                    ; 09AFB
 	ret
 
-fdc_op_2f5e:
+fdc_exec_op_init:
 	inc word [bp + 0xa]
-	mov byte [cs:fdc_param_3781], 1
+	mov byte [cs:fdc_op_in_progress], 1
 	mov ah, [bp + 0xe]
 	call fdc_select_drive_unit
-	mov byte [cs:fdc_param_3767], 0
+	mov byte [cs:fdc_multi_track_flag], 0
 
 fdc_exec_prep_command:                                     ; 09B13
-	mov ax, [cs:fdc_param_3775]
+	mov ax, [cs:fdc_cur_spt]
 	sub ax, [bp + 0xa]
 	inc ax
 	mov dl, [bp + 0xf]
 	xor_dh_dh                                    ; 09B1E
 	cmp_ax_dx                                    ; 09B20
 	jae .prep_retry
-	mov [cs:fdc_param_3778], ax
+	mov [cs:fdc_sectors_to_transfer], ax
 	sub_dx_ax                                    ; 09B28
 	push dx
 	call fdc_exec_command_check
@@ -4871,17 +4871,17 @@ fdc_exec_prep_command:                                     ; 09B13
 	mov [bp + 0xf], dl
 	mov word [bp + 0xa], 1
 	inc word [bp + 0xc]
-	inc byte [cs:fdc_param_3767]
+	inc byte [cs:fdc_multi_track_flag]
 	jmp near fdc_exec_prep_command
 
 .prep_retry:                                     ; 09B44
-	mov [cs:fdc_param_3778], dx
+	mov [cs:fdc_sectors_to_transfer], dx
 	call fdc_exec_command_check
 
 .prep_exit:                                     ; 09B4C
 	mov ah, [bp + 0xe]
 	call fdc_load_drive_timing_byte
-	mov byte [cs:fdc_param_3781], 0
+	mov byte [cs:fdc_op_in_progress], 0
 	ret
 
 fdc_exec_command_check:                                     ; 09B59
@@ -4894,28 +4894,28 @@ fdc_exec_command_check:                                     ; 09B59
 	mov ax, 1
 	mov cl, [bp + 0xe]
 	shl ax, cl
-	and ax, [cs:fdc_param_377c]
+	and ax, [cs:fdc_active_drive_mask]
 	jne .drive_ready_check
 	mov bl, [bp + 0xe]
 	xor_bh_bh                                    ; 09B74
-	cmp byte [cs:bx + fdc_param_3771], 0xff
+	cmp byte [cs:bx + fdc_drive_cur_cyl_table], 0xff
 	jne .send_fdc_cmd_byte
 
 .drive_ready_check:                                     ; 09B7E
 	not ax
-	and [cs:fdc_param_377c], ax
+	and [cs:fdc_active_drive_mask], ax
 	call xios_fdc_restore_track0
 	jae .send_fdc_cmd_byte
 	call fdc_set_error_flags
 	ret
 
 .send_fdc_cmd_byte:                                     ; 09B8E
-	cmp byte [cs:fdc_param_3767], 0
+	cmp byte [cs:fdc_multi_track_flag], 0
 	jne .check_result_bytes
-	mov ax, [cs:fdc_param_3778]
-	mov [cs:fdc_param_377a], ax
+	mov ax, [cs:fdc_sectors_to_transfer]
+	mov [cs:fdc_sectors_remaining], ax
 	mov dx, PORT_FDC_DATA
-	mov si, fdc_param_375b
+	mov si, fdc_dma_descriptor_block
 	call fdc_setup_dma_transfer_size
 	call fdc_seek_track
 	jae .calc_result_length
@@ -4923,18 +4923,18 @@ fdc_exec_command_check:                                     ; 09B59
 	ret
 
 .check_result_bytes:                                     ; 09BB0
-	mov ax, [cs:fdc_param_377a]
-	mov cl, [cs:fdc_param_3777]
+	mov ax, [cs:fdc_sectors_remaining]
+	mov cl, [cs:fdc_cur_sector_shift]
 	add cl, 7
 	shl ax, cl
-	add [cs:fdc_param_3758], ax
-	adc byte [cs:fdc_param_375a], 0
-	mov ax, [cs:fdc_param_3778]
-	mov [cs:fdc_param_377a], ax
+	add [cs:fdc_dma_phys_addr_low], ax
+	adc byte [cs:fdc_dma_phys_addr_high], 0
+	mov ax, [cs:fdc_sectors_to_transfer]
+	mov [cs:fdc_sectors_remaining], ax
 	mov dx, PORT_FDC_DATA
-	mov si, fdc_param_375b
+	mov si, fdc_dma_descriptor_block
 	call fdc_setup_dma_transfer_size
-	and byte [cs:fdc_param_3768], 8
+	and byte [cs:fdc_rw_flags], 8
 	jne .read_result_status
 	test word [bp + 0xc], 1
 	jne .calc_result_length
@@ -4946,32 +4946,32 @@ fdc_exec_command_check:                                     ; 09B59
 	ret
 
 .calc_result_length:                                     ; 09BF2
-	mov byte [cs:fdc_param_3769], 1
-	mov byte [cs:fdc_param_376b], 0
+	mov byte [cs:fdc_cmd_byte_count], 1
+	mov byte [cs:fdc_sector_size_code], 0
 	mov bx, 0xfeff
-	mov si, fdc_param_375b
+	mov si, fdc_dma_descriptor_block
 	and [si + 0xa], bx
 	cmp byte [bp + 0xf], 1
 	je .result_transfer_loop
-	mov byte [cs:fdc_param_376b], 0x10
-	inc byte [cs:fdc_param_3769]
+	mov byte [cs:fdc_sector_size_code], 0x10
+	inc byte [cs:fdc_cmd_byte_count]
 	not bx
-	mov si, fdc_param_375b
+	mov si, fdc_dma_descriptor_block
 	or [si + 0xa], bx
-	mov ax, [cs:fdc_param_3775]
+	mov ax, [cs:fdc_cur_spt]
 	sub ax, [bp + 0xa]
 	inc ax
-	cmp ax, [cs:fdc_param_3778]
+	cmp ax, [cs:fdc_sectors_to_transfer]
 	je .result_transfer_loop
-	inc byte [cs:fdc_param_3769]
+	inc byte [cs:fdc_cmd_byte_count]
 
 .result_transfer_loop:                                     ; 09C34
-	mov byte [cs:fdc_param_376a], 0
+	mov byte [cs:fdc_density_flag], 0
 	test word [bp + 0xc], 1
 	je .result_check_status
-	and byte [cs:fdc_param_3768], 8
+	and byte [cs:fdc_rw_flags], 8
 	jne .result_check_status
-	mov byte [cs:fdc_param_376a], 2
+	mov byte [cs:fdc_density_flag], 2
 
 .result_check_status:                                     ; 09C4F
 	mov cx, 0xa
@@ -4998,16 +4998,16 @@ fdc_exec_command_check:                                     ; 09B59
 	mov ah, 4
 	xor_al_al                                    ; 09C76
 	call xios_dma_mask_reg
-	mov si, fdc_param_375b
+	mov si, fdc_dma_descriptor_block
 	xor_al_al                                    ; 09C7E
 	call fdc_send_dma_param_block
-cmp word [cs:fdc_param_373b], 0xae66
+cmp word [cs:fdc_dma_command_word], 0xae66
 	jne .cmd_retry_delay
 	call xios_fdc_cmd_read_sector
 	mov al, 0
 	call fdc_release_dma_channel
 	call fdc_check_status_register
-	mov bx, fdc_param_3805
+	mov bx, fdc_stats_read_retries
 	jb .recalibrate_drive
 	jmp near .error_flag_set
 
@@ -5016,14 +5016,14 @@ cmp word [cs:fdc_param_373b], 0xae66
 	mov al, 0
 	call fdc_release_dma_channel
 	call fdc_check_completion_status
-	mov bx, fdc_param_3825
+	mov bx, fdc_stats_write_retries
 	jb .recalibrate_drive
 	jmp near .error_flag_set
 
 .recalibrate_drive:                                     ; 09CB2
 	mov al, [bp + 0xe]
 	call fdc_inc_stats_counter
-	inc byte [cs:fdc_param_377e]
+	inc byte [cs:fdc_retry_counter]
 	pop cx
 	dec cx
 	je .exec_error_exit
@@ -5039,8 +5039,8 @@ cmp word [cs:fdc_param_373b], 0xae66
 	ret
 
 fdc_set_error_flags:                                     ; 09CC9
-	mov byte [cs:fdc_param_3756], 1
-	mov byte [cs:fdc_param_3757], 1
+	mov byte [cs:fdc_read_error_code], 1
+	mov byte [cs:fdc_write_error_code], 1
 	stc
 	ret
 
@@ -5048,7 +5048,7 @@ fdc_inc_stats_counter:                                     ; 09CD7
 	mov_cl_al                                    ; 09CD7
 	mov ax, 1
 	shl ax, cl
-	test [cs:fdc_param_377f], ax
+	test [cs:fdc_drive_ready_mask], ax
 	je .ret
 	shl cl, 1
 	xor_ch_ch                                    ; 09CE7
@@ -5062,7 +5062,7 @@ fdc_clear_stats_counters:                                     ; 09CEE
 	mov_al_cl                                    ; 09CF1
 	mov ax, 1
 	shl ax, cl
-	test [cs:fdc_param_377f], ax
+	test [cs:fdc_drive_ready_mask], ax
 	je .stats_done
 	shl cl, 1
 	xor_ch_ch                                    ; 09D01
@@ -5071,7 +5071,7 @@ fdc_clear_stats_counters:                                     ; 09CEE
 	mov al, 1
 
 .stats_clear_loop:                                     ; 09D0A
-	test [cs:fdc_param_3782], al
+	test [cs:fdc_status_reg_0], al
 	je .stats_next_entry
 	inc word [bx + si]
 
@@ -5092,7 +5092,7 @@ fdc_select_drive_unit:                                     ; 09D1B
 	mov_cl_ah                                    ; 09D22
 	mov ch, 2
 	shl ch, cl
-	and ch, [cs:fdc_param_376c]
+	and ch, [cs:fdc_active_drive_fcr]
 	mov al, 2
 	and ah, 1
 	je .drive_unit_selected
@@ -5100,13 +5100,13 @@ fdc_select_drive_unit:                                     ; 09D1B
 
 .drive_unit_selected:                                     ; 09D36
 	cli
-	mov byte [cs:fdc_param_376d], 0
+	mov byte [cs:fdc_motor_timeout_counter], 0
 	sti
 	or_al_ah                                     ; 09D3E
-	mov ah, [cs:fdc_param_376c]
+	mov ah, [cs:fdc_active_drive_fcr]
 	and ah, 0xfe
 	or_al_ah                                     ; 09D48
-	mov [cs:fdc_param_376c], al
+	mov [cs:fdc_active_drive_fcr], al
 
 fdc_fcr_setup:                                 ; 09D4E
 	mov dx, PORT_FDC_CTRL
@@ -5127,13 +5127,13 @@ fdc_fcr_setup:                                 ; 09D4E
 ; for Drev A/B via PORT_FDC_CTRL (0x0288), jvf. NVRAM byte 20.
 ; -----------------------------------------------------------------------------
 fdc_motor_timeout_tick:
-	cmp byte [cs:fdc_param_376d], 0
+	cmp byte [cs:fdc_motor_timeout_counter], 0
 	je .motor_timeout_exit
-	dec byte [cs:fdc_param_376d]
+	dec byte [cs:fdc_motor_timeout_counter]
 	jne .motor_timeout_exit
 	push bx
 	push ax
-	mov bx, xios_crt_table_4256
+	mov bx, xios_nvram_table
 	mov al, [bx + 0x14]
 	cmp al, 5
 	pop ax
@@ -5162,44 +5162,44 @@ fdc_deselect_drive_unit:                                     ; 09DA4
 	mov al, 0xfb
 
 .deselect_port_write:                                     ; 09DAD
-	and al, [cs:fdc_param_376c]
-	mov [cs:fdc_param_376c], al
+	and al, [cs:fdc_active_drive_fcr]
+	mov [cs:fdc_active_drive_fcr], al
 	mov dx, PORT_FDC_CTRL
 	out dx, al
 	ret
 
 fdc_load_drive_timing_byte:                                     ; 09DBB
 	cli
-	mov bx, xios_crt_table_4256
+	mov bx, xios_nvram_table
 	mov al, [bx + 0x14]
-	mov [cs:fdc_param_376d], al
+	mov [cs:fdc_motor_timeout_counter], al
 	sti
 	ret
 
 fdc_recalibrate_all_drives:                                     ; 09DC8
-	cmp byte [cs:fdc_param_3781], 1
+	cmp byte [cs:fdc_op_in_progress], 1
 	je fdc_fcr_write_direct
 
 fdc_seek_track_zero:                                     ; 09DD0
-	test byte [cs:fdc_scratch_3932], 0xf
+	test byte [cs:fdc_drive_unit_map], 0xf
 	je .seek_drive_b
 	mov di, dph_drive_a
-	mov al, [cs:fdc_param_376c]
+	mov al, [cs:fdc_active_drive_fcr]
 	and al, 0xfe
 	mov ah, 2
 	call xios_fdc_select_drive
 
 .seek_drive_b:                                     ; 09DE6
-	test byte [cs:fdc_scratch_3933], 0xf
+	test byte [cs:fdc_drive_b_unit_map], 0xf
 	je .seek_zero_done
 	mov di, dph_drive_b
-	mov al, [cs:fdc_param_376c]
+	mov al, [cs:fdc_active_drive_fcr]
 	or al, 1
 	mov ah, 4
 	call xios_fdc_select_drive
 
 .seek_zero_done:                                     ; 09DFC
-	mov al, [cs:fdc_param_376c]
+	mov al, [cs:fdc_active_drive_fcr]
 
 fdc_fcr_write:                                 ; 09E00
 	mov dx, PORT_FDC_CTRL
@@ -5219,7 +5219,7 @@ xios_fdc_select_drive:                         ; 09E05
 	je .ret
 	mov byte [cs:xt_door], 0xff
 	mov byte [di + 5], 0xff
-	xor [cs:fdc_param_376c], ah
+	xor [cs:fdc_active_drive_fcr], ah
 .ret:                                     ; 09E24
 	ret
 
@@ -5230,7 +5230,7 @@ fdc_set_motor_enable:                                     ; 09E25
 	mov ah, 0xfb
 
 .motor_enable_port_write:                                     ; 09E2F
-	mov al, [cs:fdc_param_376c]
+	mov al, [cs:fdc_active_drive_fcr]
 	mov dx, PORT_FDC_CTRL
 	and_al_ah                                    ; 09E36
 	out dx, al
@@ -5249,15 +5249,15 @@ xios_fdc_restore_track0:                       ; 09E48
 	out dx, al
 	call fdc_wait
 	xor_bh_bh                                    ; 09E51
-	test byte [cs:fdc_param_3782], 4
+	test byte [cs:fdc_status_reg_0], 4
 	mov bl, [bp + 0xe]
-	mov byte [cs:bx + fdc_param_3771], 0
+	mov byte [cs:bx + fdc_drive_cur_cyl_table], 0
 	jne .seek_retry
-	mov byte [cs:bx + fdc_param_3771], 0xff
+	mov byte [cs:bx + fdc_drive_cur_cyl_table], 0xff
 
 .seek_retry:                                     ; 09E6A
 	clc
-	test byte [cs:fdc_param_3782], 0x10
+	test byte [cs:fdc_status_reg_0], 0x10
 	je .ret
 	stc
 .ret:                                     ; 09E74
@@ -5275,7 +5275,7 @@ fdc_seek_track:
 	push cx
 	mov bl, [bp + 0xe]
 	xor_bh_bh                                    ; 09E7C
-	mov al, [cs:bx + fdc_param_3771]
+	mov al, [cs:bx + fdc_drive_cur_cyl_table]
 	cmp al, 0xff
 	je .seek_direction_out
 	mov dx, PORT_FDC_TRACK
@@ -5283,7 +5283,7 @@ fdc_seek_track:
 
 .seek_direction_out:                                     ; 09E8B
 	mov ax, [bp + 0xc]
-	and byte [cs:fdc_param_3768], 8
+	and byte [cs:fdc_rw_flags], 8
 	jne .seek_step_loop
 	shr ax, 1
 
@@ -5298,12 +5298,12 @@ fdc_seek_track:
 	xor_bh_bh                                    ; 09EA6
 	pop ax
 	mov bl, [bp + 0xe]
-	mov [cs:bx + fdc_param_3771], al
-	test byte [cs:fdc_param_3782], 0x99
+	mov [cs:bx + fdc_drive_cur_cyl_table], al
+	test byte [cs:fdc_status_reg_0], 0x99
 	clc
 	pop cx
 	je .ret
-	mov byte [cs:bx + fdc_param_3771], 0xff
+	mov byte [cs:bx + fdc_drive_cur_cyl_table], 0xff
 	push cx
 	call fdc_set_motor_enable
 	pop cx
@@ -5319,11 +5319,11 @@ xios_fdc_step_in:                              ; 09ECA
 	call fdc_wait
 	xor_bh_bh                                    ; 09ED3
 	mov bl, [bp + 0xe]
-	inc byte [cs:bx + fdc_param_3771]
-	test byte [cs:fdc_param_3782], 0x99
+	inc byte [cs:bx + fdc_drive_cur_cyl_table]
+	test byte [cs:fdc_status_reg_0], 0x99
 	clc
 	je .ret
-	mov byte [cs:bx + fdc_param_3771], 0xff
+	mov byte [cs:bx + fdc_drive_cur_cyl_table], 0xff
 	call xios_fdc_restore_track0
 	call fdc_seek_track
 .ret:                                     ; 09EF2
@@ -5334,8 +5334,8 @@ xios_fdc_cmd_read_sector:                      ; 09EF3
 	mov dx, PORT_FDC_SECTOR
 	out dx, al
 	mov al, 0x88
-	or al, [cs:fdc_param_376a]
-	or al, [cs:fdc_param_376b]
+	or al, [cs:fdc_density_flag]
+	or al, [cs:fdc_sector_size_code]
 
 fdc_send_cmd:                                  ; 09F06
 	mov dx, PORT_FDC_CMD
@@ -5344,7 +5344,7 @@ fdc_send_cmd:                                  ; 09F06
 	ret
 
 xios_fdc_read_track_reg:                       ; 09F0E
-	mov ah, [cs:fdc_param_376c]
+	mov ah, [cs:fdc_active_drive_fcr]
 	and ah, 0xef
 	mov dx, PORT_FDC_TRACK
 	in al, dx
@@ -5354,15 +5354,15 @@ xios_fdc_read_track_reg:                       ; 09F0E
 
 .read_track_wait:                                     ; 09F21
 	mov_al_ah                                    ; 09F21
-	mov [cs:fdc_param_376c], al
+	mov [cs:fdc_active_drive_fcr], al
 	mov dx, PORT_FDC_CTRL
 	out dx, al
 	mov ax, [bp + 0xa]
 	mov dx, PORT_FDC_SECTOR
 	out dx, al
 	mov al, 0xa8
-	or al, [cs:fdc_param_376a]
-	or al, [cs:fdc_param_376b]
+	or al, [cs:fdc_density_flag]
+	or al, [cs:fdc_sector_size_code]
 	mov dx, PORT_FDC_CMD
 	out dx, al
 	call fdc_wait
@@ -5373,7 +5373,7 @@ xios_fdc_read_track_reg:                       ; 09F0E
 	ret
 
 fdc_wait:                                      ; 09F4D
-	mov byte [cs:fdc_param_376e], 1
+	mov byte [cs:fdc_wait_flag], 1
 	mov dx, 8
 	call rtm_timer_wait
 	ret
@@ -5392,7 +5392,7 @@ fdc_transfer_isr:
 	mov ds, [cs:xios_sysdat_segment_val]
 	mov dx, PORT_FDC_CMD
 	in al, dx
-	mov [cs:fdc_param_3782], al
+	mov [cs:fdc_status_reg_0], al
 	mov al, 0xd0
 	out dx, al
 	mov cx, 9
@@ -5402,11 +5402,11 @@ fdc_transfer_isr:
 	in al, dx
 	mov dx, PORT_PCB_DMA0_CNT
 	in ax, dx
-	mov [cs:fdc_param_3783], ax
+	mov [cs:fdc_status_reg_1_2], ax
 	call eoi_helper
-	cmp byte [cs:fdc_param_376e], 1
+	cmp byte [cs:fdc_wait_flag], 1
 	jne .transfer_error
-	mov byte [cs:fdc_param_376e], 0
+	mov byte [cs:fdc_wait_flag], 0
 	mov dx, 8
 	call rtm_call_helper
 
@@ -5424,47 +5424,47 @@ xios_fdc_test_busy:                            ; 09F95
 	ret
 
 fdc_check_status_register:                                     ; 09FA0
-	mov byte [cs:fdc_param_3756], 0
-	mov al, [cs:fdc_param_3782]
+	mov byte [cs:fdc_read_error_code], 0
+	mov al, [cs:fdc_status_reg_0]
 	test al, 0xbf
 	jne .status_error_lookup
-	cmp word [cs:fdc_param_3783], 0
+	cmp word [cs:fdc_status_reg_1_2], 0
 	jne .status_error_lookup
 	clc
 	ret
 
 .status_error_lookup:                                     ; 09FB8
-	mov bx, fdc_param_3845
+	mov bx, fdc_stats_seek_errors
 	call fdc_clear_stats_counters
-	inc byte [cs:fdc_param_3756]
+	inc byte [cs:fdc_read_error_code]
 	stc
 	ret
 
 fdc_check_completion_status:                                     ; 09FC5
-	mov byte [cs:fdc_param_3757], 0
-	mov al, [cs:fdc_param_3782]
+	mov byte [cs:fdc_write_error_code], 0
+	mov al, [cs:fdc_status_reg_0]
 	test al, 0xff
 	jne .completion_error_lookup
-	cmp word [cs:fdc_param_3783], 0
+	cmp word [cs:fdc_status_reg_1_2], 0
 	jne .completion_error_lookup
 	clc
 	ret
 
 .completion_error_lookup:                                     ; 09FDD
-	mov bx, fdc_param_3865
+	mov bx, fdc_stats_recal_errors
 	call fdc_clear_stats_counters
-	mov byte [cs:fdc_param_3757], 1
-	mov al, [cs:fdc_param_3782]
+	mov byte [cs:fdc_write_error_code], 1
+	mov al, [cs:fdc_status_reg_0]
 	test al, 0x40
 	je .completion_status_exit
-	mov byte [cs:fdc_param_3757], 2
+	mov byte [cs:fdc_write_error_code], 2
 
 .completion_status_exit:                                     ; 09FF7
 	stc
 	ret
 
 int28_fn_05_recalibrate:                ; 09FF9
-	mov byte [cs:fdc_param_3781], 1
+	mov byte [cs:fdc_op_in_progress], 1
 	mov_bp_sp                                    ; 09FFF
 	mov ah, [bp + 0x14]
 	call fdc_select_drive_unit
@@ -5484,7 +5484,7 @@ int28_fn_07_reserved:                   ; 0A016
 	ret
 
 int28_fn_08_step_in:                    ; 0A017
-	mov byte [cs:fdc_param_3781], 1
+	mov byte [cs:fdc_op_in_progress], 1
 	mov_bp_sp                                    ; 0A01D
 	mov ah, [bp + 0x14]
 	call fdc_select_drive_unit
@@ -5499,12 +5499,12 @@ int28_fn_09_step_out:                   ; 0A033
 	ret
 
 int28_fn_10_write_track:                ; 0A034
-	mov byte [cs:fdc_param_3781], 1
+	mov byte [cs:fdc_op_in_progress], 1
 	mov_bp_sp                                    ; 0A03A
 	mov ax, [bp + 0xc]
 	mov bx, [bp + 0xa]
 	call fdc_calc_phys_address_pair
-mov word [cs:fdc_param_373b], 0x76a6
+mov word [cs:fdc_dma_command_word], 0x76a6
 	xor_al_al                                    ; 0A04C
 	call fdc_wait_dma_channel_ready
 	xor_al_al                                    ; 0A051
@@ -5514,7 +5514,7 @@ mov word [cs:fdc_param_373b], 0x76a6
 	call xios_dma_mask_reg
 	mov ah, [bp + 0x14]
 	call fdc_select_drive_unit
-	mov byte [cs:fdc_param_3757], 1
+	mov byte [cs:fdc_write_error_code], 1
 	call xios_fdc_test_busy
 	jae .write_track_prep
 	jmp near .write_track_done
@@ -5522,17 +5522,17 @@ mov word [cs:fdc_param_373b], 0x76a6
 .write_track_prep:                                     ; 0A071
 	mov ax, [bp + 0xe]
 	mov dx, PORT_FDC_DATA
-	mov si, fdc_param_375b
+	mov si, fdc_dma_descriptor_block
 	call fdc_setup_dma_descriptor
-	mov byte [cs:fdc_param_376b], 0
-	mov byte [cs:fdc_param_3769], 0
-	mov byte [cs:fdc_param_376a], 0
+	mov byte [cs:fdc_sector_size_code], 0
+	mov byte [cs:fdc_cmd_byte_count], 0
+	mov byte [cs:fdc_density_flag], 0
 	cmp byte [bp + 0x12], 0
 	je .write_track_status
-	mov byte [cs:fdc_param_376a], 2
+	mov byte [cs:fdc_density_flag], 2
 
 .write_track_status:                                     ; 0A09B
-	mov si, fdc_param_375b
+	mov si, fdc_dma_descriptor_block
 	xor_al_al                                    ; 0A09E
 	call fdc_send_dma_param_block
 	mov al, 0xf4
@@ -5553,12 +5553,12 @@ xios_fdc_send_cmd_wait:                        ; 0A0B0
 	ret
 
 int28_fn_11_read_track:                 ; 0A0BF
-	mov byte [cs:fdc_param_3781], 1
+	mov byte [cs:fdc_op_in_progress], 1
 	mov_bp_sp                                    ; 0A0C5
 	mov ax, [bp + 0xc]
 	mov bx, [bp + 0xa]
 	call fdc_calc_phys_address_pair
-mov word [cs:fdc_param_373b], 0xae66
+mov word [cs:fdc_dma_command_word], 0xae66
 	xor_al_al                                    ; 0A0D7
 	call fdc_wait_dma_channel_ready
 	xor_al_al                                    ; 0A0DC
@@ -5568,7 +5568,7 @@ mov word [cs:fdc_param_373b], 0xae66
 	call xios_dma_mask_reg
 	mov ah, [bp + 0x14]
 	call fdc_select_drive_unit
-	mov byte [cs:fdc_param_3757], 1
+	mov byte [cs:fdc_write_error_code], 1
 	call xios_fdc_test_busy
 	jae .read_track_prep
 	jmp near .read_track_done
@@ -5576,17 +5576,17 @@ mov word [cs:fdc_param_373b], 0xae66
 .read_track_prep:                                     ; 0A0FC
 	mov ax, [bp + 0xe]
 	mov dx, PORT_FDC_DATA
-	mov si, fdc_param_375b
+	mov si, fdc_dma_descriptor_block
 	call fdc_setup_dma_descriptor
-	mov byte [cs:fdc_param_376b], 0
-	mov byte [cs:fdc_param_3769], 0
-	mov byte [cs:fdc_param_376a], 0
+	mov byte [cs:fdc_sector_size_code], 0
+	mov byte [cs:fdc_cmd_byte_count], 0
+	mov byte [cs:fdc_density_flag], 0
 	cmp byte [bp + 0x12], 0
 	je .read_track_status
-	mov byte [cs:fdc_param_376a], 2
+	mov byte [cs:fdc_density_flag], 2
 
 .read_track_status:                                     ; 0A126
-	mov si, fdc_param_375b
+	mov si, fdc_dma_descriptor_block
 	xor_al_al                                    ; 0A129
 	call fdc_send_dma_param_block
 	mov al, 0xe4
@@ -5601,19 +5601,19 @@ mov word [cs:fdc_param_373b], 0xae66
 fdc_track_rw_common_exit:                                     ; 0A13C
 	mov ah, [bp + 0x14]
 	call fdc_load_drive_timing_byte
-	mov al, [cs:fdc_param_3782]
-	mov byte [cs:fdc_param_3781], 0
+	mov al, [cs:fdc_status_reg_0]
+	mov byte [cs:fdc_op_in_progress], 0
 	ret
 
 int28_fn_13_disk_stats:                 ; 0A14D
 	mov es, [cs:xios_sysdat_segment_val]
-	mov ax, fdc_param_3785
+	mov ax, fdc_stats_read_ops
 	ret
 
 int28_fn_14_reserved:                   ; 0A156
 	ret
 
-fdc_dma_buffer_ptr_35b7:
+fdc_dma_buf_seg:
 	db 0x00, 0x00                                ; 0A157  ..
 
 fdc_dma_buf_loop:                                     ; 0A159
@@ -5650,7 +5650,7 @@ fdc_calc_dma_buffer_offset:                                     ; 0A17F
 	add_bx_cx                                    ; 0A189
 	mov cl, 3
 	shl bx, cl
-	add bx, [cs:fdc_dma_buffer_ptr_35b7]
+	add bx, [cs:fdc_dma_buf_seg]
 	mov cx, 0x40
 	mov al, [bp + 0xf]
 	xor_ah_ah                                    ; 0A19A
@@ -5659,7 +5659,7 @@ fdc_calc_dma_buffer_offset:                                     ; 0A17F
 	cld
 	ret
 
-fdc_dma_buffer_ptr_3602:
+fdc_mdisk_dma_seg:
 	db 0x00                                      ; 0A1A2  .
 	inc ax
 
@@ -5693,7 +5693,7 @@ fdc_calc_dma_alt_buffer_offset:                                     ; 0A1BF
 	add_bx_cx                                    ; 0A1C9
 	mov cl, 3
 	shl bx, cl
-	add bx, [cs:fdc_dma_buffer_ptr_3602]
+	add bx, [cs:fdc_mdisk_dma_seg]
 	mov cx, 0x40
 	mov al, [bp + 0xf]
 	xor_ah_ah                                    ; 0A1DA
@@ -5703,18 +5703,18 @@ fdc_calc_dma_alt_buffer_offset:                                     ; 0A1BF
 	ret
 
 fdc_setup_dma_transfer_size:                                     ; 0A1E2
-	mov cl, [cs:fdc_param_3777]
+	mov cl, [cs:fdc_cur_sector_shift]
 	add cl, 7
 	shl ax, cl
 
 fdc_setup_dma_descriptor:                                     ; 0A1EC
 	mov [si + 8], ax
-	mov ax, [cs:fdc_param_373b]
+	mov ax, [cs:fdc_dma_command_word]
 	mov [si + 0xa], ax
-	mov bl, [cs:fdc_param_375a]
+	mov bl, [cs:fdc_dma_phys_addr_high]
 	xor_bh_bh                                    ; 0A1FB
 	cmp ax, 0xae66
-	mov ax, [cs:fdc_param_3758]
+	mov ax, [cs:fdc_dma_phys_addr_low]
 	je .descriptor_direct
 	mov word [si], 0
 	mov [si + 2], dx
@@ -5737,16 +5737,16 @@ fdc_calc_phys_address_pair:                                     ; 0A222
 	add_ax_bx                                    ; 0A22A
 	adc ch, 0
 	and ch, 0xf
-	mov [cs:fdc_param_3758], ax
-	mov [cs:fdc_param_375a], ch
+	mov [cs:fdc_dma_phys_addr_low], ax
+	mov [cs:fdc_dma_phys_addr_high], ch
 	ret
 
 fdc_send_dma_param_block:                                     ; 0A23C
 	cli
-	mov di, fdc_param_373d
+	mov di, fdc_dma_ch0_ctrl_block
 	test al, 1
 	je .send_dma_ch1
-	mov di, fdc_param_3749
+	mov di, fdc_dma_ch1_ctrl_block
 
 .send_dma_ch1:                                     ; 0A247
 	mov cx, 6
@@ -5778,7 +5778,7 @@ fdc_wait_dma_channel_ready:                                     ; 0A257
 	mov ah, 1
 	mov_cl_al                                    ; 0A26B
 	shl ah, cl
-	xor [cs:fdc_param_3755], ah
+	xor [cs:fdc_dma_channel_mask], ah
 	sti
 	ret
 
@@ -5787,7 +5787,7 @@ fdc_release_dma_channel:                                     ; 0A276
 	mov ah, 1
 	mov_cl_al                                    ; 0A279
 	shl ah, cl
-	or [cs:fdc_param_3755], ah
+	or [cs:fdc_dma_channel_mask], ah
 	mov dx, xios_mx_dma0_msg
 	or_al_al                                     ; 0A285
 	je .dma_release_ch1
@@ -5825,8 +5825,8 @@ xios_dma_mask_reg:                             ; 0A29A
 
 fdc_int10_handler:
 	push dx
-	mov [cs:fdc_scratch_392f], ax
-	cmp byte [cs:fdc_param_3781], 1
+	mov [cs:fdc_isr_saved_ax], ax
+	cmp byte [cs:fdc_op_in_progress], 1
 	jne fdc_isr_chain_next
 
 fdc_isr:                                       ; 0A2BE
@@ -5836,97 +5836,97 @@ fdc_isr:                                       ; 0A2BE
 
 fdc_isr_chain_next:                                     ; 0A2C4
 	pop dx
-	mov ax, [cs:fdc_scratch_392f]
+	mov ax, [cs:fdc_isr_saved_ax]
 fdc_int11_handler:
 	push dx
-	mov [cs:fdc_scratch_392f], ax
+	mov [cs:fdc_isr_saved_ax], ax
 	mov dx, PORT_PCB_EOI
 	mov ax, 0x8000
 	out dx, ax
-	mov ax, [cs:fdc_scratch_392f]
+	mov ax, [cs:fdc_isr_saved_ax]
 	pop dx
 	iret
 ; Floppy parameter tables & scratch buffers (CS:373B..3941)
-fdc_param_373b:
+fdc_dma_command_word:
 	db 0x00, 0x00
-fdc_param_373d:
+fdc_dma_ch0_ctrl_block:
 	db 0xc6, 0xff, 0xc4, 0xff, 0xc2, 0xff, 0xc0, 0xff, 0xc8, 0xff, 0xca, 0xff
-fdc_param_3749:
+fdc_dma_ch1_ctrl_block:
 	db 0xd6, 0xff, 0xd4, 0xff, 0xd2, 0xff, 0xd0, 0xff, 0xd8, 0xff, 0xda, 0xff
-fdc_param_3755:
+fdc_dma_channel_mask:
 	db 0x03
-fdc_param_3756:
+fdc_read_error_code:
 	db 0x00
-fdc_param_3757:
+fdc_write_error_code:
 	db 0x00
-fdc_param_3758:
+fdc_dma_phys_addr_low:
 	db 0x00, 0x00
-fdc_param_375a:
+fdc_dma_phys_addr_high:
 	db 0x00
-fdc_param_375b:
+fdc_dma_descriptor_block:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-fdc_param_3767:
+fdc_multi_track_flag:
 	db 0x00
-fdc_param_3768:
+fdc_rw_flags:
 	db 0x08
-fdc_param_3769:
+fdc_cmd_byte_count:
 	db 0x00
-fdc_param_376a:
+fdc_density_flag:
 	db 0x00
-fdc_param_376b:
+fdc_sector_size_code:
 	db 0x00
-fdc_param_376c:
+fdc_active_drive_fcr:
 	db 0x48
-fdc_param_376d:
+fdc_motor_timeout_counter:
 	db 0x00
-fdc_param_376e:
+fdc_wait_flag:
 	db 0x00, 0x00, 0x00
-fdc_param_3771:
+fdc_drive_cur_cyl_table:
 	db 0x00, 0x00
-fdc_param_3773:
+fdc_cur_dpb_ptr:
 	db 0x00, 0x00
-fdc_param_3775:
+fdc_cur_spt:
 	db 0x00, 0x00
-fdc_param_3777:
+fdc_cur_sector_shift:
 	db 0x00
-fdc_param_3778:
+fdc_sectors_to_transfer:
 	db 0x00, 0x00
-fdc_param_377a:
+fdc_sectors_remaining:
 	db 0x00, 0x00
-fdc_param_377c:
+fdc_active_drive_mask:
 	db 0x00, 0x00
-fdc_param_377e:
+fdc_retry_counter:
 	db 0x00
-fdc_param_377f:
+fdc_drive_ready_mask:
 	db 0xff, 0x00
-fdc_param_3781:
+fdc_op_in_progress:
 	db 0x00
-fdc_param_3782:
+fdc_status_reg_0:
 	db 0x00
-fdc_param_3783:
+fdc_status_reg_1_2:
 	db 0x00, 0x00
-fdc_param_3785:
+fdc_stats_read_ops:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-fdc_param_37a5:
+fdc_stats_write_ops:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-fdc_param_37c5:
+fdc_stats_read_errors:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-fdc_param_37e5:
+fdc_stats_write_errors:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-fdc_param_3805:
+fdc_stats_read_retries:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-fdc_param_3825:
+fdc_stats_write_retries:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-fdc_param_3845:
+fdc_stats_seek_errors:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-fdc_param_3865:
+fdc_stats_recal_errors:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc
@@ -5940,11 +5940,11 @@ fdc_param_3865:
 	db 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc
 	db 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc
 	db 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0x00, 0x00, 0x00, 0x00
-fdc_scratch_392f:
+fdc_isr_saved_ax:
 	db 0x00, 0x00, 0x00
-fdc_scratch_3932:
+fdc_drive_unit_map:
 	db 0x00
-fdc_scratch_3933:
+fdc_drive_b_unit_map:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 
 dph_drive_a:
@@ -6094,49 +6094,49 @@ io_auxout_loop:                                     ; 0A7F1
 	ret
 
 xios_aux_jump_table:
-		dw xios_aux_ret_3cbe
-		dw xios_aux_ret_3cbe
-		dw xios_aux_ret_3cbd
-		dw xios_aux_ret_3cbd
+		dw sio_auxin_read_char
+		dw sio_auxin_read_char
+		dw net_auxin_ret
+		dw net_auxin_ret
 xios_aux_state_word:
-		dw xios_aux_fn_3c74
-xios_aux_fn_3c74:
+		dw net_auxin_init
+net_auxin_init:
 		push bx
 	push cx
-	mov dx, xios_aux_buf_3cad
+	mov dx, net_auxin_queue_desc
 	mov cl, 0x87
 	call rtm_timer_wait2
 	pop cx
 	pop bx
 	test ax, ax
 	je .aux_fn_poll
-mov word [cs:xios_aux_state_word], xios_aux_ret_3cbd
+mov word [cs:xios_aux_state_word], net_auxin_ret
 	ret
 
 .aux_fn_poll:                                     ; 0A82C
-mov word [cs:xios_aux_state_word], xios_aux_fn_3c93
-xios_aux_fn_3c93:
-	cmp byte [cs:xios_prn_flag_3d92], 0
+mov word [cs:xios_aux_state_word], net_auxin_poll
+net_auxin_poll:
+	cmp byte [cs:net_prn_buf_len], 0
 	je .aux_fn_exit
 	call printer_wait_completion
 
 .aux_fn_exit:                                     ; 0A83E
 	mov cl, 0x89
-	mov dx, xios_aux_buf_3cad
+	mov dx, net_auxin_queue_desc
 	call rtm_timer_wait2
-	mov al, [cs:xios_aux_data_3cab]
+	mov al, [cs:net_auxin_char_buf]
 	ret
 
-xios_aux_data_3cab:
+net_auxin_char_buf:
 	dw 0x0000
-xios_aux_buf_3cad:
+net_auxin_queue_desc:
 	times 6 db 0
-		dw xios_aux_data_3cab
+		dw net_auxin_char_buf
 		db "NetConI "
-xios_aux_ret_3cbd:
+net_auxin_ret:
 		ret
 
-xios_aux_ret_3cbe:
+sio_auxin_read_char:
 	cli
 	call sio_check_rx_status
 	jne .aux_ret_check
@@ -6202,40 +6202,40 @@ io_conout_aux_route:                                     ; 0A8C5
 	sub bl, 4
 	xor_bh_bh                                    ; 0A8D2
 	shl bx, 1
-	call word [cs:bx + xios_prn_table_3d3c]
+	call word [cs:bx + net_prn_jump_table]
 	ret
 
-xios_prn_table_3d3c:
+net_prn_jump_table:
 		dw xios_prn_isr
 		dw xios_prn_isr
-		dw xios_prn_ret_3d46
-		dw xios_prn_ret_3d46
+		dw net_prn_ret
+		dw net_prn_ret
 xios_prn_state_word:
-		dw xios_prn_fn_3d47
-xios_prn_ret_3d46:
+		dw net_prn_init
+net_prn_ret:
 		ret
 
-xios_prn_fn_3d47:
+net_prn_init:
 		push bx
 		push cx
-	mov dx, xios_prn_buf_3e12
+	mov dx, net_prn_queue_desc
 	mov cl, 0x87
 	call rtm_timer_wait2
 	pop cx
 	pop bx
 	test ax, ax
 	je .prn_fn_wait
-mov word [cs:xios_prn_state_word], xios_prn_ret_3d46
+mov word [cs:xios_prn_state_word], net_prn_ret
 	ret
 
 .prn_fn_wait:                                     ; 0A8FF
-mov word [cs:xios_prn_state_word], xios_prn_fn_3d66
-xios_prn_fn_3d66:
-	mov bl, [cs:xios_prn_flag_3d92]
+mov word [cs:xios_prn_state_word], net_prn_write_char
+net_prn_write_char:
+	mov bl, [cs:net_prn_buf_len]
 	xor_bh_bh                                    ; 0A90B
-	mov [cs:bx + xios_prn_buf_3d93], cl
+	mov [cs:bx + net_prn_line_buf], cl
 	inc bx
-	mov [cs:xios_prn_flag_3d92], bl
+	mov [cs:net_prn_buf_len], bl
 	cmp cl, 0xd
 	je printer_wait_completion
 	cmp bx, 0x7f
@@ -6243,19 +6243,19 @@ xios_prn_fn_3d66:
 	ret
 
 printer_wait_completion:                                     ; 0A923
-	mov dx, xios_prn_buf_3e12
+	mov dx, net_prn_queue_desc
 	mov cl, 0x8b
 	call rtm_timer_wait2
-	mov byte [cs:xios_prn_flag_3d92], 0
+	mov byte [cs:net_prn_buf_len], 0
 	ret
 
-xios_prn_flag_3d92:
+net_prn_buf_len:
 	db 0x00
-xios_prn_buf_3d93:
+net_prn_line_buf:
 	times 127 db 0
-xios_prn_buf_3e12:
+net_prn_queue_desc:
 	times 6 db 0
-		dw xios_prn_flag_3d92
+		dw net_prn_buf_len
 		db "NetConO "
 
 xios_prn_isr:
@@ -6321,12 +6321,12 @@ int28_fn_25_reserved:                   ; 0A9FE
 	popf
 	ret
 	call xios_switch_to_priv_stack
-	mov bx, xios_crt_buf_402f
+	mov bx, sio_chan_b_ctrl_block
 	jmp short xios_timer_isr_poll
 
 xios_timer_isr:
 	call xios_switch_to_priv_stack
-	mov bx, xios_crt_param_4058
+	mov bx, sio_chan_a_ctrl_block
 
 xios_timer_isr_poll:                                     ; 0AA3D
 	mov dx, [bx + 0x25]
@@ -6405,10 +6405,10 @@ sio_write_tx_data_reg:                                     ; 0AACF
 	and byte [bx + 0x1b], 0xfe
 	ret
 	call xios_switch_to_priv_stack
-	mov bx, xios_crt_buf_402f
+	mov bx, sio_chan_b_ctrl_block
 	jmp near .sio_write_loop
 	call xios_switch_to_priv_stack
-	mov bx, xios_crt_param_4058
+	mov bx, sio_chan_a_ctrl_block
 
 .sio_write_loop:                                     ; 0AAE7
 	mov dx, [bx + 0x27]
@@ -6421,12 +6421,12 @@ sio_write_tx_done:                                     ; 0AAF1
 	call pic_send_eoi_command
 	jmp near xios_isr_exit_iret
 	call xios_switch_to_priv_stack
-	mov bx, xios_crt_buf_402f
+	mov bx, sio_chan_b_ctrl_block
 	jmp near xios_sio_isr_rx_check
 
 xios_serial_isr:
 	call xios_switch_to_priv_stack
-	mov bx, xios_crt_param_4058
+	mov bx, sio_chan_a_ctrl_block
 
 xios_sio_isr_rx_check:                                     ; 0AB06
 	mov dx, [bx + 0x23]
@@ -6501,10 +6501,10 @@ xios_sio_isr_rx_check:                                     ; 0AB06
 	and byte [bx + 0x1A], 0xfb
 	jmp near xios_isr_exit_dispatch
 	call xios_switch_to_priv_stack
-	mov bx, xios_crt_buf_402f
+	mov bx, sio_chan_b_ctrl_block
 	jmp near .sio_rx_ret_stub
 	call xios_switch_to_priv_stack
-	mov bx, xios_crt_param_4058
+	mov bx, sio_chan_a_ctrl_block
 
 .sio_rx_ret_stub:                                     ; 0ABA5
 	mov dx, [bx + 0x25]
@@ -6524,16 +6524,16 @@ pic_send_eoi_command:                                     ; 0ABB5
 
 sio_get_channel_b_struct:                                     ; 0ABBD
 	mov dx, 2
-	mov bx, xios_crt_param_4058
+	mov bx, sio_chan_a_ctrl_block
 	ret
 
 int28_fn_18_reserved:                   ; 0ABC4
-	mov bx, xios_crt_param_4058
+	mov bx, sio_chan_a_ctrl_block
 	mov [bx + 0x1d], dl
 	ret
-		dw xios_crt_buf_402f
-		dw xios_crt_param_4058
-xios_crt_buf_402f:
+		dw sio_chan_b_ctrl_block
+		dw sio_chan_a_ctrl_block
+sio_chan_b_ctrl_block:
 	times 20 db 0                                ; 0ABCF..0ABE1 (20 bytes padding)
 	or ax, 0xe00
 	add [bx + di], dl
@@ -6541,17 +6541,17 @@ xios_crt_buf_402f:
 	add [bx + si], ax
 	db 0x00, 0x00                                ; 0ABEC
 	db 0x00, 0x7f, 0x14, 0x00, 0xfe, 0x02, 0x00, 0x03, 0x00, 0x03
-xios_crt_param_4058:
+sio_chan_a_ctrl_block:
 	dw 0x0000
-xios_crt_param_405a:
+sio_chan_a_rx_buf_size:
 	times 6 db 0
-xios_crt_param_4060:
+sio_chan_a_tx_buf_size:
 	dw 0x0000
-xios_crt_param_4062:
+sio_chan_b_rx_buf_ptr:
 	dw 0x0000
-xios_crt_param_4064:
+sio_chan_b_rx_buf_size:
 	times 6 db 0
-xios_crt_param_406a:
+sio_chan_b_tx_buf_size:
 	db 0x00
 	add [di], cl
 	add [0x1100], cl
@@ -6690,7 +6690,7 @@ prn_dpc_out:
 	cli
 	push ds
 	mov ds, [cs:xios_sysdat_segment_val]
-	mov bx, xios_crt_table_4256
+	mov bx, xios_nvram_table
 	mov al, [bx + 0x14]
 	cmp al, 5
 	jae .prn_dpc_poll
@@ -6705,7 +6705,7 @@ prn_dpc_out:
 prn_dpc_done:                                     ; 0ACFC
 	cmp dl, 1
 	jne prn_centronics_poll
-	mov bx, xios_crt_table_4256
+	mov bx, xios_nvram_table
 	mov al, [bx + 0xd]
 	and al, 0xf
 	cmp al, 1
@@ -6749,7 +6749,7 @@ io_listst:
 	cli
 	push ds
 	mov ds, [cs:xios_sysdat_segment_val]
-	mov bx, xios_crt_table_4256
+	mov bx, xios_nvram_table
 	mov al, [bx + 0x14]
 	cmp al, 5
 	jae .listst_poll_ret
@@ -6801,7 +6801,7 @@ con_status_poll:                               ; 0AD8E
 	ret
 
 i_printer:
-xios_crt_isr_41fb:
+prn_strobe_isr:
 	call xios_switch_to_priv_stack
 	mov al, 0x80
 	mov dx, PORT_PRN_CTRL
@@ -6821,12 +6821,12 @@ xios_crt_isr:
 	call rtm_call_helper
 	jmp near xios_isr_exit_dispatch
 
-xios_crt_table_4225:
+xios_autoconfig_table:
 	db 0x00, 0x00, 0x04, 0x00, 0x00, 0x80, 0x04, 0x00
 	times 10 db 0
 	db 0x00, 0x01, 0x01, 0x00
 	times 27 db 0
-xios_crt_table_4256:
+xios_nvram_table:
 	times 7 db 0
 	db 0x66, 0x00, 0x47, 0xAA                    ; 0ADFD  add byte [bx - 0x56], al
 	pop ss
@@ -6843,12 +6843,12 @@ xios_crt_table_4256:
 	times 98 db 0                                ; 0AE14..0AE74 (98 bytes padding)
 int28_fn_03_get_nvram:                  ; 0AE76
 	mov es, [cs:xios_sysdat_segment_val]
-	mov si, xios_crt_table_4256
+	mov si, xios_nvram_table
 	ret
 
 int28_fn_04_get_autoconfig:             ; 0AE7F
 	mov es, [cs:xios_sysdat_segment_val]
-	mov si, xios_crt_table_4225
+	mov si, xios_autoconfig_table
 	ret
 
 int28_fn_32_reserved:                   ; 0AE88
@@ -6915,7 +6915,7 @@ rtc_1sec_isr:
 	call fdc_motor_timeout_tick
 	call fdc_recalibrate_all_drives
 	call dpc_release_shared_devices
-	mov bx, xios_crt_table_4225
+	mov bx, xios_autoconfig_table
 	cmp byte [bx + 0xc], 0xff
 	je .rtc_1sec_notify
 	mov al, 0x10
@@ -7104,9 +7104,9 @@ int28_fn_50_isbx_reset:                 ; 0B05E
 	ret
 
 diag_format_error_record:                                     ; 0B06E
-	mov di, xios_diag_buf_4573
+	mov di, diag_err_record_buf
 	mov [di], al
-	mov bx, xios_crt_table_4256
+	mov bx, xios_nvram_table
 	or_al_al                                     ; 0B076
 	jne .diag_format_custom
 	mov byte [di + 1], 0
@@ -7162,7 +7162,7 @@ diag_format_error_record:                                     ; 0B06E
 	mov [di + 0xf], al
 	ret
 
-xios_diag_buf_4573:
+diag_err_record_buf:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 0B113  ................
 int28_fn_24_isbx_init:                  ; 0B123
 	push bp
@@ -7175,7 +7175,7 @@ int28_fn_24_isbx_init:                  ; 0B123
 	mov bl, [es:di + 3]
 	xor_bh_bh                                    ; 0B13A
 	shl bx, 1
-	mov ax, [cs:bx + xios_diag_fn_4695]
+	mov ax, [cs:bx + diag_dummy_isr_stub]
 	push ax
 	mov dx, PORT_ISBX_MCS1_06
 	mov al, 0xb6
@@ -7190,7 +7190,7 @@ int28_fn_24_isbx_init:                  ; 0B123
 	add di, 6
 	cmp cx, 0
 	je xios_jmp_entry
-	mov bx, xios_crt_table_4256
+	mov bx, xios_nvram_table
 
 xios_jmp_init:                                 ; 0B163
 	jmp near xios_init
@@ -7289,7 +7289,7 @@ xios_entry_0x8C:                               ; 0B1EF
 	pop bp
 	ret
 
-xios_diag_fn_4651:
+diag_dummy_isr_timer:
 	test al, 3
 	db 0x70, 0x02                                ; 0B1F3  jo 0xb1f7
 	stosb
@@ -7301,7 +7301,7 @@ xios_diag_fn_4651:
 	add [di], al
 	add [di], al
 	db 0x00                                      ; 0B206
-xios_diag_fn_4667:
+diag_dummy_isr_chain:
 	db 0xE0                                      ; 0B207 (add al, ah opcode 00 E0)
 	add al, 0x40
 	add di, [bx + si]
@@ -7312,8 +7312,8 @@ xios_diag_fn_4667:
 	or ax, 0x600
 	add [bp + di], al
 	db 0x00
-xios_diag_ptr_467d:
-	dw xios_diag_fn_4651
+diag_timer_isr_ptr:
+	dw diag_dummy_isr_timer
 	mov [bp + di], dl
 	add ax, 0xe10d
 	or [bp + di + 0x4106], al
@@ -7322,7 +7322,7 @@ xios_diag_ptr_467d:
 	xor al, 0
 	sbb al, [bx + si]
 	db 0x0D, 0x00                                ; 0B233 (or ax, strict word 0 opcode 0D 00 00)
-xios_diag_fn_4695:
+diag_dummy_isr_stub:
 	db 0x00                                      ; 0B235
 	add al, 0
 	add al, 0xba
@@ -7333,12 +7333,12 @@ xios_diag_fn_4695:
 	add [bx + si], dl
 	add [bx + si], cl
 	db 0x00                                      ; 0B248
-xios_diag_fn_46a9:
+diag_fast_movsb_iret:
 	db 0xF3                                      ; 0B249 (add bl, dh opcode 00 F3)
 	movsb
 	iret
 
-xios_diag_fn_46ac:
+diag_fast_movsw_iret:
 	rep movsw
 	iret
 
@@ -7347,12 +7347,12 @@ xios_diag_enter_menu:                                     ; 0B24F
 	call far [cs:xios_hook_sec_off]
 	pop bx
 	stc
-	jmp far [cs:xios_diag_hook_46bc]
+	jmp far [cs:diag_abort_hook_target]
 
-xios_diag_hook_46bc:
+diag_abort_hook_target:
 	db 0x00, 0x00, 0xFF                          ; 0B25C  ...
 	db 0xFF                                      ; 0B25F (call far [0x8e2e] opcode FF 1E 2E 8E)
-xios_diag_hook_target_46c0:
+diag_err_intercept_entry:
 	db 0x1E, 0x2E, 0x8E                          ; 0B260
 	push ds
 	push es
@@ -7369,7 +7369,7 @@ xios_diag_hook_target_46c0:
 	mov bx, [cs:sysdat_openvec]
 	test bx, bx
 	je .diag_hook_ret
-	mov si, xios_diag_buf_4710
+	mov si, diag_err_status_buf
 	mov al, [si + 2]
 	test al, 0x3a
 	jne .diag_hook_ret
@@ -7386,7 +7386,7 @@ xios_diag_hook_target_46c0:
 	pop ds
 	iret
 
-xios_diag_buf_4710:
+diag_err_status_buf:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  ; 0B2B0  ..............
 xios_int3_handler:
 	cli
@@ -7497,29 +7497,29 @@ xios_vmenu_opt_yes:
 	db "JA  "
 xios_vmenu_str_console:
 	db " Konsol="
-xios_vmenu_buf_484d:
+vmenu_buf_con_num:
 	db 0x00, " "
-xios_vmenu_buf_484f:
+vmenu_buf_mode_str:
 	times 8 db 0x00
 	db " "
-xios_vmenu_buf_4858:
+vmenu_buf_process_name:
 	times 8 db 0x00
 	db " "
-xios_vmenu_buf_4861:
+vmenu_buf_mode_flag:
 	db 0x00
-xios_vmenu_buf_4862:
+vmenu_buf_drive_map:
 	times 16 db 0x00
 	db " "
-xios_vmenu_buf_4873:
+vmenu_buf_status_flags:
 	times 3 db 0x00
-xios_vmenu_buf_4876:
+vmenu_buf_prn_status:
 	times 5 db 0x00
 	db " "
 xios_vmenu_str_printer:
 	db "Skriver="
-xios_vmenu_buf_4884:
+vmenu_buf_prn_num:
 	db 0x00, 0x00, " "
-xios_vmenu_buf_4887:
+vmenu_buf_kbd_lock:
 	times 4 db 0x00
 	db " "
 xios_vmenu_str_time:
@@ -7534,10 +7534,10 @@ xios_vmenu_opt_locked:
 	db_dk "Låst    "
 xios_vmenu_opt_lock:
 	db_dk "LÅS "
-xios_vmenu_buf_48b9:
+vmenu_buf_msg_prompt:
 	times 51 db " "                              ; 0B458
 	db_dk "- Tryk på en tast            "        ; 0B48C
-xios_vmenu_line_buf_4909:
+vmenu_line_buffer:
 	times 80 db 0                                ; 0B4A9
 xios_boot_msg_dollar:
 	db "$ **"                                    ; 0B4F9
@@ -7623,7 +7623,7 @@ crt_init_hardware_display:                                     ; 0B991
 	push cs
 	pop ds
 	cld
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	mov dx, [bx + 0xa]
 	mov cl, 0xc
 	shl dx, cl
@@ -7651,7 +7651,7 @@ mov ax, fdc_drive_dph_2
 mov di, fdc_drive_0_dpb_ptr
 mov ax, fdc_dpb_standard
 	call crt_dma_make_phys_desc
-mov ax, fdc_param_6142
+mov ax, crt_dma_desc_block
 	call crt_dma_make_phys_desc
 mov ax, fdc_dpb_3_ptr
 	push ax
@@ -7718,12 +7718,12 @@ mov dx, int_vec_backup_97
 	mov cx, 0x3000
 	rep movsw
 	pop ds
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	test byte [bx + 0x12], 1
 	jne .clear_vmenu_item
 mov byte [cs:xios_is_color_display], 0xff
 mov byte [cs:xios_default_fg_color], 0x38
-mov bx, xios_crt_table_4256
+mov bx, xios_nvram_table
 	mov al, [bx + 0x16]
 	mov cl, 4
 	rol al, cl
@@ -7739,7 +7739,7 @@ mov [cs:xios_default_bg_color], al
 mov word [cs:vmenu_item_table + 8], 0; 0BA8B  mov word [cs:0x12af], 0
 
 .setup_crt_scanlines:                                     ; 0BA92
-mov bx, xios_crt_table_4256
+mov bx, xios_nvram_table
 	mov al, [bx + 0x13]
 	mov_dl_al                                    ; 0BA98
 	and al, 1
@@ -7898,7 +7898,7 @@ rtc_days_in_month_norm:
 	db 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ; 0BC0D (CS:506D)
 rtc_days_in_month_leap:
 	db 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ; 0BC1A (CS:507A)
-rtc_spare_buf_5087:
+rtc_saved_timer_params:
 	times 12 db 0x00                             ; 0BC27 (CS:5087)
 rtc_timer_params:
 	db 0x04, 0x00, 0x0C, 0x00, 0x84, 0x03        ; 0BC33 (CS:5093)
@@ -8049,7 +8049,7 @@ xios_init_entry:
 	cld
 mov [cs:rtc_time_buf_seg], es
 	mov si, 0x50
-mov di, xios_crt_table_4225
+mov di, xios_autoconfig_table
 	push ds
 	pop es
 	push ds
@@ -8078,7 +8078,7 @@ mov di, xios_crt_table_4225
 	jne .init_check_mem_size
 	cmp bl, 0xaa
 	jne .init_read_rtc_clock
-mov bx, xios_crt_table_4256
+mov bx, xios_nvram_table
 	mov ax, 0
 
 .init_check_nvram:                                     ; 0BD98
@@ -8098,14 +8098,14 @@ mov bx, xios_crt_table_4256
 .init_read_rtc_clock:                                     ; 0BDAF
 	mov ah, 3
 	call ppi_set_nvram_bank
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	and byte [bx + 0x17], 0xdf
 	cmp byte [bx + 0x17], 0x50
 	jne .init_zero_bss_buffers
 	xor_ax_ax                                    ; 0BDC1
 	push ds
 	pop es
-mov di, rtc_spare_buf_5087
+mov di, rtc_saved_timer_params
 	mov cx, 3
 mov bx, rtc_timer_params
 
@@ -8139,7 +8139,7 @@ mov bx, rtc_timer_params
 	stosw
 	xchg bx, ax
 	loop .init_bss_clear_loop
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	and byte [bx + 0x17], 0xdf
 	cmp byte [bx + 0x17], 0x50
 	jne .init_next_ccb_ptr
@@ -8157,7 +8157,7 @@ mov bx, rtc_timer_params
 	loop .init_setup_sysdat_ptrs
 
 .init_next_ccb_ptr:                                     ; 0BE16
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	and byte [bx + 0x17], 0xdf
 	cmp byte [bx + 0x17], 0x50
 	je .init_dph_tables
@@ -8221,22 +8221,22 @@ mov ax, xios_crt_isr
 	mov_ax_bx                                    ; 0BE92
 	stosw
 	mov di, 0x98
-mov ax, xios_crt_isr_41fb
+mov ax, prn_strobe_isr
 	stosw
 	mov_ax_bx                                    ; 0BE9C
 	stosw
 	mov di, 0x9c
-mov ax, xios_crt_isr_41fb
+mov ax, prn_strobe_isr
 	stosw
 	mov_ax_bx                                    ; 0BEA6
 	stosw
 	mov di, 0x388
-mov ax, xios_diag_fn_46a9
+mov ax, diag_fast_movsb_iret
 	stosw
 	mov_ax_bx                                    ; 0BEB0
 	stosw
 	mov di, 0x38c
-mov ax, xios_diag_fn_46ac
+mov ax, diag_fast_movsw_iret
 	stosw
 	mov_ax_bx                                    ; 0BEBA
 	stosw
@@ -8247,7 +8247,7 @@ mov ax, xios_diag_fn_46ac
 	stosw
 mov [cs:xios_hook_sec_seg], cs
 mov [cs:xios_hook_timer_seg], cs
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	cmp byte [bx + 0xc], 0xff
 	je .init_format_date_str
 	mov ah, 4
@@ -8265,7 +8265,7 @@ mov bx, xios_crt_table_4225
 
 .init_date_loop:                                     ; 0BEF3
 mov word [cs:rtc_day_of_year], 0; 0BEF3  mov word [cs:0x5067], 0
-mov bx, xios_crt_table_4256
+mov bx, xios_nvram_table
 	mov al, [bx + 0x18]
 	call bcd_to_binary_byte
 mov [cs:rtc_cur_year], al
@@ -8347,28 +8347,28 @@ add ax, [cs:rtc_day_of_year]
 	pop es
 	mov dx, PORT_PCB_T0_MAXA
 	in ax, dx
-mov si, xios_diag_fn_4667
+mov si, diag_dummy_isr_chain
 	cmp ax, strict word 0x1a                     ; 0BFBB  3D 1A 00
 	je .init_check_hour_ticks
-mov si, xios_diag_fn_4651
+mov si, diag_dummy_isr_timer
 
 .init_check_hour_ticks:                                     ; 0BFC3
-mov [cs:xios_diag_ptr_467d], si
+mov [cs:diag_timer_isr_ptr], si
 	call crt_init_hardware_display
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	and byte [bx + 0x17], 0xdf
 	cmp byte [bx + 0x17], 0x50
 	jne .init_check_min_ticks
-mov word [cs:xios_mx_param_593d], 0x18; 0BFD8  mov word [cs:0x593d], 0x18
+mov word [cs:xios_mx_low_mem_reserve], 0x18; 0BFD8  mov word [cs:0x593d], 0x18
 	jmp short .init_check_min_ticks
 
 .init_check_min_ticks:                                     ; 0BFE1
-mov bx, xios_crt_table_4256
+mov bx, xios_nvram_table
 	cmp byte [bx + 0x33], 1
 	jne .init_sec_ticks_done
 	mov dl, 5
 	call int28_fn_50_isbx_reset
-mov bx, xios_crt_param_4058
+mov bx, sio_chan_a_ctrl_block
 	mov dx, PORT_ISBX_MCS0_02
 	in al, dx
 	mov [bx + 0x1E], al
@@ -8426,7 +8426,7 @@ mov dx, xios_mx_alt_msg
 	mov cl, 0x8b
 mov dx, xios_mx_alt_msg
 	call rtm_timer_wait2
-mov al, [cs:fdc_param_376c]
+mov al, [cs:fdc_active_drive_fcr]
 
 fdc_dma_scroll_cmd:                            ; 0C08A
 	mov dx, PORT_FDC_CTRL
@@ -8435,20 +8435,20 @@ fdc_dma_scroll_cmd:                            ; 0C08A
 	in al, dx
 	mov dx, PORT_PRN_RELEASE
 	out dx, al
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	mov cl, [bx + 0x13]
 	mov bx, 0
 
 .dma_scroll_cmd_poll:                                     ; 0C09F
 	cmp cl, 0
 	je .dma_scroll_cmd_done
-mov byte [cs:bx + fdc_scratch_3932], 1
+mov byte [cs:bx + fdc_drive_unit_map], 1
 	inc bx
 	dec cl
 	jmp short .dma_scroll_cmd_poll
 
 .dma_scroll_cmd_done:                                     ; 0C0AF
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	les di, [bx]
 	mov ax, es
 	mov cl, 6
@@ -8457,20 +8457,20 @@ mov bx, xios_crt_table_4225
 	shr di, cl
 	add_ax_di                                    ; 0C0BE
 mov [cs:xios_mx_mem_avail], ax
-mov bx, [cs:xios_mx_param_593d]
+mov bx, [cs:xios_mx_low_mem_reserve]
 sub [cs:xios_mx_mem_avail], bx
 mov di, boot_msg_main_memory
 	call boot_format_dec
 mov si, xios_boot_banner
 	call boot_print_str
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	mov al, [bx + 0x13]
 	xor_ah_ah                                    ; 0C0E0
 	or_al_al                                     ; 0C0E2
 	je .init_mdisk_alloc_buffers
 	cmp al, 1
 	jne .init_mdisk_check_size
-mov bx, fdc_scratch_3932
+mov bx, fdc_drive_unit_map
 	mov byte [bx + 1], 0
 
 .init_mdisk_check_size:                                     ; 0C0F1
@@ -8481,7 +8481,7 @@ mov si, boot_msg_floppy_drives
 
 .init_mdisk_alloc_buffers:                                     ; 0C0FD
 	jmp near .init_mdisk_setup_dpb
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 mov al, [cs:rtc_time_buf_val]
 	sub al, [bx + 0x13]
 	je .init_mdisk_setup_dpb
@@ -8492,11 +8492,11 @@ mov si, boot_msg_winchester_drives
 	call boot_print_str
 
 .init_mdisk_setup_dpb:                                     ; 0C11A
-mov bx, xios_crt_table_4256
+mov bx, xios_nvram_table
 	mov al, [bx + CCB_CON_IDX]
 	mov [cs:sysdat_srchdisk], al
 	mov [cs:sysdat_tempdisk], al
-mov bx, xios_crt_table_4256
+mov bx, xios_nvram_table
 mov ax, [cs:xios_mx_mem_avail]
 	mov bl, [bx + 0x1b]
 	mov bh, 0
@@ -8518,8 +8518,8 @@ mov [cs:xios_mx_mem_avail], ax
 	push es
 	mov cl, 6
 	shl ax, cl
-mov [cs:fdc_dma_buffer_ptr_35b7], ax
-mov bx, xios_crt_table_4256
+mov [cs:fdc_dma_buf_seg], ax
+mov bx, xios_nvram_table
 	mov al, [bx + 0x1b]
 	or_al_al                                     ; 0C166
 	je .init_mdisk_done
@@ -8534,9 +8534,9 @@ mov di, boot_msg_mdisk_kbytes
 mov si, boot_msg_mdisk_kbytes
 	call boot_print_str
 	mov byte [cs:sysdat_tempdisk], 0xc
-mov bx, fdc_scratch_3932
+mov bx, fdc_drive_unit_map
 	mov byte [bx + 0xc], 0xc0
-mov ax, [cs:fdc_dma_buffer_ptr_35b7]
+mov ax, [cs:fdc_dma_buf_seg]
 	mov es, ax
 	xor_di_di                                    ; 0C195
 	mov ax, 0xe5e5
@@ -8614,10 +8614,10 @@ add [cs:xios_mx_alloc_ptr], ax
 	jmp near .init_calc_disk_buffers
 
 .init_alloc_dtabcb_entry:                                     ; 0C227
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 mov dl, [cs:rtc_time_buf_val]
 mov word [cs:xios_mx_mem_limit], 0x420; 0C22F  mov word [cs:0x594f], 0x420
-mov bx, xios_crt_table_4256
+mov bx, xios_nvram_table
 	mov cl, [bx + 0x1A]
 	mov ch, 0
 	push cx
@@ -8734,13 +8734,13 @@ mov ax, [cs:xios_mx_mem_avail]
 	mov cl, 6
 	shl ax, cl
 	sub ax, strict word 0x10                     ; 0C347  2D 10 00
-mov [cs:xios_crt_param_4058], ax
-mov word [cs:xios_crt_param_405a], 0x100; 0C34E  mov word [cs:0x405a], 0x100
-mov word [cs:xios_crt_param_4060], 0x100; 0C355  mov word [cs:0x4060], 0x100
+mov [cs:sio_chan_a_ctrl_block], ax
+mov word [cs:sio_chan_a_rx_buf_size], 0x100; 0C34E  mov word [cs:0x405a], 0x100
+mov word [cs:sio_chan_a_tx_buf_size], 0x100; 0C355  mov word [cs:0x4060], 0x100
 	sub ax, strict word 1                        ; 0C35C  2D 01 00
-mov [cs:xios_crt_param_4062], ax
-mov word [cs:xios_crt_param_4064], 0x10; 0C363  mov word [cs:0x4064], 0x10
-mov word [cs:xios_crt_param_406a], 0x10; 0C36A  mov word [cs:0x406a], 0x10
+mov [cs:sio_chan_b_rx_buf_ptr], ax
+mov word [cs:sio_chan_b_rx_buf_size], 0x10; 0C363  mov word [cs:0x4064], 0x10
+mov word [cs:sio_chan_b_tx_buf_size], 0x10; 0C36A  mov word [cs:0x406a], 0x10
 	push ax
 	mov cl, 6
 	shr ax, cl
@@ -8798,7 +8798,7 @@ or ax, [cs:xios_boot_fpu_lan_flag]
 	xor_ax_ax                                    ; 0C3E8
 	mov es, ax
 	mov di, 0x94
-mov ax, xios_diag_hook_target_46c0
+mov ax, diag_err_intercept_entry
 	stosw
 	mov ax, cs
 	stosw
@@ -8806,14 +8806,14 @@ mov ax, xios_diag_hook_target_46c0
 	db 0x2E, 0xC7, 0x06, 0xA2, 0x00, 0x00, 0x00  ; 0C3FD  mov word [cs:sysdat_int_vec], 0
 	db 0x2E, 0xC7, 0x06, 0xA0, 0x00, 0x94, 0x00  ; 0C404  mov word [cs:sysdat_abort_vec], 0x94
 	mov [cs:sysdat_err_intercept_seg], cs
-mov word [cs:sysdat_err_intercept], xios_diag_hook_target_46c0; 0C410  mov word [cs:sysdat_err_intercept], 0x46c0
+mov word [cs:sysdat_err_intercept], diag_err_intercept_entry; 0C410  mov word [cs:sysdat_err_intercept], 0x46c0
 mov si, boot_msg_crlf_fpu
 	call boot_print_str
 	mov ax, 0x80
 
 .init_sysdat_done:                                     ; 0C420
 	push ax
-mov bx, xios_crt_table_4225
+mov bx, xios_autoconfig_table
 	cmp byte [bx + 0xd], 0xff
 	jne .init_banner_exit
 mov si, boot_msg_crlf_lan
@@ -8905,7 +8905,7 @@ idiv word [cs:si + xios_mx_div_table]          ; 0C472
 	times 64 db 0x00
 xios_mx_mem_free:
 	dw 0x0000
-xios_mx_param_593d:
+xios_mx_low_mem_reserve:
 	dw 0x0000
 xios_mx_mem_avail:
 	dw 0x0000
@@ -9457,7 +9457,7 @@ xios_prn_pending_flag:
 
 vmenu_clear_line_buffer:                                     ; 0C9E6
 	push es
-mov di, xios_vmenu_line_buf_4909
+mov di, vmenu_line_buffer
 	push di
 	push di
 	push ds
@@ -9684,33 +9684,33 @@ fdc_drive_2_dpb_ptr:
 	db 0x00, 0x85, 0x00, 0x88
 fdc_dpb_3_ptr:
 	db 0x00, 0x8E, 0x00, 0x00, 0x01, 0x83
-fdc_param_613c:
+crt_dma_desc_count:
 	db 0x09, 0x00
-fdc_param_613e:
+crt_dma_desc_buf_ptr:
 	db 0x50, 0x87
-fdc_param_6140:
+crt_dma_desc_attr_ptr:
 	db 0x00, 0x88
-fdc_param_6142:
+crt_dma_desc_block:
 	db 0x01, 0x83, 0x00, 0x04, 0x50, 0x8A, 0x00, 0x00
 
-xios_con_line_buffer_614a:
+vmenu_line_render_buffer:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-xios_con_line_buffer_6186:
+vmenu_line_render_buf_mid:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00
-xios_con_line_buffer_61b8:
+vmenu_line_render_buf_end:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	db 0x00, 0x00
 xios_crt_mode_line_table:
 	db 0x00, 0x81
-xios_crt_line_entry_61ec:
+crt_dma_line_table_entry:
 	db 0x52, 0x87, 0xFF, 0x0C, 0x50, 0x8A, 0x20, 0x08, 0x00, 0x81
 xios_vmenu_line_offsets:
 	db 0x00, 0x00, 0xA0, 0x00, 0x40, 0x01, 0xE0, 0x01, 0x80, 0x02, 0x20, 0x03, 0xC0, 0x03, 0x60, 0x04
@@ -9721,7 +9721,7 @@ xios_vmenu_line_offsets:
 ; -----------------------------------------------------------------------------
 vmenu_screen_line_table:
 	dw 0x0820, 0x08C0, 0x0960, 0x0A00, 0x0AA0, 0x0B40, 0x0BE0, 0x0C80, 0x0D20, 0x0DC0, 0x0E60
-	dw xios_con_line_buffer_614a
+	dw vmenu_line_render_buffer
 xios_crt_font_ptr:
 	dw 0x0000, 0xFFF8, 0x0000, 0x0000
 %if NUM_VIR_CONS == 4
