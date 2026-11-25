@@ -444,7 +444,7 @@ kbd_handler:				; 07A93 / 000002F3
 	je .check_scancode_valid
 	test byte [cs:kbd_shift_state], KBD_SHIFT_ALT
 	je .check_scancode_valid
-	mov bx, fdc_drive_type_0
+	mov bx, crt_82730_cb_status
 	jmp near xios_diag_enter_menu
 	db 0xCC				; int3 padding
 	jmp near .exit
@@ -1544,7 +1544,7 @@ crt_esc_f_cur_off:
 	or word [bx + CCB_FLAGS], CCB_FLG_CUR_OFF
 	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
 	jne crt_esc_cur_ret
-	mov word [cs:fdc_drive_cyl_0], 0xffff
+	mov word [cs:crt_cursor_col_cache], 0xffff
 
 crt_esc_cur_ret:			; 082EE
 	ret
@@ -1757,7 +1757,7 @@ crt_update_scroll_bottom:		; 08444
 	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE | CCB_FLG_WINDOW | CCB_FLG_CLIPPED
 	jne .ret
 	call crt_refresh_all_lines
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	xor byte [cs:crt_line_buf_toggle], 0x80
 	call rtm_delay_1_tick
 .ret:					; 08459
 	ret
@@ -1784,7 +1784,7 @@ crt_esc_3_restore_attrs:
 	ret
 
 .restore_hw_cursor:			; 08484
-	mov word [cs:fdc_drive_cyl_0], 0xffff
+	mov word [cs:crt_cursor_col_cache], 0xffff
 	jmp near crt_update_cursor_dispatch
 
 ; ESC 241 (0xF1) - Set Blinking Cursor (s. 62 / App. F): Sæt cursoren til at blinke
@@ -2034,12 +2034,12 @@ crt_update_hw_cursor:			; 085ED
 	add dx, [bx + CCB_WIN_LEFT]
 
 .store:
-	mov [cs:fdc_drive_cyl_0], dx
+	mov [cs:crt_cursor_col_cache], dx
 .ret:
 	ret
 
 .invalid:
-	mov word [cs:fdc_drive_cyl_0], 0xffff
+	mov word [cs:crt_cursor_col_cache], 0xffff
 	ret
 
 crt_update_cursor_dispatch:		; 08625
@@ -2211,7 +2211,7 @@ crt_scroll_lock_and_refresh:		; 08716
 	jne .start_soft_scroll
 	call crt_clear_line_range
 	call crt_refresh_all_lines
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	xor byte [cs:crt_line_buf_toggle], 0x80
 	mov ah, 0
 	call xios_crt_trigger_ca
 	jmp short .unlock_and_ret
@@ -2223,7 +2223,7 @@ crt_scroll_lock_and_refresh:		; 08716
 .standard_scroll_refresh:		; 08743
 	call crt_clear_line_range
 	call crt_refresh_all_lines
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	xor byte [cs:crt_line_buf_toggle], 0x80
 
 .unlock_and_ret:			; 0874F
 	mov byte [bx + CCB_ACTIVE], 0
@@ -2288,8 +2288,8 @@ crt_scroll_dma_update_line:		; 087CD
 	add_di_bx			; 087DC
 	mov dx, [cs:xios_sysdat_segment_ptr]
 	call crt_dma_store_phys_desc
-	mov word [cs:fdc_drive_cyl_0], 0xffff
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	mov word [cs:crt_cursor_col_cache], 0xffff
+	xor byte [cs:crt_line_buf_toggle], 0x80
 	ret
 
 rtm_wait_scroll_delay:			; 087F4
@@ -2383,21 +2383,21 @@ crt_scroll_step_shift_dma:		; 08875
 	add_di_bx			; 088A4
 	lea ax, [bx + CCB_CHAR_ATTR]
 	call crt_dma_make_phys_desc
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	xor byte [cs:crt_line_buf_toggle], 0x80
 	ret
 
 crt_soft_scroll_step_add_lines:
 	call crt_swap_active_line_buffers
 	add byte [cs:bx + 0x7c], 4
 	add byte [cs:bx + 0x80], 4
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	xor byte [cs:crt_line_buf_toggle], 0x80
 	ret
 
 crt_soft_scroll_step_sub_lines:
 	call crt_swap_active_line_buffers
 	sub byte [cs:bx + 0x7c], 4
 	sub byte [cs:bx + 0x80], 4
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	xor byte [cs:crt_line_buf_toggle], 0x80
 	ret
 
 crt_soft_scroll_step_finish_repaint:
@@ -2406,7 +2406,7 @@ crt_soft_scroll_step_finish_repaint:
 	push bx
 	mov bx, xios_scroll_line_save_buf
 	call crt_refresh_lines_loop
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	xor byte [cs:crt_line_buf_toggle], 0x80
 	pop bx
 	mov byte [bx + CCB_ACTIVE], 0
 	ret
@@ -2442,10 +2442,10 @@ crt_refresh_all_lines:			; 0893E
 crt_refresh_lines_loop:			; 08941
 	push cx
 	mov_si_bx			; 08942
-	mov di, fdc_drive_1_dpb_ptr
-	test byte [cs:fdc_drive_flags_0], 0x80
+	mov di, crt_dma_line_buf_0
+	test byte [cs:crt_line_buf_toggle], 0x80
 	jne .store_line_desc
-	mov di, fdc_drive_2_dpb_ptr
+	mov di, crt_dma_line_buf_1
 
 .store_line_desc:			; 08952
 	push cx
@@ -2468,9 +2468,9 @@ crt_refresh_tail_lines:			; 08960
 	ret
 
 crt_swap_active_line_buffers:		; 08972
-	mov si, fdc_drive_1_dpb_ptr
-	mov di, fdc_drive_2_dpb_ptr
-	test byte [cs:fdc_drive_flags_0], 0x80
+	mov si, crt_dma_line_buf_0
+	mov di, crt_dma_line_buf_1
+	test byte [cs:crt_line_buf_toggle], 0x80
 	je .store_dest_reg
 	xchg si, di			; 08980  87 F7
 
@@ -2812,7 +2812,7 @@ crt_switch_active_window:		; 08BFB
 	pop es
 	mov dl, [bx + CCB_CON_IDX]
 	call window_zorder_promote_top
-	mov word [cs:fdc_drive_cyl_0], 0xffff
+	mov word [cs:crt_cursor_col_cache], 0xffff
 	call palette_load_hardware_regs
 	call window_update_clipped_flag
 	mov cx, [bx + CCB_SCROLL_BOTTOM]
@@ -2830,7 +2830,7 @@ crt_switch_active_window:		; 08BFB
 .refresh_screen_lines:			; 08C36
 	call crt_refresh_lines_loop
 	pop bx
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	xor byte [cs:crt_line_buf_toggle], 0x80
 	call crt_load_cursor_hardware_regs
 	mov ah, 1
 	call xios_crt_trigger_ca
@@ -3083,7 +3083,7 @@ con_puts:				; 08DF1
 	mov bx, [cs:xios4_cur_window_ptr]
 	call ccb_acquire_lock
 	call rtm_delay_1_tick
-	mov word [cs:fdc_drive_cyl_0], 0xffff
+	mov word [cs:crt_cursor_col_cache], 0xffff
 	push word [bx + CCB_SCROLL_BOTTOM]
 	mov ax, 0x18
 	call crt_update_scroll_bottom
@@ -3268,13 +3268,13 @@ crt_set_display_mode_timings:		; 08FE7
 crt_set_graphics_timings:		; 08FEE
 	mov word [cs:crt_dma_desc_count], 0x000f
 	mov word [cs:crt_dma_desc_buf_ptr], 0x8723
-	mov si, fdc_dpb_alternate
+	mov si, crt_82730_gfx_timing_block
 	jmp short crt_flip_page_and_copy
 
 crt_set_text_timings_and_flip:		; 09001
 	mov word [cs:crt_dma_desc_count], 0x0009
 	mov word [cs:crt_dma_desc_buf_ptr], 0x8750
-	mov si, fdc_dpb_standard
+	mov si, crt_82730_text_timing_block
 
 crt_flip_page_and_copy:			; 09012
 	mov ax, [cs:xios_vram_back_page]
@@ -3312,7 +3312,7 @@ crt_flip_page_and_copy:			; 09012
 	mov al, [bx + 0x70]
 	mov dx, PORT_PPI_CTRL
 	out dx, al
-	mov di, fdc_drive_0_dpb_ptr
+	mov di, crt_82730_dpb_desc_table
 	mov_ax_si			; 09067
 	call crt_dma_make_phys_desc
 	mov ah, 4
@@ -3454,7 +3454,7 @@ vram_copy_16_words:			; 09131
 
 int28_fn_21_get_disp_list:		; 09141
 	call get_cur_process_ccb
-	mov si, fdc_drive_type_0
+	mov si, crt_82730_cb_status
 	jmp near ww_pointer_calc_coords
 
 int28_fn_22_set_disp_list:		; 0914A
@@ -4375,8 +4375,8 @@ crt_check_cursor_blink_tick:		; 09588
 	call crt_swap_active_line_buffers
 	mov ax, crt_dma_line_table_entry
 	call crt_dma_make_phys_desc
-	xor byte [cs:fdc_drive_flags_0], 0x80
-	mov word [cs:fdc_drive_cyl_0], 0xffff
+	xor byte [cs:crt_line_buf_toggle], 0x80
+	mov word [cs:crt_cursor_col_cache], 0xffff
 	mov word [bx + CCB_ESC_HANDLER], crt_esc_dispatch_reset
 .ret:					; 095CA
 	ret
@@ -4393,7 +4393,7 @@ crt_reset_blink_state:			; 095CB
 	mov bx, [cs:kbd_buf_head]
 	mov [cs:kbd_buf_tail], bx
 	push dx
-	xor byte [cs:fdc_drive_flags_0], 0x80
+	xor byte [cs:crt_line_buf_toggle], 0x80
 	mov bx, [cs:xios4_cur_window_ptr]
 	call crt_update_cursor_dispatch
 	pop dx
@@ -4410,16 +4410,16 @@ kbd_disabled_flag:
 
 xios_crt_trigger_ca:			; 09601
 	mov al, 1
-	mov [cs:fdc_drive_type_0], ax
+	mov [cs:crt_82730_cb_status], ax
 
 crt_post_cmd_wait:			; 09607
 	mov dx, PORT_CRT_CA
 	out dx, al
 
 .cmd_ready:				; 0960B
-	cmp [cs:fdc_drive_type_0], al
+	cmp [cs:crt_82730_cb_status], al
 	je .cmd_ready
-	mov word [cs:fdc_drive_type_0], 0x900
+	mov word [cs:crt_82730_cb_status], 0x900
 	ret
 	mov dx, [cs:xios_sysdat_segment_ptr]
 	jmp short crt_dma_store_phys_desc
@@ -4514,11 +4514,11 @@ crt_load_cursor_hardware_regs:		; 096CF
 	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
 	jne .ret
 	mov al, [bx + 0x75]
-	mov [cs:fdc_dpb_std_al0], al
+	mov [cs:crt_82730_text_al0_params], al
 	mov al, [bx + 0x74]
-	mov [cs:fdc_dpb_std_drm], al
+	mov [cs:crt_82730_text_drm_params], al
 	mov cx, [bx + 0x72]
-	mov [cs:fdc_dpb_current_format], cx
+	mov [cs:crt_82730_text_mode_params], cx
 	mov ah, 4
 	call xios_crt_trigger_ca
 .ret:					; 096F0
@@ -6121,7 +6121,7 @@ xios_nmi_handler:
 	mov byte [0x67], 0x50
 	mov ds, [cs:xios_sysdat_segment_val]
 	mov es, [cs:xios_sysdat_segment_val]
-	mov bx, fdc_drive_type_0
+	mov bx, crt_82730_cb_status
 	jmp near xios_diag_enter_menu
 
 xios_auxin_ds:
@@ -7700,7 +7700,7 @@ crt_init_hardware_display:		; 0B991
 	mov di, [bx + AUTOCONF_CRT_BUF_OFFSET]
 	mov byte [es:di + 1], 5
 	mov dx, cs
-	mov ax, fdc_drive_type_0
+	mov ax, crt_82730_cb_status
 	call crt_calc_20bit_phys_addr
 	add di, 0xe
 	stosw
@@ -7712,22 +7712,22 @@ crt_mode_switch:			; 0B9B7
 	out dx, al
 	push cs
 	pop es
-	mov di, fdc_drive_dph_0
-	mov ax, fdc_drive_dph_1
+	mov di, crt_82730_line_desc_table
+	mov ax, crt_82730_buf1_hdr
 	call crt_dma_make_phys_desc
-	mov ax, fdc_drive_dph_2
+	mov ax, crt_82730_buf2_hdr
 	call crt_dma_make_phys_desc
-	mov di, fdc_drive_0_dpb_ptr
-	mov ax, fdc_dpb_standard
+	mov di, crt_82730_dpb_desc_table
+	mov ax, crt_82730_text_timing_block
 	call crt_dma_make_phys_desc
 	mov ax, crt_dma_desc_block
 	call crt_dma_make_phys_desc
-	mov ax, fdc_dpb_3_ptr
+	mov ax, crt_82730_buf_tail_desc
 	push ax
-	mov di, fdc_drive_dph_1
+	mov di, crt_82730_buf1_hdr
 	call crt_dma_make_phys_desc
 	pop ax
-	mov di, fdc_drive_dph_2
+	mov di, crt_82730_buf2_hdr
 	call crt_dma_make_phys_desc
 	mov ax, [cs:xios_vram_base_seg]
 	mov es, ax
@@ -7825,7 +7825,7 @@ crt_mode_switch:			; 0B9B7
 	mov al, 0xa
 	mov ah, 9
 	sub_ah_dl			; 0BAB6
-	mov [cs:fdc_dpb_current_format], ax
+	mov [cs:crt_82730_text_mode_params], ax
 	mov al, 0
 	test byte [bx + NVM_SCROLL_MODE], 0xf0
 	je .setup_screen_width
@@ -7868,7 +7868,7 @@ crt_mode_switch:			; 0B9B7
 	mov [bx + CCB_SCROLL_MODE], al
 	mov al, [cs:xios_crt_50hz_60hz_flag]
 	mov [bx + CCB_BLINK_FLAG], al
-	mov ax, [cs:fdc_dpb_current_format]
+	mov ax, [cs:crt_82730_text_mode_params]
 	mov [bx + 0x72], ax
 	pop di
 	add bx, 0x94
@@ -7908,7 +7908,7 @@ crt_mode_switch:			; 0B9B7
 	rep movsb
 
 .init_done:				; 0BB66
-	cmp byte [cs:fdc_drive_type_0], 1
+	cmp byte [cs:crt_82730_cb_status], 1
 	je .init_done
 	mov ah, 4
 	call xios_crt_trigger_ca
@@ -9700,42 +9700,42 @@ dpc_release_shared_devices:		; 0CB3C
 	call dpc_release_printer
 	ret
 	align 2, db 0
-fdc_drive_type_0:
+crt_82730_cb_status:
 	db 0x01, 0x03
-fdc_drive_flags_0:
+crt_line_buf_toggle:
 	db 0x00, 0x00, 0x50, 0x00
-fdc_drive_dph_0:
+crt_82730_line_desc_table:
 	times 16 db 0
 	db 0xF7, 0xFF, 0x00, 0x00
-fdc_drive_cyl_0:
+crt_cursor_col_cache:
 	db 0xFF, 0xFF, 0xFF, 0xFF
-fdc_drive_0_dpb_ptr:
+crt_82730_dpb_desc_table:
 	times 8 db 0
-fdc_dpb_standard:
+crt_82730_text_timing_block:
 	db 0x00, 0x10, 0x03, 0x2F, 0x29, 0x06, 0x29, 0x06, 0x00, 0x00, 0x09, 0x00, 0x0A, 0x00, 0x05, 0x00
 	db 0x09, 0x06
-fdc_dpb_current_format:
+crt_82730_text_mode_params:
 	db 0x09, 0x00, 0x09, 0x00, 0x09, 0x09, 0x00, 0x00, 0x38, 0x01, 0x05, 0x00, 0x24, 0x00, 0x1E, 0x01
 	db 0x00, 0x00, 0x00, 0x00, 0x01, 0x47
-fdc_dpb_std_drm:
+crt_82730_text_drm_params:
 	db 0x03, 0x47, 0x04, 0xFA
-fdc_dpb_std_al0:
+crt_82730_text_al0_params:
 	db 0xF9, 0xFF
-fdc_dpb_alternate:
+crt_82730_gfx_timing_block:
 	db 0x00, 0x10, 0x03, 0x2F, 0x29, 0x06, 0x29, 0x06, 0x00, 0x00, 0x0F, 0x00, 0x10, 0x00, 0x05, 0x00
 	db 0x09, 0x06, 0x09, 0x08, 0x09, 0x00, 0x09, 0x09, 0x00, 0x00, 0x38, 0x01, 0x05, 0x00, 0x20, 0x00
 	db 0x20, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x47, 0x03, 0x47, 0x00, 0xFF, 0xFF, 0xFF
-fdc_drive_dph_1:
+crt_82730_buf1_hdr:
 	times 4 db 0
-fdc_drive_1_dpb_ptr:
+crt_dma_line_buf_0:
 	times 125 db 0
 	db 0x84, 0x00, 0x88, 0x00, 0x85, 0x00, 0x88
-fdc_drive_dph_2:
+crt_82730_buf2_hdr:
 	times 4 db 0
-fdc_drive_2_dpb_ptr:
+crt_dma_line_buf_1:
 	times 125 db 0
 	db 0x84, 0x00, 0x88, 0x00, 0x85, 0x00, 0x88
-fdc_dpb_3_ptr:
+crt_82730_buf_tail_desc:
 	db 0x00, 0x8E, 0x00, 0x00, 0x01, 0x83
 ; Intel 82730 CRT Text Coprocessor DMA Descriptors
 crt_dma_desc_count:
