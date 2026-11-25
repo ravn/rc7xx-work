@@ -5881,8 +5881,15 @@ fdc_dma_phys_addr_low:
 	db 0x00, 0x00
 fdc_dma_phys_addr_high:
 	db 0x00
+; Intel 80186 DMA Parameter Blok (12 bytes = 6 ord, overføres via fdc_send_dma_param_block)
+; Udfyldes dynamisk af fdc_setup_dma_descriptor før overførsel:
 fdc_dma_descriptor_block:
-	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	dw 0x0000			; +0: Kildeadresse lav (bits 0..15)
+	dw 0x0000			; +2: Kildeadresse høj (bits 16..19)
+	dw 0x0000			; +4: Destinationsadresse lav (bits 0..15)
+	dw 0x0000			; +6: Destinationsadresse høj (bits 16..19)
+	dw 0x0000			; +8: Transfer count (antal overførte bytes)
+	dw 0x0000			; +10: DMA Control Word (0xAE66 = read, 0x76A6 = write)
 fdc_multi_track_flag:
 	db 0x00
 fdc_rw_flags:
@@ -6146,11 +6153,15 @@ net_auxin_poll:
 	ret
 
 net_auxin_char_buf:
-	dw 0x0000
+	dw 0x0000			; Modtaget tegn / status
+
+; CCP/M-86 Queue Control Block (QCB) for netværks-konsol input (NetConI)
 net_auxin_queue_desc:
-	times 6 db 0
-		dw net_auxin_char_buf
-		db "NetConI "
+	dw 0x0000			; Q_LINK: Næste QCB i systemkø (sat af RTM)
+	dw 0x0000			; Q_NET: Netværks-ID / reserveret
+	dw 0x0000			; Q_FLAGS: Kø-statusflag
+	dw net_auxin_char_buf		; Q_BUF_PTR: Pointer til databuffer (1 ord)
+	db "NetConI "			; Q_NAME: 8-tegns unikt kø-navn i CCP/M-86
 net_auxin_ret:
 		ret
 
@@ -6268,13 +6279,17 @@ printer_wait_completion:		; 0A923
 	ret
 
 net_prn_buf_len:
-	db 0x00
+	db 0x00			; Antal tegn i netværksprinter-linjebuffer
 net_prn_line_buf:
-	times 127 db 0
+	times 127 db 0			; Linjebuffer for netværksprinter output (op til 127 tegn)
+
+; CCP/M-86 Queue Control Block (QCB) for netværks-konsol output (NetConO)
 net_prn_queue_desc:
-	times 6 db 0
-		dw net_prn_buf_len
-		db "NetConO "
+	dw 0x0000			; Q_LINK: Næste QCB i systemkø (sat af RTM)
+	dw 0x0000			; Q_NET: Netværks-ID / reserveret
+	dw 0x0000			; Q_FLAGS: Kø-statusflag
+	dw net_prn_buf_len		; Q_BUF_PTR: Pointer til databuffer
+	db "NetConO "			; Q_NAME: 8-tegns unikt kø-navn i CCP/M-86
 
 xios_prn_isr:
 	call sio_get_channel_b_struct
@@ -9702,14 +9717,20 @@ fdc_drive_2_dpb_ptr:
 	db 0x00, 0x85, 0x00, 0x88
 fdc_dpb_3_ptr:
 	db 0x00, 0x8E, 0x00, 0x00, 0x01, 0x83
+; Intel 82730 CRT Text Coprocessor DMA Descriptors
 crt_dma_desc_count:
-	db 0x09, 0x00
+	dw 0x0009			; Antal aktive scanlinjer pr. tegnrække (tekst: 9, grafik: 15)
 crt_dma_desc_buf_ptr:
-	db 0x50, 0x87
+	dw 0x8750			; Buffer-pointer til skærmattributter / tegnram
 crt_dma_desc_attr_ptr:
-	db 0x00, 0x88
+	dw 0x8800			; Attribut-deskriptor adresse
+
+; 82730 General Command Block (CB) / Line Parameter Block
 crt_dma_desc_block:
-	db 0x01, 0x83, 0x00, 0x04, 0x50, 0x8A, 0x00, 0x00
+	dw 0x8301			; Display mode command / status (80 tegn/linje, text mode)
+	dw 0x0400			; Scanlinjer og tegnrække-konfiguration
+	dw 0x8A50			; Linjeattributter og burst-parametre
+	dw 0x0000			; Link pointer til næste deskriptor (0 = kædeslut)
 
 vmenu_line_render_buffer:
 	db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
