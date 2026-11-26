@@ -4854,7 +4854,7 @@ io_seldsk:
 	or [cs:fdc_active_drive_mask], dx
 
 .dph_found:				; 09945
-	and al, 0xf7
+	and al, ~FDC_CTRL_PRECOMP_EN & 0xFF	; sluk forhåndskomp.
 	mov_ah_al			; 09947
 	and al, 0xf0
 	mov_al_ah			; 0994B
@@ -4922,7 +4922,7 @@ io_read:
 .read_transfer_done:			; 099B0
 	mov byte [cs:fdc_rw_flags], 8
 	and [cs:fdc_rw_flags], al
-	and al, 0xf7
+	and al, ~FDC_CTRL_PRECOMP_EN & 0xFF	; sluk forhåndskomp.
 	push ax
 	mov bx, dph_drive_a
 	mov al, 0x14
@@ -5008,7 +5008,7 @@ io_write:
 .write_transfer_done:			; 09A70
 	mov byte [cs:fdc_rw_flags], 8
 	and [cs:fdc_rw_flags], al
-	and al, 0xf7
+	and al, ~FDC_CTRL_PRECOMP_EN & 0xFF	; sluk forhåndskomp.
 	push ax
 	mov bx, dph_drive_a
 	mov al, 0x14
@@ -5610,7 +5610,7 @@ fdc_transfer_isr:
 	mov dx, PORT_FDC_CMD
 	in al, dx
 	mov [cs:fdc_status_reg_0], al
-	mov al, 0xd0
+	mov al, FDC_CMD_FORCE_INT
 	out dx, al
 	mov cx, 9
 
