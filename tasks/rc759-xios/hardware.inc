@@ -52,15 +52,20 @@ RTC_REG_DAY_OF_WEEK     equ 0x05        ; Day of week (1-7)
 RTC_REG_DAY             equ 0x06        ; Day of month (01-31, BCD)
 RTC_REG_MONTH           equ 0x07        ; Month (01-12, BCD)
 RTC_REG_RAM_BASE        equ 0x08        ; Scratchpad RAM (8 bytes, 0x08..0x0F)
-RTC_REG_STATUS          equ 0x10        ; Status bit (Ready / IRQ flag)
-RTC_REG_CTL             equ 0x11        ; Interrupt Control register
-RTC_REG_INT_STATUS      equ 0x12        ; Interrupt Status register (clears on read)
-RTC_REG_ALARM_SEC       equ 0x13        ; Alarm compare: Seconds
-RTC_REG_ALARM_MIN       equ 0x14        ; Alarm compare: Minutes
-RTC_REG_ALARM_HOUR      equ 0x15        ; Alarm compare: Hours
-RTC_REG_ALARM_DOW       equ 0x16        ; Alarm compare: Day of week
-RTC_REG_ALARM_DAY       equ 0x17        ; Alarm compare: Day of month
-RTC_REG_ALARM_MONTH     equ 0x18        ; Alarm compare: Month
+; MM58167A Control registers (A4=1, adresser 0x10-0x1F)
+; Reference: RC759 CPU Board Reference Manual (RCSL-99-0-00825) §5, s.22-27
+RTC_REG_STATUS          equ 0x10        ; alias: Interrupt Status (R) — bevaret for kompatibilitet
+RTC_REG_INT_STATUS      equ 0x10        ; Interrupt Status (R): hvilke hændelser er pending
+RTC_REG_CTL             equ 0x11        ; Interrupt Control (W): aktivér interrupt-kilder (D0-D7)
+                                        ;   D0=rollover, D1=1/10s, D2=sek, D3=min, D4=time
+                                        ;   D5=ugedag, D6=dag, D7=måned
+                                        ;   Control-reg bits: B2=start(1)/stop(0), B3=tæller(0)/latch(1)
+                                        ;   B4-B7=klokfrekvens, B0-B1=altid 0
+RTC_REG_CRESET          equ 0x12        ; Counter Reset (W): nulstil tæller(e) via bit-maske D0-D7
+RTC_REG_LRESET          equ 0x13        ; Latch Reset (W): nulstil latch(er) via bit-maske D0-D7
+RTC_REG_STATUS_BIT      equ 0x14        ; Status bit (R): D0=1 hvis tæller ændret under læsning
+RTC_REG_GO              equ 0x15        ; GO Command (W): nulstil sekund+brøkdel-tæller præcist
+RTC_REG_STANDBY_INT     equ 0x16        ; Standby Interrupt (W): D0=1 aktivér standby-interrupt
 RTC_REG_COUNT_RESET     equ 0x19        ; Counter reset register
 RTC_REG_RAM_RESET       equ 0x1A        ; RAM reset register
 

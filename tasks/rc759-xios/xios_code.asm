@@ -7197,13 +7197,14 @@ rtc_1sec_isr:
 	jmp short .rtc_1sec_done
 
 .rtc_1sec_notify:			; 0AEFE
-	; MM58167A: interrupt ryddes normalt ved LÆSNING af reg 0x10 (Interrupt Output).
-	; Denne skriv til 0x07 (Month-tæller) med 0xC4 er RC759-specifik — muligvis:
-	; a) Adresselinje-inversion i RC759-kredsløb: XIOS 0x07 → MM58167A 0x0F (Month RAM/compare)
-	; b) rtc_write_reg's bit-6-strobe bruges som RC759-specifik rearm-mekanisme
-	; Ref.: 1989 National Real Time Clock Handbook (bitsavers rsync), Fig.1 s. 1-39
+	; Skriver 0xC4 til RTC_REG_MONTH (0x07, måned-tæller) som klokfrekvens-interrupt-håndtering.
+	; Ref.: RC759 CPU Reference Manual RCSL-99-0-00825 §5 (s.22-27):
+	;   Control-reg (0x11) initialiseres med 0x04 = B2=1(start), B3=0(tæller-tilstand).
+	;   Med B3=0 skrives 0xC4 til selve TÆLLER-registeret (ikke alarm-latch).
+	;   0xC4 som månedsværdi er ugyldigt BCD — præcis funktion ukendt (original kilde tabt).
+	;   Sandsynligvis RC759-hardware-specifik interrupt-kvittering via kredsløbets glue-logik.
 	mov al, RTC_REG_MONTH
-	mov ah, 0xc4			; RC759-specifik RTC rearm/kvittering (se kommentar ovenfor)
+	mov ah, 0xc4			; ukendt RC759-specifik interrupt-kvittering (orig. kilde tabt)
 	call rtc_write_reg
 
 .rtc_1sec_done:				; 0AF05
