@@ -3020,7 +3020,7 @@ io_statline:
 	rep movsw
 
 .check_status_bits:			; 08CE4
-	mov cx, [bx + NVM_STOP_PARITY]
+	mov cx, [bx + 0x0e]		; DRI CCB+0x0E (c_ext/status felt), bit 7 = printer status
 	test cx, 0x80
 	je .check_other_status
 	mov word [cs:vmenu_buf_status_flags], 0x5392
@@ -6255,16 +6255,17 @@ xios_nmi_handler:
 	mov [bx + 8], bp
 	mov [bx + 0xa], si
 	mov [bx + 0xc], di
-	mov [bx + NVM_STOP_PARITY], sp
-	mov [bx + 0x10], cs
+	; CPU-kontekst gem ved BX=0x0200 (IVT-dataområde) — NVM-equates passer ikke her
+	mov [bx + 0x0e], sp	; +0x0E: SP (stak pointer)
+	mov [bx + 0x10], cs	; +0x10: CS (kodesegment)
 	mov ax, [cs:xios_auxin_ds]
-	mov [bx + NVM_SCROLL_MODE], ax
-	mov [bx + NVM_FLOPPY_TIMEOUT], ss
-	mov [bx + NVM_DEFAULT_FG_COLOR], es
+	mov [bx + 0x12], ax	; +0x12: DS (datasegment)
+	mov [bx + 0x14], ss	; +0x14: SS (staksegment)
+	mov [bx + 0x16], es	; +0x16: ES (extra segment)
 	pop ax
-	mov [bx + NVM_CURRENT_YEAR], ax
+	mov [bx + 0x18], ax	; +0x18: IP/FLAGS (fra stakken)
 	pop ax
-	mov [bx + NVM_DISK_BUFFERS], ax
+	mov [bx + 0x1a], ax	; +0x1A: FLAGS
 	pop ax
 	mov [bx + 0x1C], ax
 	mov byte [0x67], 0x50
@@ -6348,6 +6349,9 @@ net_auxin_queue_desc:				; CCP/M-86 Queue Control Block (16 bytes)
 net_auxin_ret:
 		ret
 
+; NB: I dette og de efterfølgende SIO ISR-funktioner er BX = sio_chan_a_ctrl_block (ikke NVRAM).
+; NVM_DISK_BUFFERS/NVM_MDISK_SIZE/NVM_SCROLL_MODE etc. herunder er SIO-bufferfelter
+; der tilfældigvis har samme offset-værdier som NVRAM-equatene.
 sio_auxin_read_char:
 	cli
 	call sio_check_rx_status
