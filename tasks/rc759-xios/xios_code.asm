@@ -238,7 +238,6 @@ xios_sup_para_base_val:
 ; Reference: DRI xios.a86 p. 13 (XIOS HEADER AND CCP/M INTERFACE)
 ;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
 ; ===========================================================================
-xios_config_table:
 xt_tick:
 	db 0x00				; xt_tick (system tick flag)
 xt_ticks_sec:
@@ -492,7 +491,6 @@ lcb_2:	DRI_LCB				; List device 2
 ;   http://www.cpm.z80.de/download/ccpmv31.zip  (xios/xios.a86)
 ; -----------------------------------------------------------------------------
 
-i_keyboard:
 kbd_handler:				; 07A93 / 000002F3
 	call xios_switch_to_priv_stack	; Skift til intern XIOS stak
 	cmp byte [cs:crt_is_blanked_flag], 0xff	; Skærm slukket / blanked pga. inaktivitet?
@@ -682,7 +680,6 @@ kbd_special_keys_table:			; RC759 special/modifier scan-kode tabel (16 bytes)
 	call xios_switch_to_priv_stack	; 07BFA
 	cld				; 07BFD
 
-i_crt:
 crt_init_irst_ca:			; 07BFE
 	mov dx, PORT_CRT_RESET		; 07BFE
 	out dx, ax			; 07C01
@@ -5577,7 +5574,6 @@ fdc_wait:				; 09F4D
 ; 4. Kvitterer med EOI via eoi_helper.
 ; 5. Vækker den ventende proces ved at signalere Flag 8 ("Floppy disk flag").
 ; -----------------------------------------------------------------------------
-i_disk:
 fdc_transfer_isr:
 	call xios_switch_to_priv_stack
 	mov ds, [cs:xios_sysdat_segment_val]
@@ -7040,7 +7036,6 @@ con_status_poll:			; 0AD8E
 .ret:					; 0AD9A
 	ret
 
-i_printer:
 prn_strobe_isr:
 	call xios_switch_to_priv_stack
 	mov al, 0x80
@@ -7129,11 +7124,13 @@ xios_hook_far_ret:
 
 xios_hook_timer_off:
 	dw xios_hook_far_ret
+; xios_fixup_target_1 = xios_hook_timer_seg: FIXUP_CODE-makroen (xios.asm) patcher dette segment-ord
 xios_fixup_target_1:
 xios_hook_timer_seg:
 	dw 0x0000			; 0AEC7  Segment (fixed up at load time)
 xios_hook_sec_off:
 	dw xios_hook_far_ret
+; xios_fixup_target_2 = xios_hook_sec_seg: FIXUP_CODE-makroen (xios.asm) patcher dette segment-ord
 xios_fixup_target_2:
 xios_hook_sec_seg:
 	dw 0x0000			; 0AECB  Segment (fixed up at load time)
@@ -9973,8 +9970,7 @@ vmenu_screen_line_table:
 	dw vmenu_line_render_buffer
 ; Pointer til standardskrifttype i Piccoline Boot-EPROM (0xFFF8:0000)
 ; efterfulgt af tabel over konsollernes custom font far-pointere
-xios_crt_font_ptr:
-xios_crt_font_rom_ptr:
+xios_crt_font_ptr:			; = xios_crt_font_rom_ptr (default font far-pointer, 0xFFF8:0000)
 	dw 0x0000			; Offset i Boot-ROM
 	dw 0xFFF8			; Segment 0xFFF8 (fysisk 0xFFF80 i EPROM)
 xios_crt_custom_font_ptrs:
