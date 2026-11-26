@@ -132,6 +132,8 @@ PORT_ISBX_TC            equ 0x0330      ; iSBX Terminal Count
 ; Intel 80186 On-Chip Peripheral Control Block (PCB at 0xFF00 - 0xFFFF)
 ; -----------------------------------------------------------------------------
 PORT_PCB_EOI            equ 0xFF22      ; End Of Interrupt register
+PCB_EOI_NONSPEC         equ 0x8000      ; 80186 PCB: Non-specific EOI (bit 15 = kvitter højest prioritet)
+PIC_EOI_NONSPEC         equ 0x20        ; 8259A PIC: Non-specific EOI (OCW2 bit 5)
 PORT_PCB_POLL           equ 0xFF24      ; Poll register
 PORT_PCB_POLLST         equ 0xFF26      ; Poll status register
 PORT_PCB_IMR            equ 0xFF28      ; Interrupt Mask Register

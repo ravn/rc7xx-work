@@ -106,7 +106,8 @@ AUTOCONF_DISPLAY_MODE	equ 0x12		; Byte: Alias for monitor type (bit 0: 0=farve, 
 AUTOCONF_NUM_FLOPPIES	equ 0x13		; Byte: Antal tilkoblede floppydrev (0..4)
 AUTOCONF_RESERVED_20	equ 0x14		; Word: Reserveret
 AUTOCONF_KBD_NATIONALITY	equ 0x16		; Byte: Tastatur nationalitetskode / dip switch (0..15)
-AUTOCONF_SYS_TYPE	equ 0x17		; Byte: Systemtype (0x50 = RC759 Piccoline)
+AUTOCONF_SYS_TYPE	equ 0x17		; Byte: Systemtype
+AUTOCONF_SYS_RC759	equ 0x50		; Systemtype: RC759 Piccoline (sammenlign med bit 5 nulstillet)
 
 ; =============================================================================
 ; Piccoline Non-Volatile Memory (NVRAM) Layout (INT 28h Func 3 / xios_nvram_table)
@@ -416,9 +417,22 @@ int28_fn_53_version:			; 078B9
 	mov bx, 0x206		; BX: supplerende version/revision-information
 	ret
 
+; RTM supervisor call-numre (CL-parameter til rtm_process_svc_call):
+RTM_SVC_FLAG_WAIT   equ 0x83	; Vent til flag DL er sat af anden proces
+RTM_SVC_TIMER_WAIT  equ 0x84	; Vent DX timer-ticks (passivér processen)
+RTM_SVC_SET_FLAG    equ 0x85	; Sæt RTM hændelse-flag DX
+RTM_SVC_MX_INIT     equ 0x86	; Initialiser mutex QCB fra DX (opsætning)
+RTM_SVC_MX_ATTACH   equ 0x87	; Tilknyt MSG til MX-kø / ikke-blokerende kø-modtagelse
+RTM_SVC_MX_REQUEST  equ 0x89	; Anmod om mutex (blokerende) / send til kø
+RTM_SVC_MX_RELEASE  equ 0x8b	; Frigiv mutex efter brug / signal
+RTM_SVC_SLEEP       equ 0x8d	; Sæt proces i dvale DX ticks
+RTM_SVC_YIELD       equ 0x8e	; Giv CPU-slice tilbage (omplan uden at vente)
+RTM_SVC_DEV_ACQUIRE equ 0xa0	; Optag device (printer/konsol) DL
+RTM_SVC_DEV_RELEASE equ 0xa1	; Frigiv device (printer/konsol)
+
 rtm_set_flag:				; 078C0
 	push dx
-	mov cl, 0x85			; RTM supervisor call 0x85 = SET_FLAG (sæt RTM hændelse-flag DX)
+	mov cl, RTM_SVC_SET_FLAG	; sæt RTM hændelse-flag DX
 	call xios_rtm_svc_call
 	pop dx
 	test ax, ax
@@ -429,7 +443,7 @@ rtm_set_flag:				; 078C0
 	ret
 
 rtm_timer_wait:				; 078D1
-	mov cl, 0x84			; RTM supervisor call 0x84 = TIMER_WAIT (vent på timer i DX ticks)
+	mov cl, RTM_SVC_TIMER_WAIT	; vent DX timer-ticks
 
 rtm_process_svc_call:			; 078D3
 	mov bx, [cs:sysdat_rlr]
@@ -3285,13 +3299,13 @@ int28_fn_00_graphics_mode:		; 08E55
 	stosw
 	add ax, strict word 0x10	; 08EFD  05 10 00
 	loop .fill_entry_words
-	mov word [es:di], 0x8200
+	mov word [es:di], 0x8200	; 82730: cmd=0x82 (line descriptor afslutning), param=0
 	inc si
 	inc si
 	inc dx
 	cmp dl, 0x10
 	jb .fill_display_list_loop
-	mov word [es:di], 0x8100
+	mov word [es:di], 0x8100	; 82730: cmd=0x81 EOF (end of frame), param=0
 	mov ax, 0xccc0
 	cmp byte [cs:xios_is_color_display], 0xff
 	jne .setup_palette
@@ -3374,14 +3388,14 @@ crt_set_display_mode_timings:		; 08FE7
 	je crt_set_text_timings_and_flip
 
 crt_set_graphics_timings:		; 08FEE
-	mov word [cs:crt_dma_desc_count], 0x000f
-	mov word [cs:crt_dma_desc_buf_ptr], 0x8723
+	mov word [cs:crt_dma_desc_count], 0x000f	; 16 scanlinjer/tegnrække (grafiktilstand, LPR=15)
+	mov word [cs:crt_dma_desc_buf_ptr], 0x8723	; 82730: cmd=0x87 LD_MAX_DMA_COUNT, param=0x23=35 (grafik)
 	mov si, crt_82730_gfx_timing_block
 	jmp short crt_flip_page_and_copy
 
 crt_set_text_timings_and_flip:		; 09001
-	mov word [cs:crt_dma_desc_count], 0x0009
-	mov word [cs:crt_dma_desc_buf_ptr], 0x8750
+	mov word [cs:crt_dma_desc_count], 0x0009	; 10 scanlinjer/tegnrække (tekst, LPR=9)
+	mov word [cs:crt_dma_desc_buf_ptr], 0x8750	; 82730: cmd=0x87 LD_MAX_DMA_COUNT, param=0x50=80 (tekst)
 	mov si, crt_82730_text_timing_block
 
 crt_flip_page_and_copy:			; 09012
@@ -6034,7 +6048,7 @@ fdc_int11_handler:
 	push dx
 	mov [cs:fdc_isr_saved_ax], ax
 	mov dx, PORT_PCB_EOI
-	mov ax, 0x8000
+	mov ax, PCB_EOI_NONSPEC
 	out dx, ax
 	mov ax, [cs:fdc_isr_saved_ax]
 	pop dx
@@ -6737,7 +6751,7 @@ xios_sio_isr_rx_check:			; 0AB06
 
 pic_send_eoi_command:			; 0ABB5
 	mov dx, PORT_PCB_EOI
-	mov ax, 0x8000
+	mov ax, PCB_EOI_NONSPEC
 	out dx, ax
 	ret
 
@@ -7190,10 +7204,10 @@ rtc_1sec_isr:
 ; Intel 80186 ICU: http://www.bitsavers.org/components/intel/80186/270788-001_80186_80188_80C186_80C188_Hardware_Reference_Manual_1990.pdf
 ; -----------------------------------------------------------------------------
 eoi_helper:				; 0AF11
-	mov al, 0x20
+	mov al, PIC_EOI_NONSPEC
 	out PORT_PIC_CMD, al
 	mov dx, PORT_PCB_EOI
-	mov ax, 0x8000
+	mov ax, PCB_EOI_NONSPEC
 	out dx, ax
 	ret
 
@@ -8325,7 +8339,7 @@ xios_init_entry:
 	call ppi_set_nvram_bank
 	mov bx, xios_autoconfig_table
 	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
-	cmp byte [bx + AUTOCONF_SYS_TYPE], 0x50
+	cmp byte [bx + AUTOCONF_SYS_TYPE], AUTOCONF_SYS_RC759
 	jne .init_zero_bss_buffers
 	xor_ax_ax			; 0BDC1
 	push ds
@@ -8366,7 +8380,7 @@ xios_init_entry:
 	loop .init_bss_clear_loop
 	mov bx, xios_autoconfig_table
 	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
-	cmp byte [bx + AUTOCONF_SYS_TYPE], 0x50
+	cmp byte [bx + AUTOCONF_SYS_TYPE], AUTOCONF_SYS_RC759
 	jne .init_next_ccb_ptr
 	xor_ax_ax			; 0BE04
 	mov es, ax
@@ -8384,7 +8398,7 @@ xios_init_entry:
 .init_next_ccb_ptr:			; 0BE16
 	mov bx, xios_autoconfig_table
 	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
-	cmp byte [bx + AUTOCONF_SYS_TYPE], 0x50
+	cmp byte [bx + AUTOCONF_SYS_TYPE], AUTOCONF_SYS_RC759
 	je .init_dph_tables
 	mov bx, cs
 	mov di, 0xc
@@ -8582,7 +8596,7 @@ xios_init_entry:
 	call crt_init_hardware_display
 	mov bx, xios_autoconfig_table
 	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
-	cmp byte [bx + AUTOCONF_SYS_TYPE], 0x50
+	cmp byte [bx + AUTOCONF_SYS_TYPE], AUTOCONF_SYS_RC759
 	jne .init_check_min_ticks
 	mov word [cs:xios_mx_low_mem_reserve], 0x18	; 0BFD8  mov word [cs:0x593d], 0x18
 	jmp short .init_check_min_ticks
