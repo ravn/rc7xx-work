@@ -176,6 +176,7 @@
 - **[zcc+llvmz80 z88dk integration — ACTIVE](project_zcc_llvmz80_sdcc_triple_blocker.md) — 2026-10-27: rt.lib wiring Phase 1+2 done; PR #90 rebased; zlfn PR #112 coord; umulhisi3 bug tracked; issue #127 reply pending**
 - [User Profile](user_profile.md) — experienced dev, Z80/LLVM/SDCC, CLion, Docker, no brew
 - [Host: sonnyboy](reference_host_sonnyboy.md) — Ubuntu 26.04 x86_64, /home/ravn/z80, headless; upstream LLVM at ~/llvm-upstream/
+- [Bitsavers rsync + 80186/MM58167A fund](reference_bitsavers_rsync.md) — rsync://bitsavers.org/bitsavers/; 80186 TCW-bits + MM58167A reg-kort; PDF'er i scratch/tmp/
 - [Memory lives in tasks/memory/](feedback_no_claude_memory.md) — canonical here; NEVER ~/.claude/; also MEMORY_LAYOUT.md + MEMORY_CODEGEN.md + MEMORY_PARKED.md
 - **[Fingerprint build after 2 no-change edits](feedback_fingerprint_build_after_two_no_change_edits.md) — HARD: add undeniable marker + prove new bytes run before edit #3** · **[Validate full feedback loop on first contradiction](feedback_validate_full_feedback_loop.md) — early gate before the fingerprint rule: verify artifact mtime/hash before forming any new hypothesis**
 

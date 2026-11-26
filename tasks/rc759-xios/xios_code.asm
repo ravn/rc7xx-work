@@ -7197,10 +7197,13 @@ rtc_1sec_isr:
 	jmp short .rtc_1sec_done
 
 .rtc_1sec_notify:			; 0AEFE
-	; Skriver 0xC4 til MM58167A MONTH-register — sandsynligvis afbrydelseskvittering/genarm.
-	; MM58167A-datasheet-side bekræfter protokol; nøjagtig funktion af 0xC4 ukendt.
+	; MM58167A: interrupt ryddes normalt ved LÆSNING af reg 0x10 (Interrupt Output).
+	; Denne skriv til 0x07 (Month-tæller) med 0xC4 er RC759-specifik — muligvis:
+	; a) Adresselinje-inversion i RC759-kredsløb: XIOS 0x07 → MM58167A 0x0F (Month RAM/compare)
+	; b) rtc_write_reg's bit-6-strobe bruges som RC759-specifik rearm-mekanisme
+	; Ref.: 1989 National Real Time Clock Handbook (bitsavers rsync), Fig.1 s. 1-39
 	mov al, RTC_REG_MONTH
-	mov ah, 0xc4			; MM58167A interrupt-kvittering (nøjagtig protokol ukendt)
+	mov ah, 0xc4			; RC759-specifik RTC rearm/kvittering (se kommentar ovenfor)
 	call rtc_write_reg
 
 .rtc_1sec_done:				; 0AF05
@@ -9296,7 +9299,7 @@ cas_stop_motor_and_timer:		; 0C747
 	out dx, ax
 	mov dx, PORT_PCB_T0_MAXB
 	out dx, ax
-	mov ax, 0xC013			; 80186 T0_CON: EN|INH|MC(B)|EXT|RUN (bånd-timing, ekstern ur)
+	mov ax, PCB_TCR_EN|PCB_TCR_INH|PCB_TCR_RTG|PCB_TCR_ALT|PCB_TCR_CONT	; 0xC013: internt ur, MAXB, continuous
 	mov dx, PORT_PCB_T0_CON
 	out dx, ax
 	mov ax, 1
@@ -9494,7 +9497,7 @@ cas_write_leader_and_header:		; 0C898
 	cli
 	push bx
 	push cx
-	mov ax, 0xC013			; 80186 T0_CON: EN|INH|MC(B)|EXT|RUN (bånd-timing, ekstern ur)
+	mov ax, PCB_TCR_EN|PCB_TCR_INH|PCB_TCR_RTG|PCB_TCR_ALT|PCB_TCR_CONT	; 0xC013: internt ur, MAXB, continuous
 	mov dx, PORT_PCB_T0_CON
 	out dx, ax
 	mov ax, 0x5dc

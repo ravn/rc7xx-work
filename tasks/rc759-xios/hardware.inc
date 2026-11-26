@@ -184,7 +184,7 @@ PORT_PCB_IRR            equ 0xFF2E      ; Interrupt Request Register
 PORT_PCB_T0_CNT         equ 0xFF50      ; Timer 0 Count register
 PORT_PCB_T0_MAXA        equ 0xFF52      ; Timer 0 Max Count A
 PORT_PCB_T0_MAXB        equ 0xFF54      ; Timer 0 Max Count B
-PORT_PCB_T0_CON         equ 0xFF56      ; Timer 0 Mode / Control register
+PORT_PCB_T0_CON         equ 0xFF56      ; Timer 0 Mode / Control register (se PCB_TCR_* nedenfor)
 
 PORT_PCB_T1_CNT         equ 0xFF58      ; Timer 1 Count register
 PORT_PCB_T1_MAXA        equ 0xFF5A      ; Timer 1 Max Count A
@@ -194,6 +194,22 @@ PORT_PCB_T1_CON         equ 0xFF5E      ; Timer 1 Mode / Control register
 PORT_PCB_T2_CNT         equ 0xFF60      ; Timer 2 Count register
 PORT_PCB_T2_MAXA        equ 0xFF62      ; Timer 2 Max Count A
 PORT_PCB_T2_CON         equ 0xFF66      ; Timer 2 Mode / Control register
+
+; 80186 PCB Timer Control Register bit-definitioner (Timers 0 og 1, Fig. 56 iAPX186 HW Ref. Manual)
+; Reference: 270788-001 iAPX 80186/80188 Hardware Reference Manual, s. 6-2
+PCB_TCR_EN              equ 0x8000      ; bit 15: Timer Enable (1=kørende)
+PCB_TCR_INH             equ 0x4000      ; bit 14: Inhibit: 1=skriv til EN er effektivt
+PCB_TCR_INT             equ 0x2000      ; bit 13: Interrupt Enable (1=interrupt ved max count)
+PCB_TCR_RIU             equ 0x1000      ; bit 12: Register In Use (read-only statusbit)
+PCB_TCR_MC              equ 0x0020      ; bit 5:  Max Count: 0=MAXA, 1=MAXA+MAXB alternerende
+PCB_TCR_RTG             equ 0x0010      ; bit 4:  Retrigger enable
+PCB_TCR_P               equ 0x0008      ; bit 3:  Prescale (1=÷4 ekstra)
+PCB_TCR_EXT             equ 0x0004      ; bit 2:  External CLK (1=ekstern tasterpin)
+PCB_TCR_ALT             equ 0x0002      ; bit 1:  Alternate: 0=brug MAXA, 1=brug MAXB
+PCB_TCR_CONT            equ 0x0001      ; bit 0:  Continuous (1=genstart automatisk)
+; 0xC013 = PCB_TCR_EN|PCB_TCR_INH|PCB_TCR_RTG|PCB_TCR_ALT|PCB_TCR_CONT
+;        = Timer kørende, internt ur (CPU÷4), retriggerable, bruger MAXB, continuous
+;        = Bruges til kassettebånd bit-bredde-måling (MAXA=MAXB=0xFFFF)
 
 PORT_PCB_DMA0_SRCLO     equ 0xFFC0      ; DMA 0 Source Address (low)
 PORT_PCB_DMA0_SRCHI     equ 0xFFC2      ; DMA 0 Source Address (high)
