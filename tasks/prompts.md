@@ -2104,3 +2104,17 @@ Opdateret issue [#22](https://github.com/ravn/rc7xx-work/issues/22#issuecomment-
 > dette er et stort og gammelt projekt. JEg arbejder lige nu på at reverse engineere kildeteksten til CCP/M-86 operativysstem på rc759 piccoline. N UNdersøg først om der mangler mere, og hvis ikke så undersøg om du kan bygge ccpm.sys ud fra kildetekster (byg evt serienummer ind)
 
 Mangelanalyse + ccpm.sys-byg verificado. Fund: (1) RE-dækningen er komplet — ccpm.sys (77.568 B), XIOS1.CON og XIOS4.CON alle 100% byte-identiske ved frisk Docker-byg (genverificeret denne session). (2) GABE: ccpm.sys-oraklet lå kun i gitignorede scratch/tmp — nu versioneret i dist/ + SHA256SUMS, rebuild_and_verify.sh peger på dist/ med fallback. (3) GABE: pre-commit hooken dækkede kun XIOS-filer — nu også ccpm.asm/mod0-4/rsp_*/license.inc (lærdom fra 2026-11-24/25-bruddet). (4) Serienummer: fundet i DRI-kilde (INIT.SUP `serial db '654321'` placeholder, GENCCPM patcher pr. licensager — GENC1.C copynote); RC759 har licens 1034-0261, serienummer 007041 i alle 5 modulers copyright-strenge; ingen runtime-validering. Implementeret license.inc med LICENSE_NO/SERIAL-makroer i mod0-4; default-byg byte-identisk, -DSERIAL-override ændrer præcis de 5 serial-felter. Restierende kendte arbejdsopgaver (ikke blokerende): mod4_xios.asm er stadig den gamle monolit (TODO i ccpm.asm), ~1200 rå hex-data-restere i moduler/RSP'er, RSP pin/vout mangler standalone-orakler.
+
+## 2026-11-26 (RC759 — RSP-byg fra annoteret kilde, DRI-toolchain, instruktionsforbedringer)
+
+> xios skal bygges fra vores fuldt annoterede kildetekst
+> nasm kan ikke finde ud af at bygge rsp eller cmd filer.
+> forklar gerne din tankegang undervejs
+> vi kan godt bruge rasm86 til at oversætte DRI-modulerne med hvis det gør ting nemmere
+> du skal nok bruge rasm86, asm86 kan ikke lave rsp filer
+> du burde have viden om de origianle dri filer i din hukommelse?
+> hvorfor læste du ikk ehukommelsen ved start? Mangler du instruktioner?
+> det kan sagtens være at de instruktioner der har været til andre ai'ere, ikke er helt perfekte til dig
+> kan du forbedre instruktionerne så de passer bedre til dig?
+
+Resultat: (1) 5/5 standalone .RSP-mastere bygger byte-identiske mod SW1400-orakler (dist/genccpm-kit ekstraheret fra disk2.img); build_and_verify_rsp.sh + pre-commit-gate låser det. (2) DRI-værktøjskorte og -kilder lokaliseret (scratch/ccpm31-src D1-D12 inkl. GENCCPM C-kilde og RSP-kilder; emu2 headless ASM86 bygger CLOCK.A86 0 fejl; DR C RASM86 durker ikke paa `offset uda/10h`). (3) Instruktioner forbedret til Copilot CLI: memory-reglen laeftet til ⛔ TOP-PRIORITY-format (dokumenteret effektivt for de to andre ⛔-regler) + ny `session-start-memory`-skill der goer MEMORY.md-read til en harness-fraengt foerste handling paa genoptagne sessioner. (4) I gang: ccpm-from-annotated (mod4 region-vis).

@@ -45,6 +45,23 @@ Specific incidents this rule pins:
     second variant of the failing command, not just at the task's
     start.
 
+  - 2026-11-26, RC759 RSP reassembly after a COMPACTED resumption: the
+    session was handed a task-continuation summary and went straight into
+    chunk-ordering archaeology on the .RSP files (stale-bin confusion,
+    several probe rounds) — while `reference_ccpm86_rsp_process_model.md`
+    already documented the whole layout (header-stripped PD+UDA-first
+    placement in ccpm.sys, code-first in the on-disk files, GENCCPM
+    mechanism, per-process offsets) AND pointed at the original DRI
+    sources (`scratch/ccpm31-src/D7` GENCCPM, `D9` CLOCK.A86) and the
+    working DR C toolchain (`rc759-cmd-toolchain/drc-toolchain`, emu2
+    headless recipe in `reference_rc759_official_drc_disk.md`). The user
+    had to ask "burde du ikke have den viden i hukommelsen?".
+    **Trigger to generalize:** a context-compaction summary is a
+    SESSION START — the summary's next-steps never substitute for the
+    MEMORY.md read; on the first turn of a resumed session, grep
+    `tasks/memory/` for the task's domain nouns (RSP, GENCCPM, rasm86,
+    …) BEFORE the first investigative tool call.
+
   - The pre-existing [[feedback_consult_rules_before_acting]] covers
     "before commit/PR/issue" but fires too LATE for many tasks.  By
     the time the commit message is being drafted, the wrong approach

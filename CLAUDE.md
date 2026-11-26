@@ -16,9 +16,9 @@ This includes "parallel just in case" broad searches — they walk iCloud-synced
 
 Calling MAME binaries raw defaults to fullscreen exclusive mode with SDL input-grab on macOS, capturing mouse and keyboard and halting indefinitely on modal ROM warnings, which completely locks the user's desktop and forces a hard reboot (freeze incident 2026-10-19).
 
-## Memory — read at session start
+## ⛔ TOP-PRIORITY HARD RULE — read memory at every session start (incl. resumed/compacted)
 
-**Durable rules, preferences, and lessons live in `tasks/memory/` (index: `tasks/memory/MEMORY.md`). Read `MEMORY.md` at the start of every session, including after `/compact` or any context summarization — treat resumed context as a new session.** (migrated out of `~/.claude/` 2026-05-28, so it is no longer auto-injected). To record a durable note: add a file under `tasks/memory/` + a one-line index entry in `MEMORY.md`. **Never write to `~/.claude/`** — that harness default is OVERRIDDEN.
+**Durable rules, preferences, and lessons live in `tasks/memory/` (index: `tasks/memory/MEMORY.md`). Read `MEMORY.md` at the start of EVERY session — including a session that resumes from a context-compaction summary or `/compact`; treat resumed context as a brand-new session. On the first turn of a resumed session, grep `tasks/memory/` for the task's domain nouns BEFORE the first investigative tool call. A handoff summary's next-steps NEVER substitute for this read. This rule is also enforced as the project skill `session-start-memory` (.claude/skills/), which the harness surfaces as a mandatory first action — invoke it at session start.** (migrated out of `~/.claude/` 2026-05-28, so it is no longer auto-injected — the read is honor-system and has been skipped with costly re-derivation; incidents logged in `feedback_check_memory_before_coding.md`). To record a durable note: add a file under `tasks/memory/` + a one-line index entry in `MEMORY.md`. **Never write to `~/.claude/`** — that harness default is OVERRIDDEN.
 
 ## Project Goal
 
@@ -172,7 +172,9 @@ Sources use **C23 features that work in both clang and z88dk zsdcc 4.5.0**.
 
 - Record all user prompts in `tasks/prompts.md`. Plan in `tasks/todo.md`, lessons in `tasks/lessons.md`.
 - Think out loud. Never apologize. Be concise and accurate.
-- Enter plan mode for non-trivial tasks; re-plan if things go sideways. Verify changes (tests, MAME boot) before marking done.
+- **Plan before non-trivial tasks** (Claude Code: plan mode; Copilot CLI:
+  maintain the plan as sql todos or in `tasks/todo.md` — same rule, and
+  re-plan if things go sideways). Verify changes (tests, MAME boot) before marking done.
 - **Persistent memory lives in the project, never `~/.claude/`** — confirm the destination is inside this project before recording any durable note.
 - **Whenever you modify the compiler, always add a lit test** (in `llvm/test/CodeGen/Z80/`) pinning the instruction sequence with FileCheck — it is the CI-gated proof. If correctness is only observable at runtime, ALSO add a test-runner fixture (`z80-utils/test-runner/testcases/clang/*.c`, `/* expect 0xNNNN */`) — it complements, never replaces, the lit test.
 
