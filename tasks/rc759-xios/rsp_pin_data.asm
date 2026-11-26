@@ -6,6 +6,35 @@
 ; initialiseringsstak samt drev- og printerfejlmeddelelser.
 ; ===========================================================================
 
+; ---------------------------------------------------------------------------
+; PIN lokale variabler i datasegmentet (DS-relative offsets, 0x140-0x1A5)
+; Disse er i "Initialiserings-kontekst"-området, men IKKE stak — de er
+; PIN's arbejdsvariabler. Se rsp_pin_code.asm for brug.
+; ---------------------------------------------------------------------------
+pin_sysdat_ptr  equ 0x0140  ; far ptr (off:seg): CCB-tabel / SYSDAT-base (LES BX)
+pin_pd_ptr      equ 0x0144  ; word offset: pointer til Process Descriptor
+pin_pd_seg      equ 0x0146  ; word segment: segment-del af pin_pd_ptr (LES SI, [0x144])
+pin_flags       equ 0x0148  ; word: tilstandsflags
+pin_uda_seg     equ 0x014a  ; word: UDA-segment fra PD (PD_UDA)
+pin_cur_ccb     equ 0x0158  ; far ptr (off:seg): aktuel CCB (LES BX → [es:bx+0xA]=konsolnr)
+pin_prev_ccb    equ 0x015c  ; word offset: gemt forrige CCB-offset (ved konsol-skift)
+pin_prev_ccb_seg equ 0x015e ; word segment: segment-del af pin_prev_ccb
+pin_cnmode      equ 0x0166  ; word: konsoltilstand (fra pin_get_cons_mode / XIOS pxios1)
+pin_listroot    equ 0x016a  ; word: liste-rod-parameter til sleep/wake-kald
+pin_drvmask_ptr equ 0x016e  ; word: pointer ind i drev-maske-tabellen (init: 0x1A6)
+pin_cword       equ 0x017e  ; word: sidst læst konsol-input-tegn / konsol-word
+pin_drive_idx   equ 0x0188  ; word: drev-index tæller (0-15 i drev-scanneloop)
+pin_drive_mask  equ 0x018a  ; word: nuværende drev-bitmask-bit (venstre-skippes pr. iter.)
+pin_drive_avail equ 0x018c  ; word: tilgængelige drev bitmask (fra BDOS)
+pin_scan_max    equ 0x018e  ; byte: øvre grænse for cword-scanning (max. konsolantal?)
+pin_scan_step   equ 0x018f  ; byte: tilvækst for cword-scanning
+pin_scan_char   equ 0x0190  ; byte: scannet tegn / tastaturtilstand
+pin_scan_state  equ 0x0191  ; byte: tilstandsmaskine-værdi for scanning
+pin_mxq_count   equ 0x0192  ; byte: antal mutex-queue beskeder behandlet
+pin_suspend_flag equ 0x0193 ; byte: 0xFF=suspenderet, 0x00=kørende
+pin_drive_list  equ 0x0194  ; byte[]: liste af tilgængelige drev-bogstaver (ASCII)
+pin_drive_count equ 0x01a5  ; byte: antal fundne tilgængelige drev
+
 data_start:
   ; -------------------------------------------------------------------------
   ; RSP Header (4 bytes)

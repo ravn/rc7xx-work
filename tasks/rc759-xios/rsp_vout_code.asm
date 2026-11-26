@@ -75,9 +75,9 @@ vout_wakeup:                                     ; 12677
 vout_read_change_mxq:                                     ; 1268C
   push bp                                      ; 1268C  0x55
   db 0x8B, 0xEC                                ; 1268D  mov bp, sp
-  les bx, [0x144]                              ; 1268F  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 1268F  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x16]                       ; 12693  0x26, 0x8B, 0x47, 0x16
-  mov [0x234], ax                              ; 12697  0xA3, 0x34, 0x02
+  mov [vout_mxq_msg], ax                              ; 12697  0xA3, 0x34, 0x02
   mov al, 0x89                                 ; 1269A  0xB0, 0x89
   push ax                                      ; 1269C  0x50
   mov ax, 0x232                                ; 1269D  0xB8, 0x32, 0x02
@@ -89,9 +89,9 @@ vout_read_change_mxq:                                     ; 1268C
 vout_write_change_mxq:                                     ; 126A6
   push bp                                      ; 126A6  0x55
   db 0x8B, 0xEC                                ; 126A7  mov bp, sp
-  les bx, [0x144]                              ; 126A9  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 126A9  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x16]                       ; 126AD  0x26, 0x8B, 0x47, 0x16
-  mov [0x234], ax                              ; 126B1  0xA3, 0x34, 0x02
+  mov [vout_mxq_msg], ax                              ; 126B1  0xA3, 0x34, 0x02
   mov al, 0x8b                                 ; 126B4  0xB0, 0x8B
   push ax                                      ; 126B6  0x50
   mov ax, 0x232                                ; 126B7  0xB8, 0x32, 0x02
@@ -128,7 +128,7 @@ vout_make_file:                                     ; 126E3
   pop es                                       ; 126F0  0x07
   cld                                          ; 126F1  0xFC
   repne stosb                                  ; 126F2  0xF2, 0xAA
-  les bx, [0x140]                              ; 126F4  0xC4, 0x1E, 0x40, 0x01
+  les bx, [vout_sysdat_ptr]                              ; 126F4  0xC4, 0x1E, 0x40, 0x01
   mov al, [es:bx + 0x50]                       ; 126F8  0x26, 0x8A, 0x47, 0x50
   inc al                                       ; 126FC  0xFE, 0xC0
   mov [0x372], al                              ; 126FE  0xA2, 0x72, 0x03
@@ -162,8 +162,8 @@ vout_reset_file:                                     ; 12726
   mov al, 0                                    ; 12733  0xB0, 0x00
   mov [0x244], al                              ; 12735  0xA2, 0x44, 0x02
   mov ah, 0                                    ; 12738  0xB4, 0x00
-  mov [0x150], ax                              ; 1273A  0xA3, 0x50, 0x01
-  mov [0x14e], ax                              ; 1273D  0xA3, 0x4E, 0x01
+  mov [vout_q_end], ax                              ; 1273A  0xA3, 0x50, 0x01
+  mov [vout_q_start], ax                              ; 1273D  0xA3, 0x4E, 0x01
   pop bp                                       ; 12740  0x5D
   ret                                          ; 12741  0xC3
 
@@ -182,8 +182,8 @@ loc_1274F:                                     ; 1274F
   jmp short loc_12799                          ; 12755  0xEB, 0x42
 
 loc_12757:                                     ; 12757
-  mov ax, [0x14e]                              ; 12757  0xA1, 0x4E, 0x01
-  cmp ax, [0x150]                              ; 1275A  0x3B, 0x06, 0x50, 0x01
+  mov ax, [vout_q_start]                              ; 12757  0xA1, 0x4E, 0x01
+  cmp ax, [vout_q_end]                              ; 1275A  0x3B, 0x06, 0x50, 0x01
   jne loc_12765                                ; 1275E  0x75, 0x05
   mov al, [0x247]                              ; 12760  0xA0, 0x47, 0x02
   jmp short loc_1274F                          ; 12763  0xEB, 0xEA
@@ -201,9 +201,9 @@ loc_12765:                                     ; 12765
   mov byte [0x244], 0xff                       ; 12778  0xC6, 0x06, 0x44, 0x02, 0xFF
 
 loc_1277D:                                     ; 1277D
-  mov ax, [0x150]                              ; 1277D  0xA1, 0x50, 0x01
+  mov ax, [vout_q_end]                              ; 1277D  0xA1, 0x50, 0x01
   mov [0x393], al                              ; 12780  0xA2, 0x93, 0x03
-  mov ax, [0x150]                              ; 12783  0xA1, 0x50, 0x01
+  mov ax, [vout_q_end]                              ; 12783  0xA1, 0x50, 0x01
   mov al, ah                                   ; 12786  0x88, 0xE0
   mov [0x394], al                              ; 12788  0xA2, 0x94, 0x03
   mov al, 0x22                                 ; 1278B  0xB0, 0x22
@@ -221,10 +221,10 @@ loc_12799:                                     ; 12799
 
 loc_1279D:                                     ; 1279D
   mov byte [0x247], 0                          ; 1279D  0xC6, 0x06, 0x47, 0x02, 0x00
-  mov word [0x152], 0xffff                     ; 127A2  0xC7, 0x06, 0x52, 0x01, 0xFF, 0xFF
-  mov ax, [0x150]                              ; 127A8  0xA1, 0x50, 0x01
+  mov word [vout_char_pend], 0xffff                     ; 127A2  0xC7, 0x06, 0x52, 0x01, 0xFF, 0xFF
+  mov ax, [vout_q_end]                              ; 127A8  0xA1, 0x50, 0x01
   inc ax                                       ; 127AB  0x40
-  les bx, [0x144]                              ; 127AC  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 127AC  0xC4, 0x1E, 0x44, 0x01
   push ax                                      ; 127B0  0x50
   mov ax, [es:bx + 0x10]                       ; 127B1  0x26, 0x8B, 0x47, 0x10
   mov cx, 8                                    ; 127B5  0xB9, 0x08, 0x00
@@ -233,7 +233,7 @@ loc_1279D:                                     ; 1279D
   pop ax                                       ; 127BC  0x58
   xor dx, dx                                   ; 127BD  0x31, 0xD2
   db 0xF7, 0xF1                                ; 127BF  div cx
-  mov [0x150], dx                              ; 127C1  0x89, 0x16, 0x50, 0x01
+  mov [vout_q_end], dx                              ; 127C1  0x89, 0x16, 0x50, 0x01
   mov al, 0xff                                 ; 127C5  0xB0, 0xFF
   pop bp                                       ; 127C7  0x5D
   ret                                          ; 127C8  0xC3
@@ -267,9 +267,9 @@ loc_127E3:                                     ; 127E3
   mov byte [0x244], 0                          ; 127F4  0xC6, 0x06, 0x44, 0x02, 0x00
 
 loc_127F9:                                     ; 127F9
-  mov ax, [0x14e]                              ; 127F9  0xA1, 0x4E, 0x01
+  mov ax, [vout_q_start]                              ; 127F9  0xA1, 0x4E, 0x01
   mov [0x393], al                              ; 127FC  0xA2, 0x93, 0x03
-  mov ax, [0x14e]                              ; 127FF  0xA1, 0x4E, 0x01
+  mov ax, [vout_q_start]                              ; 127FF  0xA1, 0x4E, 0x01
   mov al, ah                                   ; 12802  0x88, 0xE0
   mov [0x394], al                              ; 12804  0xA2, 0x94, 0x03
   mov al, 0x21                                 ; 12807  0xB0, 0x21
@@ -284,9 +284,9 @@ loc_127F9:                                     ; 127F9
 
 loc_12818:                                     ; 12818
   mov [0x348], al                              ; 12818  0xA2, 0x48, 0x03
-  mov ax, [0x14e]                              ; 1281B  0xA1, 0x4E, 0x01
+  mov ax, [vout_q_start]                              ; 1281B  0xA1, 0x4E, 0x01
   inc ax                                       ; 1281E  0x40
-  les bx, [0x144]                              ; 1281F  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 1281F  0xC4, 0x1E, 0x44, 0x01
   push ax                                      ; 12823  0x50
   mov ax, [es:bx + 0x10]                       ; 12824  0x26, 0x8B, 0x47, 0x10
   mov cx, 8                                    ; 12828  0xB9, 0x08, 0x00
@@ -295,8 +295,8 @@ loc_12818:                                     ; 12818
   pop ax                                       ; 1282F  0x58
   xor dx, dx                                   ; 12830  0x31, 0xD2
   db 0xF7, 0xF1                                ; 12832  div cx
-  mov [0x14e], dx                              ; 12834  0x89, 0x16, 0x4E, 0x01
-  cmp dx, [0x150]                              ; 12838  0x3B, 0x16, 0x50, 0x01
+  mov [vout_q_start], dx                              ; 12834  0x89, 0x16, 0x4E, 0x01
+  cmp dx, [vout_q_end]                              ; 12838  0x3B, 0x16, 0x50, 0x01
   jne loc_12841                                ; 1283C  0x75, 0x03
   call vout_reset_file                               ; 1283E  0xE8, 0xE5, 0xFE
 
@@ -315,9 +315,9 @@ vout_read_voutq:                                     ; 12846
   ret                                          ; 12851  0xC3
 
 loc_12852:                                     ; 12852
-  les bx, [0x144]                              ; 12852  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12852  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x14]                       ; 12856  0x26, 0x8B, 0x47, 0x14
-  mov [0x234], ax                              ; 1285A  0xA3, 0x34, 0x02
+  mov [vout_mxq_msg], ax                              ; 1285A  0xA3, 0x34, 0x02
   mov word [0x238], 0x14c                      ; 1285D  0xC7, 0x06, 0x38, 0x02, 0x4C, 0x01
   mov al, 0x89                                 ; 12863  0xB0, 0x89
   push ax                                      ; 12865  0x50
@@ -335,9 +335,9 @@ loc_12879:                                     ; 12879
 vout_drain_voutq:                                     ; 1287B
   push bp                                      ; 1287B  0x55
   db 0x8B, 0xEC                                ; 1287C  mov bp, sp
-  les bx, [0x144]                              ; 1287E  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 1287E  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x14]                       ; 12882  0x26, 0x8B, 0x47, 0x14
-  mov [0x234], ax                              ; 12886  0xA3, 0x34, 0x02
+  mov [vout_mxq_msg], ax                              ; 12886  0xA3, 0x34, 0x02
   mov word [0x238], 0x14c                      ; 12889  0xC7, 0x06, 0x38, 0x02, 0x4C, 0x01
   mov byte [0x34a], 0                          ; 1288F  0xC6, 0x06, 0x4A, 0x03, 0x00
   mov byte [0x34b], 0                          ; 12894  0xC6, 0x06, 0x4B, 0x03, 0x00
@@ -394,9 +394,9 @@ vout_put_char:                                     ; 128E7
   cmp byte [0x14d], 0                          ; 128EF  0x80, 0x3E, 0x4D, 0x01, 0x00
   jne loc_12916                                ; 128F4  0x75, 0x20
   mov byte [0x14d], 0xff                       ; 128F6  0xC6, 0x06, 0x4D, 0x01, 0xFF
-  mov ax, [0x152]                              ; 128FB  0xA1, 0x52, 0x01
+  mov ax, [vout_char_pend]                              ; 128FB  0xA1, 0x52, 0x01
   inc ax                                       ; 128FE  0x40
-  mov [0x152], ax                              ; 128FF  0xA3, 0x52, 0x01
+  mov [vout_char_pend], ax                              ; 128FF  0xA3, 0x52, 0x01
   mov cl, [0x14c]                              ; 12902  0x8A, 0x0E, 0x4C, 0x01
   mov bx, ax                                   ; 12906  0x89, 0xC3
   mov [bx + 0x248], cl                         ; 12908  0x88, 0x8F, 0x48, 0x02
@@ -414,23 +414,23 @@ loc_12916:                                     ; 12916
 vout_get_char:                                     ; 1291A
   push bp                                      ; 1291A  0x55
   db 0x8B, 0xEC                                ; 1291B  mov bp, sp
-  mov ax, [0x154]                              ; 1291D  0xA1, 0x54, 0x01
+  mov ax, [vout_attr_pend]                              ; 1291D  0xA1, 0x54, 0x01
   inc ax                                       ; 12920  0x40
-  cmp ax, [0x156]                              ; 12921  0x3B, 0x06, 0x56, 0x01
+  cmp ax, [vout_attr_limit]                              ; 12921  0x3B, 0x06, 0x56, 0x01
   jne loc_129A6                                ; 12925  0x75, 0x7F
   call vout_read_buf                               ; 12927  0xE8, 0x9F, 0xFE
   rcr al, 1                                    ; 1292A  0xD0, 0xD8
   jae loc_1293C                                ; 1292C  0x73, 0x0E
-  mov word [0x156], 0x80                       ; 1292E  0xC7, 0x06, 0x56, 0x01, 0x80, 0x00
+  mov word [vout_attr_limit], 0x80                       ; 1292E  0xC7, 0x06, 0x56, 0x01, 0x80, 0x00
 
 loc_12934:                                     ; 12934
-  mov word [0x154], 0xffff                     ; 12934  0xC7, 0x06, 0x54, 0x01, 0xFF, 0xFF
+  mov word [vout_attr_pend], 0xffff                     ; 12934  0xC7, 0x06, 0x54, 0x01, 0xFF, 0xFF
   jmp short loc_129A6                          ; 1293A  0xEB, 0x6A
 
 loc_1293C:                                     ; 1293C
-  cmp word [0x152], -1                         ; 1293C  0x83, 0x3E, 0x52, 0x01, 0xFF
+  cmp word [vout_char_pend], -1                         ; 1293C  0x83, 0x3E, 0x52, 0x01, 0xFF
   je loc_12967                                 ; 12941  0x74, 0x24
-  mov cx, [0x152]                              ; 12943  0x8B, 0x0E, 0x52, 0x01
+  mov cx, [vout_char_pend]                              ; 12943  0x8B, 0x0E, 0x52, 0x01
   inc cx                                       ; 12947  0x41
   mov si, 0x248                                ; 12948  0xBE, 0x48, 0x02
   mov di, 0x2c8                                ; 1294B  0xBF, 0xC8, 0x02
@@ -439,10 +439,10 @@ loc_1293C:                                     ; 1293C
   cld                                          ; 12950  0xFC
   repne movsb                                  ; 12951  0xF2, 0xA4
   mov byte [0x34c], 0                          ; 12953  0xC6, 0x06, 0x4C, 0x03, 0x00
-  mov ax, [0x152]                              ; 12958  0xA1, 0x52, 0x01
+  mov ax, [vout_char_pend]                              ; 12958  0xA1, 0x52, 0x01
   inc ax                                       ; 1295B  0x40
-  mov [0x156], ax                              ; 1295C  0xA3, 0x56, 0x01
-  mov word [0x152], 0xffff                     ; 1295F  0xC7, 0x06, 0x52, 0x01, 0xFF, 0xFF
+  mov [vout_attr_limit], ax                              ; 1295C  0xA3, 0x56, 0x01
+  mov word [vout_char_pend], 0xffff                     ; 1295F  0xC7, 0x06, 0x52, 0x01, 0xFF, 0xFF
   jmp short loc_12934                          ; 12965  0xEB, 0xCD
 
 loc_12967:                                     ; 12967
@@ -461,7 +461,7 @@ loc_12978:                                     ; 12978
   jae loc_129B8                                ; 12982  0x73, 0x34
 
 loc_12984:                                     ; 12984
-  les bx, [0x144]                              ; 12984  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12984  0xC4, 0x1E, 0x44, 0x01
   mov al, [es:bx + 4]                          ; 12988  0x26, 0x8A, 0x47, 0x04
   and al, 0x10                                 ; 1298C  0x24, 0x10
   cmp al, 0                                    ; 1298E  0x3C, 0x00
@@ -479,9 +479,9 @@ loc_1299E:                                     ; 1299E
   jmp short loc_129BA                          ; 129A4  0xEB, 0x14
 
 loc_129A6:                                     ; 129A6
-  mov ax, [0x154]                              ; 129A6  0xA1, 0x54, 0x01
+  mov ax, [vout_attr_pend]                              ; 129A6  0xA1, 0x54, 0x01
   inc ax                                       ; 129A9  0x40
-  mov [0x154], ax                              ; 129AA  0xA3, 0x54, 0x01
+  mov [vout_attr_pend], ax                              ; 129AA  0xA3, 0x54, 0x01
   mov bx, ax                                   ; 129AD  0x89, 0xC3
   mov al, [bx + 0x2c8]                         ; 129AF  0x8A, 0x87, 0xC8, 0x02
 
@@ -500,7 +500,7 @@ vout_full_disk:                                     ; 129BE
   push bp                                      ; 129BE  0x55
   db 0x8B, 0xEC                                ; 129BF  mov bp, sp
   call vout_read_change_mxq                               ; 129C1  0xE8, 0xC8, 0xFC
-  les bx, [0x144]                              ; 129C4  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 129C4  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0xe]                        ; 129C8  0x26, 0x8B, 0x47, 0x0E
   and ax, strict word 4                        ; 129CC  25 04 00
   cmp ax, 0                                    ; 129CF  0x83, 0xF8, 0x00
@@ -522,7 +522,7 @@ vout_buffer:                                     ; 129DF
   jmp short loc_12A04                          ; 129EC  0xEB, 0x16
 
 loc_129EE:                                     ; 129EE
-  les bx, [0x144]                              ; 129EE  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 129EE  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0xe]                        ; 129F2  0x26, 0x8B, 0x47, 0x0E
   and ax, 0xfdff                               ; 129F6  0x25, 0xFF, 0xFD
   cmp ax, 3                                    ; 129F9  0x83, 0xF8, 0x03
@@ -549,7 +549,7 @@ vout_purge:                                     ; 12A14
   mov byte [0x350], 0xff                       ; 12A17  0xC6, 0x06, 0x50, 0x03, 0xFF
 
 loc_12A1C:                                     ; 12A1C
-  les bx, [0x144]                              ; 12A1C  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12A1C  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0xe]                        ; 12A20  0x26, 0x8B, 0x47, 0x0E
   and ax, 0xa2                                 ; 12A24  0x25, 0xA2, 0x00
   cmp ax, 0                                    ; 12A27  0x83, 0xF8, 0x00
@@ -565,7 +565,7 @@ loc_12A2F:                                     ; 12A2F
 
 loc_12A3A:                                     ; 12A3A
   call vout_read_change_mxq                               ; 12A3A  0xE8, 0x4F, 0xFC
-  les bx, [0x144]                              ; 12A3D  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12A3D  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0xe]                        ; 12A41  0x26, 0x8B, 0x47, 0x0E
   push ax                                      ; 12A45  0x50
   and ax, 0x200                                ; 12A46  0x25, 0x00, 0x02
@@ -586,7 +586,7 @@ loc_12A60:                                     ; 12A60
   cli                                          ; 12A60  0xFA
 
 loc_12A61:                                     ; 12A61
-  les bx, [0x144]                              ; 12A61  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12A61  0xC4, 0x1E, 0x44, 0x01
   mov al, [es:bx + 4]                          ; 12A65  0x26, 0x8A, 0x47, 0x04
   and al, 8                                    ; 12A69  0x24, 0x08
   cmp al, 0                                    ; 12A6B  0x3C, 0x00
@@ -597,7 +597,7 @@ loc_12A61:                                     ; 12A61
   jmp short loc_12A61                          ; 12A76  0xEB, 0xE9
 
 loc_12A78:                                     ; 12A78
-  les bx, [0x144]                              ; 12A78  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12A78  0xC4, 0x1E, 0x44, 0x01
   or byte [es:bx + 4], 8                       ; 12A7C  0x26, 0x80, 0x4F, 0x04, 0x08
   sti                                          ; 12A81  0xFB
   mov byte [0x34e], 0                          ; 12A82  0xC6, 0x06, 0x4E, 0x03, 0x00
@@ -616,7 +616,7 @@ loc_12A91:                                     ; 12A91
   push ax                                      ; 12A9C  0x50
   call vout_get_char                               ; 12A9D  0xE8, 0x7A, 0xFE
   mov [0x350], al                              ; 12AA0  0xA2, 0x50, 0x03
-  les bx, [0x144]                              ; 12AA3  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12AA3  0xC4, 0x1E, 0x44, 0x01
   mov cx, [es:bx + 0xe]                        ; 12AA7  0x26, 0x8B, 0x4F, 0x0E
   and cx, 0x100                                ; 12AAB  0x81, 0xE1, 0x00, 0x01
   push ax                                      ; 12AAF  0x50
@@ -647,7 +647,7 @@ loc_12AB8:                                     ; 12AB8
   mov al, [0x34d]                              ; 12ADB  0xA0, 0x4D, 0x03
   mov ah, 0                                    ; 12ADE  0xB4, 0x00
   push ax                                      ; 12AE0  0x50
-  les bx, [0x144]                              ; 12AE1  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12AE1  0xC4, 0x1E, 0x44, 0x01
   mov al, [es:bx + 8]                          ; 12AE5  0x26, 0x8A, 0x47, 0x08
   mov ah, 0                                    ; 12AE9  0xB4, 0x00
   push ax                                      ; 12AEB  0x50
@@ -658,10 +658,10 @@ loc_12AEF:                                     ; 12AEF
   jmp short loc_12A87                          ; 12AF3  0xEB, 0x92
 
 loc_12AF5:                                     ; 12AF5
-  les bx, [0x144]                              ; 12AF5  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12AF5  0xC4, 0x1E, 0x44, 0x01
   and byte [es:bx + 4], 0xf7                   ; 12AF9  0x26, 0x80, 0x67, 0x04, 0xF7
   call vout_write_change_mxq                               ; 12AFE  0xE8, 0xA5, 0xFB
-  les bx, [0x144]                              ; 12B01  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12B01  0xC4, 0x1E, 0x44, 0x01
   lea ax, [bx + 0x22]                          ; 12B05  0x8D, 0x47, 0x22
   push ax                                      ; 12B08  0x50
   call vout_wakeup                               ; 12B09  0xE8, 0x6B, 0xFB
@@ -678,11 +678,11 @@ loc_12B14:                                     ; 12B14
   not al                                       ; 12B17  0xF6, 0xD0
   rcr al, 1                                    ; 12B19  0xD0, 0xD8
   jae loc_12B5C                                ; 12B1B  0x73, 0x3F
-  mov word [0x156], 0                          ; 12B1D  0xC7, 0x06, 0x56, 0x01, 0x00, 0x00
-  mov word [0x154], 0xffff                     ; 12B23  0xC7, 0x06, 0x54, 0x01, 0xFF, 0xFF
-  mov word [0x152], 0xffff                     ; 12B29  0xC7, 0x06, 0x52, 0x01, 0xFF, 0xFF
+  mov word [vout_attr_limit], 0                          ; 12B1D  0xC7, 0x06, 0x56, 0x01, 0x00, 0x00
+  mov word [vout_attr_pend], 0xffff                     ; 12B23  0xC7, 0x06, 0x54, 0x01, 0xFF, 0xFF
+  mov word [vout_char_pend], 0xffff                     ; 12B29  0xC7, 0x06, 0x52, 0x01, 0xFF, 0xFF
   call vout_read_change_mxq                               ; 12B2F  0xE8, 0x5A, 0xFB
-  les bx, [0x144]                              ; 12B32  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12B32  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0xe]                        ; 12B36  0x26, 0x8B, 0x47, 0x0E
   and ax, strict word 4                        ; 12B3A  25 04 00
   cmp ax, 0                                    ; 12B3D  0x83, 0xF8, 0x00
@@ -701,7 +701,7 @@ loc_12B59:                                     ; 12B59
   call vout_write_change_mxq                               ; 12B59  0xE8, 0x4A, 0xFB
 
 loc_12B5C:                                     ; 12B5C
-  les bx, [0x144]                              ; 12B5C  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12B5C  0xC4, 0x1E, 0x44, 0x01
   lea ax, [bx + 0x24]                          ; 12B60  0x8D, 0x47, 0x24
   push ax                                      ; 12B63  0x50
   call vout_wakeup                               ; 12B64  0xE8, 0x10, 0xFB
@@ -719,15 +719,15 @@ loc_12B6C:                                     ; 12B6C
   rcr al, 1                                    ; 12B73  0xD0, 0xD8
   jb loc_12B6C                                 ; 12B75  0x72, 0xF5
   call vout_read_change_mxq                               ; 12B77  0xE8, 0x12, 0xFB
-  les bx, [0x144]                              ; 12B7A  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12B7A  0xC4, 0x1E, 0x44, 0x01
   db 0x26, 0x81, 0x67, 0x0E, 0xDF, 0xFF        ; 12B7E  and word [es:bx + 0xe], 0xffdf
   call vout_write_change_mxq                               ; 12B84  0xE8, 0x1F, 0xFB
   call vout_reset_file                               ; 12B87  0xE8, 0x9C, 0xFB
   mov byte [0x34c], 0                          ; 12B8A  0xC6, 0x06, 0x4C, 0x03, 0x00
-  mov word [0x154], 0xffff                     ; 12B8F  0xC7, 0x06, 0x54, 0x01, 0xFF, 0xFF
-  mov word [0x152], 0xffff                     ; 12B95  0xC7, 0x06, 0x52, 0x01, 0xFF, 0xFF
-  mov word [0x156], 0                          ; 12B9B  0xC7, 0x06, 0x56, 0x01, 0x00, 0x00
-  les bx, [0x144]                              ; 12BA1  0xC4, 0x1E, 0x44, 0x01
+  mov word [vout_attr_pend], 0xffff                     ; 12B8F  0xC7, 0x06, 0x54, 0x01, 0xFF, 0xFF
+  mov word [vout_char_pend], 0xffff                     ; 12B95  0xC7, 0x06, 0x52, 0x01, 0xFF, 0xFF
+  mov word [vout_attr_limit], 0                          ; 12B9B  0xC7, 0x06, 0x56, 0x01, 0x00, 0x00
+  les bx, [vout_cur_ccb]                              ; 12BA1  0xC4, 0x1E, 0x44, 0x01
   lea ax, [bx + 0x24]                          ; 12BA5  0x8D, 0x47, 0x24
   push ax                                      ; 12BA8  0x50
   call vout_wakeup                               ; 12BA9  0xE8, 0xCB, 0xFA
@@ -756,7 +756,7 @@ vout_initq:                                     ; 12BAE
   push ax                                      ; 12BD4  0x50
   call vout_xdos                               ; 12BD5  0xE8, 0x2D, 0xFA
   or [0x351], al                               ; 12BD8  0x08, 0x06, 0x51, 0x03
-  mov ax, [0x234]                              ; 12BDC  0xA1, 0x34, 0x02
+  mov ax, [vout_mxq_msg]                              ; 12BDC  0xA1, 0x34, 0x02
   pop bp                                       ; 12BDF  0x5D
   ret 2                                        ; 12BE0  0xC2, 0x02, 0x00
 
@@ -778,24 +778,24 @@ vout_plmstart:                                 ; 12BE3
   push ax                                      ; 12BEC  0x50
   call vout_xdos                               ; 12BED  0xE8, 0x15, 0xFA
   mov ax, [0]                                  ; 12BF0  0xA1, 0x00, 0x00
-  mov [0x146], ax                              ; 12BF3  0xA3, 0x46, 0x01
+  mov [vout_ccb_seg], ax                              ; 12BF3  0xA3, 0x46, 0x01
   mov [0x142], ax                              ; 12BF6  0xA3, 0x42, 0x01
-  mov word [0x140], 0                          ; 12BF9  0xC7, 0x06, 0x40, 0x01, 0x00, 0x00
+  mov word [vout_sysdat_ptr], 0                          ; 12BF9  0xC7, 0x06, 0x40, 0x01, 0x00, 0x00
   mov al, [4]                                  ; 12BFF  0xA0, 0x04, 0x00
   mov ah, 0                                    ; 12C02  0xB4, 0x00
   mov cx, 0x2c                                 ; 12C04  0xB9, 0x2C, 0x00
   db 0xF7, 0xE1                                ; 12C07  mul cx
-  les bx, [0x140]                              ; 12C09  0xC4, 0x1E, 0x40, 0x01
+  les bx, [vout_sysdat_ptr]                              ; 12C09  0xC4, 0x1E, 0x40, 0x01
   add ax, [es:bx + 0x54]                       ; 12C0D  0x26, 0x03, 0x47, 0x54
-  mov [0x144], ax                              ; 12C11  0xA3, 0x44, 0x01
+  mov [vout_cur_ccb], ax                              ; 12C11  0xA3, 0x44, 0x01
   mov al, 0x9c                                 ; 12C14  0xB0, 0x9C
   push ax                                      ; 12C16  0x50
   mov ax, 0                                    ; 12C17  0xB8, 0x00, 0x00
   push ax                                      ; 12C1A  0x50
   call vout_xdos                               ; 12C1B  0xE8, 0xE7, 0xF9
-  mov [0x15a], bx                              ; 12C1E  0x89, 0x1E, 0x5A, 0x01
-  mov [0x15c], es                              ; 12C22  0x8C, 0x06, 0x5C, 0x01
-  les si, [0x15a]                              ; 12C26  0xC4, 0x36, 0x5A, 0x01
+  mov [vout_ccb_ptr2], bx                              ; 12C1E  0x89, 0x1E, 0x5A, 0x01
+  mov [vout_ccb_seg2], es                              ; 12C22  0x8C, 0x06, 0x5C, 0x01
+  les si, [vout_ccb_ptr2]                              ; 12C26  0xC4, 0x36, 0x5A, 0x01
   lea si, [si + 8]                             ; 12C2A  0x8D, 0x74, 0x08
   lea di, [0x373]                              ; 12C2D  0x8D, 0x3E, 0x73, 0x03
   mov cx, 8                                    ; 12C31  0xB9, 0x08, 0x00
@@ -817,7 +817,7 @@ vout_plmstart:                                 ; 12BE3
   mov ax, 0x1fa                                ; 12C4B  0xB8, 0xFA, 0x01
   push ax                                      ; 12C4E  0x50
   call vout_initq                               ; 12C4F  0xE8, 0x5C, 0xFF
-  les bx, [0x144]                              ; 12C52  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12C52  0xC4, 0x1E, 0x44, 0x01
   mov [es:bx + 0x12], ax                       ; 12C56  0x26, 0x89, 0x47, 0x12
   mov cx, 3                                    ; 12C5A  0xB9, 0x03, 0x00
   mov si, 0x377                                ; 12C5D  0xBE, 0x77, 0x03
@@ -829,7 +829,7 @@ vout_plmstart:                                 ; 12BE3
   mov ax, 0x15e                                ; 12C68  0xB8, 0x5E, 0x01
   push ax                                      ; 12C6B  0x50
   call vout_initq                               ; 12C6C  0xE8, 0x3F, 0xFF
-  les bx, [0x144]                              ; 12C6F  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12C6F  0xC4, 0x1E, 0x44, 0x01
   mov [es:bx + 0x14], ax                       ; 12C73  0x26, 0x89, 0x47, 0x14
   mov cx, 3                                    ; 12C77  0xB9, 0x03, 0x00
   mov si, 0x377                                ; 12C7A  0xBE, 0x77, 0x03
@@ -841,7 +841,7 @@ vout_plmstart:                                 ; 12BE3
   mov ax, 0x216                                ; 12C85  0xB8, 0x16, 0x02
   push ax                                      ; 12C88  0x50
   call vout_initq                               ; 12C89  0xE8, 0x22, 0xFF
-  les bx, [0x144]                              ; 12C8C  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12C8C  0xC4, 0x1E, 0x44, 0x01
   mov [es:bx + 0x16], ax                       ; 12C90  0x26, 0x89, 0x47, 0x16
   mov al, 0x94                                 ; 12C94  0xB0, 0x94
   push ax                                      ; 12C96  0x50
@@ -849,7 +849,7 @@ vout_plmstart:                                 ; 12BE3
   mov ah, 0                                    ; 12C9A  0xB4, 0x00
   push ax                                      ; 12C9C  0x50
   call vout_xdos                               ; 12C9D  0xE8, 0x65, 0xF9
-  les bx, [0x140]                              ; 12CA0  0xC4, 0x1E, 0x40, 0x01
+  les bx, [vout_sysdat_ptr]                              ; 12CA0  0xC4, 0x1E, 0x40, 0x01
   mov al, [es:bx + 0x50]                       ; 12CA4  0x26, 0x8A, 0x47, 0x50
   inc al                                       ; 12CA8  0xFE, 0xC0
   mov [0x372], al                              ; 12CAA  0xA2, 0x72, 0x03
@@ -867,7 +867,7 @@ loc_12CBA:                                     ; 12CBA
   call vout_delete_file                               ; 12CC1  0xE8, 0xFC, 0xF9
 
 loc_12CC4:                                     ; 12CC4
-  les bx, [0x144]                              ; 12CC4  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12CC4  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0xe]                        ; 12CC8  0x26, 0x8B, 0x47, 0x0E
   and ax, 0xfcff                               ; 12CCC  0x25, 0xFF, 0xFC
   cmp ax, 3                                    ; 12CCF  0x83, 0xF8, 0x03
@@ -876,7 +876,7 @@ loc_12CC4:                                     ; 12CC4
   jmp short loc_12D04                          ; 12CD7  0xEB, 0x2B
 
 loc_12CD9:                                     ; 12CD9
-  les bx, [0x144]                              ; 12CD9  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12CD9  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0xe]                        ; 12CDD  0x26, 0x8B, 0x47, 0x0E
   and ax, 0xfcff                               ; 12CE1  0x25, 0xFF, 0xFC
   and ax, strict word 4                        ; 12CE4  25 04 00
@@ -886,7 +886,7 @@ loc_12CD9:                                     ; 12CD9
   jmp short loc_12D04                          ; 12CEF  0xEB, 0x13
 
 loc_12CF1:                                     ; 12CF1
-  les bx, [0x144]                              ; 12CF1  0xC4, 0x1E, 0x44, 0x01
+  les bx, [vout_cur_ccb]                              ; 12CF1  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0xe]                        ; 12CF5  0x26, 0x8B, 0x47, 0x0E
   and ax, strict word 0x20                     ; 12CF9  25 20 00
   cmp ax, 0                                    ; 12CFC  0x83, 0xF8, 0x00

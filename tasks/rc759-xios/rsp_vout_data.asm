@@ -6,6 +6,23 @@
 ; initialiseringsstak, kø-deskriptorer (VOUTQ, VINQ, VCMXQ) og arbejdsbuffere.
 ; ===========================================================================
 
+; ---------------------------------------------------------------------------
+; VOUT lokale variabler (DS-relative offsets)
+; ---------------------------------------------------------------------------
+vout_sysdat_ptr equ 0x0140  ; far ptr (off:seg): CCB-tabel / SYSDAT-base (LES BX)
+vout_cur_ccb    equ 0x0144  ; word offset: aktuel CCB (kombineret m. vout_ccb_seg → LES BX)
+vout_ccb_seg    equ 0x0146  ; word segment: CCB-tabel segment (hi-del af vout_cur_ccb LES)
+vout_q_start    equ 0x014e  ; word: kø/buffer start-position (sammenlignes m. vout_q_end)
+vout_q_end      equ 0x0150  ; word: kø/buffer slut-position
+vout_char_pend  equ 0x0152  ; word: afventende tegn/index (0xFFFF = ingen)
+vout_ccb_ptr2   equ 0x015a  ; word offset: 2. CCB far ptr (fra BDOS-retur BX)
+vout_ccb_seg2   equ 0x015c  ; word segment: 2. CCB far ptr segment (fra BDOS-retur ES)
+vout_attr_pend  equ 0x0154  ; word: afventende attribut (0xFFFF = ingen)
+vout_attr_limit equ 0x0156  ; word: attribut-grænse (default 0x80)
+vout_mxq_msg    equ 0x0234  ; word: CCB mutex-kø besked (fra CCB+0x16)
+; Kø-deskriptor-adresser i VOUT-datasegment:
+VOUT_VCMXQ_OFF  equ 0x0232  ; VCMXQ kø-descriptor offset i DS
+
 data_start:
   ; -------------------------------------------------------------------------
   ; RSP Header (4 bytes)
