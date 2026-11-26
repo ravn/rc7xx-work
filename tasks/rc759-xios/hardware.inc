@@ -9,6 +9,18 @@
 %define _HARDWARE_INC_
 
 ; -----------------------------------------------------------------------------
+; Interrupt Vector Table (IVT) byte-offsets (= interrupt_number × 4)
+; Piccoline RC759 interrupt-tildelinger:
+IVT_NMI                 equ 0x08        ; INT 0x02: NMI → xios_nmi_handler
+IVT_INT3                equ 0x0C        ; INT 0x03: Breakpoint → xios_int3_handler
+IVT_IRQ2                equ 0x28        ; INT 0x0A: IRQ2 (FDC INT10) → fdc_int10_handler
+IVT_IRQ3                equ 0x2C        ; INT 0x0B: IRQ3 (FDC INT11) → fdc_int11_handler
+IVT_IRQ5                equ 0x34        ; INT 0x0D: IRQ5 (SIO serial) → xios_serial_isr
+IVT_IRQ7                equ 0x3C        ; INT 0x0F: IRQ7 (timer/clock) → xios_timer_isr
+IVT_INT20               equ 0x80        ; INT 0x20: FDC overførsels-ISR → fdc_transfer_isr
+IVT_INT22               equ 0x88        ; INT 0x22: CRT-ISR → xios_crt_isr
+IVT_INT23               equ 0x8C        ; INT 0x23: Tick-ISR → xios_tick_isr
+
 ; Master Interrupt Controller (Intel 8259A PIC)
 ; -----------------------------------------------------------------------------
 PORT_PIC_CMD            equ 0x0000      ; ICW1, OCW2 (EOI), OCW3
@@ -120,6 +132,14 @@ FDC_CTRL_PRECOMP_TIME   equ 0x10        ; Bit 4: Precomp timing (125/250 ns)
 FDC_CTRL_DDEN           equ 0x20        ; Bit 5: Double density (0=FM, 1=MFM)
 FDC_CTRL_CLOCK_2MHZ     equ 0x40        ; Bit 6: 0 = 1 MHz (5.25"), 1 = 2 MHz (8")
 FDC_CTRL_FORCE_READY    equ 0x80        ; Bit 7: Force Ready signal to WD2797
+
+; WD2797 Command bytes (skrives til PORT_FDC_CMD / 0x0280)
+FDC_CMD_RESTORE         equ 0x0C        ; Restore (Type I): spor til 0
+FDC_CMD_SEEK            equ 0x1C        ; Seek (Type I): spor til DR
+FDC_CMD_READ_SECT       equ 0x88        ; Read Sector (Type II): 1000 1000b (side-compare)
+FDC_CMD_WRITE_SECT      equ 0xA8        ; Write Sector (Type II): 1010 1000b (side-compare)
+FDC_CMD_READ_ADDR       equ 0xC4        ; Read Address (Type III): 1100 0100b
+FDC_CMD_FORCE_INT       equ 0xD0        ; Force Interrupt (Type IV): afbryd kommando
 
 ; -----------------------------------------------------------------------------
 ; DPC (Disk/Printer-Adaptor) Shared Peripheral Control

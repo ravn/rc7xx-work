@@ -175,8 +175,10 @@ CCB_FLG_NONDISP     equ 0x1000		; Bit 12: Non-display mode / skjult tekst (ESC i
 CCB_EXTRA_LINE      equ 0x34		; rw 1: Extra display line used when scrolling
 CCB_CON_IDX         equ 0x34		; rb 1: Virtual console number (0..3)
 CCB_ACTIVE          equ 0x35		; rb 1: Internal XIOS semaphore / active flag
-CCB_WIN_LEFT        equ 0x36		; rb 1: Left column of window (XIOS 16-bit word at 0x36)
+CCB_WIN_LEFT        equ 0x36		; rb 1: Left column of window
+CCB_WIN_RIGHT       equ 0x37		; rb 1: Right column of window (adjacent to CCB_WIN_LEFT)
 CCB_WIN_TOP         equ 0x38		; rb 1: Top row of window
+CCB_WIN_BOTTOM      equ 0x39		; rb 1: Bottom row of window (adjacent to CCB_WIN_TOP)
 CCB_LAST_TOP_LEFT   equ 0x3a		; rw 1: Last top-left corner
 CCB_LAST_BOT_RIGHT  equ 0x3c		; rw 1: Last bottom-right corner
 CCB_ROWS            equ 0x42		; rb 1: Actual number of rows (f.eks. 24)
@@ -219,6 +221,7 @@ CCB_SCROLL_PIXEL     equ 0x7c		; Pixel-scroll-offset for blød rulning (adderes/
 CCB_ESC_PARAM_BUF    equ 0x7d		; Escape-sekvens parameter-buffer
 CCB_PALETTE_SIZE     equ 0x81		; Antal aktive palet-indgange (word, initialiseret til 2, max 16)
 CCB_PALETTE          equ 0x84		; Farvepalet / attribut-tabel for konsol
+CCB_SIZEOF           equ 0x94		; Samlet størrelse af XIOS CCB-struktur i bytes
 
 ; =============================================================================
 ; Digital Research CCP/M-86 SYSDAT Structure Offsets
@@ -3822,7 +3825,7 @@ ccb_acquire_all_locks:			; 0922F
 
 .lock_next:				; 09237
 	call ccb_acquire_lock
-	add bx, 0x94
+	add bx, CCB_SIZEOF
 	loop .lock_next
 	pop cx
 	pop bx
@@ -3836,7 +3839,7 @@ ccb_release_all_locks:			; 09243
 
 .unlock_next:				; 0924B
 	mov byte [bx + CCB_ACTIVE], 0
-	add bx, 0x94
+	add bx, CCB_SIZEOF
 	loop .unlock_next
 	pop cx
 	pop bx
@@ -3904,8 +3907,8 @@ window_zorder_update_table:		; 092A5
 	ret
 
 window_calc_dimensions:			; Beregn vinduesstørrelse (bredde/højde i dx)
-	mov al, [bx + 0x39]
-	sub al, [bx + 0x37]
+	mov al, [bx + CCB_WIN_BOTTOM]
+	sub al, [bx + CCB_WIN_RIGHT]
 	cbw				; 092C2
 	inc ax
 	mov [bx + CCB_ROWS], ax
@@ -4086,7 +4089,7 @@ xios4_clip_calc_visible_spans:
 	pop cx
 	pop bx
 	inc dh
-	cmp dh, [bx + 0x39]
+	cmp dh, [bx + CCB_WIN_BOTTOM]
 	jna .row_loop
 	mov byte [si], 0
 	inc si
@@ -4215,7 +4218,7 @@ window_draw_borders:
 	call window_draw_horiz_border
 
 .bottom_border:				; 093BE
-	mov dh, [bx + 0x39]
+	mov dh, [bx + CCB_WIN_BOTTOM]
 	inc dh
 	cmp dh, [bx + CCB_SCROLL_BOTTOM]
 	je .left_border
@@ -8054,7 +8057,7 @@ crt_mode_switch:			; 0B9B7
 	mov ax, [cs:crt_82730_text_mode_params]
 	mov [bx + 0x72], ax
 	pop di
-	add bx, 0x94
+	add bx, CCB_SIZEOF
 	pop cx
 	loop .setup_screen_done
 	push ds
@@ -8421,27 +8424,27 @@ xios_init_entry:
 	stosw
 	mov_ax_bx			; 0BE38
 	stosw
-	mov di, 0x28
+	mov di, IVT_IRQ2
 	mov ax, fdc_int10_handler
 	stosw
 	mov_ax_bx			; 0BE42
 	stosw
-	mov di, 0x2c
+	mov di, IVT_IRQ3
 	mov ax, fdc_int11_handler
 	stosw
 	mov_ax_bx			; 0BE4C
 	stosw
-	mov di, 0x34
+	mov di, IVT_IRQ5
 	mov ax, xios_serial_isr
 	stosw
 	mov_ax_bx			; 0BE56
 	stosw
-	mov di, 0x3c
+	mov di, IVT_IRQ7
 	mov ax, xios_timer_isr
 	stosw
 	mov_ax_bx			; 0BE60
 	stosw
-	mov di, 0x80
+	mov di, IVT_INT20
 	mov ax, fdc_transfer_isr
 	stosw
 	mov_ax_bx			; 0BE6A
@@ -8451,12 +8454,12 @@ xios_init_entry:
 	stosw
 	mov_ax_bx			; 0BE74
 	stosw
-	mov di, 0x8c
+	mov di, IVT_INT23
 	mov ax, xios_tick_isr
 	stosw
 	mov_ax_bx			; 0BE7E
 	stosw
-	mov di, 0x88
+	mov di, IVT_INT22
 	mov ax, xios_crt_isr
 	stosw
 	mov_ax_bx			; 0BE88
