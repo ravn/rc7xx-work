@@ -17,6 +17,8 @@
 ;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=52
 ; =============================================================================
 KBD_RELEASE_BIT     equ 0x80		; Bit 7 i scan-kode: 1 = tast sluppet (key-up event)
+KBD_SCAN_MAX        equ 0x62		; Maksimal gyldig scan-kode (98 — 99 entries, 0..98)
+KBD_SCAN_ALT        equ 0x63		; Alt-tast scan-kode (0x63; + 0x80 = 0xE3 ved key-up)
 KBD_SHIFT_CTRL      equ 0x02		; Control key active
 KBD_SHIFT_LEFTSHIFT equ 0x04		; Left shift active
 KBD_SHIFT_RIGHTSHIFT equ 0x08		; Right shift active
@@ -193,7 +195,9 @@ CCB_ATTR_ALT_CHARSET equ 0x02		; Bit 1: Alternativt tegnsæt (ESC P / ESC Q)
 CCB_ATTR_BLINK       equ 0x04		; Bit 2: Blinkende tekst (ESC s / ESC t)
 CCB_ATTR_COLOR_MASK  equ 0xf8		; Bits 3-7: Farvepalet-indeks (indeks = attr >> 3)
 CCB_FLAGS           equ 0x6b		; Console control & mode flags
-CCB_DISP_MODE       equ 0x70		; Display-tilstand byte (0x0C=grafik/vindue, 0x0D=tekst)
+CCB_DISP_MODE       equ 0x70		; Display-tilstand byte
+CCB_DISP_TEXT       equ 0x0D		; CCB_DISP_MODE: tekst-tilstand (normal)
+CCB_DISP_GFX        equ 0x0C		; CCB_DISP_MODE: grafik/vindue-tilstand
 CCB_SCROLL_MODE     equ 0x71		; Console scroll / line mode
 CCB_CURSOR_LINES    equ 0x72		; Cursor start scanline (word 0x72 = start/end scanlines)
 CCB_CURSOR_HEIGHT   equ 0x73		; Cursor end scanline / height
@@ -546,7 +550,7 @@ kbd_handler:				; 07A93 / 000002F3
 	jmp near .exit
 
 .check_mouse_prefix:
-	cmp al, 0xe3
+	cmp al, KBD_SCAN_ALT | KBD_RELEASE_BIT	; Alt key-up scancode (0xE3)
 	jne .check_diag_keys
 	mov byte [cs:kbd_alt_flag], 0xff
 	jmp near .exit
@@ -565,7 +569,7 @@ kbd_handler:				; 07A93 / 000002F3
 
 .check_scancode_valid:
 	and al, 0x7f
-	cmp al, 0x62
+	cmp al, KBD_SCAN_MAX			; max. gyldig scancode
 	jle .check_special_keys
 	jmp near .exit
 
@@ -3276,7 +3280,7 @@ int28_fn_00_graphics_mode:		; 08E55
 	call ccb_acquire_all_locks
 	call rtm_delay_1_tick
 	or byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
-	mov byte [bx + CCB_DISP_MODE], 0xc
+	mov byte [bx + CCB_DISP_MODE], CCB_DISP_GFX
 	mov dx, [cs:xios_graphics_saved_buf_seg]
 	mov [cs:xios_vram_back_page], dx
 	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
@@ -3355,7 +3359,7 @@ int28_fn_01_char_mode:			; 08F67
 	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	je .ret
 	and byte [bx + CCB_FLAGS], ~CCB_FLG_WINDOW & 0xff
-	mov byte [bx + CCB_DISP_MODE], 0xd
+	mov byte [bx + CCB_DISP_MODE], CCB_DISP_TEXT
 	call palette_init_default_colors
 	mov ax, [bx + CCB_PALETTE]
 	mov [bx + CCB_CHAR_ATTR], ah
@@ -3387,7 +3391,7 @@ get_cur_process_ccb:			; 08FDC
 	jmp near get_ccb_by_index
 
 crt_set_display_mode_timings:		; 08FE7
-	cmp byte [cs:bx + 0x70], 0xd
+	cmp byte [cs:bx + CCB_DISP_MODE], CCB_DISP_TEXT
 	je crt_set_text_timings_and_flip
 
 crt_set_graphics_timings:		; 08FEE
@@ -5424,7 +5428,7 @@ xios_fdc_select_drive:			; 09E05
 	out dx, al
 	mov dx, PORT_FDC_CMD
 	in al, dx
-	test al, 0x80
+	test al, FDC_ST_NOT_READY	; bit 7 = drev ikke klar
 	je .ret
 	mov byte [cs:xt_door], 0xff
 	mov byte [di + 5], 0xff
@@ -7056,7 +7060,7 @@ floppy_status_ret:			; 0AD8B
 con_status_poll:			; 0AD8E
 	mov dx, PORT_ISBX_MCS0_02
 	in al, dx
-	test al, 0x80
+	test al, 0x80			; bit 7 = iSBX printer klar-status
 	mov ax, 0xffff
 	jne .ret
 	inc ax
