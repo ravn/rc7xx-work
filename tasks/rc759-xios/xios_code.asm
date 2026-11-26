@@ -190,10 +190,13 @@ CCB_ATTR_ALT_CHARSET equ 0x02		; Bit 1: Alternativt tegnsæt (ESC P / ESC Q)
 CCB_ATTR_BLINK       equ 0x04		; Bit 2: Blinkende tekst (ESC s / ESC t)
 CCB_ATTR_COLOR_MASK  equ 0xf8		; Bits 3-7: Farvepalet-indeks (indeks = attr >> 3)
 CCB_FLAGS           equ 0x6b		; Console control & mode flags
+CCB_DISP_MODE       equ 0x70		; Display-tilstand byte (0x0C=grafik/vindue, 0x0D=tekst)
 CCB_SCROLL_MODE     equ 0x71		; Console scroll / line mode
 CCB_CURSOR_LINES    equ 0x72		; Cursor start scanline (word 0x72 = start/end scanlines)
 CCB_CURSOR_HEIGHT   equ 0x73		; Cursor end scanline / height
-CCB_BLINK_FLAG      equ 0x74		; Cursor blink enable flag
+CCB_BLINK_FLAG      equ 0x74		; Cursor blink / 82730 MPTR40 source (duty_cyc/char_blink)
+CCB_SCAN_CTRL       equ 0x75		; 82730 MPTR44 source byte (abs_line_count/underline/invisible)
+CCB_DRI_CCB_SYSDAT  equ 0x5c		; SYSDAT-offset til konsolens DRI CCB (0x0D49, 0x0D75…)
 CCB_VIDEO_MODE      equ 0x7f		; Background color / video mode
 CCB_CHAR_ATTR       equ 0x80		; Character attribute byte
 CCB_BLANK_TIMEOUT   equ 0x83		; Screen blanking timeout in minutes (0=disabled, 1..15 min)
@@ -202,8 +205,10 @@ CCB_SAVED_COL        equ 0x68		; Gemt cursorposition ved ESC j / ESC k
 CCB_SAVED_FLAGS      equ 0x6d		; Gemte konsolflag ved ESC 2 / ESC 3
 CCB_SAVED_ATTR       equ 0x6f		; Gemt tegnattribut ved ESC 2 / ESC 3
 CCB_FKEY_TABLE       equ 0x76		; Funktionstast-tabel (pointer til fkey-definitioner)
+CCB_ESC_PARAM_CNT    equ 0x7a		; ESC-sekvens resterende parameter-tæller (nedtæller til 0)
 CCB_ESC_PARAM_FN     equ 0x7b		; Escape-sekvens parameter handler/funktion
 CCB_ESC_PARAM_BUF    equ 0x7d		; Escape-sekvens parameter-buffer
+CCB_PALETTE_SIZE     equ 0x81		; Antal aktive palet-indgange (word, initialiseret til 2, max 16)
 CCB_PALETTE          equ 0x84		; Farvepalet / attribut-tabel for konsol
 
 ; =============================================================================
@@ -762,7 +767,7 @@ io_conin:
 
 conin_valid_con:
 	mov bx, [cs:xios4_cur_window_ptr]	; 07CC1
-	cmp byte [bx + 0x7a], 0		; 07CC6
+	cmp byte [bx + CCB_ESC_PARAM_CNT], 0		; 07CC6
 	jne .read_fkey_char		; 07CCA
 
 .wait_key:
@@ -807,17 +812,17 @@ conin_valid_con:
 
 .store_fkey_ptr:
 	mov [bx + 0x78], si		; 07D12
-	mov [bx + 0x7a], cl		; 07D15
+	mov [bx + CCB_ESC_PARAM_CNT], cl		; 07D15
 
 .read_fkey_char:
 	mov si, [bx + 0x78]		; 07D18
 	lodsb				; 07D1B
 	mov [bx + 0x78], si		; 07D1C
-	dec byte [bx + 0x7a]		; 07D1F
+	dec byte [bx + CCB_ESC_PARAM_CNT]		; 07D1F
 	xor_ah_ah			; 07D22
 	or_al_al			; 07D24
 	jne .ret			; 07D26
-	mov [bx + 0x7a], al		; 07D28
+	mov [bx + CCB_ESC_PARAM_CNT], al		; 07D28
 	jmp short conin_valid_con.wait_key	; 07D2B
 
 ; -----------------------------------------------------------------------------
@@ -1163,7 +1168,7 @@ screen_dump_to_printer:			; 07EEC
 	jmp near conin_valid_con
 
 .check_printer_status:			; 07EF5
-	mov bx, [bx + 0x5c]
+	mov bx, [bx + CCB_DRI_CCB_SYSDAT]
 	mov si, [bx]
 	mov dl, [si + 0x24]
 	push dx
@@ -1717,8 +1722,8 @@ crt_esc_x_nondisp_off:
 crt_esc_z_reset_attrs:
 	and word [bx + CCB_FLAGS], ~(CCB_FLG_NOWRAP | CCB_FLG_CUR_OFF | CCB_FLG_REVERSE | CCB_FLG_CHARCONV | CCB_FLG_NONDISP) & 0xffff
 	and byte [bx + CCB_ATTR], ~(CCB_ATTR_UNDERLINE | CCB_ATTR_ALT_CHARSET | CCB_ATTR_BLINK) & 0xff
-	mov byte [bx + 0x75], 0xf8
-	mov al, [bx + 0x7f]
+	mov byte [bx + CCB_SCAN_CTRL], 0xf8
+	mov al, [bx + CCB_VIDEO_MODE]
 	ror al, 4
 	call crt_set_char_attr
 	jmp near crt_update_cursor_dispatch
@@ -1756,7 +1761,7 @@ crt_get_char_attr:			; 0837A
 	push cx
 	push di
 	lea di, [bx + CCB_PALETTE]
-	mov cx, [bx + 0x81]
+	mov cx, [bx + CCB_PALETTE_SIZE]
 	mov_dx_cx			; 08396
 	repne scasb
 	pushf
@@ -1764,7 +1769,7 @@ crt_get_char_attr:			; 0837A
 	sub_dx_cx			; 0839C
 	popf
 	je .update_ccb_attr_byte
-	cmp word [bx + 0x81], 0x10
+	cmp word [bx + CCB_PALETTE_SIZE], 0x10
 	jne .add_new_palette_entry
 	mov al, [bx + CCB_ATTR]
 	cbw				; 083AB
@@ -1778,7 +1783,7 @@ crt_get_char_attr:			; 0837A
 .add_new_palette_entry:			; 083BF
 	inc dx
 	mov [di], al
-	inc word [bx + 0x81]
+	inc word [bx + CCB_PALETTE_SIZE]
 	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
 	jne .update_ccb_attr_byte
 	call palette_translate_mono_color
@@ -1915,12 +1920,12 @@ crt_esc_245_line_scroll:
 
 ; ESC 246 (0xF6) - Disable Underline Attribute (s. 63 / App. F): Slå understregning fra
 crt_esc_246_underl_off:
-	mov byte [bx + 0x75], 0xff
+	mov byte [bx + CCB_SCAN_CTRL], 0xff
 	jmp near crt_load_cursor_hardware_regs
 
 ; ESC 247 (0xF7) - Enable Underline Attribute (s. 63 / App. F): Slå understregning til
 crt_esc_247_underl_on:
-	mov byte [bx + 0x75], 0xf8
+	mov byte [bx + CCB_SCAN_CTRL], 0xf8
 	jmp near crt_load_cursor_hardware_regs
 
 ; ESC 6 / ESC 0xFB (251) - Function Key Expansion Off / Cursor Left (s. 58 / App. F)
@@ -2878,11 +2883,11 @@ io_switch:
 
 .set_inactive_and_lookup:		; 08BB5
 	or byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
-	mov cl, [bx + 0x70]
+	mov cl, [bx + CCB_DISP_MODE]
 	call get_ccb_by_index
 	mov [cs:xios4_cur_window_ptr], bx
 	and byte [bx + CCB_FLAGS], ~CCB_FLG_INACTIVE & 0xff
-	cmp cl, [bx + 0x70]
+	cmp cl, [bx + CCB_DISP_MODE]
 	je crt_switch_active_window
 	push es
 	les si, [cs:xios_graphics_gcb_offset]
@@ -2946,7 +2951,7 @@ crt_switch_active_window:		; 08BFB
 	ret
 
 ccb_check_background_active:		; 08C56
-	mov si, [bx + 0x5c]
+	mov si, [bx + CCB_DRI_CCB_SYSDAT]
 	test word [si + 0xe], 8
 	ret
 
@@ -3002,7 +3007,7 @@ io_statline:
 	mov [cs:vmenu_buf_con_num], al
 	mov word [cs:vmenu_buf_prn_num], 0x2030
 	mov bx, [cs:xios4_cur_window_ptr]
-	mov bx, [bx + 0x5c]
+	mov bx, [bx + CCB_DRI_CCB_SYSDAT]
 	mov si, [bx]
 	test si, si
 	je .check_status_bits
@@ -3253,7 +3258,7 @@ int28_fn_00_graphics_mode:		; 08E55
 	call ccb_acquire_all_locks
 	call rtm_delay_1_tick
 	or byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
-	mov byte [bx + 0x70], 0xc
+	mov byte [bx + CCB_DISP_MODE], 0xc
 	mov dx, [cs:xios_graphics_saved_buf_seg]
 	mov [cs:xios_vram_back_page], dx
 	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
@@ -3294,7 +3299,7 @@ int28_fn_00_graphics_mode:		; 08E55
 .setup_palette:				; 08F22
 	cmp byte [cs:crt_mode_ah], 2
 	je .clear_vram_and_done
-	mov al, [bx + 0x7f]
+	mov al, [bx + CCB_VIDEO_MODE]
 	ror al, 4
 
 .clear_vram_and_done:			; 08F30
@@ -3332,7 +3337,7 @@ int28_fn_01_char_mode:			; 08F67
 	test byte [bx + CCB_FLAGS], CCB_FLG_WINDOW
 	je .ret
 	and byte [bx + CCB_FLAGS], ~CCB_FLG_WINDOW & 0xff
-	mov byte [bx + 0x70], 0xd
+	mov byte [bx + CCB_DISP_MODE], 0xd
 	call palette_init_default_colors
 	mov ax, [bx + CCB_PALETTE]
 	mov [bx + CCB_CHAR_ATTR], ah
@@ -3411,7 +3416,7 @@ crt_flip_page_and_copy:			; 09012
 	pop si
 	pop ds
 	push bx
-	mov al, [bx + 0x70]
+	mov al, [bx + CCB_DISP_MODE]
 	mov dx, PORT_PPI_CTRL
 	out dx, al
 	mov di, crt_82730_dpb_desc_table
@@ -4317,7 +4322,7 @@ xios_clip_draw_char:
 %endif
 window_draw_title:			; 09473
 	mov es, [cs:xios_sysdat_segment_ptr]
-	mov si, [bx + 0x5c]
+	mov si, [bx + CCB_DRI_CCB_SYSDAT]
 	mov si, [si]
 	test si, si
 	je .title_done
@@ -4571,7 +4576,7 @@ palette_init_default_colors:		; 09643
 	lea di, [bx + CCB_PALETTE]
 	mov si, mouse_cursor_char_table
 	mov cx, 0x10
-	mov [bx + 0x81], cx
+	mov [bx + CCB_PALETTE_SIZE], cx
 	rep movsb
 	pop es
 	ret
@@ -4580,7 +4585,7 @@ palette_init_default_colors:		; 09643
 	mov al, [cs:xios_default_fg_color]
 	mov ah, [cs:xios_default_bg_color]
 	mov [bx + CCB_PALETTE], ax
-	mov word [bx + 0x81], 2
+	mov word [bx + CCB_PALETTE_SIZE], 2
 	ret
 
 mouse_cursor_char_table:		; 32 bytes IRGB-palet-opslagstabel til mus-cursor overlay
@@ -4631,7 +4636,7 @@ palette_load_hardware_regs:		; 096B8
 crt_load_cursor_hardware_regs:		; 096CF
 	test byte [bx + CCB_FLAGS], CCB_FLG_INACTIVE
 	jne .ret
-	mov al, [bx + 0x75]
+	mov al, [bx + CCB_SCAN_CTRL]
 	mov [cs:crt_82730_text_al0_params], al
 	mov al, [bx + 0x74]
 	mov [cs:crt_82730_text_drm_params], al
@@ -4683,7 +4688,7 @@ window_zorder_list:
 	db %2
 	times 0x0b db 0
 	dw 0xffff			; +0x5A CCB link-pointer (0xFFFF = kæde-afslutning)
-	dw %3				; +0x5C Sekundær ESC-handler adresse (konsolspecifik)
+	dw %3				; +0x5C SYSDAT-offset til konsolens DRI CCB (0x0D49, 0x0D75, … pr. konsol)
 	dw crt_char_handler		; +0x5E CCB_ESC_HANDLER: standard ESC-sekvens dispatcher
 	db 0x4f			; +0x60 CCB_MAX_COL=79 (kolonne 0–79 i 80-kolonne display)
 	times 9 db 0			; +0x61 CCB_LINE_TABLE/CCB_COL/CCB_ROW/CCB_SAVED_COL (nul ved init)
@@ -7134,7 +7139,7 @@ xios_hook_sec_off:
 xios_fixup_target_2:
 xios_hook_sec_seg:
 	dw 0x0000			; 0AECB  Segment (fixed up at load time)
-i_tick:
+xios_tick_isr:
 	call xios_switch_to_priv_stack
 	inc word [cs:xios_tick_low]
 	jne rtc_1sec_isr
@@ -8421,7 +8426,7 @@ xios_init_entry:
 	mov_ax_bx			; 0BE74
 	stosw
 	mov di, 0x8c
-	mov ax, i_tick
+	mov ax, xios_tick_isr
 	stosw
 	mov_ax_bx			; 0BE7E
 	stosw
