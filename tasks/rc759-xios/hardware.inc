@@ -77,15 +77,28 @@ RTC_REG_GO              equ 0x15        ; GO Command (W): nulstil sekund+brøkde
 RTC_REG_STANDBY_INT     equ 0x16        ; Standby Interrupt (W): D0=1 aktivér standby-interrupt
 RTC_REG_TEST            equ 0x17        ; Test mode (kun fabriksbrug)
 
-; RC759 RTC write-protokol (PORT_RTC_ADDR = 0x5C, PORT_RTC_DATA = 0x5A):
-;   1. Skriv register-adresse (A4:A0, bit 6 = 0) til PORT_RTC_ADDR → vælg register/latch
-;   2. Læs PORT_RTC_ADDR → hent RTC-data
-;   For skrivning:
-;   1. Skriv data-byte til PORT_RTC_DATA (0x5A)
-;   2. Skriv adresse | 0x40 (bit 6 = 1) til PORT_RTC_ADDR → aktivér write-puls
-;   3. Vent 1μs (2 interne CPU-cyklusser)
-;   4. Skriv adresse & ~0x40 (bit 6 = 0) til PORT_RTC_ADDR → fjern write-puls
-RTC_ADDR_WPULSE         equ 0x40        ; Bit 6 af PORT_RTC_ADDR: 1 = aktivér write-puls til MM58167A
+; RC759 RTC I/O protokol (RC759 CPU Ref. Manual s.22-23):
+;   Bit 7:5 af PORT_RTC_ADDR styrer operationstype:
+;     Læsning:  bit7=1, bit6=0, bit5=0/1/0 (sæt adresse / aktiver read-puls / fjern read-puls)
+;     Skrivning: bit7=0, bit6=0/1/0, bit5=0 (sæt adresse / aktiver write-puls / fjern write-puls)
+;   Bits 4:0 = register-adresse (A4:A0, 0x00-0x1F)
+;
+;   Læse-sekvens (rtc_read_reg):
+;     1. OUT PORT_RTC_ADDR, (0x80 | reg)       ; bit 7=1, read-mode, sæt adresse
+;     2. OUT PORT_RTC_ADDR, (0xA0 | reg)       ; bit 7=1, bit 5=1 → read-puls ON
+;     3. vent 1μs (4× NOP @ 8MHz)
+;     4. IN al, PORT_RTC_ADDR                  ; læs data
+;     5. OUT PORT_RTC_ADDR, (0x80 | reg)       ; bit 5=0 → read-puls OFF
+;
+;   Skrive-sekvens (rtc_write_reg):
+;     1. OUT PORT_RTC_ADDR, (reg & 0x1F)       ; bit 7=0, write-mode, sæt adresse
+;     2. OUT PORT_RTC_DATA, data               ; data-byte til 0x5A
+;     3. OUT PORT_RTC_ADDR, (0x40 | reg)       ; bit 6=1 → write-puls ON
+;     4. vent 1μs (4× NOP @ 8MHz)
+;     5. OUT PORT_RTC_ADDR, (reg & 0x1F)       ; bit 6=0 → write-puls OFF
+RTC_ADDR_READ_MODE      equ 0x80        ; Bit 7 af PORT_RTC_ADDR: 1 = læse-mode (sættes ved alle read-trin)
+RTC_ADDR_RPULSE         equ 0x20        ; Bit 5 af PORT_RTC_ADDR: 1 = aktivér internal read-puls
+RTC_ADDR_WPULSE         equ 0x40        ; Bit 6 af PORT_RTC_ADDR: 1 = aktivér internal write-puls
 
 ; -----------------------------------------------------------------------------
 ; Intel 82730 Text Coprocessor (CRT)
