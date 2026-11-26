@@ -7365,6 +7365,8 @@ int28_fn_19_timer:			; 0B01F
 ; Intel iSBX 351 Serial Multimodule Board (INT 28H Func 23/24/50)
 ; Reference: iSBX 351 Serial Multimodule Board Hardware Reference Manual (Oct 1980)
 ;   https://www.bitsavers.org/pdf/intel/iSBX/9803190B_iSBX_351_Serial_Multimodule_Board_Hardware_Reference_Manual_Oct80.pdf
+; INT 28H Function 23 — Returns status of iSBX351 controller (if installed) (Manual p. 201)
+; Entry: AL=23; Return: AX=status
 int28_fn_23_isbx_status:		; 0B032
 con_data_read:				; 0B032
 	mov dx, PORT_ISBX_MCS0_02
@@ -7468,6 +7470,9 @@ diag_format_error_record:		; 0B06E
 
 diag_err_record_buf:
 	times 16 db 0	; 0B113  ................
+; INT 28H Function 24 — Initializes iSBX351 controller (if installed) (Manual p. 201)
+; Entry: AL=24, [SP+0]=parameter block offset, [SP+2]=parameter block segment
+; Return: Undefined
 int28_fn_24_isbx_init:			; 0B123
 	push bp
 	mov_bp_sp			; 0B124

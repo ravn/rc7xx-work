@@ -67,7 +67,7 @@ data_start:
   dw 0x0900                                     ; +0x013a: Initial IP = 0x0900 (entry point i PIN)
   dw 0x0000                                     ; +0x013c: Initial CS
   dw 0x0000                                     ; +0x013e: Initial Flags
-  times 84 db 0                                 ; +0x0140..+0x0193: Reserveret stak/buffer
+  times 84 db 0                                 ; +0x0140..+0x0193: PIN lokale variabler (navngivet via pin_* equates ovenfor)
 
   ; -------------------------------------------------------------------------
   ; Drev- og printerfejlmeddelelser
