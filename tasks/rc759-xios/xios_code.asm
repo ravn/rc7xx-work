@@ -7197,14 +7197,13 @@ rtc_1sec_isr:
 	jmp short .rtc_1sec_done
 
 .rtc_1sec_notify:			; 0AEFE
-	; Skriver 0xC4 til RTC_REG_MONTH (0x07, måned-tæller) som klokfrekvens-interrupt-håndtering.
-	; Ref.: RC759 CPU Reference Manual RCSL-99-0-00825 §5 (s.22-27):
-	;   Control-reg (0x11) initialiseres med 0x04 = B2=1(start), B3=0(tæller-tilstand).
-	;   Med B3=0 skrives 0xC4 til selve TÆLLER-registeret (ikke alarm-latch).
-	;   0xC4 som månedsværdi er ugyldigt BCD — præcis funktion ukendt (original kilde tabt).
-	;   Sandsynligvis RC759-hardware-specifik interrupt-kvittering via kredsløbets glue-logik.
+	; Skriver 0xC4 til RTC_REG_MONTH (0x07, måned-tæller) på hvert 1-sek. interrupt.
+	; Ref.: RC759 CPU Reference Manual RCSL-99-0-00825 s.33:
+	;   Bit 7 af måned-tæller = SKUDÅRS-FLAG: "set to '1' when the year is a loop year".
+	;   0xC4 = 0x80 (skudårs-flag, bit 7) | 0x44 (nedre nibble: ukendt, ugyldigt BCD).
+	;   Hvorfor 0x44 genskrives på hvert sek. ukendt — original kildekode er tabt.
 	mov al, RTC_REG_MONTH
-	mov ah, 0xc4			; ukendt RC759-specifik interrupt-kvittering (orig. kilde tabt)
+	mov ah, 0xc4			; bit 7 = skudårs-flag; 0x44-del RC759-specifik, orig. kilde tabt
 	call rtc_write_reg
 
 .rtc_1sec_done:				; 0AF05

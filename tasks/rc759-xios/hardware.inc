@@ -73,7 +73,7 @@ RTC_REG_RAM_RESET       equ 0x1A        ; RAM reset register
 ; Intel 82730 Text Coprocessor (CRT)
 ; -----------------------------------------------------------------------------
 PORT_CRT_CTRL           equ 0x0060      ; CRT control write
-PORT_PALETTE_BASE       equ 0x0180      ; 32 IRGB color palette entries (0x180-0x1BE)
+PORT_PALETTE_BASE       equ 0x0180      ; 16 IRGB farvepalet-indgange, 2 på hinanden flg. ligetal-adresser pr. indgang (0x180-0x1BE)
 PORT_CRT_RESET          equ 0x0230      ; Intel 82730 System Reset (IRST)
 PORT_CRT_CA             equ 0x0240      ; Intel 82730 Channel Attention (CA)
 
@@ -84,13 +84,30 @@ PORT_PPI_PORTA          equ 0x0070      ; Port A: Cassette in, RAM ident, iSBX s
 PORT_PPI_PORTB          equ 0x0072      ; Port B: Monitor type, sound ready, net ident
 PORT_PPI_PORTC          equ 0x0074      ; Port C: Keyboard en, GFX, NVM bank, motor
 PORT_PPI_CTRL           equ 0x0076      ; PPI Control word register
+PPI_CTRL_INIT           equ 0x92        ; Initial mode: Port A=in, Port B=in, Port C low=out, high=out
+
+; PPI Port A bit masks (IOBASE+0x70, input)
+PPI_PORTA_CAS_DATA      equ 0x01        ; Bit 0: CASSETTE DATA IN (seriel data fra bånd)
+PPI_PORTA_MPST          equ 0x02        ; Bit 1: /MPST — 0 hvis iSBX modul installeret
+PPI_PORTA_OPT0          equ 0x04        ; Bit 2: OPTION0 — iSBX-specifik statussignal
+PPI_PORTA_OPT1          equ 0x08        ; Bit 3: OPTION1 — iSBX-specifik statussignal
+PPI_PORTA_nMEMID0       equ 0x10        ; Bit 4: /MEM IDENT0 — RAM-konfiguration (se tabel)
+PPI_PORTA_nMEMID1       equ 0x20        ; Bit 5: /MEM IDENT1 — RAM-konfiguration
+PPI_PORTA_nDPC          equ 0x40        ; Bit 6: /DPC CONNECT — 0 hvis ekstern diskette/printer boks
+
+; PPI Port B bit masks (IOBASE+0x72, input)
+PPI_PORTB_nNETID        equ 0x04        ; Bit 2: /NET IDENT — 0 hvis MICRONET controller er monteret
+PPI_PORTB_nRTC_SEC      equ 0x08        ; Bit 3: /RTC SEC SOURCE — 0 hvis RCA CDP1879 bruges som RTC
+PPI_PORTB_nSOGE         equ 0x10        ; Bit 4: /SOGE — detektion af lydgenerator
+PPI_PORTB_MONO          equ 0x20        ; Bit 5: MONOCHROME — 1 hvis monokrom skærm tilsluttet
+PPI_PORTB_22KHZ         equ 0x40        ; Bit 6: 22KHZ — 1 hvis skærm kører 22 kHz linjefrekvens
 
 ; PPI Port C bit masks
 PPI_PORTC_CAS_EN        equ 0x01        ; Bit 0: Enable cassette interface
 PPI_PORTC_CAS_MOTOR_OFF equ 0x02        ; Bit 1: Cassette motor off (1=off, 0=on)
 PPI_PORTC_DRQ_MASK      equ 0x0C        ; Bit 2-3: DMA request routing mask
 PPI_PORTC_NVM_BANK_MASK equ 0x30        ; Bit 4-5: NVRAM bank select mask
-PPI_PORTC_GFX_EN        equ 0x40        ; Bit 6: Graphics mode (0=alpha, 1=gfx)
+PPI_PORTC_nGRAPHIC      equ 0x40        ; Bit 6: /GRAPHIC — 0=grafik-tilstand, 1=alfanumerisk (aktiv-lav)
 PPI_PORTC_KBD_EN        equ 0x80        ; Bit 7: Keyboard receive enable
 
 ; -----------------------------------------------------------------------------
@@ -134,7 +151,7 @@ FDC_CTRL_MOTOR_A        equ 0x02        ; Bit 1: Motor on for Drive A
 FDC_CTRL_MOTOR_B        equ 0x04        ; Bit 2: Motor on for Drive B
 FDC_CTRL_PRECOMP_EN     equ 0x08        ; Bit 3: Write precompensation enable
 FDC_CTRL_PRECOMP_TIME   equ 0x10        ; Bit 4: Precomp timing (125/250 ns)
-FDC_CTRL_DDEN           equ 0x20        ; Bit 5: Double density (0=FM, 1=MFM)
+FDC_CTRL_nDD            equ 0x20        ; Bit 5: /DD — 0=dual density (MFM), 1=single density (FM)
 FDC_CTRL_CLOCK_2MHZ     equ 0x40        ; Bit 6: 0 = 1 MHz (5.25"), 1 = 2 MHz (8")
 FDC_CTRL_FORCE_READY    equ 0x80        ; Bit 7: Force Ready signal to WD2797
 
