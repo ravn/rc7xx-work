@@ -196,6 +196,7 @@ CCB_CURSOR_LINES    equ 0x72		; Cursor start scanline (word 0x72 = start/end sca
 CCB_CURSOR_HEIGHT   equ 0x73		; Cursor end scanline / height
 CCB_BLINK_FLAG      equ 0x74		; Cursor blink / 82730 MPTR40 source (duty_cyc/char_blink)
 CCB_SCAN_CTRL       equ 0x75		; 82730 MPTR44 source byte (abs_line_count/underline/invisible)
+CCB_LINK            equ 0x5a		; CCB-kæde link-pointer (+0x5A-0x5B, 0xFFFF = kæde-afslutning)
 CCB_DRI_CCB_SYSDAT  equ 0x5c		; SYSDAT-offset til konsolens DRI CCB (0x0D49, 0x0D75…)
 CCB_VIDEO_MODE      equ 0x7f		; Background color / video mode
 CCB_CHAR_ATTR       equ 0x80		; Character attribute byte
@@ -4183,7 +4184,7 @@ window_repaint_contents:		; 09334
 	ret
 
 window_draw_borders:
-	mov word [bx + 0x5a], 0xffff
+	mov word [bx + CCB_LINK], 0xffff
 	mov dx, [bx + CCB_WIN_LEFT]
 	mov cx, [bx + CCB_COLS]
 	dec dh
@@ -4252,7 +4253,7 @@ window_draw_horiz_border:		; 093F6
 	call xios_clip_draw_char
 	mov al, ':'
 	call xios_clip_draw_char
-	mov [bx + 0x5a], si
+	mov [bx + CCB_LINK], si
 	call window_draw_title
 	mov al, 0x20
 	call xios_clip_draw_char
@@ -4327,7 +4328,7 @@ window_draw_title:			; 09473
 	test si, si
 	je .title_done
 	lea bp, [si + 8]
-	mov si, [bx + 0x5a]
+	mov si, [bx + CCB_LINK]
 	cmp si, -1
 	je .title_done
 	mov_di_si			; 0948C
