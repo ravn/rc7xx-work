@@ -16,6 +16,7 @@
 ; Reference: Piccoline Programmer's Guide v2, §4.1 Tastatur (p. 42-45)
 ;   https://rc700.dk/files/documentation/PICCOLINE_Programmers_Guide_v2.pdf#page=52
 ; =============================================================================
+KBD_RELEASE_BIT     equ 0x80		; Bit 7 i scan-kode: 1 = tast sluppet (key-up event)
 KBD_SHIFT_CTRL      equ 0x02		; Control key active
 KBD_SHIFT_LEFTSHIFT equ 0x04		; Left shift active
 KBD_SHIFT_RIGHTSHIFT equ 0x08		; Right shift active
@@ -527,7 +528,7 @@ kbd_handler:				; 07A93 / 000002F3
 	mov [cs:kbd_raw_scancode], al	; Gem rå scancode
 	cmp byte [cs:kbd_prefix_flag], 0xff
 	jne .check_mouse_packet
-	test al, 0x80
+	test al, KBD_RELEASE_BIT
 	jne .check_scancode_valid
 	mov byte [cs:kbd_prefix_flag], 0
 	mov bx, kbd_translate_table	; kbd_translate_table
@@ -629,7 +630,7 @@ kbd_handler:				; 07A93 / 000002F3
 	jmp short .store_char
 
 .set_alt_bit:
-	or al, 0x80
+	or al, KBD_RELEASE_BIT	; marker som key-release-tegn
 
 .store_char:
 	mov [cs:kbd_char_buffer], al
@@ -647,7 +648,7 @@ kbd_handler:				; 07A93 / 000002F3
 .handle_special_modifier:
 	cmp al, 0x28
 	je .handle_caps_lock
-	test byte [cs:kbd_raw_scancode], 0x80
+	test byte [cs:kbd_raw_scancode], KBD_RELEASE_BIT
 	je .set_shift_modifier
 	not ah
 	and [cs:kbd_shift_state], ah
@@ -658,7 +659,7 @@ kbd_handler:				; 07A93 / 000002F3
 	jmp short .done_modifier
 
 .handle_caps_lock:
-	test byte [cs:kbd_raw_scancode], 0x80
+	test byte [cs:kbd_raw_scancode], KBD_RELEASE_BIT
 	jne .done_modifier
 	xor [cs:kbd_lock_state], ah
 	cmp byte [cs:vmenu_active_flag], 0xff
