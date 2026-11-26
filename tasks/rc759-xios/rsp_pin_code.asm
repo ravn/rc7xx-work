@@ -450,13 +450,13 @@ loc_11AD4:                                     ; 11AD4
   les bx, [pin_cur_ccb]                              ; 11AE8  0xC4, 0x1E, 0x58, 0x01
   mov al, [es:bx + 0xa]                        ; 11AEC  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 11AF0  0xB4, 0x00
-  mov [0x164], ax                              ; 11AF2  0xA3, 0x64, 0x01
+  mov [pin_saved_wrd], ax                              ; 11AF2  0xA3, 0x64, 0x01
   mov cl, 8                                    ; 11AF5  0xB1, 0x08
   shl ax, cl                                   ; 11AF7  0xD3, 0xE0
   mov cl, [es:bx + 0xb]                        ; 11AF9  0x26, 0x8A, 0x4F, 0x0B
   mov ch, 0                                    ; 11AFD  0xB5, 0x00
   db 0x03, 0xC1                                ; 11AFF  add ax, cx
-  mov [0x164], ax                              ; 11B01  0xA3, 0x64, 0x01
+  mov [pin_saved_wrd], ax                              ; 11B01  0xA3, 0x64, 0x01
   mov cx, 7                                    ; 11B04  0xB9, 0x07, 0x00
   push cx                                      ; 11B07  0x51
   mov cx, 0                                    ; 11B08  0xB9, 0x00, 0x00
@@ -489,10 +489,10 @@ loc_11B39:                                     ; 11B39
   db 0x26, 0x81, 0x67, 0x0E, 0xEF, 0xFF        ; 11B4A  and word [es:bx + 0xe], 0xffef
   mov ax, [es:bx]                              ; 11B50  0x26, 0x8B, 0x07
   mov [pin_pd_ptr], ax                              ; 11B53  0xA3, 0x44, 0x01
-  mov word [0x180], 0xa8                       ; 11B56  0xC7, 0x06, 0x80, 0x01, 0xA8, 0x00
+  mov word [pin_pd_scan], 0xa8                       ; 11B56  0xC7, 0x06, 0x80, 0x01, 0xA8, 0x00
 
 loc_11B5C:                                     ; 11B5C
-  les bx, [0x180]                              ; 11B5C  0xC4, 0x1E, 0x80, 0x01
+  les bx, [pin_pd_scan]                              ; 11B5C  0xC4, 0x1E, 0x80, 0x01
   mov ax, [es:bx]                              ; 11B60  0x26, 0x8B, 0x07
   push ax                                      ; 11B63  0x50
   cmp ax, [pin_pd_ptr]                              ; 11B64  0x3B, 0x06, 0x44, 0x01
@@ -513,11 +513,11 @@ loc_11B77:                                     ; 11B77
   db 0x22, 0xC2                                ; 11B78  and al, dl
   rcr al, 1                                    ; 11B7A  0xD0, 0xD8
   jae loc_11B84                                ; 11B7C  0x73, 0x06
-  mov [0x180], cx                              ; 11B7E  0x89, 0x0E, 0x80, 0x01
+  mov [pin_pd_scan], cx                              ; 11B7E  0x89, 0x0E, 0x80, 0x01
   jmp short loc_11B5C                          ; 11B82  0xEB, 0xD8
 
 loc_11B84:                                     ; 11B84
-  les bx, [0x180]                              ; 11B84  0xC4, 0x1E, 0x80, 0x01
+  les bx, [pin_pd_scan]                              ; 11B84  0xC4, 0x1E, 0x80, 0x01
   mov ax, [es:bx]                              ; 11B88  0x26, 0x8B, 0x07
   cmp ax, [pin_pd_ptr]                              ; 11B8B  0x3B, 0x06, 0x44, 0x01
   jne loc_11BC0                                ; 11B8F  0x75, 0x2F
@@ -526,14 +526,14 @@ loc_11B84:                                     ; 11B84
   mov ax, [es:si]                              ; 11B96  0x26, 0x8B, 0x04
   pop es                                       ; 11B99  0x07
   mov [es:bx], ax                              ; 11B9A  0x26, 0x89, 0x07
-  mov word [0x184], 0x6c                       ; 11B9D  0xC7, 0x06, 0x84, 0x01, 0x6C, 0x00
-  les bx, [0x184]                              ; 11BA3  0xC4, 0x1E, 0x84, 0x01
+  mov word [pin_pd_link], 0x6c                       ; 11B9D  0xC7, 0x06, 0x84, 0x01, 0x6C, 0x00
+  les bx, [pin_pd_link]                              ; 11BA3  0xC4, 0x1E, 0x84, 0x01
   mov ax, [es:bx]                              ; 11BA7  0x26, 0x8B, 0x07
   mov es, [pin_pd_seg]                              ; 11BAA  0x8E, 0x06, 0x46, 0x01
   mov [es:si], ax                              ; 11BAE  0x26, 0x89, 0x04
   mov byte [es:si + 4], 0                      ; 11BB1  0x26, 0xC6, 0x44, 0x04, 0x00
   mov ax, [pin_pd_ptr]                              ; 11BB6  0xA1, 0x44, 0x01
-  mov es, [0x186]                              ; 11BB9  0x8E, 0x06, 0x86, 0x01
+  mov es, [pin_pd_link_seg]                              ; 11BB9  0x8E, 0x06, 0x86, 0x01
   mov [es:bx], ax                              ; 11BBD  0x26, 0x89, 0x07
 
 loc_11BC0:                                     ; 11BC0
@@ -648,7 +648,7 @@ loc_11C95:                                     ; 11C95
   call pin_set_conout_flag                               ; 11CC4  0xE8, 0x2B, 0xFC
   les bx, [pin_cur_ccb]                              ; 11CC7  0xC4, 0x1E, 0x58, 0x01
   mov ax, [es:bx]                              ; 11CCB  0x26, 0x8B, 0x07
-  mov [0x178], ax                              ; 11CCE  0xA3, 0x78, 0x01
+  mov [pin_vinq_msg], ax                              ; 11CCE  0xA3, 0x78, 0x01
   mov al, 0x9d                                 ; 11CD1  0xB0, 0x9D
   push ax                                      ; 11CD3  0x50
   mov ax, 0x178                                ; 11CD4  0xB8, 0x78, 0x01
@@ -703,7 +703,7 @@ loc_11D43:                                     ; 11D43
   push ax                                      ; 11D4E  0x50
   mov al, 0                                    ; 11D4F  0xB0, 0x00
   push ax                                      ; 11D51  0x50
-  lea ax, [0x1a8]                              ; 11D52  0x8D, 0x06, 0xA8, 0x01
+  lea ax, [pin_msg_drive_err]                              ; 11D52  0x8D, 0x06, 0xA8, 0x01
   push ds                                      ; 11D56  0x1E
   push ax                                      ; 11D57  0x50
   call pin_read_change_mxq                               ; 11D58  0xE8, 0x03, 0xFB
@@ -711,7 +711,7 @@ loc_11D43:                                     ; 11D43
   push ax                                      ; 11D5D  0x50
   mov al, 0                                    ; 11D5E  0xB0, 0x00
   push ax                                      ; 11D60  0x50
-  lea ax, [0x194]                              ; 11D61  0x8D, 0x06, 0x94, 0x01
+  lea ax, [pin_drive_list]                              ; 11D61  0x8D, 0x06, 0x94, 0x01
   push ds                                      ; 11D65  0x1E
   push ax                                      ; 11D66  0x50
   call pin_read_change_mxq                               ; 11D67  0xE8, 0xF4, 0xFA
@@ -727,7 +727,7 @@ loc_11D70:                                     ; 11D70
   push ax                                      ; 11D7F  0x50
   mov al, 0                                    ; 11D80  0xB0, 0x00
   push ax                                      ; 11D82  0x50
-  lea ax, [0x1c1]                              ; 11D83  0x8D, 0x06, 0xC1, 0x01
+  lea ax, [pin_msg_comma]                              ; 11D83  0x8D, 0x06, 0xC1, 0x01
   push ds                                      ; 11D87  0x1E
   push ax                                      ; 11D88  0x50
   call pin_read_change_mxq                               ; 11D89  0xE8, 0xD2, 0xFA
@@ -748,7 +748,7 @@ loc_11DA6:                                     ; 11DA6
   push ax                                      ; 11DA8  0x50
   mov al, 0                                    ; 11DA9  0xB0, 0x00
   push ax                                      ; 11DAB  0x50
-  lea ax, [0x1c2]                              ; 11DAC  0x8D, 0x06, 0xC2, 0x01
+  lea ax, [pin_msg_comma_crlf]                              ; 11DAC  0x8D, 0x06, 0xC2, 0x01
   push ds                                      ; 11DB0  0x1E
   push ax                                      ; 11DB1  0x50
   call pin_read_change_mxq                               ; 11DB2  0xE8, 0xA9, 0xFA
@@ -954,7 +954,7 @@ loc_11F61:                                     ; 11F61
   db 0xF7, 0xE2                                ; 11F6E  mul dx
   les si, [pin_sysdat_ptr]                              ; 11F70  0xC4, 0x36, 0x40, 0x01
   add ax, [es:si + 0x86]                       ; 11F74  0x26, 0x03, 0x84, 0x86, 0x00
-  mov [0x160], ax                              ; 11F79  0xA3, 0x60, 0x01
+  mov [pin_wakeup_ptr], ax                              ; 11F79  0xA3, 0x60, 0x01
   cli                                          ; 11F7C  0xFA
   mov byte [pin_scan_char], 0xff                       ; 11F7D  0xC6, 0x06, 0x90, 0x01, 0xFF
   mov al, [es:si + 0x46]                       ; 11F82  0x26, 0x8A, 0x44, 0x46
@@ -965,19 +965,19 @@ loc_11F61:                                     ; 11F61
   cmp [es:bx + 0x1c], cx                       ; 11F90  0x26, 0x39, 0x4F, 0x1C
   je loc_11FD3                                 ; 11F94  0x74, 0x3D
   mov ax, [es:bx + 0x1c]                       ; 11F96  0x26, 0x8B, 0x47, 0x1C
-  mov [0x14e], ax                              ; 11F9A  0xA3, 0x4E, 0x01
-  mov [0x14c], cx                              ; 11F9D  0x89, 0x0E, 0x4C, 0x01
-  les si, [0x14c]                              ; 11FA1  0xC4, 0x36, 0x4C, 0x01
+  mov [pin_ext_seg], ax                              ; 11F9A  0xA3, 0x4E, 0x01
+  mov [pin_ext_ptr], cx                              ; 11F9D  0x89, 0x0E, 0x4C, 0x01
+  les si, [pin_ext_ptr]                              ; 11FA1  0xC4, 0x36, 0x4C, 0x01
   les ax, [es:si + 4]                          ; 11FA5  0x26, 0xC4, 0x44, 0x04
-  mov [0x150], ax                              ; 11FA9  0xA3, 0x50, 0x01
-  mov [0x152], es                              ; 11FAC  0x8C, 0x06, 0x52, 0x01
+  mov [pin_ext2], ax                              ; 11FA9  0xA3, 0x50, 0x01
+  mov [pin_ext2_seg], es                              ; 11FAC  0x8C, 0x06, 0x52, 0x01
   mov es, [pin_pd_seg]                              ; 11FB0  0x8E, 0x06, 0x46, 0x01
   mov dl, [es:bx + 0x24]                       ; 11FB4  0x26, 0x8A, 0x57, 0x24
   mov dh, 0                                    ; 11FB8  0xB6, 0x00
   shl dx, 1                                    ; 11FBA  0xD1, 0xE2
   mov bx, ax                                   ; 11FBC  0x89, 0xC3
   mov si, dx                                   ; 11FBE  0x89, 0xD6
-  mov es, [0x152]                              ; 11FC0  0x8E, 0x06, 0x52, 0x01
+  mov es, [pin_ext2_seg]                              ; 11FC0  0x8E, 0x06, 0x52, 0x01
   mov ax, [es:bx + si + 0x42]                  ; 11FC4  0x26, 0x8B, 0x40, 0x42
   and ax, 0x80                                 ; 11FC8  0x25, 0x80, 0x00
   db 0x3B, 0xC1                                ; 11FCB  cmp ax, cx
@@ -985,7 +985,7 @@ loc_11F61:                                     ; 11F61
   mov [pin_scan_char], cl                              ; 11FCF  0x88, 0x0E, 0x90, 0x01
 
 loc_11FD3:                                     ; 11FD3
-  les bx, [0x160]                              ; 11FD3  0xC4, 0x1E, 0x60, 0x01
+  les bx, [pin_wakeup_ptr]                              ; 11FD3  0xC4, 0x1E, 0x60, 0x01
   cmp word [es:bx], 0                          ; 11FD7  0x26, 0x83, 0x3F, 0x00
   jne loc_12008                                ; 11FDB  0x75, 0x2B
   mov al, [pin_scan_char]                              ; 11FDD  0xA0, 0x90, 0x01
@@ -1011,7 +1011,7 @@ loc_12008:                                     ; 12008
   push ax                                      ; 12014  0x50
   mov al, 0                                    ; 12015  0xB0, 0x00
   push ax                                      ; 12017  0x50
-  lea ax, [0x1c4]                              ; 12018  0x8D, 0x06, 0xC4, 0x01
+  lea ax, [pin_msg_prn_busy]                              ; 12018  0x8D, 0x06, 0xC4, 0x01
   push ds                                      ; 1201C  0x1E
   push ax                                      ; 1201D  0x50
   call pin_read_change_mxq                               ; 1201E  0xE8, 0x3D, 0xF8
@@ -1032,15 +1032,15 @@ loc_12036:                                     ; 12036
   db 0xF7, 0xE1                                ; 12044  mul cx
   les si, [pin_sysdat_ptr]                              ; 12046  0xC4, 0x36, 0x40, 0x01
   add ax, [es:si + 0x86]                       ; 1204A  0x26, 0x03, 0x84, 0x86, 0x00
-  mov [0x160], ax                              ; 1204F  0xA3, 0x60, 0x01
-  les si, [0x160]                              ; 12052  0xC4, 0x36, 0x60, 0x01
+  mov [pin_wakeup_ptr], ax                              ; 1204F  0xA3, 0x60, 0x01
+  les si, [pin_wakeup_ptr]                              ; 12052  0xC4, 0x36, 0x60, 0x01
   mov word [es:si], 0                          ; 12056  0x26, 0xC7, 0x04, 0x00, 0x00
   mov byte [es:si + 9], 0xff                   ; 1205B  0x26, 0xC6, 0x44, 0x09, 0xFF
-  mov es, [0x15a]                              ; 12060  0x8E, 0x06, 0x5A, 0x01
+  mov es, [pin_ext3_seg]                              ; 12060  0x8E, 0x06, 0x5A, 0x01
   mov byte [es:bx + 8], 0xff                   ; 12064  0x26, 0xC6, 0x47, 0x08, 0xFF
   and word [es:bx + 0xe], 0xfdff               ; 12069  0x26, 0x81, 0x67, 0x0E, 0xFF, 0xFD
   and byte [es:bx + 4], 0xdf                   ; 1206F  0x26, 0x80, 0x67, 0x04, 0xDF
-  mov es, [0x162]                              ; 12074  0x8E, 0x06, 0x62, 0x01
+  mov es, [pin_wakeup_seg]                              ; 12074  0x8E, 0x06, 0x62, 0x01
   lea ax, [si + 2]                             ; 12078  0x8D, 0x44, 0x02
   push ax                                      ; 1207B  0x50
   call pin_set_conout_flag                               ; 1207C  0xE8, 0x73, 0xF8
@@ -1095,11 +1095,11 @@ loc_120CC:                                     ; 120CC
   push bp                                      ; 120D0  0x55
   db 0x8B, 0xEC                                ; 120D1  mov bp, sp
   mov ax, [0]                                  ; 120D3  0xA1, 0x00, 0x00
-  mov [0x142], ax                              ; 120D6  0xA3, 0x42, 0x01
-  mov [0x162], ax                              ; 120D9  0xA3, 0x62, 0x01
-  mov [0x15a], ax                              ; 120DC  0xA3, 0x5A, 0x01
-  mov [0x182], ax                              ; 120DF  0xA3, 0x82, 0x01
-  mov [0x186], ax                              ; 120E2  0xA3, 0x86, 0x01
+  mov [pin_sysdat_seg], ax                              ; 120D6  0xA3, 0x42, 0x01
+  mov [pin_wakeup_seg], ax                              ; 120D9  0xA3, 0x62, 0x01
+  mov [pin_ext3_seg], ax                              ; 120DC  0xA3, 0x5A, 0x01
+  mov [pin_pd_scan_seg], ax                              ; 120DF  0xA3, 0x82, 0x01
+  mov [pin_pd_link_seg], ax                              ; 120E2  0xA3, 0x86, 0x01
   les bx, [pin_sysdat_ptr]                              ; 120E5  0xC4, 0x1E, 0x40, 0x01
   mov ax, [es:bx + 0x54]                       ; 120E9  0x26, 0x8B, 0x47, 0x54
   mov [pin_cur_ccb], ax                              ; 120ED  0xA3, 0x58, 0x01
@@ -1148,23 +1148,23 @@ loc_12132:                                     ; 12132
   les bx, [pin_cur_ccb]                              ; 1215F  0xC4, 0x1E, 0x58, 0x01
   mov al, [es:bx + 0xa]                        ; 12163  0x26, 0x8A, 0x47, 0x0A
   mov ah, 0                                    ; 12167  0xB4, 0x00
-  mov [0x164], ax                              ; 12169  0xA3, 0x64, 0x01
+  mov [pin_saved_wrd], ax                              ; 12169  0xA3, 0x64, 0x01
   mov cl, 8                                    ; 1216C  0xB1, 0x08
   shl ax, cl                                   ; 1216E  0xD3, 0xE0
   mov cl, [es:bx + 0xb]                        ; 12170  0x26, 0x8A, 0x4F, 0x0B
   mov ch, 0                                    ; 12174  0xB5, 0x00
   db 0x03, 0xC1                                ; 12176  add ax, cx
-  mov [0x164], ax                              ; 12178  0xA3, 0x64, 0x01
+  mov [pin_saved_wrd], ax                              ; 12178  0xA3, 0x64, 0x01
 
 loc_1217B:                                     ; 1217B
   call pin_conin                               ; 1217B  0xE8, 0xA4, 0xF6
-  cmp byte [0x17f], 0xff                       ; 1217E  0x80, 0x3E, 0x7F, 0x01, 0xFF
+  cmp byte [pin_cword_hi], 0xff                       ; 1217E  0x80, 0x3E, 0x7F, 0x01, 0xFF
   jne loc_1218A                                ; 12183  0x75, 0x05
   call pin_controlC                               ; 12185  0xE8, 0x86, 0xF8
   jmp short loc_1217B                          ; 12188  0xEB, 0xF1
 
 loc_1218A:                                     ; 1218A
-  mov al, [0x17f]                              ; 1218A  0xA0, 0x7F, 0x01
+  mov al, [pin_cword_hi]                              ; 1218A  0xA0, 0x7F, 0x01
   and al, 1                                    ; 1218D  0x24, 0x01
   cmp al, 0                                    ; 1218F  0x3C, 0x00
   jne loc_1219A                                ; 12191  0x75, 0x07

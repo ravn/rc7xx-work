@@ -10,8 +10,11 @@
 ; VOUT lokale variabler (DS-relative offsets)
 ; ---------------------------------------------------------------------------
 vout_sysdat_ptr equ 0x0140  ; far ptr (off:seg): CCB-tabel / SYSDAT-base (LES BX)
+vout_sysdat_seg equ 0x0142  ; word segment: segment-del af vout_sysdat_ptr
 vout_cur_ccb    equ 0x0144  ; word offset: aktuel CCB (kombineret m. vout_ccb_seg → LES BX)
 vout_ccb_seg    equ 0x0146  ; word segment: CCB-tabel segment (hi-del af vout_cur_ccb LES)
+vout_ccb_state  equ 0x014c  ; byte: tilstandsværdi fra aktuel CCB
+vout_ccb_busy   equ 0x014d  ; byte: 0=ledig, 0xFF=optaget
 vout_q_start    equ 0x014e  ; word: kø/buffer start-position (sammenlignes m. vout_q_end)
 vout_q_end      equ 0x0150  ; word: kø/buffer slut-position
 vout_char_pend  equ 0x0152  ; word: afventende tegn/index (0xFFFF = ingen)
@@ -20,6 +23,28 @@ vout_ccb_seg2   equ 0x015c  ; word segment: 2. CCB far ptr segment (fra BDOS-ret
 vout_attr_pend  equ 0x0154  ; word: afventende attribut (0xFFFF = ingen)
 vout_attr_limit equ 0x0156  ; word: attribut-grænse (default 0x80)
 vout_mxq_msg    equ 0x0234  ; word: CCB mutex-kø besked (fra CCB+0x16)
+vout_ccb_state_ptr equ 0x0238 ; word: pointer til vout_ccb_state (initialiseret til 0x14c)
+; VCMXQ tilstandsbytes (inde i VCMXQ kø-deskriptor, 0x0244-0x0247):
+vout_vcmxq_data equ 0x0244  ; byte: VCMXQ intern data-byte
+vout_vcmxq_flag1 equ 0x0245 ; byte: VCMXQ flag 1 (0xFF=aktiv, 0x00=inaktiv)
+vout_vcmxq_flag2 equ 0x0246 ; byte: VCMXQ flag 2
+vout_vcmxq_flag3 equ 0x0247 ; byte: VCMXQ flag 3
+; VOUT output kontroltilstand (i kø-buffer-området, 0x0348-0x034f):
+vout_ostate     equ 0x0348  ; byte: output tilstand
+vout_active     equ 0x0349  ; byte: 0xFF=aktiv udskriv, 0x00=inaktiv
+vout_col        equ 0x034a  ; byte: aktuel kolonneposition (nulstilles ved linjeskift)
+vout_row        equ 0x034b  ; byte: aktuel rækkeposition
+vout_omode      equ 0x034c  ; byte: output-tilstandsmaskine
+vout_saved_char equ 0x034d  ; byte: gemt tegn
+vout_line_cnt   equ 0x034e  ; byte: linjetegn-tæller (sammenlignes mod 0x28=40)
+vout_line_attr  equ 0x034f  ; byte: linjeattribut (lo-byte)
+vout_line_attr2 equ 0x0350  ; byte: linjeattribut (hi-byte / ekstra flag)
+vout_line_flags equ 0x0351  ; byte: linjeflag
+vout_buf_last   equ 0x0372  ; byte: sidste byte i kø-buffer-området
+vout_prompt_str equ 0x0373  ; byte[]: prompt-streng "        $$$" (11 bytes)
+vout_work_buf   equ 0x037e  ; byte[]: arbejdsbuffer (terminaltilstand, 24 bytes)
+vout_ws1        equ 0x0393  ; byte: arbejdsbuffer tilstandsbyte 1
+vout_ws2        equ 0x0394  ; byte: arbejdsbuffer tilstandsbyte 2
 ; Kø-deskriptor-adresser i VOUT-datasegment:
 VOUT_VCMXQ_OFF  equ 0x0232  ; VCMXQ kø-descriptor offset i DS
 
