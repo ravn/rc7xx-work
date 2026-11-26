@@ -608,7 +608,7 @@ kbd_handler:				; 07A93 / 000002F3
 	jns .set_alt_bit
 	cmp al, 0x0b
 	ja .store_char
-	mov bx, 0x104e
+	mov bx, 0x104e		; DS:0x104E = alt-tast oversættelses-tabel for AL=0..0x0B
 	xlatb
 	jmp short .store_char
 
@@ -882,8 +882,8 @@ vmenu_display_menu_entry:		; 07D35 / 000005C7
 	pop es
 	mov di, vmenu_line_render_buffer	; 07D4E
 	push di
-	mov ax, 0x820
-	mov cx, 0x50
+	mov ax, 0x0820		; Tegn+attribut: char=0x20 (mellemrum), attr=0x08
+	mov cx, 0x50		; 80 tegn/linje
 	rep stosw
 	pop di
 	mov si, xios_vmenu_title	; 07D5B (vmenu titeltekst)
