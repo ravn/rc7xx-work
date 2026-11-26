@@ -107,7 +107,8 @@ AUTOCONF_NUM_FLOPPIES	equ 0x13		; Byte: Antal tilkoblede floppydrev (0..4)
 AUTOCONF_RESERVED_20	equ 0x14		; Word: Reserveret
 AUTOCONF_KBD_NATIONALITY	equ 0x16		; Byte: Tastatur nationalitetskode / dip switch (0..15)
 AUTOCONF_SYS_TYPE	equ 0x17		; Byte: Systemtype
-AUTOCONF_SYS_RC759	equ 0x50		; Systemtype: RC759 Piccoline (sammenlign med bit 5 nulstillet)
+AUTOCONF_SYS_RC759	equ 0x50		; Systemtype: RC759 Piccoline (basis, bit 5 = variant-flag)
+AUTOCONF_SYS_VARIANT	equ 0x20		; Bit 5: systemtype-variantflag (nulstilles før sammenligning)
 
 ; =============================================================================
 ; Piccoline Non-Volatile Memory (NVRAM) Layout (INT 28h Func 3 / xios_nvram_table)
@@ -209,6 +210,7 @@ CCB_SAVED_ATTR       equ 0x6f		; Gemt tegnattribut ved ESC 2 / ESC 3
 CCB_FKEY_TABLE       equ 0x76		; Funktionstast-tabel (pointer til fkey-definitioner)
 CCB_ESC_PARAM_CNT    equ 0x7a		; ESC-sekvens resterende parameter-tæller (nedtæller til 0)
 CCB_ESC_PARAM_FN     equ 0x7b		; Escape-sekvens parameter handler/funktion
+CCB_SCROLL_PIXEL     equ 0x7c		; Pixel-scroll-offset for blød rulning (adderes/subtraheres med 4)
 CCB_ESC_PARAM_BUF    equ 0x7d		; Escape-sekvens parameter-buffer
 CCB_PALETTE_SIZE     equ 0x81		; Antal aktive palet-indgange (word, initialiseret til 2, max 16)
 CCB_PALETTE          equ 0x84		; Farvepalet / attribut-tabel for konsol
@@ -2403,7 +2405,7 @@ crt_soft_scroll_step_down_start:
 crt_scroll_dma_update_line:		; 087CD
 	mov [cs:bx + 0x80], cl
 	inc cl
-	mov [cs:bx + 0x7c], cl
+	mov [cs:bx + CCB_SCROLL_PIXEL], cl
 	shl di, 1
 	shl di, 1
 	add_di_bx			; 087DC
@@ -2458,7 +2460,7 @@ scroll_shift_line_pointers:		; 08825
 	shl cx, 1
 	call crt_swap_active_line_buffers
 	rep movsw
-	lea ax, [bx + 0x7c]
+	lea ax, [bx + CCB_SCROLL_PIXEL]
 	call crt_dma_make_phys_desc
 	mov ax, crt_dma_desc_attr_ptr
 	call crt_dma_make_phys_desc
@@ -2489,12 +2491,12 @@ crt_scroll_step_shift_dma:		; 08875
 	rep movsw
 	mov [cs:bx + 0x80], al
 	inc al
-	mov [cs:bx + 0x7c], al
+	mov [cs:bx + CCB_SCROLL_PIXEL], al
 	mov di, [cs:xios_scroll_row_start]
 	shl di, 1
 	shl di, 1
 	add_di_bx			; 08891
-	lea ax, [bx + 0x7c]
+	lea ax, [bx + CCB_SCROLL_PIXEL]
 	call crt_dma_make_phys_desc
 	mov di, [cs:xios_scroll_row_end]
 	inc di
@@ -2509,14 +2511,14 @@ crt_scroll_step_shift_dma:		; 08875
 
 crt_soft_scroll_step_add_lines:
 	call crt_swap_active_line_buffers
-	add byte [cs:bx + 0x7c], 4
+	add byte [cs:bx + CCB_SCROLL_PIXEL], 4
 	add byte [cs:bx + 0x80], 4
 	xor byte [cs:crt_line_buf_toggle], 0x80
 	ret
 
 crt_soft_scroll_step_sub_lines:
 	call crt_swap_active_line_buffers
-	sub byte [cs:bx + 0x7c], 4
+	sub byte [cs:bx + CCB_SCROLL_PIXEL], 4
 	sub byte [cs:bx + 0x80], 4
 	xor byte [cs:crt_line_buf_toggle], 0x80
 	ret
@@ -5310,7 +5312,7 @@ fdc_select_drive_unit:			; 09D1B
 	sti
 	or_al_ah			; 09D3E
 	mov ah, [cs:fdc_active_drive_fcr]
-	and ah, 0xfe
+	and ah, ~FDC_CTRL_DRIVE_B & 0xFF	; vælg drev A
 	or_al_ah			; 09D48
 	mov [cs:fdc_active_drive_fcr], al
 
@@ -5362,10 +5364,10 @@ fdc_motor_timeout_tick:
 	ret
 
 fdc_deselect_drive_unit:		; 09DA4
-	mov al, 0xfd
+	mov al, ~FDC_CTRL_MOTOR_A & 0xFF	; sluk motor A
 	and ah, 1
 	je .deselect_port_write
-	mov al, 0xfb
+	mov al, ~FDC_CTRL_MOTOR_B & 0xFF	; sluk motor B
 
 .deselect_port_write:			; 09DAD
 	and al, [cs:fdc_active_drive_fcr]
@@ -5391,7 +5393,7 @@ fdc_seek_track_zero:			; 09DD0
 	je .seek_drive_b
 	mov di, dph_drive_a
 	mov al, [cs:fdc_active_drive_fcr]
-	and al, 0xfe
+	and al, ~FDC_CTRL_DRIVE_B & 0xFF	; vælg drev A
 	mov ah, 2
 	call xios_fdc_select_drive
 
@@ -5430,10 +5432,10 @@ xios_fdc_select_drive:			; 09E05
 	ret
 
 fdc_set_motor_enable:			; 09E25
-	mov ah, 0xfd
+	mov ah, ~FDC_CTRL_MOTOR_A & 0xFF	; sluk motor A
 	cmp byte [bp + 0xe], 0
 	je .motor_enable_port_write
-	mov ah, 0xfb
+	mov ah, ~FDC_CTRL_MOTOR_B & 0xFF	; sluk motor B
 
 .motor_enable_port_write:		; 09E2F
 	mov al, [cs:fdc_active_drive_fcr]
@@ -5676,7 +5678,7 @@ int28_fn_05_recalibrate:		; 09FF9
 	mov ah, [bp + 0x14]
 	call fdc_select_drive_unit
 	mov al, 0xc
-	and al, 0xfb
+	and al, ~FDC_CTRL_MOTOR_B & 0xFF	; sluk motor B
 
 fdc_read_path:				; 0A00B
 	mov dx, PORT_FDC_CMD
@@ -5696,7 +5698,7 @@ int28_fn_08_step_in:			; 0A017
 	mov ah, [bp + 0x14]
 	call fdc_select_drive_unit
 	mov al, 0x5c
-	and al, 0xfb
+	and al, ~FDC_CTRL_MOTOR_B & 0xFF	; sluk motor B
 	mov dx, PORT_FDC_CMD
 	out dx, al
 	call fdc_wait
@@ -8338,7 +8340,7 @@ xios_init_entry:
 	mov ah, 3
 	call ppi_set_nvram_bank
 	mov bx, xios_autoconfig_table
-	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
+	and byte [bx + AUTOCONF_SYS_TYPE], ~AUTOCONF_SYS_VARIANT & 0xFF
 	cmp byte [bx + AUTOCONF_SYS_TYPE], AUTOCONF_SYS_RC759
 	jne .init_zero_bss_buffers
 	xor_ax_ax			; 0BDC1
@@ -8379,7 +8381,7 @@ xios_init_entry:
 	xchg bx, ax
 	loop .init_bss_clear_loop
 	mov bx, xios_autoconfig_table
-	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
+	and byte [bx + AUTOCONF_SYS_TYPE], ~AUTOCONF_SYS_VARIANT & 0xFF
 	cmp byte [bx + AUTOCONF_SYS_TYPE], AUTOCONF_SYS_RC759
 	jne .init_next_ccb_ptr
 	xor_ax_ax			; 0BE04
@@ -8397,7 +8399,7 @@ xios_init_entry:
 
 .init_next_ccb_ptr:			; 0BE16
 	mov bx, xios_autoconfig_table
-	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
+	and byte [bx + AUTOCONF_SYS_TYPE], ~AUTOCONF_SYS_VARIANT & 0xFF
 	cmp byte [bx + AUTOCONF_SYS_TYPE], AUTOCONF_SYS_RC759
 	je .init_dph_tables
 	mov bx, cs
@@ -8595,7 +8597,7 @@ xios_init_entry:
 	mov [cs:diag_timer_isr_ptr], si
 	call crt_init_hardware_display
 	mov bx, xios_autoconfig_table
-	and byte [bx + AUTOCONF_SYS_TYPE], 0xdf
+	and byte [bx + AUTOCONF_SYS_TYPE], ~AUTOCONF_SYS_VARIANT & 0xFF
 	cmp byte [bx + AUTOCONF_SYS_TYPE], AUTOCONF_SYS_RC759
 	jne .init_check_min_ticks
 	mov word [cs:xios_mx_low_mem_reserve], 0x18	; 0BFD8  mov word [cs:0x593d], 0x18
