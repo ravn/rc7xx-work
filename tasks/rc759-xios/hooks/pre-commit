@@ -19,8 +19,14 @@ ccpm_staged=0
 if echo "$STAGED" | grep -E 'tasks/rc759-xios/(ccpm\.asm|mod[0-4]_.*\.asm|rsp_.*\.asm|license\.inc)$' >/dev/null; then
     ccpm_staged=1
 fi
+# Standalone .RSP-mastere (clock/pin/scroll/tmp759/vout _rsp.asm) + deres
+# rspsrc/-includes verificeres mod dist/genccpm-kit/*.rsp (SW1400-disk-orakler).
+rsp_staged=0
+if echo "$STAGED" | grep -E 'tasks/rc759-xios/([a-z0-9]+_rsp\.asm|rspsrc/|build_and_verify_rsp\.sh)$' >/dev/null; then
+    rsp_staged=1
+fi
 
-if [ "$xios_staged" = "0" ] && [ "$ccpm_staged" = "0" ]; then
+if [ "$xios_staged" = "0" ] && [ "$ccpm_staged" = "0" ] && [ "$rsp_staged" = "0" ]; then
     exit 0
 fi
 
@@ -71,6 +77,17 @@ if [ "$ccpm_staged" = "1" ]; then
         exit 1
     fi
     echo "ccpm.sys byte-verifikation OK."
+fi
+
+if [ "$rsp_staged" = "1" ]; then
+    echo ".RSP-filer staged — kører RSP byte-verifikation..."
+    if ! sh "$ROOT/tasks/rc759-xios/build_and_verify_rsp.sh"; then
+        echo ""
+        echo "COMMIT AFVIST: .RSP byte-verifikation fejlede."
+        echo "Verificer manuelt: tasks/rc759-xios/build_and_verify_rsp.sh"
+        exit 1
+    fi
+    echo ".RSP byte-verifikation OK."
 fi
 
 exit 0

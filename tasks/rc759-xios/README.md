@@ -37,6 +37,9 @@ sh tasks/rc759-xios/build_and_verify_xios.sh
 
 # Verificer hele ccpm.sys:
 sh tasks/rc759-xios/rebuild_and_verify.sh
+
+# Verificer de 5 standalone .RSP-moduler mod SW1400-disk-oraklerne:
+sh tasks/rc759-xios/build_and_verify_rsp.sh
 ```
 
 ## Byg Docker-image
