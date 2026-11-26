@@ -13,6 +13,7 @@
 
 ; RC759 Hardware I/O Ports and Definitions
 %include "hardware.inc"
+%include "license.inc"   ; LICENSE_NO + SERIAL til copyright-strenge
 
 
 mod4_base:
@@ -23,7 +24,7 @@ mod4_base:
   dw 0x0003                                    ; 03AD8  MEMIF version
   dw 0x0048                                    ; 03ADA  Segment
   db 0x06, 0x00                                ; 03ADC
-  db "COPYRIGHT(C)1983,84,DIGITAL RESEARCH(02/07/84)1034-0261-007041"  ; 03ADE
+  db "COPYRIGHT(C)1983,84,DIGITAL RESEARCH(02/07/84)", LICENSE_NO, SERIAL  ; 03ADE
 
 mod4_xios_init:                                ; 03B1C
   retf                                         ; 03B1C  0xCB

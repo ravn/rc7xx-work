@@ -3,6 +3,8 @@
 ; Offset range: 0x00000 - 0x01640
 ; =============================================================================
 
+%include "license.inc"   ; LICENSE_NO + SERIAL til copyright-strenge
+
 
   db 0x01, 0xB2, 0x06, 0x48, 0x00, 0xB2, 0x06, 0x00, 0x00, 0x02, 0x33, 0x0C, 0xFA, 0x06, 0x33, 0x0C ; 00000  ...H......3...3.
   db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ; 00010  ................
@@ -50,7 +52,7 @@ loc_00083:  ; 00083
   dw 0x0003                                    ; 00088  MEMIF version
   dw 0x0048                                    ; 0008A  Segment
   db 0x06                                      ; 0008C
-  db "COPYRIGHT (C) 1982,1983,1984 DIGITAL RESEARCH 1034-0261-007041 Modifyed by Flemming Kraglund Rc-Computer Denmark " ; 0008D
+  db "COPYRIGHT (C) 1982,1983,1984 DIGITAL RESEARCH ", LICENSE_NO, SERIAL, " Modifyed by Flemming Kraglund Rc-Computer Denmark " ; 0008D
 
 mod0_rtm_init:  ; 000FE
   cli                                          ; 000FE  0xFA

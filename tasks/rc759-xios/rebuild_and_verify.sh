@@ -15,7 +15,11 @@ if [ -e "$HOME/.docker/run/docker.sock" ]; then
 fi
 
 OUTPUT_FILE="$ROOT_DIR/scratch/tmp/ccpm_final.sys"
-REFERENCE_FILE="$ROOT_DIR/scratch/tmp/ccpm.sys"
+# Versioneret oracle i dist/ (primær); fallback til scratch/tmp for bagudkompatibilitet.
+REFERENCE_FILE="$SCRIPT_DIR/dist/ccpm.sys"
+if [ ! -f "$REFERENCE_FILE" ]; then
+    REFERENCE_FILE="$ROOT_DIR/scratch/tmp/ccpm.sys"
+fi
 
 if [ ! -f "$REFERENCE_FILE" ]; then
     echo "FEJL: Referencefilen $REFERENCE_FILE findes ikke!" >&2

@@ -9,6 +9,26 @@ Byte-perfekt NASM-genskabelse af **Concurrent CP/M-86 3.1** til Regnecentralen R
 - `XIOS4.CON` (29.440 bytes) — 4 virtuelle konsoller
 - `ccpm.sys` (77.568 bytes) — komplet CCP/M-86 kerne
 
+Alle tre orakler er versioneret i `dist/` (SHA256 i `dist/SHA256SUMS`).
+
+## Serienummer / licens
+
+Hvert MEMIF-modul bærer en DRI-copyright-streng der slutter med licensnummer +
+serienummer — i DRI's kilde (`ccpmv31` `D1/INIT.SUP`) en placeholder `'654321'`
+som GENCCPM patchede pr. licensager. RC759-distributionen har licens
+`1034-0261` (Regnecentralen) og serienummer `007041`. Der er ingen runtime-validering.
+
+Generel en variant med andet serienummer (svarende til GENCCPMs patch):
+
+```bash
+docker run --rm -v "$PWD:/work" -w /work/tasks/rc759-xios rc759-nasm \
+  nasm -f bin -DLICENSE_NO='"1034-0261-"' -DSERIAL='"007042"' \
+  -o /work/scratch/tmp/ccpm_variant.sys ccpm.asm
+```
+
+Standardværdier ligger i `license.inc`; default-byg er byte-identisk med originalen.
+
+
 ## Verificér
 
 ```bash

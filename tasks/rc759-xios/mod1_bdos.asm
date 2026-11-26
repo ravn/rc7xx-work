@@ -3,6 +3,8 @@
 ; Offset range: 0x01640 - 0x026C0
 ; =============================================================================
 
+%include "license.inc"   ; LICENSE_NO + SERIAL til copyright-strenge
+
   jmp near mod1_bdos1_init                     ; 01640  0xE9, 0x48, 0x00
   jmp near mod1_bdos1_entry                    ; 01643  0xE9, 0x9A, 0x00
   cli                                          ; 01646  0xFA
@@ -10,7 +12,7 @@
   dw 0x0003                                    ; 01648  MEMIF version
   dw 0x0048                                    ; 0164A  Segment
   db 0x06                                      ; 0164C
-  db "COPYRIGHT (C) 1982,1983,1984 DIGITAL RESEARCH 1034-0261-007041" ; 0164D
+  db "COPYRIGHT (C) 1982,1983,1984 DIGITAL RESEARCH ", LICENSE_NO, SERIAL ; 0164D
 
 mod1_bdos1_init:  ; 0168B
   mov bx, 0x38                                 ; 0168B  0xBB, 0x38, 0x00

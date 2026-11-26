@@ -2098,3 +2098,9 @@ Opdateret issue [#22](https://github.com/ravn/rc7xx-work/issues/22#issuecomment-
 
 
 
+
+## 2026-11-26 (RC759 CCP/M-86 — mangelanalyse og ccpm.sys-byg med serienummer)
+
+> dette er et stort og gammelt projekt. JEg arbejder lige nu på at reverse engineere kildeteksten til CCP/M-86 operativysstem på rc759 piccoline. N UNdersøg først om der mangler mere, og hvis ikke så undersøg om du kan bygge ccpm.sys ud fra kildetekster (byg evt serienummer ind)
+
+Mangelanalyse + ccpm.sys-byg verificado. Fund: (1) RE-dækningen er komplet — ccpm.sys (77.568 B), XIOS1.CON og XIOS4.CON alle 100% byte-identiske ved frisk Docker-byg (genverificeret denne session). (2) GABE: ccpm.sys-oraklet lå kun i gitignorede scratch/tmp — nu versioneret i dist/ + SHA256SUMS, rebuild_and_verify.sh peger på dist/ med fallback. (3) GABE: pre-commit hooken dækkede kun XIOS-filer — nu også ccpm.asm/mod0-4/rsp_*/license.inc (lærdom fra 2026-11-24/25-bruddet). (4) Serienummer: fundet i DRI-kilde (INIT.SUP `serial db '654321'` placeholder, GENCCPM patcher pr. licensager — GENC1.C copynote); RC759 har licens 1034-0261, serienummer 007041 i alle 5 modulers copyright-strenge; ingen runtime-validering. Implementeret license.inc med LICENSE_NO/SERIAL-makroer i mod0-4; default-byg byte-identisk, -DSERIAL-override ændrer præcis de 5 serial-felter. Restierende kendte arbejdsopgaver (ikke blokerende): mod4_xios.asm er stadig den gamle monolit (TODO i ccpm.asm), ~1200 rå hex-data-restere i moduler/RSP'er, RSP pin/vout mangler standalone-orakler.

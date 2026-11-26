@@ -3,6 +3,8 @@
 ; Offset range: 0x031E0 - 0x03AD0
 ; =============================================================================
 
+%include "license.inc"   ; LICENSE_NO + SERIAL til copyright-strenge
+
   jmp near cio_init                            ; 031E0  0xE9, 0x48, 0x00
   jmp near cio_entry                           ; 031E3  0xE9, 0x80, 0x00
   cli                                          ; 031E6  0xFA
@@ -10,7 +12,7 @@
   dw 0x0003                                    ; 031E8  MEMIF version
   dw 0x0048                                    ; 031EA  Segment
   db 0x06                                      ; 031EC
-  db "COPYRIGHT (C) 1982,1983,1984 DIGITAL RESEARCH 1034-0261-007041" ; 031ED
+  db "COPYRIGHT (C) 1982,1983,1984 DIGITAL RESEARCH ", LICENSE_NO, SERIAL ; 031ED
 
 cio_init:  ; 0322B
   retf                                         ; 0322B  0xCB
