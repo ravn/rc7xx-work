@@ -51,23 +51,41 @@ RTC_REG_HOUR            equ 0x04        ; Hours (00-23, BCD)
 RTC_REG_DAY_OF_WEEK     equ 0x05        ; Day of week (1-7)
 RTC_REG_DAY             equ 0x06        ; Day of month (01-31, BCD)
 RTC_REG_MONTH           equ 0x07        ; Month (01-12, BCD)
-RTC_REG_RAM_BASE        equ 0x08        ; Scratchpad RAM (8 bytes, 0x08..0x0F)
-; MM58167A Control registers (A4=1, adresser 0x10-0x1F)
+; MM58167A Latch/compare registers (0x08-0x0F) — spejl af 0x00-0x07, kan læses og skrives frit
+; Reference: RC759 CPU Reference Manual s.24: "the clock contains a latch chain of same length
+;   and format as the counter. Both the latch and the counter may be read and loaded at any time."
+RTC_REG_LATCH_BASE      equ 0x08        ; Latch-registers 0x08..0x0F (spejler tæller 0x00..0x07)
+RTC_REG_LATCH_MSEC_1_10 equ 0x08        ; Latch: Millisekunder (1/1000 & 1/100 sek)
+RTC_REG_LATCH_MSEC_100  equ 0x09        ; Latch: Millisekunder (1/10 sek)
+RTC_REG_LATCH_SEC       equ 0x0A        ; Latch: Sekunder
+RTC_REG_LATCH_MIN       equ 0x0B        ; Latch: Minutter
+RTC_REG_LATCH_HOUR      equ 0x0C        ; Latch: Timer
+RTC_REG_LATCH_DOW       equ 0x0D        ; Latch: Ugedag
+RTC_REG_LATCH_DAY       equ 0x0E        ; Latch: Dag i måneden
+RTC_REG_LATCH_MONTH     equ 0x0F        ; Latch: Måned (bit 7 = skudårs-flag i tæller-reg 0x07)
+; MM58167A Control registers (A4=1, adresser 0x10-0x17)
 ; Reference: RC759 CPU Board Reference Manual (RCSL-99-0-00825) §5, s.22-27
 RTC_REG_STATUS          equ 0x10        ; alias: Interrupt Status (R) — bevaret for kompatibilitet
 RTC_REG_INT_STATUS      equ 0x10        ; Interrupt Status (R): hvilke hændelser er pending
 RTC_REG_CTL             equ 0x11        ; Interrupt Control (W): aktivér interrupt-kilder (D0-D7)
                                         ;   D0=rollover, D1=1/10s, D2=sek, D3=min, D4=time
                                         ;   D5=ugedag, D6=dag, D7=måned
-                                        ;   Control-reg bits: B2=start(1)/stop(0), B3=tæller(0)/latch(1)
-                                        ;   B4-B7=klokfrekvens, B0-B1=altid 0
 RTC_REG_CRESET          equ 0x12        ; Counter Reset (W): nulstil tæller(e) via bit-maske D0-D7
 RTC_REG_LRESET          equ 0x13        ; Latch Reset (W): nulstil latch(er) via bit-maske D0-D7
-RTC_REG_STATUS_BIT      equ 0x14        ; Status bit (R): D0=1 hvis tæller ændret under læsning
+RTC_REG_STATUS_BIT      equ 0x14        ; Status bit (R): D0=1 hvis tæller ændret under læsning (gates D0)
 RTC_REG_GO              equ 0x15        ; GO Command (W): nulstil sekund+brøkdel-tæller præcist
 RTC_REG_STANDBY_INT     equ 0x16        ; Standby Interrupt (W): D0=1 aktivér standby-interrupt
-RTC_REG_COUNT_RESET     equ 0x19        ; Counter reset register
-RTC_REG_RAM_RESET       equ 0x1A        ; RAM reset register
+RTC_REG_TEST            equ 0x17        ; Test mode (kun fabriksbrug)
+
+; RC759 RTC write-protokol (PORT_RTC_ADDR = 0x5C, PORT_RTC_DATA = 0x5A):
+;   1. Skriv register-adresse (A4:A0, bit 6 = 0) til PORT_RTC_ADDR → vælg register/latch
+;   2. Læs PORT_RTC_ADDR → hent RTC-data
+;   For skrivning:
+;   1. Skriv data-byte til PORT_RTC_DATA (0x5A)
+;   2. Skriv adresse | 0x40 (bit 6 = 1) til PORT_RTC_ADDR → aktivér write-puls
+;   3. Vent 1μs (2 interne CPU-cyklusser)
+;   4. Skriv adresse & ~0x40 (bit 6 = 0) til PORT_RTC_ADDR → fjern write-puls
+RTC_ADDR_WPULSE         equ 0x40        ; Bit 6 af PORT_RTC_ADDR: 1 = aktivér write-puls til MM58167A
 
 ; -----------------------------------------------------------------------------
 ; Intel 82730 Text Coprocessor (CRT)
