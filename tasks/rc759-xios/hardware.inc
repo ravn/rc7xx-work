@@ -96,11 +96,13 @@ PPI_PORTA_nMEMID1       equ 0x20        ; Bit 5: /MEM IDENT1 — RAM-konfigurati
 PPI_PORTA_nDPC          equ 0x40        ; Bit 6: /DPC CONNECT — 0 hvis ekstern diskette/printer boks
 
 ; PPI Port B bit masks (IOBASE+0x72, input)
-PPI_PORTB_nNETID        equ 0x04        ; Bit 2: /NET IDENT — 0 hvis MICRONET controller er monteret
-PPI_PORTB_nRTC_SEC      equ 0x08        ; Bit 3: /RTC SEC SOURCE — 0 hvis RCA CDP1879 bruges som RTC
-PPI_PORTB_nSOGE         equ 0x10        ; Bit 4: /SOGE — detektion af lydgenerator
-PPI_PORTB_MONO          equ 0x20        ; Bit 5: MONOCHROME — 1 hvis monokrom skærm tilsluttet
-PPI_PORTB_22KHZ         equ 0x40        ; Bit 6: 22KHZ — 1 hvis skærm kører 22 kHz linjefrekvens
+; Ref.: RC759 CPU Reference Manual s.45 (Port B diagram, bits 7-0)
+PPI_PORTB_22KHZ         equ 0x02        ; Bit 1: 22KHZ — 1 hvis skærm kører 22kHz linjefrekvens
+PPI_PORTB_MONO          equ 0x04        ; Bit 2: MONOCHROME — 1 hvis monokrom skærm tilsluttet
+PPI_PORTB_nSOGE         equ 0x08        ; Bit 3: /SOGE — 0 hvis lydgenerator er til stede
+PPI_PORTB_nRTC_SEC      equ 0x10        ; Bit 4: /RTC SEC SOURCE — 0 hvis RCA CDP1879 bruges som RTC
+PPI_PORTB_nNETID        equ 0x20        ; Bit 5: /NET IDENT — 0 hvis MICRONET controller er monteret
+                                        ; Bit 6-7: ikke brugt
 
 ; PPI Port C bit masks
 PPI_PORTC_CAS_EN        equ 0x01        ; Bit 0: Enable cassette interface
