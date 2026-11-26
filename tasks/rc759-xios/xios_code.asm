@@ -3479,6 +3479,9 @@ crt_copy_vram_page_1con:		; 09079
 	pop ds
 	ret
 %endif
+; INT 28H Function 35 — Write string direct to console buffer (Manual p. 207)
+; Entry: AL=35, DL=kolonne, DH=række, CX=antal tegn, DS:SI=strengadresse
+; Return: Undefined
 int28_fn_35_write_str:			; 09096
 	mov_bp_sp			; 09096
 	push ds
@@ -3525,6 +3528,8 @@ int28_fn_35_write_str:			; 09096
 	pop ds
 	jmp near window_repaint_contents
 
+; INT 28H Function 39 — Update physical screen (Manual p. 208)
+; Entry: AL=39; Return: Undefined
 int28_fn_39_update_screen:		; 090DC
 	call get_cur_process_ccb
 	jmp near window_repaint_contents
@@ -3597,6 +3602,8 @@ int28_fn_22_set_disp_list:		; 0914A
 	xchg bx, dx			; 09153  87 DA
 	ret
 
+; INT 28H Function 36 — Set cursor position (Manual p. 207)
+; Entry: AL=36, BH=række, BL=kolonne; Return: Undefined
 int28_fn_36_cursor_pos:			; 09156
 	push bx
 	call get_cur_process_ccb
@@ -3605,16 +3612,23 @@ int28_fn_36_cursor_pos:			; 09156
 	mov [bx + CCB_ROW], dl
 	jmp near crt_update_cursor
 
+; INT 28H Function 37 — Returns current attributes (Manual p. 207)
+; Entry: AL=37; Return: AH=attributter
 int28_fn_37_get_attr:			; 09164
 	call get_cur_process_ccb
 	mov ah, [bx + CCB_ATTR]
 	ret
 
+; INT 28H Function 38 — Set attributes (Manual p. 208)
+; Entry: AL=38, AH=attributter; Return: Undefined
 int28_fn_38_set_attr:			; 0916B
 	call get_cur_process_ccb
 	mov [bx + CCB_ATTR], ah
 	ret
 
+; INT 28H Function 31 — Defines palette contents (Manual p. 206)
+; Entry: AL=31, DS:DX = adresse på palette-definition
+; Return: Undefined
 int28_fn_31_palette:			; 09172
 	xchg si, dx			; 09172  87 F2
 	call get_cur_process_ccb
@@ -4378,6 +4392,9 @@ window_draw_title:			; 09473
 ; Intel 82730 Text Coprocessor: 1987 Intel Microprocessor and Peripheral Handbook Vol. 2, kap. 7 p. 7-34
 ;   https://archive.org/download/bitsavers_inteldataBrocessorandPeripheralHandbookVolume2_98878032/1987_Intel_Microprocessor_and_Peripheral_Handbook_Volume_2.pdf
 ; =============================================================================
+; INT 28H Function 30 — Optical mouse driver interface (Manual p. 205)
+; CL=1: Initialisér mus; CL=2: Deinitialiser; CL=3: Status
+;   CL=3 retur: AL=0 intet / AL=1 knap (AH=tegn) / AL=2 bevæget (BX=Δx, CX=Δy)
 int28_fn_30_mouse:			; 094A0
 	cmp cl, 4
 	jb .mouse_service_loop
@@ -7378,6 +7395,8 @@ con_data_read:				; 0B032
 .ret:					; 0B05D
 	ret
 
+; INT 28H Function 50 — Reset iSBX351 controller (Manual p. 210)
+; Entry: AL=50; Return: Undefined
 int28_fn_50_isbx_reset:			; 0B05E
 	mov al, 1
 	call diag_format_error_record
@@ -9235,6 +9254,10 @@ xios_cas_block_num:
 	db 0x00, 0x00		; Aktuel bloknummer på båndet
 xios_cas_state:
 	db 0x01			; Båndtilstand: 1=klar/initialiseret
+; INT 28H Function 26 — Read file header record from cassette tape (Manual p. 202)
+; Entry:  AL=26, CX=max bytes to read, DX=input buffer offset, [SP+0]=buffer segment
+; Return: AL=0 ok / 1 CRC err / 2 no data / 3 no leader / 4 wrong rec# / 5 EOF
+;         CX=bytes read, DX=next byte offset; AH, BX undefined; stack unchanged
 int28_fn_26_cas_read_hdr:		; 0C6B6 (Båndoptager læs filhoved)
 	call stack_swap_context
 	mov_bx_dx			; 0C6B9
@@ -9246,6 +9269,9 @@ int28_fn_26_cas_read_hdr:		; 0C6B6 (Båndoptager læs filhoved)
 	xchg bx, cx			; 0C6D2  87 D9
 	ret
 
+; INT 28H Function 27 — Write file header on cassette tape (Manual p. 202)
+; Entry:  AL=27, CX=bytes to write, DX=output buffer offset, [SP+0]=buffer segment
+; Return: AX,CX=0, BX undefined, DX=next byte offset; stack unchanged
 int28_fn_27_cas_write_hdr:		; 0C6D5 (Båndoptager skriv filhoved)
 	call stack_swap_context
 	mov_bx_dx			; 0C6D8
@@ -9256,6 +9282,10 @@ int28_fn_27_cas_write_hdr:		; 0C6D5 (Båndoptager skriv filhoved)
 	mov_dx_bx			; 0C6EF
 	ret
 
+; INT 28H Function 28 — Read next data record from cassette tape (Manual p. 203)
+; Entry:  AL=28, CX=max bytes to read, DX=input buffer offset, [SP+0]=buffer segment
+; Return: AL=0 ok / 1 CRC err / 2 no data / 3 no leader / 4 wrong rec# / 5 EOF
+;         CX=bytes read, DX=next byte offset; AH, BX undefined; stack unchanged
 int28_fn_28_cas_read_data:		; 0C6F2 (Båndoptager læs datablok)
 	call stack_swap_context
 	mov_bx_dx			; 0C6F5
@@ -9267,6 +9297,9 @@ int28_fn_28_cas_read_data:		; 0C6F2 (Båndoptager læs datablok)
 	xchg bx, cx			; 0C70C  87 D9
 	ret
 
+; INT 28H Function 29 — Write next data record on cassette tape (Manual p. 204)
+; Entry:  AL=29, CX=bytes to write, DX=output buffer offset, [SP+0]=buffer segment
+; Return: AX,CX=0, BX undefined, DX=next byte offset; stack unchanged
 int28_fn_29_cas_write_data:		; 0C70F (Båndoptager skriv datablok)
 	call stack_swap_context
 	mov_bx_dx			; 0C712
@@ -9277,6 +9310,9 @@ int28_fn_29_cas_write_data:		; 0C70F (Båndoptager skriv datablok)
 	mov_dx_bx			; 0C727
 	ret
 
+; INT 28H Function 40 — Write end of file record on cassette tape (Manual p. 208)
+; Entry:  AL=40
+; Return: AX=0
 int28_fn_40_cas_write_eof:		; 0C72A (Båndoptager skriv EOF-blok)
 	call stack_swap_context
 	mov_bx_dx			; 0C72D
@@ -9731,6 +9767,9 @@ vmenu_clear_line_buffer:		; 0C9E6
 	call io_statline
 	ret
 
+; INT 28H Function 41 — Reserve/release DPC parallel interface (Manual p. 209)
+; Entry: AL=41, AH=1 (reserver) eller AH=2 (frigiv)
+; Return: Undefined
 int28_fn_41_dpc_parallel:		; 0CA03 (Reserver/frigiv DPC interface)
 	push ax
 	push es
@@ -9814,6 +9853,9 @@ dpc_release_printer:			; 0CA82
 .ret:
 	ret
 
+; INT 28H Function 42 — Reserve/release shared disk (Manual p. 209)
+; Entry: AL=42, AH=1 (reserver) eller AH=2 (frigiv)
+; Return: Undefined
 int28_fn_42_shared_disk:		; 0CAB5 (Reserver/frigiv delt disk)
 	push ax
 	push es
