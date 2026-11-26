@@ -141,6 +141,12 @@ FDC_CMD_WRITE_SECT      equ 0xA8        ; Write Sector (Type II): 1010 1000b (si
 FDC_CMD_READ_ADDR       equ 0xC4        ; Read Address (Type III): 1100 0100b
 FDC_CMD_FORCE_INT       equ 0xD0        ; Force Interrupt (Type IV): afbryd kommando
 
+; fdc_drive_unit_map enheds-type koder (tabel indekseret af drevnummer)
+FDC_UNIT_NONE           equ 0x00        ; Ingen enhed / drev ikke installeret
+FDC_UNIT_FLOPPY         equ 0x01        ; Standard diskette (5.25" eller 8")
+FDC_UNIT_MDISK          equ 0xC0        ; M-disk (RAM-disk, drev 0xC=12); sættes ved boot
+FDC_UNIT_WDISK          equ 0xD0        ; Winchester harddisk (multi-sektor overførsel)
+
 ; -----------------------------------------------------------------------------
 ; DPC (Disk/Printer-Adaptor) Shared Peripheral Control
 ; -----------------------------------------------------------------------------

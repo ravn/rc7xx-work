@@ -437,6 +437,7 @@ RTM_SVC_MX_REQUEST  equ 0x89	; Anmod om mutex (blokerende) / send til kø
 RTM_SVC_MX_RELEASE  equ 0x8b	; Frigiv mutex efter brug / signal
 RTM_SVC_SLEEP       equ 0x8d	; Sæt proces i dvale DX ticks
 RTM_SVC_YIELD       equ 0x8e	; Giv CPU-slice tilbage (omplan uden at vente)
+RTM_SVC_PROC_READY  equ 0x8f	; Markér process som klar (PD_FLAG=0 sat inden kald)
 RTM_SVC_DEV_ACQUIRE equ 0xa0	; Optag device (printer/konsol) DL
 RTM_SVC_DEV_RELEASE equ 0xa1	; Frigiv device (printer/konsol)
 
@@ -3678,7 +3679,7 @@ io_auxist:
 	mov si, [cs:sysdat_rlr]
 	mov es, [si + PD_UDA]
 	mov word [si + PD_FLAG], 0
-	mov cx, 0x8f
+	mov cx, RTM_SVC_PROC_READY
 	call rtm_process_svc_call
 	pop dx
 	pop cx
@@ -4907,9 +4908,9 @@ io_read:
 	ret
 
 .read_dma_loop:				; 0999F
-	cmp al, 0xc0
+	cmp al, FDC_UNIT_MDISK		; M-disk enhedstype → direkte overførsel
 	je .read_done
-	cmp al, 0xd0
+	cmp al, FDC_UNIT_WDISK		; Winchester → næste sektor
 	je .read_next_sector
 	jmp near .read_transfer_done
 
@@ -6908,7 +6909,7 @@ io_list:
 	pop ds
 	mov bx, [cs:sysdat_rlr]
 	mov es, [bx + PD_UDA]
-	mov cx, 0x8f
+	mov cx, RTM_SVC_PROC_READY
 	call rtm_process_svc_call
 	pop es
 	pop ds
@@ -7196,8 +7197,10 @@ rtc_1sec_isr:
 	jmp short .rtc_1sec_done
 
 .rtc_1sec_notify:			; 0AEFE
+	; Skriver 0xC4 til MM58167A MONTH-register — sandsynligvis afbrydelseskvittering/genarm.
+	; MM58167A-datasheet-side bekræfter protokol; nøjagtig funktion af 0xC4 ukendt.
 	mov al, RTC_REG_MONTH
-	mov ah, 0xc4
+	mov ah, 0xc4			; MM58167A interrupt-kvittering (nøjagtig protokol ukendt)
 	call rtc_write_reg
 
 .rtc_1sec_done:				; 0AF05
@@ -7667,7 +7670,7 @@ xios_int3_handler:
 	call con_puts
 	mov bx, [cs:sysdat_rlr]
 	and word [bx + PD_FLAG], 0xfdfd
-	mov cx, 0x8f
+	mov cx, RTM_SVC_PROC_READY
 	mov dx, 0xffff
 	jmp near rtm_process_svc_call
 
@@ -8784,7 +8787,7 @@ fdc_dma_scroll_cmd:			; 0C08A
 	call boot_print_str
 	mov byte [cs:sysdat_tempdisk], 0xc
 	mov bx, fdc_drive_unit_map
-	mov byte [bx + 0xc], 0xc0
+	mov byte [bx + 0xc], FDC_UNIT_MDISK	; M-disk enhed for drev 12 (0xC)
 	mov ax, [cs:fdc_dma_buf_seg]
 	mov es, ax
 	xor_di_di			; 0C195
@@ -9293,7 +9296,7 @@ cas_stop_motor_and_timer:		; 0C747
 	out dx, ax
 	mov dx, PORT_PCB_T0_MAXB
 	out dx, ax
-	mov ax, 0xc013
+	mov ax, 0xC013			; 80186 T0_CON: EN|INH|MC(B)|EXT|RUN (bånd-timing, ekstern ur)
 	mov dx, PORT_PCB_T0_CON
 	out dx, ax
 	mov ax, 1
@@ -9491,7 +9494,7 @@ cas_write_leader_and_header:		; 0C898
 	cli
 	push bx
 	push cx
-	mov ax, 0xc013
+	mov ax, 0xC013			; 80186 T0_CON: EN|INH|MC(B)|EXT|RUN (bånd-timing, ekstern ur)
 	mov dx, PORT_PCB_T0_CON
 	out dx, ax
 	mov ax, 0x5dc
