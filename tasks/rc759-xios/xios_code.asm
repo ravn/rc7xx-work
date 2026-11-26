@@ -1194,9 +1194,9 @@ screen_dump_to_printer:			; 07EEC
 	mov si, [bx]
 	mov dl, [si + 0x24]
 	push dx
-	mov cl, 0xa0
+	mov cl, RTM_SVC_DEV_ACQUIRE
 	call rtm_process_svc_call
-	mov cl, 0xa1
+	mov cl, RTM_SVC_DEV_RELEASE
 	call rtm_process_svc_call
 	pop dx
 	mov si, boot_msg_printer_reserved
@@ -2370,7 +2370,7 @@ crt_scroll_lock_and_refresh:		; 08716
 	push bx
 	mov dx, 4
 	call rtm_set_flag
-	mov cl, 0x8e
+	mov cl, RTM_SVC_YIELD
 	call rtm_process_svc_call
 	mov dx, 9
 	call rtm_timer_wait
@@ -4018,7 +4018,7 @@ rtm_delay_1_tick:			; 09312
 	push si
 	push di
 	push es
-	mov cl, 0x8d
+	mov cl, RTM_SVC_SLEEP
 	mov dx, 1
 	mov bx, [cs:sysdat_rlr]
 	mov es, [bx + PD_UDA]
@@ -5327,7 +5327,7 @@ fdc_fcr_setup:				; 09D4E
 	cmp ch, 0
 	jne .ret
 	mov dx, 0x3c
-	mov cl, 0x8d
+	mov cl, RTM_SVC_SLEEP
 	pusha				; 09D5C  60
 	call rtm_process_svc_call
 	popa				; 09D60  61
@@ -5451,7 +5451,7 @@ fdc_set_motor_enable:			; 09E25
 	or_al_ah			; 09E3B
 	out dx, al
 	mov dx, 0x3c
-	mov cl, 0x8d
+	mov cl, RTM_SVC_SLEEP
 	pusha				; 09E43  60
 	call rtm_process_svc_call
 	popa				; 09E47  61
@@ -5985,7 +5985,7 @@ fdc_wait_dma_channel_ready:		; 0A257
 
 .dma_channel_wait_call:			; 0A261
 	pusha				; 0A261  60
-	mov cl, 0x89
+	mov cl, RTM_SVC_MX_REQUEST
 	call rtm_process_svc_call
 	popa				; 0A267  61
 	cli
@@ -6009,7 +6009,7 @@ fdc_release_dma_channel:		; 0A276
 
 .dma_release_ch1:			; 0A28C
 	pusha				; 0A28C  60
-	mov cl, 0x8b
+	mov cl, RTM_SVC_MX_RELEASE
 	call rtm_process_svc_call
 	popa				; 0A292  61
 	sti
@@ -6337,7 +6337,7 @@ net_auxin_init:
 		push bx
 	push cx
 	mov dx, net_auxin_queue_desc
-	mov cl, 0x87
+	mov cl, RTM_SVC_MX_ATTACH
 	call rtm_process_svc_call
 	pop cx
 	pop bx
@@ -6354,7 +6354,7 @@ net_auxin_poll:
 	call printer_wait_completion
 
 .aux_fn_exit:				; 0A83E
-	mov cl, 0x89
+	mov cl, RTM_SVC_MX_REQUEST
 	mov dx, net_auxin_queue_desc
 	call rtm_process_svc_call
 	mov al, [cs:net_auxin_char_buf]
@@ -6457,7 +6457,7 @@ net_prn_init:
 		push bx
 		push cx
 	mov dx, net_prn_queue_desc
-	mov cl, 0x87
+	mov cl, RTM_SVC_MX_ATTACH
 	call rtm_process_svc_call
 	pop cx
 	pop bx
@@ -6482,7 +6482,7 @@ net_prn_write_char:
 
 printer_wait_completion:		; 0A923
 	mov dx, net_prn_queue_desc
-	mov cl, 0x8b
+	mov cl, RTM_SVC_MX_RELEASE
 	call rtm_process_svc_call
 	mov byte [cs:net_prn_buf_len], 0
 	ret
@@ -8621,55 +8621,55 @@ xios_init_entry:
 
 .init_sec_ticks_done:			; 0BFF9
 	mov es, [cs:rtc_time_buf_seg]
-	mov cl, 0x86
+	mov cl, RTM_SVC_MX_INIT
 	mov dx, xios_mx_sound_qcb
 	call rtm_process_svc_call
-	mov cl, 0x87
+	mov cl, RTM_SVC_MX_ATTACH
 	mov dx, xios_mx_sound_msg
 	call rtm_process_svc_call
-	mov cl, 0x8b
+	mov cl, RTM_SVC_MX_RELEASE
 	mov dx, xios_mx_sound_msg
 	call rtm_process_svc_call
-	mov cl, 0x86
+	mov cl, RTM_SVC_MX_INIT
 	mov dx, xios_mx_dma0_qcb
 	call rtm_process_svc_call
-	mov cl, 0x87
+	mov cl, RTM_SVC_MX_ATTACH
 	mov dx, xios_mx_dma0_msg
 	call rtm_process_svc_call
-	mov cl, 0x8b
+	mov cl, RTM_SVC_MX_RELEASE
 	mov dx, xios_mx_dma0_msg
 	call rtm_process_svc_call
-	mov cl, 0x86
+	mov cl, RTM_SVC_MX_INIT
 	mov dx, xios_mx_dma1_qcb
 	call rtm_process_svc_call
-	mov cl, 0x87
+	mov cl, RTM_SVC_MX_ATTACH
 	mov dx, xios_mx_dma1_msg
 	call rtm_process_svc_call
-	mov cl, 0x8b
+	mov cl, RTM_SVC_MX_RELEASE
 	mov dx, xios_mx_dma1_msg
 	call rtm_process_svc_call
-	mov cl, 0x86
+	mov cl, RTM_SVC_MX_INIT
 	mov dx, xios_mx_cass_qcb
 	call rtm_process_svc_call
-	mov cl, 0x87
+	mov cl, RTM_SVC_MX_ATTACH
 	mov dx, xios_mx_cass_msg
 	call rtm_process_svc_call
-	mov cl, 0x8b
+	mov cl, RTM_SVC_MX_RELEASE
 	mov dx, xios_mx_cass_msg
 	call rtm_process_svc_call
-	mov cl, 0x86
+	mov cl, RTM_SVC_MX_INIT
 	mov dx, xios_qcb_link_req
 	call rtm_process_svc_call
-	mov cl, 0x86
+	mov cl, RTM_SVC_MX_INIT
 	mov dx, xios_qcb_xmit_req
 	call rtm_process_svc_call
-	mov cl, 0x86
+	mov cl, RTM_SVC_MX_INIT
 	mov dx, xios_mx_alt_qcb
 	call rtm_process_svc_call
-	mov cl, 0x87
+	mov cl, RTM_SVC_MX_ATTACH
 	mov dx, xios_mx_alt_msg
 	call rtm_process_svc_call
-	mov cl, 0x8b
+	mov cl, RTM_SVC_MX_RELEASE
 	mov dx, xios_mx_alt_msg
 	call rtm_process_svc_call
 	mov al, [cs:fdc_active_drive_fcr]
@@ -9757,7 +9757,7 @@ dpc_reserve_printer:			; 0CA1E
 	pop cx
 	pop es
 	pop ds
-	mov cl, 0x83
+	mov cl, RTM_SVC_FLAG_WAIT
 	mov dl, 2
 	call rtm_process_svc_call
 	mov byte [cs:xios_prn_reserve_flag], 0xff
@@ -9842,7 +9842,7 @@ dpc_reserve_fdc:			; 0CAD1
 	pop es
 	pop ds
 	mov dl, 1
-	mov cl, 0x83
+	mov cl, RTM_SVC_FLAG_WAIT
 	call rtm_process_svc_call
 	mov cx, 0xffff
 	call io_statline
