@@ -97,6 +97,20 @@ PORT_FDC_SECTOR         equ 0x0284      ; WD2797 Sector register
 PORT_FDC_DATA           equ 0x0286      ; WD2797 Data register
 PORT_FDC_CTRL           equ 0x0288      ; Drive/Side/Motor/Clock/Density control
 
+; WD2797 Status Register bit masks (port 0x0280, læses ved statusforespørgsel)
+FDC_ST_BUSY             equ 0x01        ; Bit 0: Kommando aktiv (BUSY)
+FDC_ST_INDEX            equ 0x02        ; Bit 1: Indekspuls registreret (Type I)
+FDC_ST_DRQ              equ 0x02        ; Bit 1: Data Request (Type II/III)
+FDC_ST_TRACK0           equ 0x04        ; Bit 2: Hoved på spor 0 (Type I)
+FDC_ST_LOST_DATA        equ 0x04        ; Bit 2: Datatab / DRQ ikke behandlet (Type II/III)
+FDC_ST_CRC_ERR          equ 0x08        ; Bit 3: CRC-fejl
+FDC_ST_SEEK_ERR         equ 0x10        ; Bit 4: Seek Error (Type I)
+FDC_ST_RNF              equ 0x10        ; Bit 4: Record Not Found (Type II/III)
+FDC_ST_HEAD_LOADED      equ 0x20        ; Bit 5: Hoved indkoblet (Type I)
+FDC_ST_WRITE_FAULT      equ 0x40        ; Bit 6: Skrivefejl / skrivebeskyttet
+FDC_ST_NOT_READY        equ 0x80        ; Bit 7: Drev ikke klar
+FDC_ST_ERR_MASK         equ 0x99        ; Fejlmaske: NOT_READY|SEEK_ERR|CRC_ERR|BUSY
+
 ; FDC Control Register (0x0288) bit masks
 FDC_CTRL_DRIVE_B        equ 0x01        ; Bit 0: 0 = Drive A, 1 = Drive B
 FDC_CTRL_MOTOR_A        equ 0x02        ; Bit 1: Motor on for Drive A

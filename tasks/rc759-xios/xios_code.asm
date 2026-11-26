@@ -5466,7 +5466,7 @@ xios_fdc_restore_track0:		; 09E48
 
 .seek_retry:				; 09E6A
 	clc
-	test byte [cs:fdc_status_reg_0], 0x10
+	test byte [cs:fdc_status_reg_0], FDC_ST_SEEK_ERR
 	je .ret
 	stc
 .ret:					; 09E74
@@ -5509,7 +5509,7 @@ fdc_seek_track:
 	pop ax
 	mov bl, [bp + 0xe]
 	mov [cs:bx + fdc_drive_cur_cyl_table], al
-	test byte [cs:fdc_status_reg_0], 0x99
+	test byte [cs:fdc_status_reg_0], FDC_ST_ERR_MASK
 	clc
 	pop cx
 	je .ret
@@ -5530,7 +5530,7 @@ xios_fdc_step_in:			; 09ECA
 	xor_bh_bh			; 09ED3
 	mov bl, [bp + 0xe]
 	inc byte [cs:bx + fdc_drive_cur_cyl_table]
-	test byte [cs:fdc_status_reg_0], 0x99
+	test byte [cs:fdc_status_reg_0], FDC_ST_ERR_MASK
 	clc
 	je .ret
 	mov byte [cs:bx + fdc_drive_cur_cyl_table], 0xff
@@ -5665,7 +5665,7 @@ fdc_check_completion_status:		; 09FC5
 	call fdc_clear_stats_counters
 	mov byte [cs:fdc_write_error_code], 1
 	mov al, [cs:fdc_status_reg_0]
-	test al, 0x40
+	test al, FDC_ST_WRITE_FAULT	; bit 6 = skrivefejl / skrivebeskyttet
 	je .completion_status_exit
 	mov byte [cs:fdc_write_error_code], 2
 
