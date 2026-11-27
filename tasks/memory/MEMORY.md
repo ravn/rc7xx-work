@@ -141,6 +141,7 @@
 - **[Minimal repro BEFORE source dive](feedback_minimal_repro_before_source_dive.md) — HARD: 30s repro first; no "suggested fix" in filed issues without repro proof**
 - **[Zoom out on recurring pattern](feedback_zoom_out_on_recurring_pattern.md) — HARD: after 2-3 fixes of one class, find the systemic cause unprompted**
 - **[Audit the oracle](feedback_audit_oracle_not_just_fix.md) — HARD: bug found by luck -> build the detector that would have caught it**
+- **[Progress receipt before next attempt](feedback_progress_receipt.md) — HARD: attempt #2 names metric+expected delta; metric unmoved 2x = STOP+5-line map; 2nd rewrite of same component = escalate; every approach must falsify a candidate**
 
 ## 9. Code & source style
 

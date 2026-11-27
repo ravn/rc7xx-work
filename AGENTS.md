@@ -221,6 +221,18 @@ the whole brief.
   build the one-variable repro before going deeper. Define that measured oracle and
   success criterion (e.g. "an 'A' fills 7 pixel rows, a 'p' fills 9") up front, so
   "looks right" is never the test.
+- **Progress receipt before the next attempt — progress is a quotable number,
+  not a feeling.** The sibling of the Surprise tripwire: that one fires on surprise,
+  this one on silent spinning. Before attempt #2 at the same failure, write one line:
+  `metric = X (now v); this attempt should move it to w`. If no metric can be named
+  as moving, the attempt is fishing — ask instead of spending. If the primary metric
+  is unmoved across two consecutive attempts, STOP and lay out a 5-line map: current
+  model, what has been falsified, remaining candidates, where cost was burned, and
+  the decision wanted. A 2nd rewrite of the same component (script, harness,
+  aligner) is a design error, not an effort error — escalate before the third. Every
+  new approach must name which candidate hypotheses it falsifies if it succeeds; one
+  that cannot name any is research, not debugging — surface it as such before
+  spending.
 
 ## Meta-cognition (the ones that matter most)
 
