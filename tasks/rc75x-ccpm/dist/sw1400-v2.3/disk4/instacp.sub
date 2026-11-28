@@ -1,0 +1,7 @@
+pip $1=acp.cmd
+pip $1=acp.cnf
+pip $1=acpkonf.cmd
+set $1acp.cmd [sys]
+set $1acp.cnf [sys]
+set $1acpkonf.cmd [sys]
+

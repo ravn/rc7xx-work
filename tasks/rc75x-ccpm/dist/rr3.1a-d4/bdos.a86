@@ -1,0 +1,127 @@
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	0		;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+       		DB	5, 'BDOS1'	;  PROC bdos1(cx,dx,REF ax, REF cxerr);
+		DB	PROC		;
+		DW	0		;
+		DW	OFFSET XBDOS1	;
+		DB	4		;	fire parametre
+		DB	2, 'CX'		;
+		DB	VALUE+REAL,0	;
+		DB	2, 'DX'		;
+		DB	VALUE+REAL,0	;
+		DB	2, 'AX'		;
+		DB	REF+REAL,0	;
+		DB	5, 'CXERR'	;
+		DB	REF+REAL,0	;
+
+;	bdos1 kan anvendes til kald af de BDOS-interruptrutiner (int-224)
+;	som kun kr{ver at CL (CX) og eventuelt DX har en v{rdi.
+;	bdos1 kan f.eks. anvendes ved C_GET (hent konsolnummer) eller
+;	C_WRITE (skriv et tegn p} sk{rmen).
+
+
+
+       		DB	5, 'BDOS2'	; PROC bdos2(cx,blk$,REF ax, REF cxerr);
+		DB	PROC		;
+		DW	0		;
+		DW	OFFSET XBDOS2	;
+		DB	4		;	fire parametre
+		DB	2, 'CX'		;
+		DB	VALUE+REAL,0	;
+		DB	3, 'BLK'	;
+		DB	VALUE+STRING,0	;
+		DB	2, 'AX'		;
+		DB	REF+REAL,0	;
+		DB	5, 'CXERR'	;
+		DB	REF+REAL,0	;
+
+
+;	bdos2 kan anvendes til kald af de BDOS-interruptrutiner (int-224)
+;	som kr{ver at DX og DS indeholder adressen p} en parameter blok.
+;	bdos1 kan f.eks. anvendes ved C_WRITESTR (skriv streng p} sk{rmen)
+;	eller Q_OPEN (}bner til en system k|).
+
+
+
+		DB	0
+		DW	OFFSET RESERVER
+		DW	ASSEMBLER	;
+
+
+INCLUDE	ASSEMBL.A86
+
+
+BDOS		EQU	224
+
+
+
+
+XBDOS1:	MOV	CL,1		;
+	CALL	REALPAR		;
+	MOV	XCX,BX		;
+	MOV	CL,2		;
+	CALL	REALPAR		;
+	MOV	XDX,BX		;
+
+	MOV	CX,XCX		;
+	MOV	DX,XDX		;
+	INT	BDOS		;
+
+	PUSH	CX		;
+	MOV	BX,AX		;
+	MOV	CL,3		;
+	CALL	PUTREALPAR	;
+	POP	BX		;
+	MOV	CL,4		;
+	CALL	PUTREALPAR	;
+
+	JMP	FINITO		;
+
+
+XBDOS2:	MOV	CL,1		;
+	CALL	REALPAR		;
+	MOV	CX,BX		;
+	MOV	BP,RESERVER+6	;
+	PUSH	DS		;
+	MOV	DS,4[BP]	;	COMAL's data_segment;
+	MOV	DX,8[BP]	;	anden parameter adresse;
+	ADD	DX,4		;	skip max og current l{ngde;
+	INT	BDOS		;
+	POP	DS		;
+
+	PUSH	CX		;
+	MOV	BX,AX		;
+	MOV	CL,3		;
+	CALL	PUTREALPAR	;
+	POP	BX		;
+	MOV	CL,4		;
+	CALL	PUTREALPAR	;
+
+	JMP	FINITO		;
+
+dseg $
+
+XCX	DW 	0
+XDX	DW	0
+
+
+END
+
+
+
+$
+
+XCX	DW 	0
+XDX	DW	0
+
+
+END
+
+
+ªUªUUªUªUªªUªUªUUªUªUªªU

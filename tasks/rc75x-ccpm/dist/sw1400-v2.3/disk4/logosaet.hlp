@@ -1,0 +1,54 @@
+                                  S[TNINGER
+ 
+frem/fr    - flytter skildpadden den angivne l{ngde frem
+tilbage/tb - flytter skildpadden den angivne l{ngde tilbage
+s{tx       - flytter skildpadden vandret til den angivne koordinat
+s{ty       - flytter skildpadden lodret til den angivne koordinat
+s{txy      - flytter skildpadden til det angivne koordinats{t
+ 
+venstre/ve - drejer skildpaddens retning den angivne vinkel til venstre
+h|jre/h|   - drejer skildpaddens retning den angivne vinkel til h|jre
+drejtil    - s{tter skilpadddens retning til den angivne retning
+ 
+tegn       - n}r skildpadden flyttes vil den tegne
+slet       - n}r skildpadden flyttes vil den slette eventuelle linier
+l|ft       - skildpadden hverken tegner eller sletter
+ 
+hjem       - flytter skildpadden til midten af sk{rmen
+viskud     - visker sk{rmen ren, flytter ikke skildpadden
+start      - flytter skildpadden hjem og visker sk{rmen ren,
+             dvs. laver b}de hjem og viskud
+$
+hvor       - afleverer skildpaddens position og retning til tre variable
+pilind     - markerer skildpaddens position og retning med en pil,
+             se ogs} kommandoen pil
+pilud      - sletter en pil sat med pilind
+henttal    - indl{ser et tal til en variabel
+henttast   - venter p} at en tast trykkes ned og tildeler
+             variablen ascii-v{rdien af tasten
+l{stast    - hvis en tast har v{ret nedtrykket gives variablen
+             ascii-v{rdien af tasten ellers 0
+ 
+skriv      - skriver v{rdien af udtrykket i |verste linie
+s{tning    - skriver teksten efter s{tning i |verste linie
+udport     - skriver det andet argument ud p} den port, som det
+             f|rste argument angiver
+$
+hvis       - start p} betingelse, udtrykket afg|r hvilke
+             s{tninger der skal udf|res
+ellers     - alternativ i betingelse
+sluthvis   - afslutning p} betingelse
+gentag     - start p} gentagelsesl|kke, udtrykket angiver
+             hvor mange gange s{tningerne mellem gentag og
+             hertil skal udf|res
+hertil     - slut p} gentagelsesl|kke
+ 
+:=         - variablen f|r := f}r v{rdien af udtrykket efter
+ 
+"kald af procedure" - skriv navnet p} proceduren efterfulgt parametre
+stop       - bevirker stop af den procedure stop st}r i
+ 
+begynd     - start p} en procedure erkl{ring
+slut       - afslutning p} en procedure erkl{ring
+begynd og slut m} kun bruges n}r en procedure laves eller rettes
+

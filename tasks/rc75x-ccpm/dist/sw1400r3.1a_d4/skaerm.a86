@@ -1,0 +1,46 @@
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	0		;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+       		DB	9, 'SK[RMTYPE'	;	FUNC sk{rmtype;
+		DB	REALFUNC	;
+		DW	0		;
+		DW	OFFSET XCOM	;
+		DB	0		;	ingen parametre
+
+		DB	0
+		DW	OFFSET RESERVER
+		DW	ASSEMBLER	;
+
+; ******
+;	sk{rmtype returnerer v{rdien
+;
+;	0	ved PICCOLINE farvesk{rm
+;	1	ved PICCOLINE monokrom sk{rm
+;	2	ved Partner farvesk{rm
+;	3	ved Partner monokrom sk{rm
+; ******
+
+
+INCLUDE	ASSEMBL.A86
+
+
+XIOS		EQU	28h
+AUTO_CONF	EQU	4
+
+
+XCOM:	MOV	AL,AUTO_CONF		;
+	INT	XIOS			;
+	MOV	AL,ES:18[SI]		;
+	XOR	AH,AH			;
+	MOV	BX,AX			;
+	CALL	REALRES			;
+	JMP	FINITO			;
+
+
+END
+

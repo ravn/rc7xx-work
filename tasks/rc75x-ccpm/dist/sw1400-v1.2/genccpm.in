@@ -1,0 +1,28 @@
+
+verb=y
+dest=b:
+delete=n
+sysparams
+sys=a: tmp=a: cmd=n mem=3000
+osstart=48
+
+mem
+d=1 a=1500,8000,400 a=8000,c000,1000
+
+diskbuffers
+a:
+1
+1
+1
+1
+hashing
+b:
+a:
+a:
+hashing
+m:
+a:
+a:
+hashing
+
+

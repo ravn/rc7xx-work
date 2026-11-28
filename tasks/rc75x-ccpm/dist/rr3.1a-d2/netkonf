@@ -1,0 +1,13 @@
+
+verb=y
+delete=y
+sysparams
+sys=a: tmp=a: cmd=n mem=3000 nq=30 qb=800 nf=ff
+osstart=48
+
+mem
+d=1
+a=2000,d000,400
+
+
+

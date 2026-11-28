@@ -1,0 +1,513 @@
+$X
+$A
+$B
+$C
+$D
+$E
+                     Vejledning
+
+	-	Returner til hovedmenu
+	-	Lister over specialkoder og kommandoer
+	-	Hovedmenu og statusbillede
+	-	HENT, GEM og KOPI - rutinefunktioner
+	-	Generel oversigt over opgaver og opgavenavne
+	-	Diverse
+
+
+V{lg et emne fra ovenn{vnte liste. Alle menuer virker p} samme m}de. Der kan 
+v{lges emne ved at skrive bogstavet, og menuen fremkommer straks p} sk{rmen. 
+Der kan ogs} v{lges menu ved at flytte mark|ren ned gennem listen. N}r mar-
+k|ren er placeret under den menu, der |nskes vist, trykkes RETUR, og menuen 
+fremkommer p}sk{rmen. Du kan altid forlade menuerne ved at trykke p} ESC.
+
+
+Å
+1
+
+A.		Liste over specielle koder og kommandoer.
+
+
+
+Foruden de almindelige bogstaver og tegn, der findes p} tastaturet, bruger 
+RcTekst f|lgende "funktionstaster". Nogle af disse funktions taster er 
+specielt m{rkede, andre best}r af en kombination af S[T/SLET (F1/F2) og en 
+anden tast. Dette vil fremg} af oversigten over tastaturet.
+
+(S[T/SLET virker n{sten ligesom skiftetasten: brugt alene har den ingen 
+virkning.)
+
+
+
+			Funktionstaster:
+
+	RETUR				PIL TIL VENSTRE
+	ESC				PIL TIL H\JRE
+	TAB       ( '-->I' )		PIL OP
+	BAK TAB	  ( 'I<--' )		PIL NED
+	BAKTAST   ( '<=='  )		HJEM        (skr} pil/F5)
+	SLET TEGN
+
+	Taster til rulning:		Specielle taster:
+
+	RETNING (F8)			INDS[T      (TEGN IND)
+	LINIE   (F9)			FORMAT      (F3)
+	SK[RM   (F10)			FIND        (F4)
+	SIDE    (F11)			LEKSIKON    (F6)
+	OPGAVE  (F12)			DECIMAL TAB (F7)
+
+F|lgende to taster bruges til en r{kke specialfunktioner:
+
+	S[T     (F1)			SLET        (F2)
+
+Ä®
+
+		Oversigt over redigeringskommandoer.
+
+Med denne gruppe foretages |jeblikkelige {ndringer i teksten:
+
+S[T  'SLET TEGN'	SLET en vilk}r m{ngde tekst i en omgang.
+S[T  'S' 		Ny sideinddeling fra og med nuv{rende side.
+S[T  'B' 		Definer en m{ngde tekst som en 'blok'.
+S[T  'F' 		Inds{t den aktuelle 'blok' i teksten.
+S[T  'I' 		Ryk resten af afsnittet ind under mark|ren.
+S[T  'INDS[T'		Skift til indskrivning med 'aktiv RETUR'.
+SLET 'INDS[T'		Skift tilbage til 'passiv RETUR.'
+S[T  'LINIE'		Start en 'l|bende inds{t' linie med aktiv ind-
+			skrivning.
+SLET 'LINIE'		Slet resten af linien og returner til passiv 
+			indskrivnining.
+
+
+Å
+
+Disse kommandoer ber|rer kun sk{rmbilledet:
+
+S[T  'P' 	Flyt venstre hj|rne af sk{rmbilledet
+		til aktuel kolonne.
+SLET 'P'	Flyt venstre hj|rne af sk{rmbilledet
+		tilbage til kolonne 1.
+S[T  '<' 	Vis de 'skjulte koder.
+SLET '<'	Fjern de 'skjulte koder' fra sk{rmen.
+
+
+
+Denne gruppe lagrer specielle koder i teksten, som bevirker, at den p}g{ld-
+ende del af teksten fremh{ves. S[T '_' og SLET '_' bevirker f.eks., at 
+teksten imellem disse to kommandoer understreges. Hvis du skriver S[T < og 
+derved viser de 'skjulte koder', vil du se tegnene '<_', hvor du skrev S[T 
+'_'
+
+S[T eller SLET '!'	Start/stop fed skrift.
+S[T eller SLET '_'	Start/stop understregning.
+S[T eller SLET '='	Start/stop dobbelt understregning.
+S[T eller SLET '/'	Start/stop gennemstregning.
+S[T eller SLET 'R'	Start/stop udskrivning med r|dt/sort 
+			(farveb}ndskift).
+S[T eller SLET 'X'	Start/stop udvidet tegns{t.
+
+Fed skrift, understregning og gennemstregning er standardfunktioner hos de 
+fleste skrivere. Resten afh{nger af hvilken skriver, du bruger.
+
+
+Denne gruppe lagrer specielle udskrivnings- eller formatteringsÄkoder. De har 
+kun indflydelse p} de tegn, der f|lger umiddelbart efter:
+
+S[T PIL TIL VENSTRE	Centrer efterf|lgende tekst.
+S[T PIL TIL H\JRE	Den f|lgende tekst skrives med lige h|jre margen.
+S[T RETUR		Inds{t et linieskift i teksten.
+S[T TAB 		Inds{t et tabulatorstop i den eksisterende tekst. 
+S[T DECIMAL TAB		Inds{t et decimaltabulatorstop i den eksisterende 
+			tekst.
+S[T '+' 		Inds{t en 'bl|d' bindestreg i teksten.
+S[T ' ' 		Inds{t et 'fast' mellemrum i teksten.
+S[T '_' 		Inds{t en 'fast' bindestreg i teksten.
+S[T BAKTAST		Skriv n{ste tegn oveni det foreg}ende.
+
+S[T PIL OP		Begynd skrivning 1/2 indeks oppe.
+S[T PIL NED		Stop skrivning 1/2 indeks oppe.
+
+S[T PIL NED		Begynd skrivning 1/2 indeks nede.
+S[T PIL OP		Stop skrivning 1/2 indeks nede.
+
+
+
+
+Denne gruppe lagrer linier til specielle form}l i opgaven:
+
+S[T eller SLET FORMAT	Inds{t/slet en formatlinie i opgaven.
+S[T eller SLET 'T'	Inds{t/slet linie som topmargentekst.
+S[T eller SLET 'M'	Inds{t/slet linie som bundmargentekst.
+S[T eller SLET ':'	Inds{t/slet linie som intern note.
+S[T eller SLET '#'	Reserver plads til sidenummer ved udskrivning.
+S[T SIDE		Inds{t sideskift.
+S[T '(' 		Start gruppering.
+S[T ')' 		Stop gruppering.
+
+
+
+Denne gruppe indeholder forskellige s|gemuligheder:
+
+S[T  HJEM		Afm{rk p}g{ldende sted i teksten som HJEM.
+FIND HJEM		G} tilbage til det punkt, der sidst blev
+			afm{rket som 'HJEM'.
+
+FIND tegn		Find n{ste forekomst af 'tegn'.
+
+S[T  FIND		Definer og udf|r en s|g/erstat-kommando.
+
+FIND LINIE linienr.	S|g frem/tilbage til angivne linienummer.
+
+FIND LINIE +/-ant.	S|g antal linier frem/tilbage i teksten.
+
+FIND SIDE sidenr.	S|g frem/tilbage til angivne sidenummer.
+
+FIND SIDE +/-ant.	S|g antal sider frem/tilbage.
+
+Åh
+2
+
+B.                   Hovedmenu og statusbillede
+
+Foruden de forskellige menuer viser hovedmenuen et statusbillede over 
+disken.
+
+'Opgaver p}' er den disk RcTekst vil benytte, n}r der angives opgavenavn 
+uden diskstation. For f.eks. at l{se OPG1 p} den givne disk, beh|ver du kun 
+skrive opgavens navn. Hvis du vil have den l{st fra en anden diskstation, 
+kr{ves der n{rmere specifikation, f.eks. 'B:OPG1'.
+
+'Programmer p}' angiver den diskstation, hvor RcTekst forventer at finde 
+sine hj{lpeopgaver, osv. N}r du k|rer tekstbehandling kan programdisken kun 
+bruges i denne diskstation. (Den kan dog fjernes med funktionen DISK, OpgAdm 
+menuen, men i s} fald vil kun funktionerne KOPI, NYT NAVN og SLET fungere, 
+indtil den installeres igen).
+
+RcTekst kan installeres med enhver diskstation som given disk og program-
+disk. Hvis den nuv{rende indstilling ikke passer dig, kan du {ndre den (Se 
+Brugervejledningen).
+
+'Terminal' angiver hvilken terminal, der er installeret.
+
+'Aktuel opgave' fort{ller hvilken opgave, der befinder sig i skrivefeltet. 
+Navnet registreres n}r opgaven l{ses ind i det tomme skrivefelt; systemet 
+antager endvidere, at det er dette navn, der skal bruges ved funktionerne 
+GEM eller KOPI. Hvis skrivefeltet er tomt, eller du endnu ikke har navngivet 
+den indskrevne tekst, st}r der 'tekstvinduet er tomt'. Hvis du l{ser mere 
+end en opgave ind i skrivefeltet, registreres kun den f|rste som 'Aktuel 
+opgave'.
+
+Statusbilledet viser dig ogs}, hvor meget den igangv{rende opgave fylder, og 
+hvor meget plads der er tilbage p} disken. Du kan derved se, om der er plads 
+nok til den igangv{rende opgave. Hvis opgaven f.eks. er p} 14 K, og status-
+billedet viser, at der er 120 K tilbage, vil du m}ske komme til at mangle 
+plads, og statusbilledet vil vise Disken Fuld. Hvis der f.eks. kun er 8 K 
+tilbage, b|r du overveje at slette nogle opgaver eller lagre opgaven p} en 
+disk med mere plads.
+
+'Aktuel placering' viser, hvor mark|ren var placeret, da du sidst brugte 
+skrivefeltet. Der angives Side, Linie og Kolonne, hvis du arbejder med 
+almindelige tekstbehandlingsopgaver, eller kun linie og kolonne hvis det 
+ikke er en tekstbehandlingsopgave. (Den v{sentligste forskel best}r i, om 
+sidel{ngden er 0 eller et virkeligt antal linier. Sidel{ngden for tekst-
+behandlingsopgaver opgives normalt i formatmenuen; hvilket ikke er tilf{ldet 
+for ikke-tekstbehandlingsopgaver).
+
+Listen over diskstationer viser en linie for hver station, du har brugt 
+under den nuv{rende tekstbehandlingsk|rsel. F|rste gang du l{ser fra, lagrer 
+p}, osv. en diskstation, f|jes en statuslinie til listen. Bortset fra at 
+angive hvor meget plads, der er tilbage p} den enkelte disk, b}de i % af 
+hele disk og i tilbagev{rende K, minder denne liste dig om, hvilken disk du 
+har brugt. Hvis du |nsker at inds{tte en ny disk, og der fremkommer en 
+statuslinie for den p}g{ldende station, SKAL du bruge funktionen Disk fra 
+formatmenuen for at informere RcTekst om {ndringen. Hvis der ikke fremkommer 
+en s}dan linie p} statusbilledet, kan Disk proceduren springes over.
+
+3
+
+C.          Kommandoerne HENT, GEM og KOPI
+
+Disse tre kommandoer d{kker st|rstedelen af dit behov for diskbehandling. 
+
+HENT l{ser en opgave fra disk til skrivefeltet, s} du kan redigere eller 
+udskrive den.
+GEM lagrer din tekst som en opgave p} disken og rydder skrivefeltet til 
+n{ste opgave.
+KOPI lagrer en tekst under udarbejdelse og vender efter kopieringen tilbage 
+til n|jgtig samme skriveposition som f|r kopieringen, s} du kan forts{tte 
+skrivningen.
+
+Hvis du ikke vil gemme teksten, skal du bare trykke ESC p} hovedmenuen. 
+RcTekst g|r derefter opm{rksom p}, at tekstvinduet ikke er tomt, og sp|rger 
+om du vil kassere den p}g{ldende tekst. Svar J for ja. RcTekst rydder 
+derefter skrivefeltet og returnerer til hovedmenuen, og du kan forts{tte, 
+som du |nsker.
+
+For det meste er brugen af disse kommandoer indlysende, og du beh|ver ikke 
+spekulere meget over dem. De f|lgende sk{rmbilleder omhandler nogle mere 
+sj{ldne tilf{lde.
+
+Normalt HENTes en opgave ad gangen (skrivefeltet er tomt, n}r du starter), 
+s} den indl{ste opgave er derfor det eneste, du ser i skrivefeltet ved tryk 
+p} Rediger. Opgavens navn fremg}r af linien Aktuel Opgave p} statusbilledet, 
+og enhver {ndring eller sikkerhedskopiering bliver udf|rt under dette navn. 
+Hvis det drejer sig om en ikke-tekstbehandlingsopgave (alle opgavetyper 
+undtagen WP og WPB) bruger RcTekst et format, der er kompatibelt med dit 
+operativsystems standardtekstopgaver - ingen sidel{ngde, manuel formattering 
+og tabulatorstop for hver ottende kolonne. Drejer det sig om en 
+tekstbehandlingsopgave, bruges oplysninger fra opgaven selv, nemlig de 
+oplysninger, der blev givet i formatmenuen og den oprindelige formatlinie, 
+og som viser det format, der blev brugt ved den foreg}ende redigering.
+
+Hvis du HENTer en opgave, og der i forvejen st}r en tekst i skrivefeltet, 
+enten fra en anden opgave eller noget du lige har skrevet, bliver den tekst, 
+du indl{ser, h{ftet p} i slutningen af den tekst, der allerede st}r i 
+skrivefeltet. Denne ekstra tekst {ndrer ikke formatet eller navnet angivet 
+under 'Aktuel opgave'. Dette er meget nyttigt, hvis du |nsker at kombinere 
+tekst fra to eller flere opgaver. Hvis du simpelthen har glemt at fjerne den 
+foreg}ende tekst, f|r du indl{ste den nye opgave, skal du bare kassere den 
+nuv{rende tekst og HENTe opgaven igen.
+
+GEM kommandoen formoder, at du vil lagre den aktuelle tekst under samme 
+navn, som blev brugt ved indl{sningen, men dette kontrolleres altid f|rst. 
+Tryk RETUR hvis samme navn skal bruges. (Hvis teksten ikke allerede har et 
+navn, bliver du naturligvis n|dt til at give den et navn nu). Hvis du kun 
+angiver navnet p} diskstationen (et bogstav efterfulgt af kolon) vil teksten 
+blive lagret p} den disk, der forefindes der, under det oprindelige navn.
+
+Hvis du angiver et andet opgavenavn eller en anden diskstation, vil teksten 
+blive lagret som en ny version af opgaven, uden at originalen eller dens 
+sikkerhedskopi {ndres. Bibeholder du derimod det oprindelige navn, lagres 
+f|rst den aktuelle version, og derefter slettes eventuelle tidligere 
+sikkerhedskopier, og den foreg}ende version f}r status af sikkerhedskopi.
+
+Hvis der sker noget med den aktuelle version af opgaven, eller hvis du af 
+anden grund |nsker at g} tilbage til sikkerhedskopien, kan du HENTe 
+sikkerhedskopien direkte ved at angive opgavetypen WPB (BAK). Hvis du |nsker 
+den GEMt som den aktuelle version, SKAL du angive et opgavenavn. Hvis du 
+anvender det gamle opgavenavn, overskrives den gamle aktuelle version 
+naturligvis. Bem{rk: GEM accepterer ikke WPB eller BAK opgavetyper.
+
+
+KOPI er en bekvem kombination af GEM fulgt af en automatisk HENT af den 
+samme opgave og med tilbagevenden til n|jagtig samme position som f|r 
+kopieringen. Da form}let med denne funktion er at g|re sikkerhedskopieringen 
+s} let som muligt, bruges altid samme navn som angivet under 'Aktuel opgave' 
+p} statusbilledet. KOPI stopper ikke, som det er tilf{ldet med GEM, for at 
+sp|rge om du |nsker at lagre opgaven under et andet navn eller p} en anden 
+disk. \nsker du at lagre den aktuelle opgave under et nyt navn, skal du 
+huske at bruge GEM f|rst for at f} oprettet navnet som 'Aktuel opgave'
+
+Hvis GEM eller KOPI f}r pladsproblemer - der kan enten v{re for mange 
+opgaver p} disken eller ikke plads nok - stoppes processen automatisk, og 
+der returneres til hovedmenuen. Hvis du fors|gte at lagre teksten p} en 
+anden disk eller under et andet navn end angivet under 'Aktuel opgave', er 
+linien 'Aktuel opgave' m}ske allerede blevet {ndret p} statusbilledet. N}r 
+du har skaffet nok plads p} disken eller udskiftet den, kan du igen aktivere 
+GEM og KOPI, og systemet vil g} frem som f|r og bruge det navn, der er vist 
+under 'Aktuel opgave'.
+
+4
+
+D.      En generel oversigt over opgaver og opgavenavne
+
+Datamaten lagrer n{sten alt, den kender - programmer, opgaver, l|nnings-
+oplysninger, osv. - p} plader eller diske. En disk kan indeholde alle 
+t{nkelige kombinationer af s}danne oplysninger, lagret i separate 'opgaver'. 
+RcTekst best}r af et s{t programopgaver; indskreven tekst bliver til 
+opgaver; den sikkerhedskopi RcTekst bevarer, n}r du opdaterer enopgave, er 
+en separat opgave, osv. De forskellige opgaver p} en disk adskiller sig fra 
+hinanden ved deres navne. Operativsystemet - hovedprogrammet der 
+kontrollerer alle dine andre programmer, inklusive dette - indeholder visse 
+regler for udformningen af opgavenavne. Mange programmer, heriblandt RcTekst 
+fastl{gger for nemheds skyld ekstra regler herfor.
+
+De f|lgende sk{rmbilleder giver en oversigt over operativsystemets regler 
+for udformning af opgavenavne, RcTekst's egne regler for opgavenavne, og 
+endelig de to slags tekstopgaver, som RcTekst tillader.
+
+Å0
+
+Operativsystemets regler for udformning af opgavenavne
+
+Operativsystemet tillader opgavenavne best}ende af to dele: selve 'navnet' 
+der kan best} af 1-8 tegn; og 'typen' der kan best} af h|jst 3 tegn. Til 
+udformningen kan der bruges alle bogstaver, tal og tegn, undtagen: 
+mellemrum, <> . , : ? * [ og ]. RcTekst s}vel som de fleste andre programmer 
+behandler opgavenavnene, som var de skrevet med store bogstaver, ogs} selvom 
+du har skrevet dem med sm}. N}r du skriver et 'opgavenavn', skal du adskille 
+'navnet' fra 'typen' med et punktum.
+
+(Det skaber ofte forvirring, at udtrykket 'opgavenavn' nogle gange bruges 
+til at referere til navnet og typen under eet, og andre gange til kun at 
+referere til den f|rste del. For at g|re tingene v{rre vil du af og til f} 
+brug for at referere til en opgave p} en anden disk end den 'givne' disk. 
+Dette g|res ved at skrive bogstavet p} stationen fulgt af et kolon f|r 
+opgavenavnet. Den fuldst{ndige kombination af station, navn og type kaldes 
+normalt 'opgavespecifikation').
+
+Å(
+
+RcTekst's regler for udformning af opgavenavne
+
+Du vil blive bedt om at angive opgavenavn i forbindelse med funktionerne 
+HENT, GEM og KOPI, og n}r du bruger formatmenuen. For at lette dig i dit 
+arbejde, g}r RcTekst ud fra f|lgende:
+
+Hvis du ikke angiver bogstavet for en diskstation, g}r RcTekst ud fra, at du 
+mener den station, der er angivet ved 'opgaver p}:' p} hovedmenuen.
+
+Hvis du udelader opgavetype, g}r RcTekst ud fra, at du mener dets 
+standardopgavetype 'WP'. Du beh|ver kun angive opgavetype, hvis du arbejder 
+med en ikke-tekstbehandlingsopgave - f.eks. et kildeprogram.
+
+Hvis der vises et opgavenavn i parentes, n}r RcTekst beder om opgavenavn, 
+beh|ver du kun trykke RETUR, og programmet vil bruge det tilbudte navn. Hvis 
+du derimod kun skriver f.eks. 'B:', g}r RcTekst ud fra, at du |nsker at 
+bruge det tilbudte navn men p} station B.
+
+N}r du opretter, redigerer og udskriver opgaver med tekstbehandling, vil du 
+normalt kun interessere dig for den del af opgavenavnene, der udg|r selve 
+'navnet'. Ved masseudsendelse af et salgsbrev t{nker du m}ske p} det f|rste 
+brev som SALGBRV1, hvor det fulde navn for operativsystemet er B:SALGBRV1. 
+(Idet vi g}r ud fra, at din udgave af RcTekst er konfigureret med station B 
+som given station for opgaver).
+
+For RcTekst er alle opgaver normalt af typen WP, hvorved visse 
+formatteringsoplysninger er underforst}et; oplysninger som kun er af 
+interesse for RcTekst for at holde styr p} margenindstilling, tabulatorstop, 
+osv. Men de samme oplysninger, som er s} v{rdifulde for tekstbehandlings-
+programmet, er helt uden v{rdi for andre programmer. Hvis du |nsker at 
+oprette eller gemme en tekstopgave, der skal bruges af et andet program - 
+f.eks. en opgave best}ende af kildekoder til en overs{tter - skal du 
+udtrykkelig angive opgave'type', n}r du refererer til opgaven, og opgavetyp-
+en m} IKKE v{re 'WP'. RcTekst vil hverken skrive eller forvente at l{se de 
+formatteringsoplysninger, som kun det forst}r, i forbindelse med andet end 
+tekstbehandlingsopgaver. I forbindelse med ikke-tekstbehandlings-opgaver 
+skal du ogs} undg} at bruge koder, undtagen standardtegn, vognretur, 
+almindelige tabulatorstop (ingen h|jrestillede, centrerede eller decimal-
+stop).
+
+N}r RcTekst l{ser en ikke-tekstbehandlingsopgave, g}r det ud fra, at der 
+skal bruges et format, der er kompatibelt med operativsystemets standard: 
+tabulatorstop ved hver ottende kolonne, linier best}ende af 80 kolonner og 
+manuel tekstformattering - hver linie skal afsluttes med vognretur. 
+Derudover identificeres den sikkerhedskopi, der automatisk oprettes, n}r en 
+ikke-tekstbehandlingsopgave opdateres, ved hj{lp af typeangivelsen BAK og 
+ikke WPB. Du kan l{se en ikke-tekstbehandlingsopgave og GEMme den med typen 
+WP eller omvendt, men RcTekst tillader ikke, at du bruger funktionerne 
+[NDRING og KOPI mellem forskellige klasser opgaver.
+
+Hermed nogle enkelte bem{rkninger om sikkerhedskopier, b}de for tekstbehand-
+lingsopgaver og ikke-tekstbehandlingsopgaver: n}r du lagrer eller sikker-
+hedskopierer en opgave ved hj{lp af GEM og KOPI, navngiver RcTekst 
+automatisk kopien af den tekst, du startede med, ved at bruge samme navn og 
+type, henholdsvis WPB og BAK. (Hvis der allerede eksisterer en sikkerheds-
+kopi, slettes den automatisk, s} du altid har den aktuelle version og den 
+lige foreg}ende lagret p} disken). Hvis funktionerne GEM eller KOPI af en 
+eller anden grund svigter, findes b}de originalen og en tidligere sikker-
+hedskopi intakt p} disken. Hvis du p} et eller andet tidspunkt |nsker eller 
+har brug for at g} tilbage til sikkerhedskopien, kan du med RcTekst HENTe en 
+opgave af typen WPB eller BAK. N}r du derimod fors|ger at lagre den ved 
+hj{lp af GEM, vil RcTekst insistere p}, at du giver den et nyt navn og dette 
+m} ikke v{re et WPB eller BAK navn.
+
+De f|lgende opgavetyper har en speciel betydning i RcTekst. Du b|r ALDRIG 
+angive opgavetypen som WP, medmindre den indeholder n|jagtig, hvad RcTekst 
+forventer:
+
+	Type		Betydning i RcTekst.
+	WP		Tekstbehandlingsopgave.
+	WPB		Sikkerhedskopi af ovenst}ende.
+	BAK		Sikkerhedskopi af ikke-tekstbehandlingsopgave.
+
+	(Programdisken skal indeholde f|lgende opgavetyper).
+	WPO		Overlay.
+	WPP		Skriverdefinition (se udskrivningsmenuen).
+	WPF		Skrifttypedefinition (proportional skrift).
+	WPH		Vejledning.
+	WPT		Terminaldefinition (Monokrom ell. Farve 
+                        benyttes kun ved installation af RcTekst).
+	(Programdisken kan indeholde)
+	WPL		Leksikondefinition (nuv{rende leksikon er 
+                        GIVEN.WPL)
+
+
+
+RcTekst opretter og sletter ogs} midlertidige opgaver af typen O$ og B$. Den 
+aktuelle 'blok' findes p} disken som WORKx.BLK.
+
+ÜÄ
+5
+E.                         Diverse.
+
+
+               [ndring af det givne format.
+
+RcTekst er installeret med et format, der er typisk for de fleste tekstbe-
+handlingssystemer: 65 10-pitch tegn pr. linie, tabulatorstop i kolonne fem 
+og derefter hver tiende kolonne, 66 linierpr. side med 6 linier pr. tomme, 
+osv. Hvis de fleste af dine opgaver har en anden st|rrelse, kan du {ndre det 
+givne formatp} f|lgende m}de:
+
+P} et tomt skrivefelt trykkes S[T FORMAT for at f} indstillet formatlinien, 
+som du |nsker det. Skriv noget tekst, ligegyldigt hvad - du kan ogs} n|jes 
+med at trykke RETUR og f} en tom linie. Returner derefter til hovedmenuen og 
+v{lg formatmenuen. Foretag de {ndringer, du |nsker. (Forlad kun menuen ved 
+at trykke RETUR, hvis du trykker ESC, ignoreres {ndringerne). Endelig gemmes 
+'opgaven' som GIVEN.WP p} programdisken. Tryk ESC for at komme tilbage til 
+operativsystemet. Fra nu af vil dette format v{re dit standardformat. (Det 
+kan altid {ndres ved at 'redigere' GIVEN.WP som enhver anden opgave, eller 
+du kan g} tilbage til de oprindelige v{rdier ved at slette opgaven).
+
+           Oversigt over opgaver via OpgAdm
+
+Det er nemt at v{nne sig til at trykke RETUR, n}r RcTekst under funktionen 
+Katalog p} OpgAdm menuen sp|rger, hvilke opgaver du |nsker at se. Medmindre 
+andet angives, g}r RcTekst ud fra, at du bare vil have en liste over de 
+aktuelle opgaver. Normalt beh|ver du ikke andet, men n}r du skal finde ud 
+af, hvilke opgaver der evt. kan slettes, fordi disken er fuld, b|r du ikke 
+glemme, at de fleste diske indeholder andre opgaver. Specielt er sikkerheds-
+kopierne (WPB og BAK) sandsynlige kandidater, hvis du mangler plads.
+
+Husk at '*' og '?' kan bruges til at f} vist udvalgte lister.
+Her er nogle af de vigtigste:
+
+'*.*'		Alle opgaver, programnavne, osv.
+'*.WPB' 	Alle sikkerhedskopier af tekstbehandlingsopgaver.
+'*.BAK' 	Alle sikkerhedskopier af ikke-tekstbehandlingsopgaver.
+'MEMO?.*'	Alle de opgaver, der begynder med MEMO plus h|jst et ekstra
+		tegn (f.eks. MEMO.WP, MEMO.WPB, MEMO1.WP, MEMO2.WP)
+'B:*.CMD'	Alle programopgaver p} station B
+
+ÅH
+
+          Oprettelse af din egen vejledning
+
+Sk{rmbillederne til denne vejledning kommer fra en enkelt ikke-tekstbehand-
+lingsopgave, der hedder HELP.WPH. Denne tekst kan redigeres ved hj{lp af 
+RcTekst n|jagtig som enhver anden opgave. N}r du har v{nnet dig til at bruge 
+tekstbehandling, vil du m}ske |nske at oprette din egen vejledning. Hvis du 
+bruger sm} diske, vil du m}ske forkorte den (eller helt slette den), s} du 
+ikke spilder plads p} oplysninger, som du ikke l{ngere beh|ver. Du kan ogs} 
+tilf|je kommentarer til specielle ting. Hvordan du {ndrer vejledningen er 
+beskrevet nedenfor.
+Ä‡
+
+Vejledningen kan indeholde 19 menuoptegnelser udover den f|rste linie, som 
+altid returnerer dig til hovedmenuen. Sk{rmbillederne er adskilt af 'faste' 
+sideskift. En note linie (S[T ':') kun indeholdende et tal identificerer det 
+f|rste sk{rmbillede af en hel serie. Hvis du vil tilf|je en ny serie, skal 
+der tilf|jes en note, der begynder med '$' til listen |verst i opgaven, og 
+en menubeskrivelse i den efterf|lgende tekst. Derefter indskriver du din(e) 
+sk{rmtekst(er) i opgaven. (Det er nemt at kontrollere: tag bare en sikker-
+hedskopi af opgaven og v{lg Vejl. Din tekst er |jeblikkeligt inkluderet).
+
+6
+
+		Stop gruppering.
+
+
+
+Denne gruppe indeholder forskellige s|gemuligheder:
+
+S[T  HJEM		Afm{rk p}g{ldende sted i teksten[

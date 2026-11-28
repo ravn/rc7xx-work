@@ -1,0 +1,51 @@
+era a:diskvedl.cmd
+era a:eraq.cmd
+era a:filadm.cmd
+era a:function.cmd
+era a:konfig.cmd
+era a:menu.mdf
+era a:omenu.mdf
+era a:menuvedl.cmd
+era a:pip.cmd
+era a:sdir.cmd
+era a:show.cmd
+era a:start?
+era a:type.cmd
+era a:startup.0
+ren a:startup.0=start80
+era a:instjoba.sub
+era a:instjobb.sub
+era a:instjobd.sub
+era a:instal.cmd
+era a:ren.cmd
+era a:submit.cmd
+era a:reserver.cmd
+era a:frigiv.cmd
+era a:assign.dir
+era a:gkonfig.cmd
+era a:okonfig.cmd
+era a:opdat*.*
+era a:print.cmd
+era a:vmenu.cmd
+era a:vindue.cmd
+era a:DD75XH1.SYS
+era a:DD75XHD1.SYS
+era a:DD75XHM1.SYS
+era a:DD75XM1.SYS
+era a:DD75XMD1.SYS
+era a:DD75XMM1.SYS
+era a:ccpm1.sys
+set a:*.*[ro,sys]
+set a:assign.sys[rw]
+set a:kdef.sys[rw]
+set a:set.cmd[rw,dir]
+set a:era.cmd[rw,dir]
+set a:instjobc.sub[rw,dir]
+era a:set.cmd
+era a:instjobc.sub
+era a:era.cmd
+
+era a:era.cmd
+
+era a:era.cmd
+

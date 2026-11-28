@@ -1,0 +1,190 @@
+
+VERSNO		EQU	8324h
+ASSEMBLER	EQU	28h
+VALUE		EQU	0
+REF		EQU	1
+REAL		EQU	0
+STRING		EQU	2
+PROC		EQU	5
+REALFUNC	EQU	9
+STRINGFUNC	EQU	10
+ASSERR		EQU	180
+
+
+CSEG $
+
+
+	; FUNCTION get_real_par(no : byte): integer;
+
+	; (* henter parameter no fra COMAL og konveterer tallet og
+	;    og l{gger det i BX *)
+
+	;	CALL		RETURN
+	; CL	no
+	; BX			get_real_par
+
+REALPAR:
+	MOV	BP,RESERVER+6	;
+	XOR	CH,CH		;
+	SHL	CX,1		;
+	ADD	BP,CX		;
+	MOV	SI,4[BP]	;   ptr := adresse_par(no);
+	MOV	BX,1		;
+	CALL	COMALRUT	;   comal_fix(ptr);
+	RET			;
+
+
+
+	; PROCEDURE get_string_par(no : byte, adr : integer);
+
+	; (* henter parameter no fra COMAL og l{gger den i adressen
+	;    DI udpeger og fremefter *)
+
+	;	CALL		RETURN
+	; CL	no
+	; DI	adr
+
+STRPAR:
+	MOV	BP,RESERVER+6	;
+	PUSH	DS		;
+	POP	ES		;   extra_segment := pakkens data_segment;
+	PUSH	DS		;   gem pakkens data_segment;
+	MOV	DS,4[BP]	;   data_segment := COMAL's data_segment;
+	XOR	CH,CH		;
+	SHL	CX,1		;
+	ADD	BP,CX		;
+	MOV	SI,4[BP]	;   ptr := adresse_par(no);
+	INC	SI		;
+	INC	SI		;   skip_max_l{ngde;
+	LODS	AX		;
+	MOV	CX,AX		;   hent_nuv{rende_l{ngde;
+	CLD			;
+	REP	MOVSB		;   flyt strengen;
+	POP	DS		;   data_segment := pakkens data_segment;
+	RET			;
+
+
+
+	; PROCEDURE put_real_resultat(resultat : integer,
+	;			REF resultat_segm, resultat_offset : integer);
+
+	; (* konverterer resultatet til COMAL-format  og returnerer v{rdien *)
+
+	; 	CALL		RETURN
+	; BX	resultat
+	; AX			resultat_segm
+	; CX			resultat_offset
+
+REALRES:MOV	SI,BX		;
+	MOV	BX,0		;
+	CALL	COMALRUT	;   comal_float(resultat);
+	RET 			;
+
+
+
+
+	; PROCEDURE put_real_parameter(resultat : integer, no : byte);
+
+	; (* konverterer resultatet til COMAL-format  og l{gger resultatet
+	;    p} adressen for parameter no *)
+
+	; 	CALL		RETURN
+	; BX	resultat
+	; CL	no
+
+PUTREALPAR:
+	PUSH	CX		;
+	CALL	REALRES		;   realres(resultat,res_segm,res_offset);
+	MOV	SI,CX		;   from := res_offset;
+	MOV	BP,RESERVER+6	;   (* res_segm = COMAL's data_segment *)
+	POP	CX		;
+	XOR	CH,CH		;
+	SHL	CX,1		;
+	ADD	BP,CX		;
+	MOV	DI,4[BP]	;   to := adresse_par(no);
+	PUSH	DS		;   gem pakkens data_segment;
+	MOV	ES,AX		;   extra_segment := COMAL's data_segment;
+	MOV	DS,AX		;   data_segment := COMAL's data_segment;
+	MOV	CX,8		;
+	REP	MOVSB		;   movebytes(from,to,8);
+	POP	DS		;   hent pakkens data_segment;
+	RET			;
+
+
+
+	; PROCEDURE finito;
+	; (* return far *)
+
+
+FINITO:	MOV	BP,RESERVER+6	;
+	SUB	BP,6		;
+	MOV	SP,BP		;   return_far;
+	RETF			;
+
+
+
+	; PROCEDURE test_error(error_kode : integer);
+
+	; (* tester om error_kode er forskellig fra nul og s{tter
+	;    i s} fald fejlkoden i COMAL *)
+
+	;	CALL		RETURN
+	; AX	error_kode
+
+
+	; PROCEDURE error(error_kode : integer);
+
+	; (* s{tter fejlkoden i COMAL *)
+
+	;	CALL		RETURN
+	; AX	error_kode
+
+
+TSTERR:	OR	AX,AX		;
+	JNZ	ERROR		;   IF error_kode <> 0 THEN
+	RET			;	comal_set_error(error_kode);
+
+ERROR:	MOV	SI,AX		;
+	MOV	BX,32		;
+	CALL	COMALRUT	;   comal_set_error(error_kode);
+	RET			;
+
+
+
+	; PROCEDURE comal_rutine(rutine_no, arg1, arg2 : integer,
+	;				REF res_offset, res_segment : integer);
+
+	; (* kalder en af de COMAL-rutiner, der er til r}dighed for pakken *)
+
+	;	CALL		RETURN
+	; BX	rutine_no
+	; SI	arg1
+	; DI	arg2
+	; CX			res_offset
+	; AX			res_segment
+
+
+COMALRUT:
+	MOV	BP,RESERVER+6	;
+	PUSH	DS		;   gem pakkens data_segment;
+	MOV	DS,4[BP]	;   data_segment := COMAL's data_segment;
+	CALLF	DWORD PTR [BP]	;   kald COMAL-rutinen;
+	MOV	DX,DS		;
+	POP	DS		;   data_segment := pakkens data_segment;
+	PUSH	SI		;   gem resultat_offset;
+	PUSH	DX		;   gem resultat_segment;
+	CALL	TSTERR		;   test om der er fejl under COMAL-rutinen;
+	POP	AX		;   resultat_segment;
+	POP	CX		;   resultat_offset;
+	RET			;
+
+
+DSEG $
+
+ORG	100h
+
+RESERVER	RW	4
+
+CSEG $
+
+bx,pixel_row_offset		;       pi

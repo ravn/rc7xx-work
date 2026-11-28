@@ -1,0 +1,120 @@
+:IF \nsker du at opdatere et PICCOLINE 4-konsolsystem (CCPM UDEN NET)
+  *De gamle 1-konsol grafikdrivere slettes
+  DD759H1.SYS%
+  DD759HM1.SYS%
+  DD759HD1.SYS%
+  DD759M1.SYS%
+  DD759MM1.SYS%
+  DD759MD1.SYS%
+  *Operativsystem opdateres til XIOS Version 3.1
+  CCPM.SYS
+  *De gamle 4-konsol grafikdrivere erstattes af nye
+  DD759H4.SYS/DD75XH.SYS
+  DD759HM4.SYS/DD75XHM.SYS
+  DD759HD4.SYS/DD75XHD.SYS
+  DD759M4.SYS/DD75XM.SYS
+  DD759MM4.SYS/DD75XMM.SYS
+  DD759MD4.SYS/DD75XMD.SYS
+  *De gamle skriver- og plotterdrivere opdateres
+  DD602.SYS
+  DD604H.SYS
+  DD604HC.SYS
+  DD604V.SYS
+  DD604VC.SYS
+  DD605H.SYS
+  DD605V.SYS
+  DD621.SYS
+  DD608VC.SYS?DD608VC.SYS er GSX-driver til de nye printere RC607 / RC608  til A4-h|j, og farve.
+  DD608HC.SYS?DD608HC.SYS er GSX-driver til den nye printer RC608  til A4-tv{rs, og farve.
+  DD609VC.SYS?DD609VC.SYS er GSX-driver til den nye printer RC609  til A4-h|j, og farve.
+  DD609HC.SYS?DD609HC.SYS er GSX-driver til den nye printer RC609  til A4-tv{rs, og farve.
+:ELSE
+  :IF \nsker du at opdatere et PICCOLINE 1-konsolsystem (CCPM UDEN NET)
+    *De gamle 4-konsol grafikdrivere slettes
+    DD759H4.SYS%
+    DD759HM4.SYS%
+    DD759HD4.SYS%
+    DD759M4.SYS%
+    DD759MM4.SYS%
+    DD759MD4.SYS%
+    *Operativsystem opdateres til XIOS Version 3.1
+    CCPM.SYS/CCPM1.SYS
+    CCPM1.SYS>CCPM.SYS
+    *De gamle 1-konsol grafikdrivere erstattes af nye
+    DD759H1.SYS/DD75XH1.SYS
+    DD759HM1.SYS/DD75XHM1.SYS
+    DD759HD1.SYS/DD75XHD1.SYS
+    DD759M1.SYS/DD75XM1.SYS
+    DD759MM1.SYS/DD75XMM1.SYS
+    DD759MD1.SYS/DD75XMD1.SYS
+    *De gamle skriver- og plotterdrivere opdateres
+    DD602.SYS
+    DD604H.SYS
+    DD604HC.SYS
+    DD604V.SYS
+    DD604VC.SYS
+    DD605H.SYS
+    DD605V.SYS
+    DD621.SYS
+    DD608VC.SYS?DD608VC.SYS er GSX-driver til de nye printere RC607 / RC608  til A4-h|j, og farve.
+    DD608HC.SYS?DD608HC.SYS er GSX-driver til den nye printer RC608  til A4-tv{rs, og farve.
+    DD609VC.SYS?DD609VC.SYS er GSX-driver til den nye printer RC609  til A4-h|j, og farve.
+    DD609HC.SYS?DD609HC.SYS er GSX-driver til den nye printer RC609  til A4-tv{rs, og farve.
+  :ELSE ; ikke 1 kons. ikke 4 kons.
+    :IF \nsker du at opdatere en Partner net-v{rt ( CCP/M opdateres IKKE )
+      *De gamle 1-konsol grafikdrivere erstattes af nye
+      DD759H1.SYS/DD75XH1.SYS
+      DD759HM1.SYS/DD75XHM1.SYS
+      DD759HD1.SYS/DD75XHD1.SYS
+      DD759M1.SYS/DD75XM1.SYS
+      DD759MM1.SYS/DD75XMM1.SYS
+      DD759MD1.SYS/DD75XMD1.SYS
+      *De gamle 4-konsol grafikdrivere erstattes af nye
+      DD759H4.SYS/DD75XH.SYS
+      DD759HM4.SYS/DD75XHM.SYS
+      DD759HD4.SYS/DD75XHD.SYS
+      DD759M4.SYS/DD75XM.SYS
+      DD759MM4.SYS/DD75XMM.SYS
+      DD759MD4.SYS/DD75XMD.SYS
+      *De gamle skriver- og plotterdrivere opdateres
+      DD602.SYS
+      DD604H.SYS
+      DD604HC.SYS
+      DD604V.SYS
+      DD604VC.SYS
+      DD605H.SYS
+      DD605V.SYS
+      DD621.SYS
+      DD608VC.SYS?DD608VC.SYS er GSX-driver til de nye printere RC607 / RC608  til A4-h|j, og farve.
+      DD608HC.SYS?DD608HC.SYS er GSX-driver til den nye printer RC608  til A4-tv{rs, og farve.
+      DD609VC.SYS?DD609VC.SYS er GSX-driver til den nye printer RC609  til A4-h|j, og farve.
+      DD609HC.SYS?DD609HC.SYS er GSX-driver til den nye printer RC609  til A4-tv{rs, og farve.
+    :ENDIF
+  :ENDIF
+:ENDIF
+*\vrige grafik opdateres
+GRAPHICS.CMD
+ASSIGN1.DIR%
+ASSIGN4.DIR%
+ASSIGN.DIR!
+ASSIGN.SYS
+*Hj{lpeprogrammerne opdateres
+GKONFIG.CMD
+OKONFIG.CMD
+KONFIG.CMD
+FUNCTION.CMD
+DISKVEDL.CMD
+FILADM.CMD
+INSTAL.CMD
+IMENU.MDF
+MENU.MDF
+MENU.CMD
+MENUVEDL.CMD
+VINDUE.CMD
+VMENU.CMD
+*Den nye RcComal80 (m. ASM-, PPas og Comal-pakker) opdateres
+COMAL80.CMD
+COMAL80.ERM
+GENERRM.CSV
+*Bem{rk: Nyt hj{lpeprogram
+MDISK.CMD?MDISK er et program der kan oprette en mdisk under k|rslen, alts} UDEN at man skal resette PICCOLINE f|r M-disken kan bruges.

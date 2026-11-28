@@ -1,0 +1,88 @@
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	OFFSET DOKPROGRAM ;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+       		DB	8, 'KOMMANDO'	;	PROC kommando(comstr$);
+		DB	PROC		;
+		DW	OFFSET DOKKOM	;
+		DW	OFFSET XCOM	;
+		DB	1		;	1 parameter
+      		DB	6, 'COMSTR'	;
+		DB	VALUE+STRING, 0	;	simple_string
+
+		DB	0
+		DW	OFFSET RESERVER
+		DW	ASSEMBLER	;
+
+
+INCLUDE	ASSEMBL.A86
+
+
+BDOS		EQU	224
+P_PRIO		EQU	145
+C_ATTACH	EQU	146
+P_CLI		EQU	150
+
+
+DOKPROGRAM	DW	LENGTH DPROGRAM
+DPROGRAM	DB	'kan kalde programmer'
+
+DOKKOM		DW	OFFSET DKOMSLUT - OFFSET DKOM
+DKOM		DB	'proceduren KOMMANDO kalder det program som '
+		DB	'strengparameteren angiver'
+DKOMSLUT	RB	0
+
+
+
+XCOM:	MOV	CL,P_PRIO		;	(* s{t prioritet for denne
+	MOV	DL,197			;	   process til 197 *)
+	INT	BDOS			;	p_prio(197)
+
+	MOV	DI,OFFSET CLBUF1	;
+	MOV	CX,128			;	(* slet clbuf1 *)
+	MOV	AL,0			;
+	PUSH	DS			;
+	POP	ES			;
+	REP	STOS AL			;
+
+	MOV	DI,OFFSET CLBUF1	;	(* hent 1. parameter
+	MOV	CX,1			;	   til clbuf1 *)
+	CALL	STRPAR			;
+
+	MOV	DX,OFFSET CLBUF		;	(* udf|r kommando *)
+	MOV	CL,P_CLI		;	p_cli(clbuf);
+	INT	BDOS			;
+	OR	AX,AX			;	IF NOT(success) THEN
+	JZ	OK			;
+	MOV	AX,ASSERR		;		set_error(ass_error);
+	CALL	ERROR			;
+
+					;	(* vent p} sk{rmen bliver
+OK:	MOV	CL,C_ATTACH		;	   frigivet *)
+	INT	BDOS			;	c_attach;
+
+	MOV	CL,P_PRIO		;	(* s{t prioritet tilbage
+	MOV	DL,200			;	   til 200 *)
+	INT	BDOS			;	p_prio(200);
+
+	MOV	BX,31			;
+	CALL	COMALRUT		;	comal_program_funktionkeys;
+
+	JMP	FINITO			;
+
+
+DSEG	$
+
+CLBUF	DB	0			;
+CLBUF1	RB	128			;
+	DB	0			;
+
+
+END
+
+
+                                                                     

@@ -1,0 +1,177 @@
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	0		;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+
+						; FUNC bitshr(arg1,noofbits);
+		DB	6,'BITSHR'		; skift til h|jre
+		DB	REALFUNC		; reel funktion
+		DW	0			; ingen dok
+		DW	OFFSET XBITSHR		; adresse p} funktionen
+		DB	2			; 2 parametre
+		DB	4,'ARG1'		; navn for f|rste parameter
+		DB	VALUE+REAL,0		; type for f|rste parameter
+		DB	8,'NOOFBITS'		; navn for anden parameter
+		DB	VALUE+REAL,0		; type for anden parameter
+
+						; FUNC bitshl(arg1,noofbits);
+		DB	6,'BITSHL'		; skift til venstre
+		DB	REALFUNC		; reel funktion
+		DW	0			; ingen dok
+		DW	OFFSET XBITSHL		; adresse p} funktionen
+		DB	2			; 2 parametre
+		DB	4,'ARG1'		; navn for f|rste parameter
+		DB	VALUE+REAL,0		; type for f|rste parameter
+		DB	8,'NOOFBITS'		; navn for anden parameter
+		DB	VALUE+REAL,0		; type for anden parameter
+
+						; FUNC bitnot(arg1);
+		DB	6,'BITNOT'		; not
+		DB	REALFUNC		; reel funktion
+		DW	0			; ingen dok
+		DW	OFFSET XBITNOT		; adresse p} funktionen
+		DB	1			; 1 parameter
+		DB	4,'ARG1'		; navn for f|rste parameter
+		DB	VALUE+REAL,0		; type for f|rste parameter
+
+						; FUNC bitxor(arg1,arg2);
+		DB	6,'BITXOR'		; xor
+		DB	REALFUNC		; reel funktion
+		DW	0			; ingen dok
+		DW	OFFSET XBITXOR		; adresse p} funktionen
+		DB	2			; 2 parametre
+		DB	4,'ARG1'		; navn for f|rste parameter
+		DB	VALUE+REAL,0		; type for f|rste parameter
+		DB	4,'ARG2'		; navn for anden parameter
+		DB	VALUE+REAL,0		; type for anden parameter
+
+						; FUNC bitor(arg1,arg2);
+		DB	5,'BITOR'		; or
+		DB	REALFUNC		; reel funktion
+		DW	0			; ingen dok
+		DW	OFFSET XBITOR		; adresse p} funktionen
+		DB	2			; 2 parametre
+		DB	4,'ARG1'		; navn for f|rste parameter
+		DB	VALUE+REAL,0		; type for f|rste parameter
+		DB	4,'ARG2'		; navn for anden parameter
+		DB	VALUE+REAL,0		; type for anden parameter
+
+						; FUNC bitand(arg1,arg2);
+		DB	6,'BITAND'		; and
+		DB	REALFUNC		; reel funktion
+		DW	0			; ingen dok
+		DW	OFFSET XBITAND		; adresse p} funktionen
+		DB	2			; 2 parametre
+		DB	4,'ARG1'		; navn for f|rste parameter
+		DB	VALUE+REAL,0		; type for f|rste parameter
+		DB	4,'ARG2'		; navn for anden parameter
+		DB	VALUE+REAL,0		; type for anden parameter
+
+
+		DB	0
+		DW	OFFSET RESERVER
+		DW	ASSEMBLER	;
+
+
+INCLUDE ASSEMBL.A86
+
+XBITAND:MOV	CL,1			;
+	CALL	REALPAR			; get_two_parameters;
+	MOV	BITREP1,BX		;
+	MOV	CL,2			;
+	CALL	REALPAR			;
+	MOV	BITREP2,BX		;
+	MOV	BX,BITREP1		;
+	MOV	DX,BITREP2		;
+	AND	BX,DX			;
+	CALL	REALRES			; put_real_resultat(and(bitrep1,bitrep2));
+	JMP	FINITO			;
+
+
+XBITOR:	MOV	CL,1			;
+	CALL	REALPAR			; get_two_parameters;
+	MOV	BITREP1,BX		;
+	MOV	CL,2			;
+	CALL	REALPAR			;
+	MOV	BITREP2,BX		;
+	MOV	BX,BITREP1		;
+	MOV	DX,BITREP2		;
+	OR	BX,DX			;
+	CALL	REALRES			; put_resultat(or(bitrep1,bitrep2));
+	JMP	FINITO			;
+
+
+XBITXOR:MOV	CL,1			;
+	CALL	REALPAR			; get_two_parameters;
+	MOV	BITREP1,BX		;
+	MOV	CL,2			;
+	CALL	REALPAR			;
+	MOV	BITREP2,BX		;
+	MOV	BX,BITREP1		;
+	MOV	DX,BITREP2		;
+	XOR	BX,DX			;
+	CALL	REALRES			; put_resultat(xor(bitrep1,bitrep2));
+	JMP	FINITO			;
+
+
+XBITNOT:MOV	CL,1			;
+	CALL	REALPAR			; get_two_parameters;
+	MOV	BITREP1,BX		;
+	MOV	BX,BITREP1		;
+	NOT	BX			;
+	CALL	REALRES			; put_resultat(not(bitrep1));
+	JMP	FINITO			;
+
+
+XBITSHL:MOV	CL,1			;
+	CALL	REALPAR			; get_two_parameters;
+	MOV	BITREP1,BX		;
+	MOV	CL,2			;
+	CALL	REALPAR			;
+	MOV	BITREP2,BX		;
+	MOV	BX,BITREP1		;
+	MOV	CX,BITREP2		;
+	CMP	CX,15			; IF bitrep2 > 15 THEN
+	JBE	SHLOK			;	error(shift_overflow)
+	JMP	ERRSH			;
+SHLOK:	SHL	BX,CL			; ELSE
+	CALL	REALRES			;	put_resultat(shl(bitrep1,bitrep2));
+	JMP	FINITO			;
+
+
+XBITSHR:MOV	CL,1			;
+	CALL	REALPAR			; get_two_parameters;
+	MOV	BITREP1,BX		;
+	MOV	CL,2			;
+	CALL	REALPAR			;
+	MOV	BITREP2,BX		;
+	MOV	BX,BITREP1		;
+	MOV	CX,BITREP2		;
+	CMP	CX,15			; IF bitrep2 > 15 THEN
+	JBE	SHROK			;	error(shift_overflow)
+	JMP	ERRSH			;
+SHROK:	SHR	BX,CL			; ELSE
+	CALL	REALRES			;	put_resultat(shr(bitrep1,bitrep2));
+	JMP	FINITO			;
+
+
+	; PROCEDURE error_shift;
+
+ERRSH:	MOV	AL,181			;
+	CALL	ERROR			;
+	JMP	FINITO			;
+
+
+DSEG
+
+BITREP1		DW	0		; f|rste argument
+BITREP2		DW	0		; anden argument
+
+
+END
+
+

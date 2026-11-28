@@ -1,0 +1,43 @@
+                                 KOMMANDOER
+ 
+l{r/F5     - bruges til at oprette en ny procedure
+ret/F6     - bruges til rette en allerede eksisterende procedure
+ 
+hvilke/F3  - skriver en liste af de allerede eksisterende procedurer
+glem/F4    - sletter en allerede eksisterende procedure
+list/F2    - skriver en allerede eksisterende procedure p} sk{rmen
+plist      - skriver en allerede eksisterende procedure p} printeren
+ 
+disk/F9    - skriver en liste over filer som indeholder Logo-procedurer
+pdisk      - som ovenfor men udskrift p} printer
+ 
+fjern      - fjerner en fil med Logo-procedurer p} disken
+hent/F10   - henter Logo-procedurer fra en fil p} disken
+gem/F11    - gemmer Logo-procedurer p} en fil p} disken
+tilf|j/F12 - tilf|jer Logo-procedurer til en fil p} disken
+ 
+glem, list, plist, gem og tilf|j vil omhandle alle procedurer,
+             hvis procedurenavnet alle gives
+$
+farvel     - afslutter Logo
+hj{lp      - giver bl.a. denne information p} sk{rmen
+phj{lp     - giver bl.a. denne information p} printeren
+F1         - skriver den sidste s{tningslinie i kommandolinien igen
+fortryd/F8 - fortryder den sidste s{tningslinie. Hvis den 
+             indeholder start, viskud eller sletter linier
+             er det ikke en rigtig fortrydelse
+lav        - laver en procedure som indeholder ordrerne der er brugt
+             til at lave den sidste tegning p} sk{rmen.
+             Hvis proceduren er for lang er der mulighed for at
+             rette i de f|rste eller de sidste 19 linier
+ 
+tegnigen   - tegner tegningen p} sk{rmen igen
+kopi/F7    - laver en kopi af sk{rmbilledet p} printeren
+holger     - bruges til at skifte om fremtidige ordrer ogs}
+             skal udf|res af Holger eller ikke
+plotter    - bruges til at skifte om fremtidige ordrer ogs}
+             skal udf|res p} en plotter eller ikke
+pil        - bruges til at skifte om skildpaddens position og
+             retning skal hele tiden markeres med en pil eller ej
+ 
+

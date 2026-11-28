@@ -1,0 +1,22 @@
+1  jessop
+11 frem 
+1  tilbage
+3  venstre
+9  h|jre
+1  faktorfrem
+1  faktordrej
+1  pen op
+0  pen ned
+1  opsnoning af ledning
+31 stop
+31 start1
+0  start2
+16 stop venstre motor
+4  stop h|jre motor
+20 stop begge motorer
+5  bremsel{ngde
+2  pulsl{ngde
+30 start penmotor
+8  de to n{ste tal bruges til at afl{se statusbit for pennen
+4  i dette tilf{lde bit 2, da   status MOD 8 DIV 4
+

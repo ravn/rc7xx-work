@@ -1,0 +1,71 @@
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	0		;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+
+	DB	4,'POUT'	; PROC pout(port,d);
+	DB	PROC		;
+	DW	0		; ingen dokumentation
+	DW	OFFSET XPOUT	;
+	DB	2		; to parametre;
+	DB	4,'PORT'	;
+	DB	VALUE+REAL,0	;
+	DB	1,'D'		;
+	DB	VALUE+REAL,0	;
+
+	DB	3,'PIN'		; PROC pin(port, REF d);
+	DB	PROC		;
+	DW	0		; ingen dokumentation
+	DW	OFFSET XPIN	;
+	DB	2		; to parametre
+	DB	4,'PORT'	;
+	DB	VALUE+REAL,0	;
+	DB	1,'d'		;
+	DB	REF+REAL,0	;
+
+
+	DB	0		; ikke flere procedurer og funktioner
+	DW	OFFSET RESERVER	;
+	DW	ASSEMBLER	;
+
+
+INCLUDE	ASSEMBL.A86
+
+
+
+XPIN:	MOV	CL,1
+	CALL	REALPAR
+	MOV	X,BX
+	MOV	DX,X
+	IN	AL,DX
+	MOV	AH,0
+	MOV	BX,AX
+	MOV	CL,2
+	CALL	PUTREALPAR
+	JMP	FINITO
+
+
+XPOUT:	MOV	CL,1
+	CALL	REALPAR
+	MOV	X,BX
+	MOV	CL,2
+	CALL	REALPAR
+	MOV	Y,BX
+	MOV	AX,Y
+	MOV	DX,X
+	OUT	DX,AL
+	JMP	FINITO
+
+
+
+DSEG	$
+
+
+X		DW	0		; f|rste argument
+Y		DW	0		; anden argument
+
+

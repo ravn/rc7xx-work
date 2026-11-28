@@ -1,0 +1,45 @@
+era a:assign.dir
+era a:eraq.cmd
+era a:gkonfig.cmd
+era a:instal.cmd
+era a:instjobb.sub
+era a:instjobc.sub
+era a:instjobd.sub
+era a:konfig.cmd
+era a:omenu.mdf
+era a:menuvedl.cmd
+era a:okonfig.cmd
+era a:opdat*.*
+era a:show.cmd
+era a:start80
+era a:startup.0
+era a:DD75XH1.SYS
+era a:DD75XHD1.SYS
+era a:DD75XHM1.SYS
+era a:DD75XM1.SYS
+era a:DD75XMD1.SYS
+era a:DD75XMM1.SYS
+era a:ccpm1.sys
+ren a:startup.0=start0
+set a:*.*[ro,sys]
+set a:assign.sys[rw]
+set a:kdef.sys[rw]
+set a:instjoba.sub[rw,dir]
+era a:instjoba.sub
+
+instjoba.sub
+
+
+nstjoba.sub
+
+
+stjoba.sub
+
+
+a:instjoba.sub
+
+
+instjoba.sub
+
+
+instjoba.s

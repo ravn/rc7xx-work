@@ -1,0 +1,30 @@
+set b:ccpm.sys[rw]
+set b:comal80.cmd[rw]
+set b:imenu.mdf[rw]
+set b:menu.cmd[rw]
+set b:startup.0[rw]
+era b:ccpm.sys
+era b:comal80.cmd
+era b:imenu.mdf
+era b:menu.cmd
+era b:startup.0
+pip b:=a:ccpm.sys
+pip b:=a:comal80.cmd
+pip b:=a:imenu.mdf
+pip b:=a:menu.cmd
+pip b:startup.0=a:start80
+set b:ccpm.sys[sys,ro]
+set b:comal80.cmd[sys,ro]
+set b:imenu.mdf[sys,ro]
+set b:menu.cmd[sys,ro]
+set b:startup.0[sys,ro]
+
+up.0[sys,ro]
+
+
+:startup.0[sys,ro]
+
+
+iladm.cmd
+pip b:=a:function.sys
+pip b:=a:i

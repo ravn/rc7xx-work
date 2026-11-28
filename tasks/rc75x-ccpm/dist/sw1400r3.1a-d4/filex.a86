@@ -1,0 +1,966 @@
+    				;FILEX program version 1.0  19 jan 83
+                                ; edited 84.07.19  kneh version 1.1
+				; edited 84.08.08  ndh
+				;
+false	equ	0		;
+true	equ	1		;
+				;
+c_getnum	equ	99h	;
+c_setnum	equ	94h	;
+c_read		equ	01h	;
+c_write		equ	02h	;
+c_rawio         equ     06H     ;
+print	equ	9		;
+rdco	equ	10		;
+open	equ	15		;
+close	equ	16		;
+delete	equ	19		;
+read	equ	20		;
+write	equ	21		;
+make	equ	22		;
+dmaoff	equ	26		;
+dmaseg	equ	51		;
+				;
+ok	equ	0		; result values
+nexist	equ	1		;
+full	equ	2		;
+eof	equ	3		;
+transm	equ	4		;
+
+CSEG
+start:				;
+	mov	cl,c_getnum	;
+	int	224		;
+	mov	def_console,al	;
+	mov	cl,91h		; set priority
+	mov	dl,0b0h		;
+	int	224		;
+	mov	ax,ds		;
+	mov	es,ax		;
+
+	MOV	DX,0080H	;
+	MOV	BX,OFFSET conslen
+				; move program call parameters
+	MOV	SI,DX
+	LODSB			; to cons buffer
+	MOV	CH,AL		;
+	MOV	[BX],AL		;
+	INC	BX
+	INC	DX
+m1:	MOV	AL,CH		;	
+	OR	AL,AL		;
+	JZ	mm		;
+	MOV	SI,DX
+	LODSB			;
+	MOV	[BX],AL		;
+	INC	BX
+	INC	DX
+	DEC	CH		;
+	JMP	m1		;
+mm:	MOV	DX,0080H	;
+	MOV	SI,DX
+	LODSB			;
+	CMP	AL,0		;
+	JNZ	m2		; rdcons:=no parameters specified
+	MOV	BYTE PTR rdcons,true
+				; after program name
+m2:	MOV	DX,OFFSET sttext; write('FILEX - ver x.x');
+	MOV	CL,print	;
+	INT	224		;
+				;
+act:
+	CALL	getnextitem	; getnextitem;
+	MOV	BX,OFFSET itemlen
+	MOV	DX,OFFSET receive
+	CALL	comp		;
+	JNZ	l0000		;
+	JMP	sleep		; if item='remote' then goto sleep;
+l0000:	MOV	AL,itemlen	;
+	CMP	AL,0		;
+	JNZ	l0001		;
+	JMP	endprog		; if item='' then goto endprog;
+l0001:	MOV	BX,OFFSET itemlen
+	MOV	DX,OFFSET noend	;
+	CALL	comp		;
+	JNZ	act2		;
+	JMP	boot		; if item='NOEND' then goto boot;
+act2:	CALL	buildname	; name:=buildname(item) 
+	MOV	DX,OFFSET unitnr;
+	MOV	AL,remote	;
+	MOV	lhandside,AL	; lhandside:= (Rx: specified)
+	CMP	AL,true		;
+	JZ	act3		; if not Rx: specified then  
+	XOR	AL,AL		; begin
+	MOV	sfcbcr,AL	;   sfcbrc:=0;
+	MOV	BX,OFFSET sfcb	;   sfcbname:=name
+	JMP	act4		; end
+act3:	MOV	BX,OFFSET bufname
+				; else
+act4:	CALL	movename	; begin
+	CALL	getnextitem	;   buf.name:=name
+	MOV	BX,OFFSET itemlen
+				; end;
+	MOV	DX,OFFSET equal	; getnextitem;
+	CALL	comp		; if item<>'=' then goto parameter-rror;
+	JZ	l0002		;
+	JMP	parmerr		; getnextitem;
+l0002:	CALL	getnextitem	; buildname(item);
+	CALL	buildname	; if lhandside=(Rx: specified)
+	MOV	AL,remote	;   then goto parameter-error;
+	MOV	BX,OFFSET lhandside
+				; if Rx: specified then goto rtol;
+	CMP	AL,[BX]		;
+	JNZ	act5		;
+	JMP	parmerr		;
+act5:	CMP	AL,true		;
+	JNZ	act6		;
+	JMP	rtol		; sfcbname:=name;
+act6:	MOV	DX,OFFSET unitnr; sfcbrc:=0;
+	MOV	BX,OFFSET sfcb	;
+	CALL	movename	;
+	XOR	AL,AL		;
+	MOV	sfcbcr,AL	;
+				;
+				; LOCAL -> remote
+ltor:	MOV	CL,open		; open(source);
+	MOV	DX,OFFSET sfcb	;
+	INT	224		;
+	CMP	AL,0FFH		; if open-error then abort
+	JNZ	l003		;
+	JMP	openerr		;
+l003:	MOV	AL,bufname+1	; if buf.name='' then
+	CMP	AL,' '		;
+	JNZ	ltor1		; begin
+	MOV	DX,OFFSET name	;   buf.name:=name (except unitno)
+	MOV	BX,OFFSET bufname+1
+				; end;
+	CALL	moveonlyname	;
+ltor1:	MOV	AL,2		;
+	MOV	bufop,AL	; buf.operation:=2; (*make*)
+	MOV	WORD PTR antal,19	; antal:=19;
+	CALL	outandin	; outline(buf,antal);
+				; inline(buf,antal);
+	MOV	AL,bufst	;
+	CMP	AL,transm	; if transmission error then abort
+	JNZ	l004		;
+	JMP	trxerr		;
+l004:	CMP	AL,ok		; if make-error then abort
+	JZ	l005		;
+	JMP	makeerr		;
+l005:	MOV	CL,dmaoff	;
+	MOV	DX,OFFSET bufarea
+	INT	224		; setdmaoffset(buf.area);
+	MOV	CL,dmaseg	;
+	MOV	DX,DS		;
+	INT	224		; setdmaseg(buf.area);
+	MOV	AL,4		;
+	MOV	bufop,AL	; buf.operation:=4; (* write *)
+ltor2:	MOV	DX,OFFSET sfcb	; while not eof(source) do
+				; begin
+	MOV	CL,read		;   read(source);
+	INT	224		;
+	OR	AL,AL		;
+	JZ	l006		;
+	JMP	closfiles	;
+l006:	MOV	WORD PTR antal,131; antal := 131;
+	CALL	outandin	;   outline(buf,antal);
+				;   inline(buf,antal);
+	MOV	AL,bufst	;
+	CMP	AL,transm	;   if transmission-error then abort
+	JNZ	l007		;
+	JMP	trxerr		; 
+l007:	CMP	AL,ok		;   if write-error then abort
+	JZ	l008		;
+	JMP	writeerr	;
+l008:	JMP	ltor2		; end;
+				;
+				;
+				; remote -> LOCAL
+rtol:	MOV	DX,OFFSET unitnr; buf.name:=name
+	MOV	BX,OFFSET bufname
+	CALL	movename	;
+	XOR	AL,AL		;
+	MOV	sfcbcr,AL	; sfcbcr:=0;
+	MOV	AL,sfcb+1	; if destname='' then
+	CMP	AL,' '		; begin
+	JNZ	rtol1		;   sfcbname:=name;
+	MOV	DX,OFFSET name	;
+	MOV	BX,OFFSET sfcb+1; 
+	CALL	moveonlyname	; end;
+rtol1:	MOV	AL,1		;
+	MOV	bufop,AL	; buf.operation:=1; (*open*)
+	MOV	WORD PTR antal,19; antal := 19;
+	CALL	outandin	; outline(buf,antal);
+				; inline(buf,antal)	;
+	MOV	AL,bufst	;
+	CMP	AL,transm	; if transmission-error then abort
+	JNZ	l009		;
+	JMP	trxerr		;
+l009:	CMP	AL,ok		; if open-error then abort
+	JZ	l010		;
+	JMP	openerr		;
+l010:	MOV	CL,delete	; delete(destination);
+	MOV	DX,OFFSET sfcb	;
+	INT	224		;
+	MOV	CL,make		; make(destination);
+	MOV	DX,OFFSET sfcb	;
+	INT	224		;
+	CMP	AL,0FFH		; if make-error then abort
+	JNZ	l011		;
+	JMP	makeerr		;
+l011:	MOV	CL,dmaoff	;
+	MOV	DX,OFFSET bufarea
+				; setdma(buf.area);
+	INT	224		;
+	MOV	DX,DS		;
+	MOV	CL,dmaseg	;
+	INT	224		; setdmaseg(buf.area);
+	MOV	AL,3		; buf.operation:=3; (* read *)
+	MOV	bufop,AL	;
+rtol2:	MOV	WORD PTR antal,3; antal :=3;
+	CALL	outandin	; outline(buffer,antal);
+				; inline(buffer,antal);
+	MOV	AL,status	; 
+	OR	AL,AL		; if receive_status=error or
+	JZ	l012		;
+	JMP	trxerr		;    buffer_status=transm_error
+l012:	MOV	AL,bufst	; then exit to transmission_error
+	CMP	AL,transm	; else
+	JNZ	l013		;
+	JMP	trxerr		; begin
+l013:	OR	AL,AL		;   if buffer_status<>0
+	JZ	l014		;
+	JMP	closfiles	;   then close files
+l014:	MOV	DX,OFFSET sfcb	; end;
+	MOV	CL,write	;
+	INT	224		;
+	OR	AL,AL		; if write-error then abort
+	JZ	l015		;
+	JMP	writeerr	;
+l015:	JMP	rtol2		;
+				;
+closfiles:			;
+	MOV	AL,5		;
+	MOV	bufop,AL	; buf.operation:=5 (* close *)
+	MOV	WORD PTR antal,3	; antal:=3;
+	CALL	outandin	; outline(buf,antal);
+				; inline(buf,antal);
+	MOV	AL,bufst	;
+	CMP	AL,transm	; if transmission-error then abort
+	JNZ	l016		;
+	JMP	trxerr		;
+l016:	CMP	AL,ok		;
+	JZ	l017		;
+	JMP	clsrerr		; if close-error on remote then abort
+l017:	MOV	CL,close	;
+	MOV	DX,OFFSET sfcb	;
+	INT	224		; close(source/destination);
+	CMP	AL,0FFH		;
+	JNZ	l018		;
+	JMP	clslerr		; if close-error on local then abort
+l018:	JMP	act		; goto start:
+				;
+endprog:			;
+	MOV	AL,6		;
+	MOV	bufop,AL	; buf.operation:=6 (* end *)
+	MOV	WORD PTR antal,3	; antal:=3;
+	CALL	outandin	; outline(buf,antal);
+				; inline(buf,antal);
+	JMP	boot		; warmboot;
+				;end.
+				;
+
+
+	; ****************************************
+	; *                                      *
+	; *      sleeping partner                *
+	; *                                      *
+	; ****************************************
+				; sleep:
+sleep:	MOV	DX,OFFSET oktext; write('remote OPERATION');
+	MOV	CL,print	;
+	INT	224		;
+sleep1:	MOV	BX,OFFSET result;
+	MOV	BYTE PTR [BX],ok;
+	CALL	inline		; repeat
+	MOV	AL,status	;   inline(buffer,antal)
+	CMP	AL,ok		;   if ok then
+	JZ	l019		;
+	JMP	transerr	;   begin
+l019:	MOV	AL,bufop	;     case buf.operation of
+	MOV	BX,OFFSET jptable-3
+	MOV	CH,AL		;
+	ADD	AL,CH		;
+	ADD	AL,CH		;
+	MOV	CL,AL		;
+	XOR	AL,AL		;
+	MOV	CH,AL		;
+	ADD	BX,CX
+	RCR	SI,1
+	RCL	SI,1		;
+	JMP	BX		;
+jptable:			;
+	JMP	openf		; 1: openfile(buf.name);
+	JMP	makef		; 2: makefile(buf.name);
+	JMP	readf		; 3: readfile;
+	JMP	writef		; 4: writefile;
+	JMP	closf		; 5: closefile;
+	JMP	endf		; 6: endsession;
+				;
+				;
+transerr:			;
+	MOV	BX,OFFSET result;
+	MOV	BYTE PTR [BX],transm
+	JMP	senda3		;
+openf:	MOV	DX,OFFSET bufname
+	MOV	BX,OFFSET sfcb	;
+	CALL	movename	;     1: begin (* open *)
+	SUB	AL,AL		;
+	MOV	sfcbcr,AL	;
+	MOV	CL,open		;          movename;
+	MOV	DX,OFFSET sfcb	;
+	INT	224		;          open(buf.name)
+	INC	AL		;
+	JNZ	open1		;
+	MOV	BX,OFFSET result;
+	MOV	BYTE PTR [BX],nexist
+	JMP	senda3		;
+open1:	MOV	CL,dmaoff	;          setdma(buf.area)
+	MOV	DX,OFFSET bufarea
+	INT	224		;
+	MOV	CL,dmaseg	;
+	MOV	DX,DS		;
+	INT	224		;          setdmaseg(buf.area)
+	JMP	senda3		;        end;
+				;
+makef:	MOV	DX,OFFSET bufname
+	MOV	BX,OFFSET sfcb	;
+	CALL	movename	;     2: begin (* make *)
+	SUB	AL,AL		;
+	MOV	sfcbcr,AL	;
+	MOV	CL,delete	;          movename;
+	MOV	DX,OFFSET sfcb	;
+	INT	224		;          delete(buf.name);
+	MOV	CL,make		;          make(buf.name);
+	MOV	DX,OFFSET sfcb	;
+	INT	224		;
+	INC	AL		;
+	JNZ	make1		;
+	MOV	BX,OFFSET result;
+	MOV	BYTE PTR [BX],full
+	JMP	senda3		;
+make1:	MOV	CL,dmaoff	;          setdma(buf.area);
+	MOV	DX,OFFSET bufarea
+	INT	224		;
+	MOV	CL,dmaseg	;
+	MOV	DX,DS		;
+	INT	224		;          setdmaseg(buf.area);
+	JMP	senda3		;        end;
+				;
+readf:	MOV	DX,OFFSET sfcb	;     3: begin (* read *)
+	MOV	CL,read		;          read;
+	INT	224		;
+	OR	AL,AL		;
+	JZ	senda131	;
+	MOV	BX,OFFSET result;
+	MOV	BYTE PTR [BX],eof
+	JMP	senda3		;        end;
+				;
+writef:	MOV	DX,OFFSET sfcb	;     4: begin (* write *)
+	MOV	CL,write	;          write;
+	INT	224		;
+	OR	AL,AL		;
+	JNZ	l020		;
+	JMP	senda3		;
+l020:	MOV	BX,OFFSET result;
+	MOV	BYTE PTR [BX],full
+	JMP	senda3		;        end;
+				;
+closf:	MOV	DX,OFFSET sfcb	;     5: begin (* close *)
+	MOV	CL,close	;          close;
+	INT	224		;
+	INC	AL		;
+	JZ	l021		;
+	JMP	senda3		;
+l021:	MOV	BX,OFFSET result;
+	MOV	BYTE PTR [BX],full
+	JMP	senda3		;        end;
+				;
+endf:				;     6: begin (* end *)
+				;
+				;        end;
+				;     end;
+				;
+senda3:	MOV	BX,OFFSET antal	;
+	MOV	BYTE PTR [BX],3	;
+	JMP	senda		;
+				;
+senda131:			;
+	MOV	BX,OFFSET antal	;
+	MOV	BYTE PTR [BX],131
+				;
+senda:	INC	BX
+	MOV	BYTE PTR [BX],0	;
+	MOV	AL,result	;
+	MOV	bufst,AL	;
+	CALL	outline		;     outline(buffer,antal);
+	MOV	AL,bufop	;
+	CMP	AL,6		;   until bufop=6;
+	JZ	l022		;
+	JMP	sleep1		;
+l022:				;
+	JMP	boot		;
+				;
+boot:	MOV	CL,8FH		;
+	INT	224		;
+
+
+openerr:			;
+	MOV	DX,OFFSET mopen	;
+	JMP	printerr	;
+				;
+makeerr:			;
+	MOV	DX,OFFSET mmake	;
+	JMP	printerr	;
+				;
+writeerr:			;
+	MOV	DX,OFFSET mwrite;
+	JMP	printerr	;
+				;
+clsrerr:			;
+	MOV	DX,OFFSET mremclose
+	JMP	printerr	;
+				;
+clslerr:			;
+	MOV	DX,OFFSET mlocclose
+	JMP	printerr	;
+				;
+trxerr:				;
+	MOV	DX,OFFSET mtxmerr
+	JMP	printerr	;
+				;
+parmerr:			;
+	MOV	DX,OFFSET mparmerr
+	JMP	printerr	;
+				;
+				;
+printerr:			;
+	MOV	CL,print	;
+	INT	224		; write error message to console
+	MOV	AL,rdcons	; if read-from-console=false
+	CMP	AL,false	;  then goto cpm
+	JNZ	l023		;
+	JMP	boot		;  else 
+l023:	XOR	AL,AL		;   begin
+	MOV	conslen,AL	;     len(cons):=0   
+	JMP	act		;   end;  
+				; goto start;
+				;
+				;
+getnextitem:			; procedure getnextitem
+	MOV	BX,OFFSET conspil
+				; begin
+	MOV	CH,0		;   while conspil<=len(cons) and
+	MOV	CL,[BX]		;         cons(conspil)=' ' do 
+	MOV	BX,OFFSET cons	;   begin
+	DEC	BX
+	ADD	BX,CX
+	RCR	SI,1
+	RCL	SI,1		;     conspil:=conspil+1;          
+getn2:	MOV	AL,conslen	;   end;
+	CMP	AL,CL		;
+	JS	getn3		;
+	MOV	AL,[BX]		;
+	CMP	AL,' '		;
+	JNZ	getn5		;
+	INC	CL		;
+	INC	BX
+	JMP	getn2		;
+getn3:	MOV	AL,rdcons	;   if conspil>len(cons) then  
+	CMP	AL,0		;   begin
+	JZ	getn10		;     if rdcons then
+	MOV	DX,OFFSET star	;     begin
+	MOV	CL,print	;       write('* ');
+	INT	224		;       readln(cons);
+	MOV	DX,OFFSET consmax
+	MOV	CL,rdco		;
+	INT	224		;
+	MOV	DX,OFFSET crnl	;       writeln;
+	MOV	CL,print	;
+	INT	224		;
+	MOV	AL,conslen	;       
+	MOV	CL,AL		;       for i=1 to len(cons) do
+	MOV	CH,32		;       begin
+	MOV	BX,OFFSET cons	;         if cons[i]>='a' then    
+getnn:	MOV	AL,[BX]		;           cons[i]:=cons[i]-('a'-'A');
+	CMP	AL,'a'		;              (* convert lower case
+	JS	getn		;                      to upper case *)
+	SUB	AL,CH		;       end;
+	MOV	[BX],AL		;
+getn:	INC	BX
+	DEC	CL		;
+	JNZ	getnn		;
+	MOV	CH,0		;
+	MOV	CL,1		;       pil := 1;
+	MOV	BX,OFFSET cons	;
+	ADD	BX,CX
+	RCR	SI,1
+	RCL	SI,1		;
+	DEC	BX
+getn4:	MOV	AL,conslen	;
+	CMP	AL,CL		;       while conspil<=len(cons) and
+	JS	getn10		;             cons(conspil)=' '  do 
+	MOV	AL,[BX]		;       begin
+	CMP	AL,' '		;         conspil:=conspil+1;
+	JNZ	getn5		;       end;
+	INC	CL		;
+	INC	BX
+	JMP	getn4		;     end
+getn10:	MOV	BX,OFFSET itemlen
+				;     else
+	MOV	BYTE PTR [BX],0	;     begin
+	RET			;       itemlen:=0;
+				;       return;
+				;     end;
+getn5:	MOV	DX,OFFSET item	;
+	MOV	CH,1		; i := 1;
+	MOV	AL,[BX]		;
+	CMP	AL,'='		; if cons[pil]='=' then
+	JNZ	getn6		; begin
+	MOV	DI,DX
+	STOSB			;   item[1]:='=';
+	MOV	BX,OFFSET itemlen
+				;
+	MOV	BYTE PTR [BX],1	;   itemlen:=1;
+	INC	CL		;
+	MOV	BX,OFFSET conspil
+				;   pil:=pil+1;
+	MOV	[BX],CL		;   return;
+	RET			; end;
+getn6:	MOV	AL,conslen	; while pil<=len(cons) and
+	CMP	AL,CL		;       cons(pil)<>' ' and
+	JS	getn7		;       cons(pil)<>'=' do
+	MOV	AL,[BX]		; begin
+	CMP	AL,' '		;    
+	JZ	getn7		; 
+	CMP	AL,'='		; 
+	JZ	getn7		; 
+	PUSH	CX		;    
+	PUSH	BX		;  
+	MOV	BX,OFFSET badchar
+				;   if pos('<>,;?*[]',cons[pil])<>0 
+	MOV	CH,[BX]		;   
+getchk:	INC	BX		;          (* check for illegal characters *)
+	CMP	AL,[BX]		;
+	JNZ	l024		;
+	JMP	parmerr		;     then exit to parameter-error
+l024:	DEC	CH		;
+	JNZ	getchk		;     else
+	POP	BX		;     begin
+	POP	CX		;       name[i]:=cons[pil];
+	MOV	DI,DX
+	STOSB			;       i:=i+1;
+	INC	CH		;       pil:=pil+1;
+	INC	CL		;     end;
+	INC	DX
+	INC	BX		; end;
+	JMP	getn6		; 
+getn7:	MOV	DX,OFFSET itemlen
+				; itemlen:=i-1;
+	MOV	AL,CH		;
+	DEC	AL		;
+	MOV	DI,DX
+	STOSB			;
+	MOV	BX,OFFSET conspil
+	MOV	[BX],CL		;
+	RET			;end;
+				;
+buildname:			; procedure buildname;
+	MOV	BX,OFFSET fejl	; begin
+	MOV	BYTE PTR [BX],false
+				 ;  fejl:=false;
+	MOV	BX,OFFSET remote;
+	MOV	BYTE PTR [BX],false
+				;  remote:=false;
+	MOV	CH,11		;
+	MOV	BX,OFFSET name	;
+build1:	MOV	BYTE PTR [BX],' '
+				;  name:= '        ';
+	INC	BX		;  name2:='   ';
+	DEC	CH		;
+	JNZ	build1		;
+	MOV	BX,OFFSET item+1; 
+	MOV	AL,[BX]		;
+	CMP	AL,':'		; if item[2]=':' then
+	JNZ	build2		;   begin
+	DEC	BX
+	MOV	AL,[BX]		;
+	MOV	CL,'A'-1	;
+	SUB	AL,CL		;
+	MOV	BX,OFFSET unitnr;
+	MOV	[BX],AL		;     unitnr:=ord(item[1])-(ord('A')-1);
+	MOV	BX,OFFSET item+2;     pos := 3;
+	MOV	CL,3		;
+	JMP	build4		;   end;
+build2:	INC	BX		; else
+	MOV	AL,[BX]		;   begin
+	CMP	AL,':'		;     if item[3]=':' and
+	JNZ	build3		; 
+	MOV	BX,OFFSET item	;
+	MOV	AL,[BX]		;
+	CMP	AL,'R'		;        item[1]='R' then
+	JNZ	build3		;
+	MOV	BX,OFFSET remote;          begin
+	MOV	BYTE PTR [BX],true
+	MOV	BX,OFFSET item+1;            remote:=true;
+	MOV	AL,[BX]		;
+	MOV	CL,'A'-1	;
+	SUB	AL,CL		;
+	MOV	BX,OFFSET unitnr;
+	MOV	[BX],AL		;            unitnr:=ord(item[2])-(ord('A')-1);
+	MOV	BX,OFFSET item+3;
+	MOV	CL,4		;          end; 
+	JMP	build4		;     else
+build3:	MOV	BX,OFFSET unitnr;       begin
+	MOV	BYTE PTR [BX],0	;       (* no disk specified *)
+	MOV	BX,OFFSET item	;       end;
+	MOV	CL,1		;   end;
+build4:	MOV	CH,1		; pil :=1;
+	MOV	DX,OFFSET name	;
+build5:	MOV	AL,itemlen	; while pos<=itemlen and
+	CMP	AL,CL		;       pil<=8       and
+	JS	lret1		;       item[pos]<>'.'    do
+	MOV	AL,8		;   begin
+	CMP	AL,CH		;     name[pil]:=item[pos];
+	JS	build6		;     pil:=pil+1;
+	MOV	AL,[BX]		;     pos:=pos+1;
+	CMP	AL,'.'		;   end;
+	JZ	build7		;
+	MOV	AL,[BX]		;
+	MOV	DI,DX
+	STOSB			;
+	INC	CH		;
+	INC	CL		;
+	INC	DX
+	INC	BX
+	JMP	build5		;
+build6:	MOV	AL,itemlen	; while pos<=itemlen and
+	CMP	AL,CL		;       item[pos]<>'.'    do
+	JS	lret1		;   begin	
+	MOV	AL,[BX]		;     pos:=pos+1;
+	CMP	AL,'.'		;   end;
+	JZ	build7		;
+	INC	CL		;
+	INC	BX
+	JMP	build6		;
+build7:	INC	CL		; while pos<=itemlen and
+	INC	BX		;       pil<=3            do
+	MOV	CH,1		;
+	MOV	DX,OFFSET name2	;  begin
+build8:	MOV	AL,itemlen	;    name2[pil]:=item[pos];
+	CMP	AL,CL		;    pil:=pil+1;
+	JS	lret1		;    pos:=pos+1;
+	MOV	AL,3		;  end;
+	CMP	AL,CH		;
+	JS	lret1		;
+	MOV	AL,[BX]		;
+	CMP	AL,'.'		;
+	JNZ	l025		;
+	JMP	parmerr		;
+l025:	MOV	DI,DX
+	STOSB			;
+	INC	CH		;
+	INC	CL		;
+	INC	DX
+	INC	BX
+	JMP	build8		;
+lret1:	RET			;
+				;	
+				;
+movename:			; procedure movename;
+	MOV	CL,16		; begin
+move1:	MOV	SI,DX
+	LODSB			;
+	MOV	[BX],AL		;
+	INC	DX
+	INC	BX
+	DEC	CL		;
+	JNZ	move1 		;
+	RET			; end;
+				;
+moveonlyname:			; procedure ldeonlyname;
+	MOV	CL,15		; begin
+	JMP	move1		; end;
+				;
+comp:	MOV	SI,DX
+	LODSB			; function compare:boolean;
+	CMP	AL,[BX]		; begin
+	JNZ	lret2		;   if len(s1)<>len(s2) then return;
+	MOV	CH,AL		;
+cp1:	INC	DX		;   for i:=1 to len(s1) do
+	INC	BX		;   begin
+	MOV	SI,DX
+	LODSB			;     if s1[i]<>s2[i] then return;
+	CMP	AL,[BX]		;
+	JNZ	lret2		;   end;
+	DEC	CH		;
+	JNZ	CP1		;
+lret2:	RET			;  return;
+				;end;
+				;
+				;
+				;
+outandin:			;procedure outandin;
+	CALL	outline		;begin
+	CALL	inline		;  outline(buf,antal);
+	RET			;  inline(buf,antal);
+				;end;
+				;
+				;
+inline:				;procedure inline(buf,antal);
+				;begin
+	mov	cl,c_setnum	;
+	mov	dl,4		;
+	int	224		;
+inl1:	CALL	rec		; repeat
+	CMP	AL,35		;   rec(ch);
+	JNZ	inl1		; until ord(ch)<>35;
+	MOV	BX,OFFSET antal+1	;
+	CALL	rdata		; rdata(right);
+	DEC	BX
+	CALL	rdata		; rdata(left);
+	MOV	CX,antal	; antal:=left shift 8 + right;
+	MOV	BX,OFFSET buffer;
+				; i:=0;
+				; while antal>0 do
+	JCXZ	inl3		; begin
+inl2:	CALL	rdata		;   rdata(buf.area(i));
+	INC	BX		;   i:=i+1;
+				;   antal:=antal-1;
+	LOOP	inl2		; end;
+inl3:	MOV	BX,OFFSET checksum
+				; rdata(checksum);
+	CALL	rdata		;
+	CALL	rec		; if rec(ch)=13 then
+	CMP	AL,13		;   
+	JNZ	inl6		;   begin
+	MOV	AL,0		;
+	MOV	BX,antal	;
+	MOV	CH,BH		;     i:=0;
+	MOV	CL,BL		;
+	MOV	BX,OFFSET buffer;
+inl4:	MOV	DH,AL		;     while antal>0 do
+	MOV	AL,CH		;     begin
+	OR	AL,CL		;
+	MOV	AL,DH		;
+	JZ	inl5		;
+	ADD	AL,[BX]		;       calc_check:=calc_check+buf.area(i)
+	INC	BX		;       i:=i+1;
+	DEC	CX		;       antal:=antal-1;
+	JMP	inl4		;     end;
+inl5:	MOV	BX,OFFSET checksum
+				;     if calck_check+checksum=0 then
+	ADD	AL,[BX]		;       status:=ok
+	JNZ	inl6		;     else
+	SUB	AL,AL		;       status:=error;
+	MOV	status,AL	;   end; 
+	jmp	inl7		;
+				; else
+inl6:	MOV	AL,1FH		;   status:=error;
+	MOV	status,AL	;
+inl7:
+	mov	cl,c_setnum	;
+	mov	dl,def_console	;
+	int	224		;
+	RET			; end;
+				;
+rdata:	CALL	rec		; procedure rdata(ch);
+				; begin
+	SHL	AL,1		;   rec(ch1);
+	SHL	AL,1		;
+	SHL	AL,1		;
+	SHL	AL,1		;   ch1:=(ch1 and 1111B) shift 4;
+	MOV	AH,AL		;
+	CALL	rec		;   rec(ch2);
+	AND	AL,0FH		;   ch2:=ch2 and 1111B;
+	OR	AL,AH		;   ch:=ch1+ch2;
+	MOV	[BX],AL		;
+	RET			; end;
+				;
+rec:	PUSH	BX		;
+        PUSH    DX
+	PUSH	CX		;
+	push	ax		;
+	mov	cl,c_rawio	;
+        mov     dl,0FDH
+	int	224		;
+	and	al,7fh		;
+	pop	cx		;
+	mov	ah,ch		;
+	POP	CX		;
+        POP     DX
+	POP	BX		;
+	RET			;
+				;
+				;
+				; procedure outline(buf,antal)
+outline:			; begin
+	mov	cl,c_setnum	;
+	mov	dl,4		;
+	int	224		;
+	MOV	AL,35		; write(chr(35));
+	CALL	xmt		;
+	MOV	BX,OFFSET antal+1
+	CALL	xdata		; xdata(antal div 256);
+	DEC	BX
+	CALL	xdata		; xdata(antal mod 256);
+	MOV	BX,antal	;
+	MOV	CH,BH		;
+	MOV	CL,BL		;
+	MOV	BX,OFFSET buffer; i:=0;
+outl1:	MOV	AL,CH		; while antal>0 do
+	OR	AL,CL		; begin
+	JZ	outl2		;
+	CALL	xdata		;   xdata(buffer(i));
+	INC	BX		;   i:=i+1;
+	DEC	CX		;   antal:=antal-1;
+	JMP	outl1		; end;
+outl2:	SUB	AL,AL		; checksum:=0;
+	MOV	BX,antal	;
+	MOV	CH,BH		;
+	MOV	CL,BL		;
+	MOV	BX,OFFSET buffer; i:=0;
+outl3:	MOV	DH,AL		; while antal>0 do
+	MOV	AL,CH		; begin
+	OR	AL,CL		;
+	MOV	AL,DH		;
+	JZ	outl4		;
+	ADD	AL,[BX]		;   checksum:=checksum+buffer(i);
+	INC	BX		;   i:=i+1;
+	DEC	CX		;   antal:=antal-1;
+	JMP	outl3		; end;
+outl4:	MOV	DH,AL		;
+	SUB	AL,AL		;
+	SUB	AL,DH		; checksum:=0-checksum;
+	MOV	checksum,AL	;
+	MOV	BX,OFFSET checksum
+	CALL	xdata		;
+	MOV	AL,13		; xmt(13);
+	CALL	xmt		;
+	MOV	AL,10		; xmt(10);
+	CALL	xmt		;
+	mov	cl,c_setnum	;
+	mov	dl,def_console	;
+	int	224		;
+	RET			; end;
+				;
+xdata:	MOV	AL,[BX]		; procedure xdata(i:integer);
+	ROR	AL,1		; begin
+	ROR	AL,1		;   xmt((i div 256)+32);
+	ROR	AL,1		;
+	ROR	AL,1		;
+	AND	AL,0FH		;
+	OR	AL,40H		;
+	CALL	xmt		;
+	MOV	AL,[BX]		;
+	AND	AL,0FH		;
+	OR	AL,40H		;
+	CALL	xmt		;  xmt((i mod 256)+32);
+	RET			; end;
+				;
+xmt:
+	PUSH	CX		;
+	PUSH	DX		;
+	PUSH	BX		;
+	mov	dl,al		;
+	mov	cl,c_write	;
+	int	224		;
+ 	POP	BX		;
+	POP	DX		;
+	POP	CX		;
+	RET			;
+				;
+				; end;
+				; end;
+				;
+DSEG
+ORG	100H
+	
+receive	DB	6,'REMOTE'	;
+noend	DB	5,'NOEND'	;
+equal	DB	1,'='		;
+
+badchar	DB	8,'<>,;?*[]'	;
+
+
+star	DB	'* $'		;
+
+oktext	DB	'Remote operation'	;
+	DB	13,10,'$'
+
+sttext	DB	' PICCOLINE FILEX   vers. 1.1 '	;
+
+crnl	DB	13,10,'$'			;
+
+mopen	DB	'Cannot open source file'
+	DB	13,10,'$'
+
+mmake	DB	'Directory full on destination disk'
+	DB	13,10,'$'
+
+mwrite	DB	'No space on destination disk'
+	DB	13,10,'$'
+
+mremclose	DB	'Cannot close file on remote disk'
+		DB	13,10,'$'
+
+mlocclose	DB	'Cannot close file on local disk'
+		DB	13,10,'$'
+
+mtxmerr	DB	'Transmission error'
+	DB	13,10,'$'
+
+mparmerr	DB	'*** Parameter error ***'
+		DB	13,10,'$'
+
+fejl		DB	false	;
+status		DB	0	;
+result		DB	ok	;
+lhandside	DB	false	;
+checksum	DB	0	;
+				;
+buffer		RB	131	;
+bufop		equ	buffer	;
+bufref		equ	bufop+1	;
+bufst		equ	bufref+1;
+bufarea		equ	bufst+1	;
+bufname		equ	bufst+1	;
+antal		DW	0	;
+				;
+sfcb		RB	36	;
+sfcbcr		EQU	sfcb+32	;
+				;
+conspil		DB	1	;
+consmax		DB	80	;
+conslen		DB	0	;
+cons		RB	80	;
+				;
+itemlen		DB	0	;
+item		RB	20	;
+				;
+remote		DB	false	;
+				;
+unitnr		DB	0	;
+name		RB	8	;
+name2		RB	3	;
+blanks		DB	0,0,0,0	;
+				;
+rdcons		DB	false	;
+
+def_console	db	0	;
+	END
+
+	JZ	act3		; if not Rx: specified then  
+	XOR	AL,AL		; begin
+	MOV	sfcbcr,AL	;   sfcbrc:=0;
+	

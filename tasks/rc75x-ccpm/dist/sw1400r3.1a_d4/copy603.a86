@@ -1,0 +1,436 @@
+
+CSEG
+VER		DW 	VERSNO		; copy603
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	0		;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+
+		DB	11,'SK[RMUDSNIT'; PROC sk{rmudsnit(startx, starty
+		DB	PROC		;         antalx, antaly, indryk);
+		DW	0		; ingen dokumentation
+		DW	OFFSET XDUMP	;
+		DB	5		; fem parametre
+		DB	6,'STARTX'	;
+		DB	VALUE+REAL,0	;
+		DB	6,'STARTY'	;
+		DB	VALUE+REAL,0	;
+		DB	6,'ANTALX'	;
+		DB	VALUE+REAL,0	;
+		DB	6,'ANTALY'	;
+		DB	VALUE+REAL,0	;
+		DB	6,'INDRYK'	;
+		DB	VALUE+REAL,0	;
+
+		DB	9,'SK[RMKOPI'	; PROC sk{rmkopi;
+		DB	PROC		;
+		DW	0		; ingen dokumentation
+		DW	OFFSET HARDCOPY	;
+		DB	0		;
+
+
+		DB	0		; ikke flere procedurer og funktioner
+		DW	OFFSET RESERVER	;
+		DW	ASSEMBLER	;
+
+
+INCLUDE	ASSEMBL.A86
+
+						; Constants
+
+no_of_dots	equ	8			; dots in printer matrix
+ESC		equ	27			; 
+LF		equ	10			; Line Feed
+CR		equ	13			; Carrige Return
+
+; Extra xios function calls
+
+get_nvm		equ	3			; function number
+get_config	equ	4			; do
+
+XIOS		equ	28h			; interrupt number
+
+
+
+; Operating system calls
+
+L_DETACH	equ	159			; function number
+L_WRITE		equ 	5			; do
+
+OS		equ	224			; op sys interrupt number
+
+
+						; Macroes
+
+
+CodeMacro PUSHA
+DB 60H
+endM
+
+CodeMacro POPA
+DB 61H
+endM
+
+
+
+XDUMP:	MOV	CL,1		;
+	CALL	REALPAR		;
+	MOV	X,BX		; x:=get_real_par(1);
+	MOV	CL,2		;
+	CALL	REALPAR		;
+	MOV	Y,BX		; y:=get_real_par(2);
+	MOV	CL,3		;
+	CALL	REALPAR		;
+	MOV	NX,BX		; nx:=get_real_par(3);
+	MOV	CL,4		;
+	CALL	REALPAR		;
+	MOV	NY,BX		; ny:=get_real_par(4);
+	MOV	CL,5		;
+	CALL	REALPAR		;
+	MOV	INDENT,BX	; indent:=get_real_par(5);
+
+	JMP	COPY		;
+
+HARDCOPY:			; (* hele sk{rmen *)
+	mov	x,0		; x:=0;
+	mov	y,0		; y:=0;
+	mov	nx,720		; nx:=720; (* max sk{rmst|rrelse x-akse *)
+	mov	ny,352		; ny:=352; (* max sk{rmst|rrelse y-akse *)
+	mov	indent,30	; indent:=30;
+
+
+COPY:	mov	al,get_config			;
+	int	xios				;
+	mov	al,ES:byte ptr 18[si]		;  screen:=auto_config(18);
+	mov	screen,al			;
+	mov	al,get_nvm			; if cpu_id = Partner then
+	int	xios				; begin
+	cmp	ES:byte ptr 53[si],0		;   pixel_segment:=0F000H;
+	jnz	PICCOLINE			;   xmax:=719;
+	mov	pixel_segment,0F000H		;   ymax:=351;
+	jmps	screen_60_hz			; end
+PICCOLINE:					; else
+	mov	pixel_segment,0D000H		; begin (* PICCOLINE *)
+	mov	al,screen			;   pixel_segment:=0D000H;
+	test	al,010B				;   
+	jnz	screen_60_hz			;     xmax:=559;
+	mov	xmax,559			;     ymax:=255;
+	mov	ymax,255			;   end
+	jmps	check_limits			;   else
+screen_60_hz:					;   begin
+	mov	xmax,719			;     xmax:=719;
+	mov	ymax,351			;     ymax:=351;
+						;   end;
+						; end;
+check_limits:					;
+	mov	ax,x				; if (x > xmax) or
+	mov	bx,y				;    (y > ymax) then
+	cmp	ax,xmax				;    return
+	jbe	x_ok				;
+	jmp	return				;
+x_ok:						;
+	cmp	bx,ymax				;
+	jbe	y_ok				;
+	jmp	return				;
+y_ok:						;
+	add	ax,nx				; else
+	dec	ax				; begin
+	cmp	ax,xmax				;   if (x+nx-1) > xmax then
+	jbe	check_y				;     nx:=xmax + 1 - x;
+	mov	ax,xmax				;
+	inc	ax				;
+	sub	ax,x				;
+	mov	nx,ax				; 
+check_y:					;
+	add	bx,ny				;   if (y+ny-1) > ymax then
+	dec	bx				;     ny:=ymax + 1 - y;
+	cmp	bx,ymax				; 
+	jbe	limits_ok			;
+	mov	bx,ymax				;
+	sub	bx,y				;
+	inc	bx				;
+	mov	ny,bx				;
+limits_ok:
+
+
+	mov	ax,pixel_segment
+	mov	es,ax
+
+	mov	ax,x				; 
+	mov	cl,4				;   pixel_row_offset:=
+	shr	ax,cl				;      2*( (x DIV 16)*
+	mov	cx,ymax				;      (ymax+1) +y));
+	inc	cx				;
+	imul	cx				;
+	add	ax,y				;
+	shl	ax,1				;
+	mov	pixel_row_offset,ax		;
+
+	mov	ax,ny				;
+	add	ax,no_of_dots-1			;   max_row:=
+	mov	cx,no_of_dots			;     ((ny + no_of_dots -1)DIV
+	xor	dx,dx				;      no_of_dots);
+	idiv	cx				;
+	mov	max_row,ax			;
+	
+	call	init_graphics_print		;   init_graphics_print;
+
+	
+	mov	cx,max_row			;   for row:=1 to max_row do
+next_row:					;
+	push	cx				;     do_indent;
+	call	do_indent			;     pixel_offset:=
+	mov	bx,pixel_row_offset		;       pixel_row_offset;
+	add	pixel_row_offset,2*no_of_dots	;     pixel_row_offset :=
+	mov	ax,x				;       2*no_of_dots;
+	and	ax,0Fh				;     bit_no := x MOD 16;
+	mov	bit_no,al			; 
+	cmp	cx,1				;
+	je	last_line_to_write		;     if row <> max_row then
+	mov	last_line,no_of_dots-1		;       last_line:=no_of_dots-1;
+	jmps	next_line			;
+last_line_to_write:				;     else
+	mov	ax,ny				; 
+	dec	ax				;       last_line:= (ny-1)MOD
+	mov	cx,no_of_dots			;            no_of_dots;
+	xor	dx,dx				;
+	idiv	cx				;
+	mov	last_line,dl			;
+next_line:					;
+	call	write_row			;     write_row;
+	call	writeln                         ;     writeln;
+	pop	cx				;
+	loop	next_row			;   end; (* for loop *)
+
+	call	reset_printer			;   reset_printer;
+
+return:
+	JMP	FINITO
+
+
+write_row:
+
+	mov	row_index,0			;   row_index:=0;+
+	mov	cx,nx				;   for col:=1 to nx do
+	mov	di,offset pixel_row		;
+	cld					;
+next_coloumn:
+	push	cx				;
+	call	pack_vertical			;     pixel_row[row_index]:=
+						;     pack_vertical(pixel_seg,
+	mov	ds:[di],dl 			;       pixel_offset,bit_no,
+	inc	di				;	last_line);
+	inc	row_index			;     row_index :+ 1;
+	inc	bit_no				;     bit_no :+ 1;
+	cmp	bit_no,16			;     if (bit_no=16) or
+	je	write_it			;        (col=nx) then
+	pop	cx				;	
+	push	cx				;
+	cmp	cx,1				;
+	je	write_it			;
+	jmps	just_loop			;
+write_it:
+	call	print_it			;	  print_it;
+just_loop:	
+	pop	cx				;
+	loop	next_coloumn			;   end	 (* for *)
+
+
+pack_vertical:					; procedure pack_vertical;
+	mov	cl,last_line			; begin
+	xor	ch,ch				;
+	inc	cx				;
+	xor	dx,dx				;   bit_pattern:=0;
+next_pixel:					;   for line:=last_line downto 0
+	push	cx				;   do begin
+	dec	cx				;
+	mov	si,cx				;     pixel:=(memw[pixel_seg:
+	shl	si,1				;      pixel_offset + 2*line] 
+	add	si,bx				;      SHR (15- bit_no)) and 1;
+	mov	ax,es:[si]			;
+	mov	cx,15				;
+	sub	cl,bit_no			;
+	shr	ax,cl				;
+	and	ax,1				;
+
+	shl	dx,1				;     bit_pattern:= bit_pattern
+	or	dx,ax				;      SHL 1 OR pixel;
+	pop	cx				;
+	loop	next_pixel			;   end;
+
+	ret					; end;	
+
+
+do_indent:					; procedure do_indent;
+						; begin
+	cmp	indent,999			;   if (indent>999) or (indent<1) then
+	ja	dont_indent			;      return;
+	cmp	indent,1			;
+	jb	dont_indent			;
+	pusha
+	mov	ax,indent			; 
+	mov	cl,100				;
+	idiv	cl				;   I2:=indent DIV 100 + 
+	add	al,'0'				;       char(0);
+	mov	I2,al				;
+	mov	al,ah				;   I1:= ((indent MOD 100) DIV
+	xor	ah,ah				;         10) + char(0);
+	mov	cl,10				;
+	idiv	cl				;
+	add	al,'0'				;  
+	mov	I1,al				;
+	add	ah,'0'				;   I0:= (indent MOD 10) + 
+	mov	I0,ah				;         char(0);
+	mov	si,offset indent_codes		;   write(@ESC,'S','0',I2,
+	mov	cx,6				;         I1,I0);
+	cld					;
+next_indent_code:				;
+	push	cx				;
+	lodsb					;
+	mov	dl,al				;
+	push	si				;
+	call	write_char			;
+	pop	si				;
+	pop	cx				;
+	loop	next_indent_code		;
+	mov	cx,indent			;   for i:=1 to indent do
+next_space:					;
+	push	cx				;
+	mov	dl,0				;     write(0);
+	call	write_char			; 
+	pop	cx				;
+	loop 	next_space			;
+	popa					;
+dont_indent:					;
+	ret					; end;
+
+
+init_graphics_print:				; procedure init_graphics_print;
+	mov	si,offset init_code		; begin
+	mov	cx,length init_code		;
+	cld					;
+next_code:					;
+	push	cx				;
+	lodsb					;
+	mov	dl,al				;  writeln(@ESC,'T16',@ESC,'>');
+	push	si				;
+	call	write_char			;
+	pop	si				;
+	pop	cx				;
+	loop next_code				;
+	ret					; end;
+
+
+
+reset_printer:					; procedure reset_printer;
+	call	writeln				; begin
+	mov	dl,ESC				;   writeln(@ESC,'c1');
+	call	write_char			;
+	mov	dl,'c'				; 
+	call	write_char			;
+	mov	dl,'1'				; 
+	call	write_char			;
+	mov	cl,L_DETACH			;   detach_printer;
+	int	OS				;
+	ret					; end;
+
+
+
+
+print_it:					; procedure print_it;
+	pusha					; begin
+	mov	ax,row_index			;    N1:=(row_index-1) DIV 10
+	mov	cl,10 				;        + char(0);
+	idiv	cl				;
+	add	al,'0'				;
+	mov	N1,al				;
+	add	ah,'0'				;   N0:=(row_index-1) MOD 10
+	mov	N0,ah				;        + char(0);
+	mov	cx,row_index			;
+	add	cx,6				;   write(@ESC,'S00',N1,N0);
+
+	mov	si,offset esc_codes		;
+	cld	
+
+next_char:					;   for i:= row_index-1 do
+	push	cx				; 
+	lodsb					;     write(pixel_row[i]; 
+	mov	dl,al				; 
+	push	si				; 
+	call	write_char			; 
+	pop	si				;
+	pop	cx				; 
+	loop	next_char
+
+	popa
+	mov	row_index,0			;   row_index:=0
+	mov	bit_no,0			;   bit_no:=0;
+	mov	ax,ymax				;
+	inc	ax				;   pixel_offset:=
+	shl	ax,1				;    pixel_offset+
+	add	bx,ax				;    (ymax+1)*2;
+	mov	di,offset pixel_row		;
+	ret					; end; 
+
+
+
+writeln:					; procedure writeln;
+	mov	dl,CR				; begin
+	call	write_char			;   write(CR);
+	mov	dl,LF				;   write(LF);
+	call	write_char			;
+	ret					; end;
+
+
+write_char:
+	mov	cl,L_WRITE			; (* char to write is in dl *)
+	int	OS				;
+	ret
+
+
+
+
+
+DSEG	$
+
+pixel_segment		dw	0		; Variables
+pixel_offset		dw	0		; offset in pixel memory
+pixel_row_offset	dw	0
+
+x			dw	0		; start pixel coordinate
+y			dw	0		;  
+
+nx			dw	0		; number of pixels to write
+ny			dw	0		; i each direction
+
+xmax			dw	0		; max pixel value - screen dependant
+ymax			dw	0
+
+indent			dw	0		; number of pixels to indent
+
+max_row			dw	0		; number of printer rows to write
+
+bit_no			db	0
+last_line		db	0
+
+indent_codes	db	ESC
+		db	'S'
+I3		db	'0'
+I2		db	'0'
+I1		db	'0'
+I0		db	'0'
+
+
+esc_codes	db	ESC
+		db	'S'
+N3		db	'0'
+N2		db	'0'
+N1		db	'0'
+N0		db	'0'
+pixel_row	rb	16				; pixel_row : string[16];
+row_index	dw	16
+init_code	db	ESC,'T16',ESC,'>',ESC,'E'
+
+screen		db	0
+
