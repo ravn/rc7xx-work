@@ -48,30 +48,48 @@ vout_ws2        equ 0x0394  ; byte: arbejdsbuffer tilstandsbyte 2
 ; Kø-deskriptor-adresser i VOUT-datasegment:
 VOUT_VCMXQ_OFF  equ 0x0232  ; VCMXQ kø-descriptor offset i DS
 
-data_start:
+vout_data_start:
   ; -------------------------------------------------------------------------
   ; RSP Header (4 bytes)
   ; -------------------------------------------------------------------------
+%ifdef CCPM_SYS
+  dw 0x119f                                     ; +0x0000: Link field (p_link til næste RSP: PIN0)
+%else
   dw 0x0000                                     ; +0x0000: Link field (0 = ulinket)
+%endif
   dw 0x0047                                     ; +0x0002: RSP Code segment size / entry
   times 17 db 0                                 ; +0x0004..+0x0014: Reserveret
 
   ; -------------------------------------------------------------------------
-  ; Process Descriptor (PD): "VOUT    "
+  ; Process Descriptor (PD): "VOUT    " / "VOUT0   "
   ; -------------------------------------------------------------------------
   db 0xb4                                       ; +0x0015: Standard prioritet = 180 (0xB4)
   dw 0x0003                                     ; +0x0016: Status / pf_keep = 3
+%ifdef CCPM_SYS
+  db "VOUT0   "                                 ; +0x0018: Procesnavn (VOUT0)
+%else
   db "VOUT    "                                 ; +0x0018: Procesnavn (8 tegn, uinitialiseret konsolnr)
+%endif
   db 0x04                                       ; +0x0020: Processtatus
   times 5 db 0                                  ; +0x0021..+0x0025: Reserveret
+%ifdef CCPM_SYS
+  dw 0x0008                                     ; +0x0026: p_uda = 8 paragraffer
+%else
   dw 0x00ff                                     ; +0x0026: Parent / console mask (0xFF = alle konsoller)
+%endif
   times 76 db 0                                 ; +0x0028..+0x0073: Reserveret PD felter
 
   ; -------------------------------------------------------------------------
   ; User Data Area (UDA): Stak og kontekst
   ; -------------------------------------------------------------------------
   dw 0x013a                                     ; +0x0074: Initial stack pointer SP = 0x013A
-  times 42 db 0                                 ; +0x0076..+0x009F: Reserveret UDA felter
+  times 26 db 0                                 ; +0x0076..+0x008F: Reserveret UDA felter
+%ifdef CCPM_SYS
+  dw 0x129e, 0x1264, 0x1264, 0x1264             ; +0x0090: Runtime segmenter patched af GENCCPM
+%else
+  times 8 db 0                                  ; +0x0090..+0x0097
+%endif
+  times 8 db 0                                  ; +0x0098..+0x009F
   dw 0x0001                                     ; +0x00a0: INSYS flag = 1
   times 5 db 0                                  ; +0x00a2..+0x00a6: Reserveret
   times 147 db 0xcc                             ; +0x00a7..+0x0139: INT3 stak-fyld op til SP=0x013A
@@ -122,4 +140,4 @@ data_start:
   times 24 db 0                                 ; +0x037e..+0x0395: Reserveret
   dw 0x005a                                     ; +0x0396..+0x0397: Kontrolværdi
   times 8 db 0                                  ; +0x0398..+0x039f: Slutjustering til 928 bytes (0x3A0)
-data_end:
+vout_data_end:

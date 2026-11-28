@@ -4,13 +4,15 @@
 ; 167 paragraphs = 2.672 bytes (0x117D0 - 0x1223F)
 ; ===========================================================================
 
+%include "rasm86.inc"
+
 ; -----------------------------------------------------------------------------
 ; pin_xdos (mon1..4) — BDOS / XDOS system call entry
 ; Invokes INT 0xE0 with function in CX, parameter in DX.
 ; -----------------------------------------------------------------------------
 pin_xdos:                                     ; 117D0
   push bp                                      ; 117D0  0x55
-  db 0x8B, 0xEC                                ; 117D1  mov bp, sp (d=1)
+  mov_bp_sp                                    ; 117D1  mov bp, sp (d=1)
   mov dx, [bp + 4]                             ; 117D3  0x8B, 0x56, 0x04
   mov cx, [bp + 6]                             ; 117D6  0x8B, 0x4E, 0x06
   int 0xe0                                     ; 117D9  0xCD, 0xE0
@@ -23,7 +25,7 @@ pin_xdos:                                     ; 117D0
 ; -----------------------------------------------------------------------------
 pin_intsys:                                     ; 117DF
   push bp                                      ; 117DF  0x55
-  db 0x8B, 0xEC                                ; 117E0  mov bp, sp
+  mov_bp_sp                                    ; 117E0  mov bp, sp
   mov bx, [bp + 4]                             ; 117E2  0x8B, 0x5E, 0x04
   mov dx, [bp + 6]                             ; 117E5  0x8B, 0x56, 0x06
   mov cx, [bp + 8]                             ; 117E8  0x8B, 0x4E, 0x08
@@ -42,7 +44,7 @@ pin_intsys:                                     ; 117DF
 ; -----------------------------------------------------------------------------
 pin_pxios1:                                     ; 11800
   push bp                                      ; 11800  0x55
-  db 0x8B, 0xEC                                ; 11801  mov bp, sp
+  mov_bp_sp                                    ; 11801  mov bp, sp
   mov ax, [bp + 8]                             ; 11803  0x8B, 0x46, 0x08
   mov cx, [bp + 6]                             ; 11806  0x8B, 0x4E, 0x06
   mov dx, [bp + 4]                             ; 11809  0x8B, 0x56, 0x04
@@ -62,7 +64,7 @@ pin_pxios1:                                     ; 11800
 ; -----------------------------------------------------------------------------
 pin_conin:                                     ; 11822
   push bp                                      ; 11822  0x55
-  db 0x8B, 0xEC                                ; 11823  mov bp, sp
+  mov_bp_sp                                    ; 11823  mov bp, sp
   mov ax, 1                                    ; 11825  0xB8, 0x01, 0x00
   push ax                                      ; 11828  0x50
   mov ax, 0                                    ; 11829  0xB8, 0x00, 0x00
@@ -84,7 +86,7 @@ loc_1183B:                                     ; 1183B
 ; -----------------------------------------------------------------------------
 pin_get_cons_mode:                                     ; 11840
   push bp                                      ; 11840  0x55
-  db 0x8B, 0xEC                                ; 11841  mov bp, sp
+  mov_bp_sp                                    ; 11841  mov bp, sp
   mov ax, 0x1e                                 ; 11843  0xB8, 0x1E, 0x00
   push ax                                      ; 11846  0x50
   mov ax, 0x100                                ; 11847  0xB8, 0x00, 0x01
@@ -104,7 +106,7 @@ pin_get_cons_mode:                                     ; 11840
 ; -----------------------------------------------------------------------------
 pin_read_change_mxq:                                     ; 1185E
   push bp                                      ; 1185E  0x55
-  db 0x8B, 0xEC                                ; 1185F  mov bp, sp
+  mov_bp_sp                                    ; 1185F  mov bp, sp
   mov byte [pin_mxq_count], 0                          ; 11861  0xC6, 0x06, 0x92, 0x01, 0x00
 
 loc_11866:                                     ; 11866
@@ -128,7 +130,7 @@ loc_1187B:                                     ; 1187B
 
 loc_11886:                                     ; 11886
   pop cx                                       ; 11886  0x59
-  db 0x22, 0xC1                                ; 11887  and al, cl
+  and_al_cl                                    ; 11887  and al, cl
   rcr al, 1                                    ; 11889  0xD0, 0xD8
   jae loc_118AB                                ; 1188B  0x73, 0x1E
   mov ax, 2                                    ; 1188D  0xB8, 0x02, 0x00
@@ -154,14 +156,14 @@ loc_118AB:                                     ; 118AB
 ; -----------------------------------------------------------------------------
 pin_write_change_mxq:                                     ; 118AF
   push bp                                      ; 118AF  0x55
-  db 0x8B, 0xEC                                ; 118B0  mov bp, sp
+  mov_bp_sp                                    ; 118B0  mov bp, sp
   mov ax, [bp + 4]                             ; 118B2  0x8B, 0x46, 0x04
   mov [pin_listroot], ax                              ; 118B5  0xA3, 0x6A, 0x01
   mov al, 0x89                                 ; 118B8  0xB0, 0x89
   push ax                                      ; 118BA  0x50
   mov ax, 0x168                                ; 118BB  0xB8, 0x68, 0x01
   push ax                                      ; 118BE  0x50
-  db 0xE8, 0x0E, 0xFF                          ; 118BF  call 0x117d0
+  call pin_xdos                                ; 118BF  call pin_xdos
   pop bp                                       ; 118C2  0x5D
   ret 2                                        ; 118C3  0xC2, 0x02, 0x00
 
@@ -171,14 +173,14 @@ pin_write_change_mxq:                                     ; 118AF
 ; -----------------------------------------------------------------------------
 pin_sleep:                                     ; 118C6
   push bp                                      ; 118C6  0x55
-  db 0x8B, 0xEC                                ; 118C7  mov bp, sp
+  mov_bp_sp                                    ; 118C7  mov bp, sp
   mov ax, [bp + 4]                             ; 118C9  0x8B, 0x46, 0x04
   mov [pin_listroot], ax                              ; 118CC  0xA3, 0x6A, 0x01
   mov al, 0x8b                                 ; 118CF  0xB0, 0x8B
   push ax                                      ; 118D1  0x50
   mov ax, 0x168                                ; 118D2  0xB8, 0x68, 0x01
   push ax                                      ; 118D5  0x50
-  db 0xE8, 0xF7, 0xFE                          ; 118D6  call 0x117d0
+  call pin_xdos                                ; 118D6  call pin_xdos
   pop bp                                       ; 118D9  0x5D
   ret 2                                        ; 118DA  0xC2, 0x02, 0x00
 
@@ -188,7 +190,7 @@ pin_sleep:                                     ; 118C6
 ; -----------------------------------------------------------------------------
 pin_wake_up:                                     ; 118DD
   push bp                                      ; 118DD  0x55
-  db 0x8B, 0xEC                                ; 118DE  mov bp, sp
+  mov_bp_sp                                    ; 118DE  mov bp, sp
   mov ax, 0x212                                ; 118E0  0xB8, 0x12, 0x02
   push ax                                      ; 118E3  0x50
   push word [bp + 4]                           ; 118E4  0xFF, 0x76, 0x04
@@ -204,7 +206,7 @@ pin_wake_up:                                     ; 118DD
 ; -----------------------------------------------------------------------------
 pin_set_conout_flag:                                     ; 118F2
   push bp                                      ; 118F2  0x55
-  db 0x8B, 0xEC                                ; 118F3  mov bp, sp
+  mov_bp_sp                                    ; 118F3  mov bp, sp
   mov ax, 0x213                                ; 118F5  0xB8, 0x13, 0x02
   push ax                                      ; 118F8  0x50
   push word [bp + 4]                           ; 118F9  0xFF, 0x76, 0x04
@@ -220,7 +222,7 @@ pin_set_conout_flag:                                     ; 118F2
 ; -----------------------------------------------------------------------------
 pin_reset_conout_flag:                                     ; 11907
   push bp                                      ; 11907  0x55
-  db 0x8B, 0xEC                                ; 11908  mov bp, sp
+  mov_bp_sp                                    ; 11908  mov bp, sp
   cli                                          ; 1190A  0xFA
 
 loc_1190B:                                     ; 1190B
@@ -246,7 +248,7 @@ loc_11921:                                     ; 11921
 ; -----------------------------------------------------------------------------
 pin_wake_vout:                                     ; 1192E
   push bp                                      ; 1192E  0x55
-  db 0x8B, 0xEC                                ; 1192F  mov bp, sp
+  mov_bp_sp                                    ; 1192F  mov bp, sp
   les bx, [bp + 4]                             ; 11931  0xC4, 0x5E, 0x04
   and byte [es:bx + 4], 0xf7                   ; 11934  0x26, 0x80, 0x67, 0x04, 0xF7
   lea ax, [bx + 0x22]                          ; 11939  0x8D, 0x47, 0x22
@@ -261,7 +263,7 @@ pin_wake_vout:                                     ; 1192E
 ; -----------------------------------------------------------------------------
 pin_write_vinq:                                     ; 11944
   push bp                                      ; 11944  0x55
-  db 0x8B, 0xEC                                ; 11945  mov bp, sp
+  mov_bp_sp                                    ; 11945  mov bp, sp
   les bx, [bp + 4]                             ; 11947  0xC4, 0x5E, 0x04
   mov ax, [es:bx + 0xe]                        ; 1194A  0x26, 0x8B, 0x47, 0x0E
   and ax, strict word 1                        ; 1194E  25 01 00
@@ -275,7 +277,7 @@ pin_write_vinq:                                     ; 11944
   push ax                                      ; 11968  0x50
   mov ax, 0x168                                ; 11969  0xB8, 0x68, 0x01
   push ax                                      ; 1196C  0x50
-  db 0xE8, 0x60, 0xFE                          ; 1196D  call 0x117d0
+  call pin_xdos                                ; 1196D  call pin_xdos
   les bx, [bp + 4]                             ; 11970  0xC4, 0x5E, 0x04
   mov ax, [es:bx + 0x14]                       ; 11973  0x26, 0x8B, 0x47, 0x14
   mov [pin_listroot], ax                              ; 11977  0xA3, 0x6A, 0x01
@@ -284,7 +286,7 @@ pin_write_vinq:                                     ; 11944
   push ax                                      ; 11982  0x50
   mov ax, 0x168                                ; 11983  0xB8, 0x68, 0x01
   push ax                                      ; 11986  0x50
-  db 0xE8, 0x46, 0xFE                          ; 11987  call 0x117d0
+  call pin_xdos                                ; 11987  call pin_xdos
   les bx, [bp + 4]                             ; 1198A  0xC4, 0x5E, 0x04
   lea ax, [bx + 0x26]                          ; 1198D  0x8D, 0x47, 0x26
   push ax                                      ; 11990  0x50
@@ -300,7 +302,7 @@ loc_11994:                                     ; 11994
 ; -----------------------------------------------------------------------------
 pin_set_ccb:                                     ; 11998
   push bp                                      ; 11998  0x55
-  db 0x8B, 0xEC                                ; 11999  mov bp, sp
+  mov_bp_sp                                    ; 11999  mov bp, sp
   les bx, [pin_cur_ccb]                              ; 1199B  0xC4, 0x1E, 0x58, 0x01
   mov ax, [es:bx + 0x12]                       ; 1199F  0x26, 0x8B, 0x47, 0x12
   mov [pin_listroot], ax                              ; 119A3  0xA3, 0x6A, 0x01
@@ -310,7 +312,7 @@ pin_set_ccb:                                     ; 11998
   push ax                                      ; 119AE  0x50
   mov ax, 0x168                                ; 119AF  0xB8, 0x68, 0x01
   push ax                                      ; 119B2  0x50
-  db 0xE8, 0x1A, 0xFE                          ; 119B3  call 0x117d0
+  call pin_xdos                                ; 119B3  call pin_xdos
   cmp ax, -1                                   ; 119B6  0x83, 0xF8, 0xFF
   jne loc_119E3                                ; 119B9  0x75, 0x28
   les bx, [pin_cur_ccb]                              ; 119BB  0xC4, 0x1E, 0x58, 0x01
@@ -341,14 +343,14 @@ loc_119E3:                                     ; 119E3
 ; -----------------------------------------------------------------------------
 pin_switch:                                     ; 119E7
   push bp                                      ; 119E7  0x55
-  db 0x8B, 0xEC                                ; 119E8  mov bp, sp
+  mov_bp_sp                                    ; 119E8  mov bp, sp
   les ax, [pin_cur_ccb]                              ; 119EA  0xC4, 0x06, 0x58, 0x01
   mov [pin_prev_ccb], ax                              ; 119EE  0xA3, 0x5C, 0x01
   mov [pin_prev_ccb_seg], es                              ; 119F1  0x8C, 0x06, 0x5E, 0x01
   mov al, [bp + 4]                             ; 119F5  0x8A, 0x46, 0x04
   mov ah, 0                                    ; 119F8  0xB4, 0x00
   mov cx, 0x2c                                 ; 119FA  0xB9, 0x2C, 0x00
-  db 0xF7, 0xE1                                ; 119FD  mul cx
+  mul_cx                                       ; 119FD  mul cx
   les bx, [pin_sysdat_ptr]                              ; 119FF  0xC4, 0x1E, 0x40, 0x01
   add ax, [es:bx + 0x54]                       ; 11A03  0x26, 0x03, 0x47, 0x54
   mov [pin_cur_ccb], ax                              ; 11A07  0xA3, 0x58, 0x01
@@ -361,7 +363,7 @@ pin_switch:                                     ; 119E7
 ; -----------------------------------------------------------------------------
 pin_controlC:                                     ; 11A0E
   push bp                                      ; 11A0E  0x55
-  db 0x8B, 0xEC                                ; 11A0F  mov bp, sp
+  mov_bp_sp                                    ; 11A0F  mov bp, sp
   mov al, [pin_cword]                              ; 11A11  0xA0, 0x7E, 0x01
   cmp al, [pin_scan_max]                              ; 11A14  0x3A, 0x06, 0x8E, 0x01
   jb loc_11A1C                                 ; 11A18  0x72, 0x02
@@ -420,14 +422,14 @@ loc_11A54:                                     ; 11A54
   rcr al, 1                                    ; 11A97  0xD0, 0xD8
   jae loc_11AA5                                ; 11A99  0x73, 0x0A
   mov es, [pin_prev_ccb_seg]                              ; 11A9B  0x8E, 0x06, 0x5E, 0x01
-  db 0x26, 0x81, 0x4F, 0x0E, 0x10, 0x00        ; 11A9F  or word [es:bx + 0xe], 0x10
+  or word [es:bx + 0xe], strict word 0x10     ; 11A9F
 
 loc_11AA5:                                     ; 11AA5
   mov al, 0x9c                                 ; 11AA5  0xB0, 0x9C
   push ax                                      ; 11AA7  0x50
   mov ax, 0                                    ; 11AA8  0xB8, 0x00, 0x00
   push ax                                      ; 11AAB  0x50
-  db 0xE8, 0x21, 0xFD                          ; 11AAC  call 0x117d0
+  call pin_xdos                                ; 11AAC  call pin_xdos
   mov [pin_pd_ptr], bx                              ; 11AAF  0x89, 0x1E, 0x44, 0x01
   mov [pin_pd_seg], es                              ; 11AB3  0x8C, 0x06, 0x46, 0x01
   les bx, [pin_prev_ccb]                              ; 11AB7  0xC4, 0x1E, 0x5C, 0x01
@@ -437,7 +439,7 @@ loc_11AA5:                                     ; 11AA5
   and ax, strict word 4                        ; 11AC6  25 04 00
   cmp ax, 0                                    ; 11AC9  0x83, 0xF8, 0x00
   je loc_11AD4                                 ; 11ACC  0x74, 0x06
-  db 0x26, 0x81, 0x67, 0x0E, 0xFB, 0xFF        ; 11ACE  and word [es:bx + 0xe], 0xfffb
+  and word [es:bx + 0xe], strict word 0xfffb  ; 11ACE
 
 loc_11AD4:                                     ; 11AD4
   les bx, [pin_cur_ccb]                              ; 11AD4  0xC4, 0x1E, 0x58, 0x01
@@ -455,7 +457,7 @@ loc_11AD4:                                     ; 11AD4
   shl ax, cl                                   ; 11AF7  0xD3, 0xE0
   mov cl, [es:bx + 0xb]                        ; 11AF9  0x26, 0x8A, 0x4F, 0x0B
   mov ch, 0                                    ; 11AFD  0xB5, 0x00
-  db 0x03, 0xC1                                ; 11AFF  add ax, cx
+  add_ax_cx                                    ; 11AFF  add ax, cx
   mov [pin_saved_wrd], ax                              ; 11B01  0xA3, 0x64, 0x01
   mov cx, 7                                    ; 11B04  0xB9, 0x07, 0x00
   push cx                                      ; 11B07  0x51
@@ -486,7 +488,7 @@ loc_11B39:                                     ; 11B39
   cmp ax, 0                                    ; 11B44  0x83, 0xF8, 0x00
   je loc_11BC1                                 ; 11B47  0x74, 0x78
   cli                                          ; 11B49  0xFA
-  db 0x26, 0x81, 0x67, 0x0E, 0xEF, 0xFF        ; 11B4A  and word [es:bx + 0xe], 0xffef
+  and word [es:bx + 0xe], strict word 0xffef  ; 11B4A
   mov ax, [es:bx]                              ; 11B50  0x26, 0x8B, 0x07
   mov [pin_pd_ptr], ax                              ; 11B53  0xA3, 0x44, 0x01
   mov word [pin_pd_scan], 0xa8                       ; 11B56  0xC7, 0x06, 0x80, 0x01, 0xA8, 0x00
@@ -510,7 +512,7 @@ loc_11B6D:                                     ; 11B6D
 
 loc_11B77:                                     ; 11B77
   pop dx                                       ; 11B77  0x5A
-  db 0x22, 0xC2                                ; 11B78  and al, dl
+  and_al_dl                                    ; 11B78  and al, dl
   rcr al, 1                                    ; 11B7A  0xD0, 0xD8
   jae loc_11B84                                ; 11B7C  0x73, 0x06
   mov [pin_pd_scan], cx                              ; 11B7E  0x89, 0x0E, 0x80, 0x01
@@ -592,7 +594,7 @@ loc_11C1B:                                     ; 11C1B
 ; -----------------------------------------------------------------------------
 pin_controlO:                                     ; 11C33
   push bp                                      ; 11C33  0x55
-  db 0x8B, 0xEC                                ; 11C34  mov bp, sp
+  mov_bp_sp                                    ; 11C34  mov bp, sp
   les bx, [pin_pd_ptr]                              ; 11C36  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x22]                       ; 11C3A  0x26, 0x8B, 0x47, 0x22
   and ax, strict word 8                        ; 11C3E  25 08 00
@@ -631,7 +633,7 @@ loc_11C95:                                     ; 11C95
   push ax                                      ; 11C97  0x50
   mov ax, 0x168                                ; 11C98  0xB8, 0x68, 0x01
   push ax                                      ; 11C9B  0x50
-  db 0xE8, 0x31, 0xFB                          ; 11C9C  call 0x117d0
+  call pin_xdos                                ; 11C9C  call pin_xdos
   cmp al, 0xff                                 ; 11C9F  0x3C, 0xFF
   jne loc_11C95                                ; 11CA1  0x75, 0xF2
   les bx, [pin_cur_ccb]                              ; 11CA3  0xC4, 0x1E, 0x58, 0x01
@@ -653,12 +655,12 @@ loc_11C95:                                     ; 11C95
   push ax                                      ; 11CD3  0x50
   mov ax, 0x178                                ; 11CD4  0xB8, 0x78, 0x01
   push ax                                      ; 11CD7  0x50
-  db 0xE8, 0xF5, 0xFA                          ; 11CD8  call 0x117d0
+  call pin_xdos                                ; 11CD8  call pin_xdos
   mov al, 0x18                                 ; 11CDB  0xB0, 0x18
   push ax                                      ; 11CDD  0x50
   mov ax, 0                                    ; 11CDE  0xB8, 0x00, 0x00
   push ax                                      ; 11CE1  0x50
-  db 0xE8, 0xEB, 0xFA                          ; 11CE2  call 0x117d0
+  call pin_xdos                                ; 11CE2  call pin_xdos
   mov [pin_drive_avail], ax                              ; 11CE5  0xA3, 0x8C, 0x01
   mov word [pin_drive_mask], 1                          ; 11CE8  0xC7, 0x06, 0x8A, 0x01, 0x01, 0x00
   mov byte [pin_drive_count], 0                          ; 11CEE  0xC6, 0x06, 0xA5, 0x01, 0x00
@@ -674,7 +676,7 @@ loc_11CF9:                                     ; 11CF9
   mov al, 0x25                                 ; 11D0C  0xB0, 0x25
   push ax                                      ; 11D0E  0x50
   push word [pin_drive_mask]                            ; 11D0F  0xFF, 0x36, 0x8A, 0x01
-  db 0xE8, 0xBA, 0xFA                          ; 11D13  call 0x117d0
+  call pin_xdos                                ; 11D13  call pin_xdos
   cmp al, 0                                    ; 11D16  0x3C, 0x00
   je loc_11D2E                                 ; 11D18  0x74, 0x14
   mov ax, [pin_drive_idx]                              ; 11D1A  0xA1, 0x88, 0x01
@@ -768,7 +770,7 @@ loc_11DC8:                                     ; 11DC8
 ; -----------------------------------------------------------------------------
 pin_turn_off_ctrlO:                                     ; 11DCA
   push bp                                      ; 11DCA  0x55
-  db 0x8B, 0xEC                                ; 11DCB  mov bp, sp
+  mov_bp_sp                                    ; 11DCB  mov bp, sp
   les bx, [pin_pd_ptr]                              ; 11DCD  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x22]                       ; 11DD1  0x26, 0x8B, 0x47, 0x22
   and ax, 0x80                                 ; 11DD5  0x25, 0x80, 0x00
@@ -809,7 +811,7 @@ loc_11DE6:                                     ; 11DE6
 ; -----------------------------------------------------------------------------
 pin_controlS:                                     ; 11E23
   push bp                                      ; 11E23  0x55
-  db 0x8B, 0xEC                                ; 11E24  mov bp, sp
+  mov_bp_sp                                    ; 11E24  mov bp, sp
   les bx, [pin_cur_ccb]                              ; 11E26  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11E2A  0x26, 0xFF, 0x77, 0x16
   call pin_write_change_mxq                               ; 11E2E  0xE8, 0x7E, 0xFA
@@ -839,7 +841,7 @@ pin_controlS:                                     ; 11E23
 ; -----------------------------------------------------------------------------
 pin_controlQ:                                     ; 11E63
   push bp                                      ; 11E63  0x55
-  db 0x8B, 0xEC                                ; 11E64  mov bp, sp
+  mov_bp_sp                                    ; 11E64  mov bp, sp
   les bx, [pin_pd_ptr]                              ; 11E66  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 6]                          ; 11E6A  0x26, 0x8B, 0x47, 0x06
   and ax, 0x1000                               ; 11E6E  0x25, 0x00, 0x10
@@ -888,7 +890,7 @@ loc_11E91:                                     ; 11E91
 ; -----------------------------------------------------------------------------
 pin_controlP:                                     ; 11ED2
   push bp                                      ; 11ED2  0x55
-  db 0x8B, 0xEC                                ; 11ED3  mov bp, sp
+  mov_bp_sp                                    ; 11ED3  mov bp, sp
   les bx, [pin_cur_ccb]                              ; 11ED5  0xC4, 0x1E, 0x58, 0x01
   push word [es:bx + 0x16]                     ; 11ED9  0x26, 0xFF, 0x77, 0x16
   call pin_write_change_mxq                               ; 11EDD  0xE8, 0xCF, 0xF9
@@ -922,7 +924,7 @@ pin_controlP:                                     ; 11ED2
 ; -----------------------------------------------------------------------------
 pin_raw:                                     ; 11F22
   push bp                                      ; 11F22  0x55
-  db 0x8B, 0xEC                                ; 11F23  mov bp, sp
+  mov_bp_sp                                    ; 11F23  mov bp, sp
   les bx, [pin_pd_ptr]                              ; 11F25  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x22]                       ; 11F29  0x26, 0x8B, 0x47, 0x22
   and ax, strict word 4                        ; 11F2D  25 04 00
@@ -942,7 +944,7 @@ loc_11F3E:                                     ; 11F3E
   mov ax, [es:bx + 0xe]                        ; 11F50  0x26, 0x8B, 0x47, 0x0E
   and ax, 0x200                                ; 11F54  0x25, 0x00, 0x02
   mov cx, 0                                    ; 11F57  0xB9, 0x00, 0x00
-  db 0x3B, 0xC1                                ; 11F5A  cmp ax, cx
+  cmp_ax_cx                                    ; 11F5A  cmp ax, cx
   je loc_11F61                                 ; 11F5C  0x74, 0x03
   jmp near loc_12036                           ; 11F5E  0xE9, 0xD5, 0x00
 
@@ -951,7 +953,7 @@ loc_11F61:                                     ; 11F61
   mov al, [es:bx + 0x24]                       ; 11F65  0x26, 0x8A, 0x47, 0x24
   mov ah, 0                                    ; 11F69  0xB4, 0x00
   mov dx, 0xa                                  ; 11F6B  0xBA, 0x0A, 0x00
-  db 0xF7, 0xE2                                ; 11F6E  mul dx
+  mul_dx                                       ; 11F6E  mul dx
   les si, [pin_sysdat_ptr]                              ; 11F70  0xC4, 0x36, 0x40, 0x01
   add ax, [es:si + 0x86]                       ; 11F74  0x26, 0x03, 0x84, 0x86, 0x00
   mov [pin_wakeup_ptr], ax                              ; 11F79  0xA3, 0x60, 0x01
@@ -959,7 +961,7 @@ loc_11F61:                                     ; 11F61
   mov byte [pin_scan_char], 0xff                       ; 11F7D  0xC6, 0x06, 0x90, 0x01, 0xFF
   mov al, [es:si + 0x46]                       ; 11F82  0x26, 0x8A, 0x44, 0x46
   and al, 0x40                                 ; 11F86  0x24, 0x40
-  db 0x3A, 0xC1                                ; 11F88  cmp al, cl
+  cmp_al_cl                                    ; 11F88  cmp al, cl
   je loc_11FD3                                 ; 11F8A  0x74, 0x47
   mov es, [pin_pd_seg]                              ; 11F8C  0x8E, 0x06, 0x46, 0x01
   cmp [es:bx + 0x1c], cx                       ; 11F90  0x26, 0x39, 0x4F, 0x1C
@@ -980,7 +982,7 @@ loc_11F61:                                     ; 11F61
   mov es, [pin_ext2_seg]                              ; 11FC0  0x8E, 0x06, 0x52, 0x01
   mov ax, [es:bx + si + 0x42]                  ; 11FC4  0x26, 0x8B, 0x40, 0x42
   and ax, 0x80                                 ; 11FC8  0x25, 0x80, 0x00
-  db 0x3B, 0xC1                                ; 11FCB  cmp ax, cx
+  cmp_ax_cx                                    ; 11FCB  cmp ax, cx
   je loc_11FD3                                 ; 11FCD  0x74, 0x04
   mov [pin_scan_char], cl                              ; 11FCF  0x88, 0x0E, 0x90, 0x01
 
@@ -1029,7 +1031,7 @@ loc_12036:                                     ; 12036
   mov al, [es:bx + 8]                          ; 1203B  0x26, 0x8A, 0x47, 0x08
   mov ah, 0                                    ; 1203F  0xB4, 0x00
   mov cx, 0xa                                  ; 12041  0xB9, 0x0A, 0x00
-  db 0xF7, 0xE1                                ; 12044  mul cx
+  mul_cx                                       ; 12044  mul cx
   les si, [pin_sysdat_ptr]                              ; 12046  0xC4, 0x36, 0x40, 0x01
   add ax, [es:si + 0x86]                       ; 1204A  0x26, 0x03, 0x84, 0x86, 0x00
   mov [pin_wakeup_ptr], ax                              ; 1204F  0xA3, 0x60, 0x01
@@ -1070,7 +1072,7 @@ loc_12080:                                     ; 12080
 ; -----------------------------------------------------------------------------
 pin_plmstart:                                     ; 120A3
   push bp                                      ; 120A3  0x55
-  db 0x8B, 0xEC                                ; 120A4  mov bp, sp
+  mov_bp_sp                                    ; 120A4  mov bp, sp
   les bx, [pin_cur_ccb]                              ; 120A6  0xC4, 0x1E, 0x58, 0x01
   mov ax, [es:bx]                              ; 120AA  0x26, 0x8B, 0x07
   mov [pin_pd_ptr], ax                              ; 120AD  0xA3, 0x44, 0x01
@@ -1093,7 +1095,7 @@ loc_120CC:                                     ; 120CC
   pop bp                                       ; 120CE  0x5D
   ret                                          ; 120CF  0xC3
   push bp                                      ; 120D0  0x55
-  db 0x8B, 0xEC                                ; 120D1  mov bp, sp
+  mov_bp_sp                                    ; 120D1  mov bp, sp
   mov ax, [0]                                  ; 120D3  0xA1, 0x00, 0x00
   mov [pin_sysdat_seg], ax                              ; 120D6  0xA3, 0x42, 0x01
   mov [pin_wakeup_seg], ax                              ; 120D9  0xA3, 0x62, 0x01
@@ -1132,7 +1134,7 @@ loc_12132:                                     ; 12132
   mov al, [pin_scan_step]                              ; 12132  0xA0, 0x8F, 0x01
   mov ah, 0                                    ; 12135  0xB4, 0x00
   mov cx, 0x2c                                 ; 12137  0xB9, 0x2C, 0x00
-  db 0xF7, 0xE1                                ; 1213A  mul cx
+  mul_cx                                       ; 1213A  mul cx
   les bx, [pin_sysdat_ptr]                              ; 1213C  0xC4, 0x1E, 0x40, 0x01
   add ax, [es:bx + 0x54]                       ; 12140  0x26, 0x03, 0x47, 0x54
   mov [pin_cur_ccb], ax                              ; 12144  0xA3, 0x58, 0x01
@@ -1140,7 +1142,7 @@ loc_12132:                                     ; 12132
   push ax                                      ; 12149  0x50
   mov ax, 0                                    ; 1214A  0xB8, 0x00, 0x00
   push ax                                      ; 1214D  0x50
-  db 0xE8, 0x7F, 0xF6                          ; 1214E  call 0x117d0
+  call pin_xdos                                ; 1214E  call pin_xdos
   mov [pin_pd_ptr], bx                              ; 12151  0x89, 0x1E, 0x44, 0x01
   mov [pin_pd_seg], es                              ; 12155  0x8C, 0x06, 0x46, 0x01
   mov al, [pin_scan_step]                              ; 12159  0xA0, 0x8F, 0x01
@@ -1153,7 +1155,7 @@ loc_12132:                                     ; 12132
   shl ax, cl                                   ; 1216E  0xD3, 0xE0
   mov cl, [es:bx + 0xb]                        ; 12170  0x26, 0x8A, 0x4F, 0x0B
   mov ch, 0                                    ; 12174  0xB5, 0x00
-  db 0x03, 0xC1                                ; 12176  add ax, cx
+  add_ax_cx                                    ; 12176  add ax, cx
   mov [pin_saved_wrd], ax                              ; 12178  0xA3, 0x64, 0x01
 
 loc_1217B:                                     ; 1217B

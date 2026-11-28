@@ -16,7 +16,7 @@
 
 cio_init:  ; 0322B
   retf                                         ; 0322B  0xCB
-  db 0x6B, 0x03, 0x7E                         ; 0322C  imul ax, word [bp + di], 0x7e
+  imul ax, word [bp + di], 0x7e               ; 0322C
   add cx, [bp - 0x6bfd]                        ; 0322F  0x03, 0x8E, 0x03, 0x94
   add bx, [bp + si - 0x4fd]                    ; 03233  0x03, 0x9A, 0x03, 0xFB
   add bx, [bx + si]                            ; 03237  0x03, 0x18
@@ -32,7 +32,7 @@ cio_init:  ; 0322B
   add [bx - 0x7f00], bh                        ; 03251  0x00, 0xBF, 0x00, 0x81
   add bl, [bp + di - 0x6500]                   ; 03255  0x02, 0x9B, 0x00, 0x9B
   add [si], cl                                 ; 03259  0x00, 0x0C
-  db 0x03, 0xD3                               ; 0325B  add dx, bx
+  add_dx_bx                                    ; 0325B  add dx, bx
   add bx, [bx + di + 3]                        ; 0325D  0x03, 0x59, 0x03
   inc si                                       ; 03260  0x46
   add al, 0x57                                 ; 03261  0x04, 0x57
@@ -41,8 +41,8 @@ cio_init:  ; 0322B
 
 cio_entry:  ; 03266
   shl cx, 1                                    ; 03266  0xD1, 0xE1
-  db 0x8B, 0xF1                               ; 03268  mov si, cx
-  db 0x2E, 0xFF, 0x94, 0x4C, 0x00             ; 0326A  call word [cs:si + 0x4c]
+  mov_si_cx                                    ; 03268  mov si, cx
+  call word [cs:word si + 0x4c]               ; 0326A
   retf                                         ; 0326F  0xCB
 
 cio_xios_far_call:  ; 03270
@@ -58,7 +58,7 @@ cio_fn21_notimp:  ; 0327B
   ret                                          ; 0327E  0xC3
 
 cio_fn15_lstattach:  ; 0327F
-  db 0x33, 0xC9                               ; 0327F  xor cx, cx
+  xor_cx_cx                                   ; 0327F  xor cx, cx
   jmp short cio_lcb_verify                          ; 03281  0xEB, 0x03
 
 cio_fn18_clstattch:  ; 03283
@@ -77,7 +77,7 @@ loc_03298:  ; 03298
   jmp short loc_032B5                          ; 03299  0xEB, 0x1A
 
 cio_fn09_conattach:  ; 0329B
-  db 0x33, 0xC9                               ; 0329B  xor cx, cx
+  xor_cx_cx                                   ; 0329B  xor cx, cx
   jmp short cio_ccb_verify                          ; 0329D  0xEB, 0x03
 
 cio_fn19_cconattch:  ; 0329F
@@ -96,7 +96,7 @@ loc_032B4:  ; 032B4
 
 loc_032B5:  ; 032B5
   mov ax, [0x68]                               ; 032B5  0xA1, 0x68, 0x00
-  db 0x8B, 0xD8                               ; 032B8  mov bx, ax
+  mov_bx_ax                                    ; 032B8  mov bx, ax
   pushf                                        ; 032BA  0x9C
   cli                                          ; 032BB  0xFA
   cmp bx, [si]                                 ; 032BC  0x3B, 0x1C
@@ -119,7 +119,7 @@ loc_032CF:  ; 032CF
   pop si                                       ; 032DC  0x5E
   pop dx                                       ; 032DD  0x5A
   popf                                         ; 032DE  0x9D
-  db 0x33, 0xC9                               ; 032DF  xor cx, cx
+  xor_cx_cx                                   ; 032DF  xor cx, cx
   jmp short loc_032B5                          ; 032E1  0xEB, 0xD2
 
 loc_032E3:  ; 032E3
@@ -127,7 +127,7 @@ loc_032E3:  ; 032E3
 
 loc_032E5:  ; 032E5
   popf                                         ; 032E5  0x9D
-  db 0x33, 0xDB                               ; 032E6  xor bx, bx
+  xor_bx_bx                                    ; 032E6  xor bx, bx
   ret                                          ; 032E8  0xC3
 
 cio_fn16_lstdetach:  ; 032E9
@@ -180,7 +180,7 @@ loc_0332D:  ; 0332D
 
 loc_03340:  ; 03340
   popf                                         ; 03340  0x9D
-  db 0x33, 0xDB                               ; 03341  xor bx, bx
+  xor_bx_bx                                    ; 03341  xor bx, bx
   ret                                          ; 03343  0xC3
 
 cio_fn12_conassign:  ; 03344
@@ -202,7 +202,7 @@ loc_03367:  ; 03367
   mov si, [si + 2]                             ; 03367  0x8B, 0x74, 0x02
   test si, si                                  ; 0336A  0x85, 0xF6
   je loc_03396                                 ; 0336C  0x74, 0x28
-  db 0x3B, 0xDE                               ; 0336E  cmp bx, si
+  cmp_bx_si                                    ; 0336E  cmp bx, si
   je loc_03374                                 ; 03370  0x74, 0x02
   jmp short loc_03367                          ; 03372  0xEB, 0xF3
 
@@ -272,9 +272,9 @@ loc_033E2:  ; 033E2
   call cio_wake_disp                               ; 033E6  0xE8, 0x2B, 0x00
   pop si                                       ; 033E9  0x5E
   pop ax                                       ; 033EA  0x58
-  db 0x8B, 0xD8                               ; 033EB  mov bx, ax
+  mov_bx_ax                                    ; 033EB  mov bx, ax
   add si, 2                                    ; 033ED  0x83, 0xC6, 0x02
-  db 0x8B, 0xFE                               ; 033F0  mov di, si
+  mov_di_si                                    ; 033F0  mov di, si
 
 loc_033F2:  ; 033F2
   cmp word [si], 0                             ; 033F2  0x83, 0x3C, 0x00
@@ -290,12 +290,12 @@ loc_033FF:  ; 033FF
   mov si, [di]                                 ; 03403  0x8B, 0x35
   mov [di], bx                                 ; 03405  0x89, 0x1D
   mov [bx], si                                 ; 03407  0x89, 0x37
-  db 0x8B, 0xD7                               ; 03409  mov dx, di
+  mov_dx_di                                    ; 03409  mov dx, di
   mov cx, 0x213                                ; 0340B  0xB9, 0x13, 0x02
   call cio_xios_far_call                               ; 0340E  0xE8, 0x5F, 0xFE
 
 loc_03411:  ; 03411
-  db 0x33, 0xDB                               ; 03411  xor bx, bx
+  xor_bx_bx                                    ; 03411  xor bx, bx
   ret                                          ; 03413  0xC3
 
 cio_wake_disp:  ; 03414
@@ -312,7 +312,7 @@ loc_03428:  ; 03428
   ret                                          ; 03429  0xC3
 
 cio_conassign_match:  ; 0342A
-  db 0x33, 0xC9                               ; 0342A  xor cx, cx
+  xor_cx_cx                                   ; 0342A  xor cx, cx
   push es                                      ; 0342C  0x06
   mov es, [es:0x2e]                            ; 0342D  0x26, 0x8E, 0x06, 0x2E, 0x00
   mov ax, [es:di + 2]                          ; 03432  0x26, 0x8B, 0x45, 0x02
@@ -339,13 +339,13 @@ loc_03455:  ; 03455
 
 cio_fn13_getdefcon:  ; 03457
   mov si, [0x68]                               ; 03457  0x8B, 0x36, 0x68, 0x00
-  db 0x32, 0xFF                               ; 0345B  xor bh, bh
+  xor_bh_bh                                    ; 0345B  xor bh, bh
   mov bl, [si + 0x20]                          ; 0345D  0x8A, 0x5C, 0x20
   ret                                          ; 03460  0xC3
 
 cio_fn20_getdeflst:  ; 03461
   mov si, [0x68]                               ; 03461  0x8B, 0x36, 0x68, 0x00
-  db 0x32, 0xFF                               ; 03465  xor bh, bh
+  xor_bh_bh                                    ; 03465  xor bh, bh
   mov bl, [si + 0x24]                          ; 03467  0x8A, 0x5C, 0x24
   ret                                          ; 0346A  0xC3
 
@@ -361,7 +361,7 @@ loc_03478:  ; 03478
   mov [si + 0x20], dl                          ; 0347C  0x88, 0x54, 0x20
   call cio_getccbadr                               ; 0347F  0xE8, 0x27, 0x00
   mov [es:0x62], si                            ; 03482  0x26, 0x89, 0x36, 0x62, 0x00
-  db 0x33, 0xDB                               ; 03487  xor bx, bx
+  xor_bx_bx                                    ; 03487  xor bx, bx
   ret                                          ; 03489  0xC3
 
 cio_fn17_setdeflst:  ; 0348A
@@ -376,7 +376,7 @@ loc_03497:  ; 03497
   mov [si + 0x24], dl                          ; 0349B  0x88, 0x54, 0x24
   call cio_getlcbadr                               ; 0349E  0xE8, 0x26, 0x00
   mov [es:0x64], si                            ; 034A1  0x26, 0x89, 0x36, 0x64, 0x00
-  db 0x33, 0xDB                               ; 034A6  xor bx, bx
+  xor_bx_bx                                    ; 034A6  xor bx, bx
   ret                                          ; 034A8  0xC3
 
 cio_getccbadr:  ; 034A9
@@ -384,21 +384,21 @@ cio_getccbadr:  ; 034A9
   mov al, [bx + 0x20]                          ; 034AD  0x8A, 0x47, 0x20
 
 cio_getccbadr_spec:  ; 034B0
-  db 0x32, 0xE4                               ; 034B0  xor ah, ah
+  xor_ah_ah                                    ; 034B0  xor ah, ah
   mov si, [0x54]                               ; 034B2  0x8B, 0x36, 0x54, 0x00
   mov cl, 2                                    ; 034B6  0xB1, 0x02
   shl ax, cl                                   ; 034B8  0xD3, 0xE0
-  db 0x03, 0xF0                               ; 034BA  add si, ax
-  db 0x03, 0xF0                               ; 034BC  add si, ax
-  db 0x03, 0xF0                               ; 034BE  add si, ax
+  add_si_ax                                    ; 034BA  add si, ax
+  add_si_ax                                    ; 034BC  add si, ax
+  add_si_ax                                    ; 034BE  add si, ax
   mov cl, 3                                    ; 034C0  0xB1, 0x03
   shl ax, cl                                   ; 034C2  0xD3, 0xE0
-  db 0x03, 0xF0                               ; 034C4  add si, ax
+  add_si_ax                                    ; 034C4  add si, ax
   ret                                          ; 034C6  0xC3
 
 cio_getlcbadr:  ; 034C7
   mov bx, [0x68]                               ; 034C7  0x8B, 0x1E, 0x68, 0x00
-  db 0x32, 0xE4                               ; 034CB  xor ah, ah
+  xor_ah_ah                                    ; 034CB  xor ah, ah
   mov al, [bx + 0x24]                          ; 034CD  0x8A, 0x47, 0x24
   cmp al, [0x48]                               ; 034D0  0x3A, 0x06, 0x48, 0x00
   jbe loc_034DB                                ; 034D4  0x76, 0x05
@@ -409,11 +409,11 @@ loc_034DB:  ; 034DB
   mov si, [0x86]                               ; 034DB  0x8B, 0x36, 0x86, 0x00
   push ax                                      ; 034DF  0x50
   shl ax, 1                                    ; 034E0  0xD1, 0xE0
-  db 0x03, 0xF0                               ; 034E2  add si, ax
+  add_si_ax                                    ; 034E2  add si, ax
   pop ax                                       ; 034E4  0x58
   mov cl, 3                                    ; 034E5  0xB1, 0x03
   shl ax, cl                                   ; 034E7  0xD3, 0xE0
-  db 0x03, 0xF0                               ; 034E9  add si, ax
+  add_si_ax                                    ; 034E9  add si, ax
   ret                                          ; 034EB  0xC3
 
 cio_fn23_cioterm:  ; 034EC
@@ -461,7 +461,7 @@ loc_03524:  ; 03524
   jmp short loc_03524                          ; 03534  0xEB, 0xEE
 
 loc_03536:  ; 03536
-  db 0x33, 0xDB                               ; 03536  xor bx, bx
+  xor_bx_bx                                    ; 03536  xor bx, bx
   ret                                          ; 03538  0xC3
 
 cio_fn25_cmode:  ; 03539
@@ -470,7 +470,7 @@ cio_fn25_cmode:  ; 03539
   je loc_03547                                 ; 0353E  0x74, 0x07
   dec dx                                       ; 03540  0x4A
   mov [bx + 0x22], dx                          ; 03541  0x89, 0x57, 0x22
-  db 0x33, 0xDB                               ; 03544  xor bx, bx
+  xor_bx_bx                                    ; 03544  xor bx, bx
   ret                                          ; 03546  0xC3
 
 loc_03547:  ; 03547
@@ -480,13 +480,13 @@ loc_03547:  ; 03547
 cio_fn00_conin:  ; 0354B
   call cio_clr_raw_mode                               ; 0354B  0xE8, 0xBE, 0x02
   call cio_coninf                               ; 0354E  0xE8, 0xE7, 0x03
-  db 0x8A, 0xD0                               ; 03551  mov dl, al
+  mov_dl_al                                    ; 03551  mov dl, al
   call cio_chk_ctrlp                               ; 03553  0xE8, 0xD8, 0x02
   jb loc_0355B                                 ; 03556  0x72, 0x03
   call cio_tabout                               ; 03558  0xE8, 0x82, 0x03
 
 loc_0355B:  ; 0355B
-  db 0x8A, 0xDA                               ; 0355B  mov bl, dl
+  mov_bl_dl                                    ; 0355B  mov bl, dl
   ret                                          ; 0355D  0xC3
 
 cio_fn01_conout:  ; 0355E
@@ -535,7 +535,7 @@ loc_035AF:  ; 035AF
   ret                                          ; 035AF  0xC3
 
 loc_035B0:  ; 035B0
-  db 0x32, 0xDB                               ; 035B0  xor bl, bl
+  xor_bl_bl                                    ; 035B0  xor bl, bl
   ret                                          ; 035B2  0xC3
 
 cio_fn24_ciostat:  ; 035B3
@@ -560,7 +560,7 @@ cio_dirio_status:  ; 035CF
   mov bl, 1                                    ; 035D6  0xB3, 0x01
 
 loc_035D8:  ; 035D8
-  db 0x8A, 0xC3                               ; 035D8  mov al, bl
+  mov_al_bl                                    ; 035D8  mov al, bl
   ret                                          ; 035DA  0xC3
 
 cio_fn05_dirio:  ; 035DB
@@ -627,7 +627,7 @@ cio_fn27_pblock:  ; 03637
   push dx                                      ; 03637  0x52
   call cio_clr_raw_mode                               ; 03638  0xE8, 0xD1, 0x01
   pop di                                       ; 0363B  0x5F
-  db 0x33, 0xC0                               ; 0363C  xor ax, ax
+  xor_ax_ax                                    ; 0363C  xor ax, ax
   mov bp, [bx + 0x22]                          ; 0363E  0x8B, 0x6F, 0x22
   jmp short loc_03652                          ; 03641  0xEB, 0x0F
 
@@ -691,13 +691,13 @@ cio_fn14_conprint:  ; 03690
   call cio_clr_raw_mode                               ; 03692  0xE8, 0x77, 0x01
   pop bx                                       ; 03695  0x5B
   pop ax                                       ; 03696  0x58
-  db 0x33, 0xC9                               ; 03697  xor cx, cx
+  xor_cx_cx                                   ; 03697  xor cx, cx
   and al, 0x7f                                 ; 03699  0x24, 0x7F
 
 loc_0369B:  ; 0369B
   cmp ah, 0                                    ; 0369B  0x80, 0xFC, 0x00
   je loc_036A4                                 ; 0369E  0x74, 0x04
-  db 0x3A, 0xE1                               ; 036A0  cmp ah, cl
+  cmp_ah_cl                                    ; 036A0  cmp ah, cl
   je loc_036C5                                 ; 036A2  0x74, 0x21
 
 loc_036A4:  ; 036A4
@@ -706,7 +706,7 @@ loc_036A4:  ; 036A4
   mov dl, [bx]                                 ; 036AA  0x8A, 0x17
   pop ds                                       ; 036AC  0x1F
   and dl, 0x7f                                 ; 036AD  0x80, 0xE2, 0x7F
-  db 0x3A, 0xD0                               ; 036B0  cmp dl, al
+  cmp_dl_al                                    ; 036B0  cmp dl, al
   je loc_036C5                                 ; 036B2  0x74, 0x11
   push ax                                      ; 036B4  0x50
   push cx                                      ; 036B5  0x51
@@ -732,14 +732,14 @@ loc_036CB:  ; 036CB
   push bx                                      ; 036CB  0x53
   mov al, [si + 6]                             ; 036CC  0x8A, 0x44, 0x06
   mov [si + 5], al                             ; 036CF  0x88, 0x44, 0x05
-  db 0x33, 0xDB                               ; 036D2  xor bx, bx
+  xor_bx_bx                                    ; 036D2  xor bx, bx
 
 loc_036D4:  ; 036D4
   push bx                                      ; 036D4  0x53
 
 loc_036D5:  ; 036D5
   call cio_coninf                               ; 036D5  0xE8, 0x60, 0x02
-  db 0x8A, 0xD0                               ; 036D8  mov dl, al
+  mov_dl_al                                    ; 036D8  mov dl, al
   pop bx                                       ; 036DA  0x5B
   cmp dl, 0xd                                  ; 036DB  0x80, 0xFA, 0x0D
   jne loc_036E3                                ; 036DE  0x75, 0x03
@@ -752,7 +752,7 @@ loc_036E3:  ; 036E3
   je loc_036E0                                 ; 036E6  0x74, 0xF8
   cmp dl, 8                                    ; 036E8  0x80, 0xFA, 0x08
   jne loc_03700                                ; 036EB  0x75, 0x13
-  db 0x0A, 0xDB                               ; 036ED  or bl, bl
+  or_bl_bl                                     ; 036ED  or bl, bl
   je loc_036D4                                 ; 036EF  0x74, 0xE3
   dec bl                                       ; 036F1  0xFE, 0xCB
   mov al, [si + 6]                             ; 036F3  0x8A, 0x44, 0x06
@@ -763,7 +763,7 @@ loc_036E3:  ; 036E3
 loc_03700:  ; 03700
   cmp dl, 0x7f                                 ; 03700  0x80, 0xFA, 0x7F
   jne loc_0371C                                ; 03703  0x75, 0x17
-  db 0x0A, 0xDB                               ; 03705  or bl, bl
+  or_bl_bl                                     ; 03705  or bl, bl
   je loc_03719                                 ; 03707  0x74, 0x10
   pop di                                       ; 03709  0x5F
   push di                                      ; 0370A  0x57
@@ -797,7 +797,7 @@ loc_0373C:  ; 0373C
   mov al, [si + 5]                             ; 0373C  0x8A, 0x44, 0x05
   cmp al, [si + 6]                             ; 0373F  0x3A, 0x44, 0x06
   jb loc_03748                                 ; 03742  0x72, 0x04
-  db 0x33, 0xDB                               ; 03744  xor bx, bx
+  xor_bx_bx                                    ; 03744  xor bx, bx
   jmp short loc_03719                          ; 03746  0xEB, 0xD1
 
 loc_03748:  ; 03748
@@ -825,10 +825,10 @@ loc_0376D:  ; 0376D
   push bx                                      ; 0376D  0x53
   call cio_prcsmsg                               ; 0376E  0xE8, 0x90, 0x01
   pop cx                                       ; 03771  0x59
-  db 0x33, 0xDB                               ; 03772  xor bx, bx
+  xor_bx_bx                                    ; 03772  xor bx, bx
 
 loc_03774:  ; 03774
-  db 0x0A, 0xC9                               ; 03774  or cl, cl
+  or_cl_cl                                     ; 03774  or cl, cl
   je loc_03794                                 ; 03776  0x74, 0x1C
   pop di                                       ; 03778  0x5F
   push di                                      ; 03779  0x57
@@ -838,12 +838,12 @@ loc_03774:  ; 03774
   dec cl                                       ; 03781  0xFE, 0xC9
   mov dl, [bx + di + 1]                        ; 03783  0x8A, 0x51, 0x01
   pop ds                                       ; 03786  0x1F
-  db 0x8A, 0xEB                               ; 03787  mov ch, bl
+  mov_ch_bl                                    ; 03787  mov ch, bl
   push cx                                      ; 03789  0x51
   call cio_ctlout                               ; 0378A  0xE8, 0x41, 0x01
   pop cx                                       ; 0378D  0x59
   mov bh, 0                                    ; 0378E  0xB7, 0x00
-  db 0x8A, 0xDD                               ; 03790  mov bl, ch
+  mov_bl_ch                                    ; 03790  mov bl, ch
   jmp short loc_03774                          ; 03792  0xEB, 0xE0
 
 loc_03794:  ; 03794
@@ -852,13 +852,13 @@ loc_03794:  ; 03794
   je loc_037C7                                 ; 03799  0x74, 0x2C
   and byte [si + 4], 0xfd                      ; 0379B  0x80, 0x64, 0x04, 0xFD
   mov ah, [si + 0xc]                           ; 0379F  0x8A, 0x64, 0x0C
-  db 0x8A, 0xC4                               ; 037A2  mov al, ah
+  mov_al_ah                                    ; 037A2  mov al, ah
 
 loc_037A4:  ; 037A4
   cmp al, [si + 6]                             ; 037A4  0x3A, 0x44, 0x06
   jb loc_037C7                                 ; 037A7  0x72, 0x1E
   sub al, [si + 6]                             ; 037A9  0x2A, 0x44, 0x06
-  db 0x0A, 0xC0                               ; 037AC  or al, al
+  or_al_al                                     ; 037AC  or al, al
   je loc_037C7                                 ; 037AE  0x74, 0x17
   push ax                                      ; 037B0  0x50
   mov dl, 8                                    ; 037B1  0xB2, 0x08
@@ -869,7 +869,7 @@ loc_037A4:  ; 037A4
   call cio_conoutf                               ; 037BD  0xE8, 0xB4, 0x01
   pop ax                                       ; 037C0  0x58
   dec ah                                       ; 037C1  0xFE, 0xCC
-  db 0x8A, 0xC4                               ; 037C3  mov al, ah
+  mov_al_ah                                    ; 037C3  mov al, ah
   jmp short loc_037A4                          ; 037C5  0xEB, 0xDD
 
 loc_037C7:  ; 037C7
@@ -948,7 +948,7 @@ cio_chk_ctrlp:  ; 0382E
 
 loc_03845:  ; 03845
   ret                                          ; 03845  0xC3
-  db 0x33, 0xDB                               ; 03846  xor bx, bx
+  xor_bx_bx                                    ; 03846  xor bx, bx
   mov ax, cs                                   ; 03848  0x8C, 0xC8
 
 loc_0384A:  ; 0384A
@@ -979,7 +979,7 @@ loc_0387B:  ; 0387B
   cmp dl, 0x20                                 ; 03885  0x80, 0xFA, 0x20
   jae loc_038A0                                ; 03888  0x73, 0x16
   dec al                                       ; 0388A  0xFE, 0xC8
-  db 0x0A, 0xC0                               ; 0388C  or al, al
+  or_al_al                                     ; 0388C  or al, al
   je loc_038A0                                 ; 0388E  0x74, 0x10
   cmp dl, 8                                    ; 03890  0x80, 0xFA, 0x08
   jne loc_03899                                ; 03893  0x75, 0x04
@@ -1079,7 +1079,7 @@ cio_constf:  ; 03919
   jmp near cio_goxios                           ; 03921  0xE9, 0x1B, 0x01
 
 loc_03924:  ; 03924
-  db 0x33, 0xDB                               ; 03924  xor bx, bx
+  xor_bx_bx                                    ; 03924  xor bx, bx
   cmp [si + 0x2a], bx                          ; 03926  0x39, 0x5C, 0x2A
   jne loc_03933                                ; 03929  0x75, 0x08
   mov di, [si + 0x12]                          ; 0392B  0x8B, 0x7C, 0x12
@@ -1090,7 +1090,7 @@ loc_03933:  ; 03933
   mov bl, 0xff                                 ; 03933  0xB3, 0xFF
 
 loc_03935:  ; 03935
-  db 0x8A, 0xC3                               ; 03935  mov al, bl
+  mov_al_bl                                    ; 03935  mov al, bl
   ret                                          ; 03937  0xC3
 
 cio_coninf:  ; 03938
@@ -1108,7 +1108,7 @@ loc_03946:  ; 03946
 
 loc_03952:  ; 03952
   mov bx, [si + 0x2a]                          ; 03952  0x8B, 0x5C, 0x2A
-  db 0x8B, 0xC3                               ; 03955  mov ax, bx
+  mov_ax_bx                                    ; 03955  mov ax, bx
   mov word [si + 0x2a], 0                      ; 03957  0xC7, 0x44, 0x2A, 0x00, 0x00
   ret                                          ; 0395C  0xC3
 
@@ -1135,7 +1135,7 @@ loc_0397F:  ; 0397F
   pushf                                        ; 0397F  0x9C
   cli                                          ; 03980  0xFA
   mov ax, [si + 0xe]                           ; 03981  0x8B, 0x44, 0x0E
-  db 0x8B, 0xD8                               ; 03984  mov bx, ax
+  mov_bx_ax                                    ; 03984  mov bx, ax
   and ax, 0xfce7                               ; 03986  0x25, 0xE7, 0xFC
   cmp ax, strict word 2                       ; 03989  3D 02 00
   jbe loc_039CD                                ; 0398C  0x76, 0x3F
@@ -1161,7 +1161,7 @@ loc_039A5:  ; 039A5
   mov [si + 0x1E], ax                          ; 039B3  0x89, 0x44, 0x1E
   push dx                                      ; 039B6  0x52
   push si                                      ; 039B7  0x56
-  db 0x32, 0xF6                               ; 039B8  xor dh, dh
+  xor_dh_dh                                    ; 039B8  xor dh, dh
   mov [si + 0x20], dx                          ; 039BA  0x89, 0x54, 0x20
   lea dx, [si + 0x18]                          ; 039BD  0x8D, 0x54, 0x18
   mov cx, 0x8b                                 ; 039C0  0xB9, 0x8B, 0x00
@@ -1220,7 +1220,7 @@ loc_03A1F:  ; 03A1F
   or word [bx + 6], 0x80                       ; 03A2A  0x81, 0x4F, 0x06, 0x80, 0x00
   push dx                                      ; 03A2F  0x52
   push si                                      ; 03A30  0x56
-  db 0x33, 0xD2                               ; 03A31  xor dx, dx
+  xor_dx_dx                                    ; 03A31  xor dx, dx
   mov cx, 0x8f                                 ; 03A33  0xB9, 0x8F, 0x00
   call cio_xios_far_call                               ; 03A36  0xE8, 0x37, 0xF8
   pop si                                       ; 03A39  0x5E
@@ -1235,8 +1235,8 @@ cio_listf:  ; 03A3C
 cio_goxios:  ; 03A3F
   push dx                                      ; 03A3F  0x52
   push si                                      ; 03A40  0x56
-  db 0x8A, 0xCA                               ; 03A41  mov cl, dl
-  db 0x8A, 0xD6                               ; 03A43  mov dl, dh
+  mov_cl_dl                                    ; 03A41  mov cl, dl
+  mov_dl_dh                                    ; 03A43  mov dl, dh
   call cio_xios_call                               ; 03A45  0xE8, 0x2E, 0xF8
   pop si                                       ; 03A48  0x5E
   pop dx                                       ; 03A49  0x5A

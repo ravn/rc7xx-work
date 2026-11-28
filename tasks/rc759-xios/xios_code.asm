@@ -244,11 +244,19 @@ SYSDAT_TOD_SEC       equ 0x82		; Byte: Sekunder (00-59 BCD)
 	jmp near xios_fn_dispatch_entry	; 077A3
 
 xios_sysdat_segment_val:
+%ifdef CCPM_SYS
+	dw 0x06FA			; SYSDAT segment (sat af GENCCPM)
+xios_sysdat_entry_val:
+	dw 0x0003			; SYSDAT entry offset (sat af GENCCPM)
+xios_sup_para_base_val:
+	dw 0x0048			; Supervisor paragraph base (sat af GENCCPM)
+%else
 	dw 0x0000			; SYSDAT segment (unlinked, sat af CCP/M loader ved CS:0C06)
 xios_sysdat_entry_val:
 	dw 0x0000			; SYSDAT entry offset (unlinked, sat af loader ved CS:0C08)
 xios_sup_para_base_val:
 	dw 0x0000			; Supervisor paragraph base (unlinked, ved CS:0C0A)
+%endif
 
 ; ===========================================================================
 ; SYSDAT:0x0C0C — DRI struct xios_table (XIOS HEADER)
@@ -285,7 +293,11 @@ xt_dphtab:
 	dw dph_drive_m			; Drev M (Memory Disk / M-Disk DPH)
 	dw 0x0000, 0x0000, 0x0000	; Drev N, O, P
 xt_alloc:
+%ifdef CCPM_SYS
+	dw 0x132D			; Allokeret bufferplads i CCPM.SYS
+%else
 	dw XT_ALLOC_PARAS		; xt_alloc (unlinked bufferplads: 500 paras i XIOS1, 1280 paras i XIOS4)
+%endif
 
 xios_fn_dispatch_entry:
 	cld
@@ -7116,18 +7128,13 @@ xios_autoconfig_table:
 	times 27 db 0
 xios_nvram_table:
 	times 7 db 0
-	db 0x66, 0x00, 0x47, 0xAA	; 0ADFD  add byte [bx - 0x56], al
-	pop ss
-	popa				; 0AE02  NVRAM byte 0x0C
-	pusha				; 0AE03  NVRAM byte 0x0D: NVM_ISBX_BAUD_MODE (0x60=9600)
-	inc di				; 0AE04  NVRAM byte 0x0E: NVM_STOP_PARITY
-	stosb				; 0AE05  NVRAM byte 0x0F
-	pop ss				; 0AE06  NVRAM byte 0x10 (0x1E)
-	popa				; 0AE07  NVRAM byte 0x11
-	db 0x10, 0xA1, 0x3C, 0x00	; 0AE08  NVRAM bytes 0x12-0x15 (NVM_SCROLL_MODE=0x10)
-	times 4 db 0			; 0AE0C  NVRAM bytes 0x16-0x19
-	db 0x02, 0x00			; 0AE10  NVRAM bytes 0x1A-0x1B (NVM_MDISK_SIZE=0x02)
-	inc word [bx + si]		; 0AE12  NVRAM bytes 0x1C-0x1D (0xFF 0x00)
+	db 0x66, 0x00, 0x47, 0xAA	; 0ADFD: NVRAM bytes 0x07-0x0A
+	db 0x17, 0x61, 0x60, 0x47	; 0AE01: NVRAM bytes 0x0B-0x0E (0x60=9600 baud)
+	db 0xAA, 0x17, 0x61		; 0AE05: NVRAM bytes 0x0F-0x11
+	db 0x10, 0xA1, 0x3C, 0x00	; 0AE08: NVRAM bytes 0x12-0x15 (NVM_SCROLL_MODE=0x10)
+	times 4 db 0			; 0AE0C: NVRAM bytes 0x16-0x19
+	db 0x02, 0x00			; 0AE10: NVRAM bytes 0x1A-0x1B (NVM_MDISK_SIZE=0x02)
+	db 0xFF, 0x00			; 0AE12: NVRAM bytes 0x1C-0x1D
 	times 98 db 0			; 0AE14..0AE74 (98 bytes padding)
 int28_fn_03_get_nvram:			; 0AE76
 	mov es, [cs:xios_sysdat_segment_val]

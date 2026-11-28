@@ -2,13 +2,16 @@
 ; RC759 Piccoline — RASM-86 Instruction Encoding Compatibility Macros
 ; =============================================================================
 ; Digital Researchs RASM-86 assembler (brugt af Flemming Kraglund ved RC)
-; genererer modsat direction-bit (d=1) for to-registers 8086-instruktioner
-; i forhold til NASMs standard (d=0).
+; genererer konsekvent direction-bit d=1 for to-registers 8086-instruktioner
+; (XOR, MOV, ADD, SUB, AND, OR, CMP, ADC, SBB, XCHG) i forhold til NASMs
+; standard (d=0).
+;
+; Detaljeret teknisk analyse findes i: ASSEMBLER_COMPATIBILITY.md
 ;
 ; Eksempel:
 ;   "add bp, bx"
-;     RASM-86: 0x03, 0xEB (opcode 0x03: add reg, r/m med reg=bp, r/m=bx)
-;     NASM:    0x01, 0xDD (opcode 0x01: add r/m, reg med r/m=bp, reg=bx)
+;     RASM-86: 0x03, 0xEB (opcode 0x03: add reg, r/m med reg=bp, r/m=bx, d=1)
+;     NASM:    0x01, 0xDD (opcode 0x01: add r/m, reg med r/m=bp, reg=bx, d=0)
 ; Begge udfører nøjagtig samme logiske operation (BP = BP + BX), men
 ; maskinkoden adskiller sig på direction-bitten.
 ;
@@ -460,6 +463,479 @@
 %endmacro
 %macro lodsw_cs 0
   db 0x2E, 0xAD		; CS: LODSW — load word [cs:si] into AX, increment si
+%endmacro
+
+
+; ===========================================================================
+; RASM-86 instruction macros (direction bit d=1 / alternative opcode encodings)
+; ===========================================================================
+
+%macro adc_al_ah 0
+  db 0x12, 0xC4
+%endmacro
+
+%macro add_al_ah 0
+  db 0x02, 0xC4
+%endmacro
+
+%macro add_al_ch 0
+  db 0x02, 0xC5
+%endmacro
+
+%macro add_al_cl 0
+  db 0x02, 0xC1
+%endmacro
+
+%macro add_ax_ax 0
+  db 0x03, 0xC0
+%endmacro
+
+%macro add_ax_cx 0
+  db 0x03, 0xC1
+%endmacro
+
+%macro add_ax_sp 0
+  db 0x03, 0xC4
+%endmacro
+
+%macro add_bh_ch 0
+  db 0x02, 0xFD
+%endmacro
+
+%macro add_bx_dx 0
+  db 0x03, 0xDA
+%endmacro
+
+%macro add_ch_al 0
+  db 0x02, 0xE8
+%endmacro
+
+%macro add_cx_ax 0
+  db 0x03, 0xC8
+%endmacro
+
+%macro add_cx_si 0
+  db 0x03, 0xCE
+%endmacro
+
+%macro add_dh_dh 0
+  db 0x02, 0xF6
+%endmacro
+
+%macro add_di_ax 0
+  db 0x03, 0xF8
+%endmacro
+
+%macro add_di_cx 0
+  db 0x03, 0xF9
+%endmacro
+
+%macro add_dl_bl 0
+  db 0x02, 0xD3
+%endmacro
+
+%macro add_dx_cx 0
+  db 0x03, 0xD1
+%endmacro
+
+%macro and_ah_al 0
+  db 0x22, 0xE0
+%endmacro
+
+%macro and_ah_ch 0
+  db 0x22, 0xE5
+%endmacro
+
+%macro and_ah_cl 0
+  db 0x22, 0xE1
+%endmacro
+
+%macro and_al_cl 0
+  db 0x22, 0xC1
+%endmacro
+
+%macro and_al_dh 0
+  db 0x22, 0xC6
+%endmacro
+
+%macro and_al_dl 0
+  db 0x22, 0xC2
+%endmacro
+
+%macro and_bl_al 0
+  db 0x22, 0xD8
+%endmacro
+
+%macro and_cl_ah 0
+  db 0x22, 0xCC
+%endmacro
+
+%macro and_cl_ch 0
+  db 0x22, 0xCD
+%endmacro
+
+%macro cmp_ah_al 0
+  db 0x3A, 0xE0
+%endmacro
+
+%macro cmp_ah_cl 0
+  db 0x3A, 0xE1
+%endmacro
+
+%macro cmp_al_bl 0
+  db 0x3A, 0xC3
+%endmacro
+
+%macro cmp_al_ch 0
+  db 0x3A, 0xC5
+%endmacro
+
+%macro cmp_al_cl 0
+  db 0x3A, 0xC1
+%endmacro
+
+%macro cmp_ax_si 0
+  db 0x3B, 0xC6
+%endmacro
+
+%macro cmp_bl_bh 0
+  db 0x3A, 0xDF
+%endmacro
+
+%macro cmp_bx_ax 0
+  db 0x3B, 0xD8
+%endmacro
+
+%macro cmp_bx_cx 0
+  db 0x3B, 0xD9
+%endmacro
+
+%macro cmp_bx_di 0
+  db 0x3B, 0xDF
+%endmacro
+
+%macro cmp_bx_dx 0
+  db 0x3B, 0xDA
+%endmacro
+
+%macro cmp_bx_si 0
+  db 0x3B, 0xDE
+%endmacro
+
+%macro cmp_cl_ch 0
+  db 0x3A, 0xCD
+%endmacro
+
+%macro cmp_dh_dl 0
+  db 0x3A, 0xF2
+%endmacro
+
+%macro cmp_di_dx 0
+  db 0x3B, 0xFA
+%endmacro
+
+%macro cmp_dx_ax 0
+  db 0x3B, 0xD0
+%endmacro
+
+%macro cmp_si_ax 0
+  db 0x3B, 0xF0
+%endmacro
+
+%macro cmp_si_bx 0
+  db 0x3B, 0xF3
+%endmacro
+
+%macro cmp_si_di 0
+  db 0x3B, 0xF7
+%endmacro
+
+%macro div_cx 0
+  db 0xF7, 0xF1
+%endmacro
+
+%macro mov_al_bl 0
+  db 0x8A, 0xC3
+%endmacro
+
+%macro mov_ax_bp 0
+  db 0x8B, 0xC5
+%endmacro
+
+%macro mov_bl_ah 0
+  db 0x8A, 0xDC
+%endmacro
+
+%macro mov_bl_ch 0
+  db 0x8A, 0xDD
+%endmacro
+
+%macro mov_bp_ax 0
+  db 0x8B, 0xE8
+%endmacro
+
+%macro mov_bp_bx 0
+  db 0x8B, 0xEB
+%endmacro
+
+%macro mov_bx_bp 0
+  db 0x8B, 0xDD
+%endmacro
+
+%macro mov_ch_ah 0
+  db 0x8A, 0xEC
+%endmacro
+
+%macro mov_ch_bl 0
+  db 0x8A, 0xEB
+%endmacro
+
+%macro mov_cl_bl 0
+  db 0x8A, 0xCB
+%endmacro
+
+%macro mov_cx_bp 0
+  db 0x8B, 0xCD
+%endmacro
+
+%macro mov_cx_bx 0
+  db 0x8B, 0xCB
+%endmacro
+
+%macro mov_cx_si 0
+  db 0x8B, 0xCE
+%endmacro
+
+%macro mov_dh_cl 0
+  db 0x8A, 0xF1
+%endmacro
+
+%macro mov_dh_dl 0
+  db 0x8A, 0xF2
+%endmacro
+
+%macro mov_di_dx 0
+  db 0x8B, 0xFA
+%endmacro
+
+%macro mov_di_sp 0
+  db 0x8B, 0xFC
+%endmacro
+
+%macro mov_dl_bl 0
+  db 0x8A, 0xD3
+%endmacro
+
+%macro mov_dl_cl 0
+  db 0x8A, 0xD1
+%endmacro
+
+%macro mov_dl_dh 0
+  db 0x8A, 0xD6
+%endmacro
+
+%macro mov_dx_ax 0
+  db 0x8B, 0xD0
+%endmacro
+
+%macro mov_dx_sp 0
+  db 0x8B, 0xD4
+%endmacro
+
+%macro mul_ah 0
+  db 0xF6, 0xE4
+%endmacro
+
+%macro mul_bl 0
+  db 0xF6, 0xE3
+%endmacro
+
+%macro mul_bx 0
+  db 0xF7, 0xE3
+%endmacro
+
+%macro mul_ch 0
+  db 0xF6, 0xE5
+%endmacro
+
+%macro mul_cl 0
+  db 0xF6, 0xE1
+%endmacro
+
+%macro mul_cx 0
+  db 0xF7, 0xE1
+%endmacro
+
+%macro mul_di 0
+  db 0xF7, 0xE7
+%endmacro
+
+%macro mul_dx 0
+  db 0xF7, 0xE2
+%endmacro
+
+%macro or_ah_ah 0
+  db 0x0A, 0xE4
+%endmacro
+
+%macro or_ah_ch 0
+  db 0x0A, 0xE5
+%endmacro
+
+%macro or_al_ch 0
+  db 0x0A, 0xC5
+%endmacro
+
+%macro or_al_dh 0
+  db 0x0A, 0xC6
+%endmacro
+
+%macro or_bh_dh 0
+  db 0x0A, 0xFE
+%endmacro
+
+%macro or_bl_al 0
+  db 0x0A, 0xD8
+%endmacro
+
+%macro or_bl_bl 0
+  db 0x0A, 0xDB
+%endmacro
+
+%macro or_bl_dl 0
+  db 0x0A, 0xDA
+%endmacro
+
+%macro or_ch_ch 0
+  db 0x0A, 0xED
+%endmacro
+
+%macro or_cx_ax 0
+  db 0x0B, 0xC8
+%endmacro
+
+%macro or_dh_dh 0
+  db 0x0A, 0xF6
+%endmacro
+
+%macro or_di_di 0
+  db 0x0B, 0xFF
+%endmacro
+
+%macro or_dl_dl 0
+  db 0x0A, 0xD2
+%endmacro
+
+%macro or_si_si 0
+  db 0x0B, 0xF6
+%endmacro
+
+%macro push_es 0
+  db 0x65, 0x06
+%endmacro
+
+%macro sub_ah_ah 0
+  db 0x2A, 0xE4
+%endmacro
+
+%macro sub_ah_al 0
+  db 0x2A, 0xE0
+%endmacro
+
+%macro sub_al_ah 0
+  db 0x2A, 0xC4
+%endmacro
+
+%macro sub_al_al 0
+  db 0x2A, 0xC0
+%endmacro
+
+%macro sub_al_ch 0
+  db 0x2A, 0xC5
+%endmacro
+
+%macro sub_al_cl 0
+  db 0x2A, 0xC1
+%endmacro
+
+%macro sub_al_dl 0
+  db 0x2A, 0xC2
+%endmacro
+
+%macro sub_ax_cx 0
+  db 0x2B, 0xC1
+%endmacro
+
+%macro sub_bh_al 0
+  db 0x2A, 0xF8
+%endmacro
+
+%macro sub_bx_bx 0
+  db 0x2B, 0xDB
+%endmacro
+
+%macro sub_bx_cx 0
+  db 0x2B, 0xD9
+%endmacro
+
+%macro sub_ch_ch 0
+  db 0x2A, 0xED
+%endmacro
+
+%macro sub_ch_cl 0
+  db 0x2A, 0xE9
+%endmacro
+
+%macro sub_cl_al 0
+  db 0x2A, 0xC8
+%endmacro
+
+%macro sub_cl_ch 0
+  db 0x2A, 0xCD
+%endmacro
+
+%macro sub_cx_bx 0
+  db 0x2B, 0xCB
+%endmacro
+
+%macro sub_cx_cx 0
+  db 0x2B, 0xC9
+%endmacro
+
+%macro sub_dx_bx 0
+  db 0x2B, 0xD3
+%endmacro
+
+%macro sub_si_si 0
+  db 0x2B, 0xF6
+%endmacro
+
+%macro xchg_ah_al 0
+  db 0x86, 0xC4
+%endmacro
+
+%macro xchg_ch_cl 0
+  db 0x86, 0xCD
+%endmacro
+
+%macro xchg_cl_ch 0
+  db 0x86, 0xE9
+%endmacro
+
+%macro xor_ah_al 0
+  db 0x32, 0xE0
+%endmacro
+
+%macro xor_al_ch 0
+  db 0x32, 0xC5
+%endmacro
+
+%macro xor_bl_bl 0
+  db 0x32, 0xDB
+%endmacro
+
+%macro xor_cl_cl 0
+  db 0x32, 0xC9
 %endmacro
 
 %endif

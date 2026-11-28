@@ -16,7 +16,7 @@
 
 mem_init:  ; 0270B
   retf                                         ; 0270B  0xCB
-  db 0xDE, 0x00                               ; 0270C  fiadd word [bx + si]
+  fiadd word [bx + si]                         ; 0270C
   or al, [bx + di]                             ; 0270E  0x0A, 0x01
   xor al, [bx + di]                            ; 02710  0x32, 0x01
   pop dx                                       ; 02712  0x5A
@@ -24,7 +24,7 @@ mem_init:  ; 0270B
   add [bx], cx                                 ; 02715  0x01, 0x0F
   add ch, [bp + di + 2]                        ; 02717  0x02, 0x6B, 0x02
   loope loc_02720                              ; 0271A  0xE1, 0x04
-  db 0xD3, 0x05                               ; 0271C  rol word [di], cl
+  rol word [di], cl                           ; 0271C
   jp mem_entry                                 ; 0271E  0x7A, 0x06
 
 loc_02720:  ; 02720
@@ -69,8 +69,8 @@ loc_0275C:  ; 0275C
 loc_0275F:  ; 0275F
   mov ch, 0                                    ; 0275F  0xB5, 0x00
   shl cx, 1                                    ; 02761  0xD1, 0xE1
-  db 0x8B, 0xF1                               ; 02763  mov si, cx
-  db 0x2E, 0xFF, 0x94, 0x4C, 0x00             ; 02765  call word [cs:si + 0x4c]
+  mov_si_cx                                    ; 02763  mov si, cx
+  call word [cs:word si + 0x4c]               ; 02765
   dec byte [0x6f4]                             ; 0276A  0xFE, 0x0E, 0xF4, 0x06
   jne mem_exit                                 ; 0276E  0x75, 0x20
   pushf                                        ; 02770  0x9C
@@ -93,7 +93,7 @@ mem_restore_stack:  ; 02773
   pop bx                                       ; 0278F  0x5B
 
 mem_exit:  ; 02790
-  db 0x8B, 0xC3                               ; 02790  mov ax, bx
+  mov_ax_bx                                    ; 02790  mov ax, bx
   retf                                         ; 02792  0xCB
 
 rtm_call_0x80_entry:  ; 02793
@@ -103,13 +103,13 @@ rtm_call_0x80_entry:  ; 02793
   ret                                          ; 0279D  0xC3
 
 mem_fn00_maxmem:  ; 0279E
-  db 0x8B, 0xF2                               ; 0279E  mov si, dx
+  mov_si_dx                                    ; 0279E  mov si, dx
   push ds                                      ; 027A0  0x1E
   mov ds, [es:0x2e]                            ; 027A1  0x26, 0x8E, 0x1E, 0x2E, 0x00
   mov dx, [si + 2]                             ; 027A6  0x8B, 0x54, 0x02
   pop ds                                       ; 027A9  0x1F
-  db 0x2B, 0xC0                               ; 027AA  sub ax, ax
-  db 0x8B, 0xD8                               ; 027AC  mov bx, ax
+  sub_ax_ax                                    ; 027AA  sub ax, ax
+  mov_bx_ax                                    ; 027AC  mov bx, ax
   call io_const_rtm_helper                     ; 027AE  0xE8, 0xB2, 0x00
   jcxz loc_027B7                               ; 027B1  0xE3, 0x04
   mov bx, 0xffff                               ; 027B3  0xBB, 0xFF, 0xFF
@@ -122,17 +122,17 @@ loc_027B7:  ; 027B7
   mov [si], ax                                 ; 027C0  0x89, 0x04
   mov byte [si + 4], 1                         ; 027C2  0xC6, 0x44, 0x04, 0x01
   pop ds                                       ; 027C6  0x1F
-  db 0x2B, 0xDB                               ; 027C7  sub bx, bx
+  sub_bx_bx                                    ; 027C7  sub bx, bx
   ret                                          ; 027C9  0xC3
 
 mem_fn01_absmax:  ; 027CA
-  db 0x8B, 0xF2                               ; 027CA  mov si, dx
+  mov_si_dx                                    ; 027CA  mov si, dx
   push ds                                      ; 027CC  0x1E
   mov ds, [es:0x2e]                            ; 027CD  0x26, 0x8E, 0x1E, 0x2E, 0x00
   mov ax, [si]                                 ; 027D2  0x8B, 0x04
   mov dx, [si + 2]                             ; 027D4  0x8B, 0x54, 0x02
   pop ds                                       ; 027D7  0x1F
-  db 0x2B, 0xDB                               ; 027D8  sub bx, bx
+  sub_bx_bx                                    ; 027D8  sub bx, bx
   call io_const_rtm_helper                     ; 027DA  0xE8, 0x86, 0x00
   jcxz loc_027E3                               ; 027DD  0xE3, 0x04
   mov bx, 0xffff                               ; 027DF  0xBB, 0xFF, 0xFF
@@ -144,16 +144,16 @@ loc_027E3:  ; 027E3
   mov [si + 2], dx                             ; 027E9  0x89, 0x54, 0x02
   mov [si], ax                                 ; 027EC  0x89, 0x04
   pop ds                                       ; 027EE  0x1F
-  db 0x2B, 0xDB                               ; 027EF  sub bx, bx
+  sub_bx_bx                                    ; 027EF  sub bx, bx
   ret                                          ; 027F1  0xC3
 
 mem_fn02_cpmalloc:  ; 027F2
-  db 0x8B, 0xF2                               ; 027F2  mov si, dx
+  mov_si_dx                                    ; 027F2  mov si, dx
   push ds                                      ; 027F4  0x1E
   mov ds, [es:0x2e]                            ; 027F5  0x26, 0x8E, 0x1E, 0x2E, 0x00
-  db 0x2B, 0xC0                               ; 027FA  sub ax, ax
+  sub_ax_ax                                    ; 027FA  sub ax, ax
   mov bx, [si + 2]                             ; 027FC  0x8B, 0x5C, 0x02
-  db 0x8B, 0xD3                               ; 027FF  mov dx, bx
+  mov_dx_bx                                    ; 027FF  mov dx, bx
   pop ds                                       ; 02801  0x1F
   call io_const_rtm_helper                     ; 02802  0xE8, 0x5E, 0x00
   jcxz loc_0280B                               ; 02805  0xE3, 0x04
@@ -166,18 +166,18 @@ loc_0280B:  ; 0280B
   mov [si + 2], dx                             ; 02811  0x89, 0x54, 0x02
   mov [si], ax                                 ; 02814  0x89, 0x04
   pop ds                                       ; 02816  0x1F
-  db 0x2B, 0xDB                               ; 02817  sub bx, bx
+  sub_bx_bx                                    ; 02817  sub bx, bx
   ret                                          ; 02819  0xC3
 
 mem_fn03_cpmabsa:  ; 0281A
-  db 0x8B, 0xF2                               ; 0281A  mov si, dx
+  mov_si_dx                                    ; 0281A  mov si, dx
   push ds                                      ; 0281C  0x1E
   mov ds, [es:0x2e]                            ; 0281D  0x26, 0x8E, 0x1E, 0x2E, 0x00
   mov ax, [si]                                 ; 02822  0x8B, 0x04
   mov bx, [si + 2]                             ; 02824  0x8B, 0x5C, 0x02
-  db 0x8B, 0xD3                               ; 02827  mov dx, bx
+  mov_dx_bx                                    ; 02827  mov dx, bx
   pop ds                                       ; 02829  0x1F
-  db 0x33, 0xC9                               ; 0282A  xor cx, cx
+  xor_cx_cx                                   ; 0282A  xor cx, cx
 
 loc_0282C:  ; 0282C
   mov di, [0x68]                               ; 0282C  0x8B, 0x3E, 0x68, 0x00
@@ -207,18 +207,18 @@ loc_02854:  ; 02854
   mov [si + 2], dx                             ; 0285A  0x89, 0x54, 0x02
   mov [si], ax                                 ; 0285D  0x89, 0x04
   pop ds                                       ; 0285F  0x1F
-  db 0x2B, 0xDB                               ; 02860  sub bx, bx
+  sub_bx_bx                                    ; 02860  sub bx, bx
   ret                                          ; 02862  0xC3
 
 io_const_rtm_helper:  ; 02863
   push si                                      ; 02863  0x56
-  db 0x2B, 0xC9                               ; 02864  sub cx, cx
+  sub_cx_cx                                    ; 02864  sub cx, cx
   push cx                                      ; 02866  0x51
   push cx                                      ; 02867  0x51
   push dx                                      ; 02868  0x52
   push bx                                      ; 02869  0x53
   push ax                                      ; 0286A  0x50
-  db 0x8B, 0xD4                               ; 0286B  mov dx, sp
+  mov_dx_sp                                    ; 0286B  mov dx, sp
   push ds                                      ; 0286D  0x1E
   mov cx, ss                                   ; 0286E  0x8C, 0xD1
   mov ds, cx                                   ; 02870  0x8E, 0xD9
@@ -236,7 +236,7 @@ io_const_rtm_helper:  ; 02863
 mem_fn04_cpmfree:  ; 02880
   push ds                                      ; 02880  0x1E
   mov ds, [es:0x2e]                            ; 02881  0x26, 0x8E, 0x1E, 0x2E, 0x00
-  db 0x8B, 0xF2                               ; 02886  mov si, dx
+  mov_si_dx                                    ; 02886  mov si, dx
   mov al, [si + 4]                             ; 02888  0x8A, 0x44, 0x04
   mov dx, [si]                                 ; 0288B  0x8B, 0x14
   pop ds                                       ; 0288D  0x1F
@@ -251,14 +251,14 @@ loc_02899:  ; 02899
   mov si, [bx]                                 ; 02899  0x8B, 0x37
   cmp si, 0                                    ; 0289B  0x83, 0xFE, 0x00
   jne loc_028A5                                ; 0289E  0x75, 0x05
-  db 0x2B, 0xDB                               ; 028A0  sub bx, bx
-  db 0x8B, 0xCB                               ; 028A2  mov cx, bx
+  sub_bx_bx                                    ; 028A0  sub bx, bx
+  mov_cx_bx                                    ; 028A2  mov cx, bx
   ret                                          ; 028A4  0xC3
 
 loc_028A5:  ; 028A5
   test word [si + 6], 1                        ; 028A5  0xF7, 0x44, 0x06, 0x01, 0x00
   je loc_028B0                                 ; 028AA  0x74, 0x04
-  db 0x8B, 0xDE                               ; 028AC  mov bx, si
+  mov_bx_si                                    ; 028AC  mov bx, si
   jmp short loc_02899                          ; 028AE  0xEB, 0xE9
 
 loc_028B0:  ; 028B0
@@ -273,10 +273,10 @@ mem_free_memory:  ; 028BC
   push ds                                      ; 028BC  0x1E
   push ss                                      ; 028BD  0x16
   pop ds                                       ; 028BE  0x1F
-  db 0x2B, 0xC9                               ; 028BF  sub cx, cx
+  sub_cx_cx                                    ; 028BF  sub cx, cx
   push cx                                      ; 028C1  0x51
   push dx                                      ; 028C2  0x52
-  db 0x8B, 0xD4                               ; 028C3  mov dx, sp
+  mov_dx_sp                                    ; 028C3  mov dx, sp
   mov cx, 0x82                                 ; 028C5  0xB9, 0x82, 0x00
   call rtm_call_0x80_entry                     ; 028C8  0xE8, 0xC8, 0xFE
   pop dx                                       ; 028CB  0x5A
@@ -294,11 +294,11 @@ loc_028D9:  ; 028D9
   cmp si, 0                                    ; 028DB  0x83, 0xFE, 0x00
   je loc_02926                                 ; 028DE  0x74, 0x46
   mov bx, [si + 2]                             ; 028E0  0x8B, 0x5C, 0x02
-  db 0x3B, 0xD8                               ; 028E3  cmp bx, ax
+  cmp_bx_ax                                    ; 028E3  cmp bx, ax
   ja loc_0291F                                 ; 028E5  0x77, 0x38
-  db 0x8B, 0xCB                               ; 028E7  mov cx, bx
+  mov_cx_bx                                    ; 028E7  mov cx, bx
   add cx, [si + 4]                             ; 028E9  0x03, 0x4C, 0x04
-  db 0x3B, 0xC8                               ; 028EC  cmp cx, ax
+  cmp_cx_ax                                    ; 028EC  cmp cx, ax
   jb loc_0291F                                 ; 028EE  0x72, 0x2F
   test word [si + 6], 0x40                     ; 028F0  0xF7, 0x44, 0x06, 0x40, 0x00
   jne loc_028D9                                ; 028F5  0x75, 0xE2
@@ -319,16 +319,16 @@ loc_0291A:  ; 0291A
   add ax, strict word 0x16                    ; 0291A  05 16 00
 
 loc_0291D:  ; 0291D
-  db 0x8B, 0xD8                               ; 0291D  mov bx, ax
+  mov_bx_ax                                    ; 0291D  mov bx, ax
 
 loc_0291F:  ; 0291F
-  db 0x8B, 0xD3                               ; 0291F  mov dx, bx
+  mov_dx_bx                                    ; 0291F  mov dx, bx
   call mem_free_memory                               ; 02921  0xE8, 0x98, 0xFF
   jmp short mem_fn05_freeall                   ; 02924  0xEB, 0xA9
 
 loc_02926:  ; 02926
-  db 0x33, 0xDB                               ; 02926  xor bx, bx
-  db 0x8B, 0xCB                               ; 02928  mov cx, bx
+  xor_bx_bx                                    ; 02926  xor bx, bx
+  mov_cx_bx                                    ; 02928  mov cx, bx
   ret                                          ; 0292A  0xC3
 
 mem_fn06_malloc:  ; 0292B
@@ -342,7 +342,7 @@ mem_fn06_malloc:  ; 0292B
 loc_02936:  ; 02936
   push es                                      ; 02936  0x06
   mov es, [es:0x2e]                            ; 02937  0x26, 0x8E, 0x06, 0x2E, 0x00
-  db 0x8B, 0xFA                               ; 0293C  mov di, dx
+  mov_di_dx                                    ; 0293C  mov di, dx
   mov ax, [es:di + 6]                          ; 0293E  0x26, 0x8B, 0x45, 0x06
   cmp ax, strict word 0                       ; 02942  3D 00 00
   jne loc_0294E                                ; 02945  0x75, 0x07
@@ -370,7 +370,7 @@ loc_02969:  ; 02969
   mov si, [si + 2]                             ; 02969  0x8B, 0x74, 0x02
   cmp si, 0                                    ; 0296C  0x83, 0xFE, 0x00
   je loc_0298C                                 ; 0296F  0x74, 0x1B
-  db 0x3B, 0xF0                               ; 02971  cmp si, ax
+  cmp_si_ax                                    ; 02971  cmp si, ax
   jne loc_02969                                ; 02973  0x75, 0xF4
   cmp si, [0x68]                               ; 02975  0x3B, 0x36, 0x68, 0x00
   je loc_0298C                                 ; 02979  0x74, 0x11
@@ -404,9 +404,9 @@ loc_0299D:  ; 0299D
   mov [es:di + 4], cx                          ; 029AD  0x26, 0x89, 0x4D, 0x04
 
 loc_029B1:  ; 029B1
-  db 0x8B, 0xF0                               ; 029B1  mov si, ax
+  mov_si_ax                                    ; 029B1  mov si, ax
   add si, 0x16                                 ; 029B3  0x83, 0xC6, 0x16
-  db 0x2B, 0xC9                               ; 029B6  sub cx, cx
+  sub_cx_cx                                    ; 029B6  sub cx, cx
   push si                                      ; 029B8  0x56
 
 loc_029B9:  ; 029B9
@@ -419,7 +419,7 @@ loc_029B9:  ; 029B9
 loc_029C5:  ; 029C5
   pop si                                       ; 029C5  0x5E
   mov ax, [0x4c]                               ; 029C6  0xA1, 0x4C, 0x00
-  db 0x2B, 0xC1                               ; 029C9  sub ax, cx
+  sub_ax_cx                                    ; 029C9  sub ax, cx
   cmp ax, strict word 0                       ; 029CB  3D 00 00
   jne loc_029DB                                ; 029CE  0x75, 0x0B
 
@@ -445,11 +445,11 @@ loc_029EB:  ; 029EB
   push di                                      ; 029EB  0x57
   mov di, 0x65a                                ; 029EC  0xBF, 0x5A, 0x06
   mov cx, 0xb                                  ; 029EF  0xB9, 0x0B, 0x00
-  db 0x2B, 0xC0                               ; 029F2  sub ax, ax
+  sub_ax_ax                                    ; 029F2  sub ax, ax
   mov es, [cs:6]                               ; 029F4  0x2E, 0x8E, 0x06, 0x06, 0x00
   rep stosw                                    ; 029F9  0xF3, 0xAB
   pop di                                       ; 029FB  0x5F
-  db 0x2B, 0xC9                               ; 029FC  sub cx, cx
+  sub_cx_cx                                    ; 029FC  sub cx, cx
   pop es                                       ; 029FE  0x07
 
 loc_029FF:  ; 029FF
@@ -491,7 +491,7 @@ loc_02A3D:  ; 02A3D
   mov [0x76], bx                               ; 02A43  0x89, 0x1E, 0x76, 0x00
   pop dx                                       ; 02A47  0x5A
   push dx                                      ; 02A48  0x52
-  db 0x2B, 0xF6                               ; 02A49  sub si, si
+  sub_si_si                                    ; 02A49  sub si, si
   call mem_try_mau                               ; 02A4B  0xE8, 0x92, 0x00
   pop dx                                       ; 02A4E  0x5A
   pop bx                                       ; 02A4F  0x5B
@@ -520,7 +520,7 @@ loc_02A66:  ; 02A66
   push word [bx + 2]                           ; 02A75  0xFF, 0x77, 0x02
   push ss                                      ; 02A78  0x16
   pop ds                                       ; 02A79  0x1F
-  db 0x8B, 0xD4                               ; 02A7A  mov dx, sp
+  mov_dx_sp                                    ; 02A7A  mov dx, sp
   mov cx, 0x82                                 ; 02A7C  0xB9, 0x82, 0x00
   call rtm_call_0x80_entry                     ; 02A7F  0xE8, 0x11, 0xFD
   pop ax                                       ; 02A82  0x58
@@ -540,7 +540,7 @@ loc_02A66:  ; 02A66
 loc_02A97:  ; 02A97
   push es                                      ; 02A97  0x06
   mov es, [es:0x2e]                            ; 02A98  0x26, 0x8E, 0x06, 0x2E, 0x00
-  db 0x8B, 0xFA                               ; 02A9D  mov di, dx
+  mov_di_dx                                    ; 02A9D  mov di, dx
   mov ax, [0x65a]                              ; 02A9F  0xA1, 0x5A, 0x06
   mov [es:di], ax                              ; 02AA2  0x26, 0x89, 0x05
   mov [bx + 2], ax                             ; 02AA5  0x89, 0x47, 0x02
@@ -563,8 +563,8 @@ loc_02ACD:  ; 02ACD
   mov di, [0x660]                              ; 02AD3  0x8B, 0x3E, 0x60, 0x06
   mov [bx + 8], di                             ; 02AD7  0x89, 0x7F, 0x08
   pop es                                       ; 02ADA  0x07
-  db 0x2B, 0xC9                               ; 02ADB  sub cx, cx
-  db 0x8B, 0xD9                               ; 02ADD  mov bx, cx
+  sub_cx_cx                                    ; 02ADB  sub cx, cx
+  mov_bx_cx                                    ; 02ADD  mov bx, cx
   ret                                          ; 02ADF  0xC3
 
 mem_try_mau:  ; 02AE0
@@ -575,7 +575,7 @@ mem_try_mau:  ; 02AE0
   push es                                      ; 02AEA  0x06
   mov ds, [es:0x2e]                            ; 02AEB  0x26, 0x8E, 0x1E, 0x2E, 0x00
   mov es, [cs:6]                               ; 02AF0  0x2E, 0x8E, 0x06, 0x06, 0x00
-  db 0x8B, 0xF2                               ; 02AF5  mov si, dx
+  mov_si_dx                                    ; 02AF5  mov si, dx
   mov di, 0x666                                ; 02AF7  0xBF, 0x66, 0x06
   mov cx, 5                                    ; 02AFA  0xB9, 0x05, 0x00
   rep movsw                                    ; 02AFD  0xF3, 0xA5
@@ -593,13 +593,13 @@ loc_02B0E:  ; 02B0E
   mov es, [es:0x2e]                            ; 02B0F  0x26, 0x8E, 0x06, 0x2E, 0x00
   mov si, 0x666                                ; 02B14  0xBE, 0x66, 0x06
   mov ax, [si + 4]                             ; 02B17  0x8B, 0x44, 0x04
-  db 0x2B, 0xC9                               ; 02B1A  sub cx, cx
+  sub_cx_cx                                    ; 02B1A  sub cx, cx
   cmp ax, [es:di + 4]                          ; 02B1C  0x26, 0x3B, 0x45, 0x04
   pop es                                       ; 02B20  0x07
   je loc_02B32                                 ; 02B21  0x74, 0x0F
   mov cx, 3                                    ; 02B23  0xB9, 0x03, 0x00
   mov bx, [0x662]                              ; 02B26  0x8B, 0x1E, 0x62, 0x06
-  db 0x8B, 0xFE                               ; 02B2A  mov di, si
+  mov_di_si                                    ; 02B2A  mov di, si
   cmp ax, [0x65c]                              ; 02B2C  0x3B, 0x06, 0x5C, 0x06
   jbe mem_take_scl                                ; 02B30  0x76, 0x25
 
@@ -630,7 +630,7 @@ mem_take_scl:  ; 02B57
   push bx                                      ; 02B62  0x53
   push ss                                      ; 02B63  0x16
   pop ds                                       ; 02B64  0x1F
-  db 0x8B, 0xD4                               ; 02B65  mov dx, sp
+  mov_dx_sp                                    ; 02B65  mov dx, sp
   mov cx, 0x30a                                ; 02B67  0xB9, 0x0A, 0x03
   call rtm_call_0x80_entry                     ; 02B6A  0xE8, 0x26, 0xFC
   cmp cx, 0                                    ; 02B6D  0x83, 0xF9, 0x00
@@ -641,20 +641,20 @@ mem_take_scl:  ; 02B57
   pop ax                                       ; 02B78  0x58
   pop ax                                       ; 02B79  0x58
   pop ds                                       ; 02B7A  0x1F
-  db 0x8B, 0xC3                               ; 02B7B  mov ax, bx
+  mov_ax_bx                                    ; 02B7B  mov ax, bx
   mov bx, 0x76                                 ; 02B7D  0xBB, 0x76, 0x00
 
 loc_02B80:  ; 02B80
-  db 0x8B, 0xF3                               ; 02B80  mov si, bx
+  mov_si_bx                                    ; 02B80  mov si, bx
   mov bx, [si]                                 ; 02B82  0x8B, 0x1C
-  db 0x3B, 0xD8                               ; 02B84  cmp bx, ax
+  cmp_bx_ax                                    ; 02B84  cmp bx, ax
   jne loc_02B80                                ; 02B86  0x75, 0xF8
   push ax                                      ; 02B88  0x50
   mov ax, [bx]                                 ; 02B89  0x8B, 0x07
   mov [si], ax                                 ; 02B8B  0x89, 0x04
   pop bx                                       ; 02B8D  0x5B
   mov cx, 0x30c                                ; 02B8E  0xB9, 0x0C, 0x03
-  db 0x8B, 0xD3                               ; 02B91  mov dx, bx
+  mov_dx_bx                                    ; 02B91  mov dx, bx
   mov bx, 0x5a                                 ; 02B93  0xBB, 0x5A, 0x00
   call rtm_call_0x80_entry                     ; 02B96  0xE8, 0xFA, 0xFB
   pop cx                                       ; 02B99  0x59
@@ -671,7 +671,7 @@ loc_02B9B:  ; 02B9B
 mem_fn07_mfree:  ; 02BA1
   push es                                      ; 02BA1  0x06
   mov es, [es:0x2e]                            ; 02BA2  0x26, 0x8E, 0x06, 0x2E, 0x00
-  db 0x8B, 0xF2                               ; 02BA7  mov si, dx
+  mov_si_dx                                    ; 02BA7  mov si, dx
   mov bx, [es:si + 2]                          ; 02BA9  0x26, 0x8B, 0x5C, 0x02
   mov dx, [es:si]                              ; 02BAD  0x26, 0x8B, 0x14
   pop es                                       ; 02BB0  0x07
@@ -694,7 +694,7 @@ loc_02BCC:  ; 02BCC
   mov si, [si + 2]                             ; 02BCC  0x8B, 0x74, 0x02
   cmp si, 0                                    ; 02BCF  0x83, 0xFE, 0x00
   je loc_02BEE                                 ; 02BD2  0x74, 0x1A
-  db 0x3B, 0xF3                               ; 02BD4  cmp si, bx
+  cmp_si_bx                                    ; 02BD4  cmp si, bx
   jne loc_02BCC                                ; 02BD6  0x75, 0xF4
   cmp si, [0x68]                               ; 02BD8  0x3B, 0x36, 0x68, 0x00
   je loc_02BEE                                 ; 02BDC  0x74, 0x10
@@ -718,7 +718,7 @@ loc_02BFB:  ; 02BFB
   lea si, [bx + 0x16]                          ; 02BFB  0x8D, 0x77, 0x16
 
 loc_02BFE:  ; 02BFE
-  db 0x8B, 0xDE                               ; 02BFE  mov bx, si
+  mov_bx_si                                    ; 02BFE  mov bx, si
   mov si, [bx]                                 ; 02C00  0x8B, 0x37
   cmp si, 0                                    ; 02C02  0x83, 0xFE, 0x00
   je loc_02C29                                 ; 02C05  0x74, 0x22
@@ -727,7 +727,7 @@ loc_02BFE:  ; 02BFE
   ja loc_02BFE                                 ; 02C0C  0x77, 0xF0
   mov ax, [si + 2]                             ; 02C0E  0x8B, 0x44, 0x02
   add ax, [si + 4]                             ; 02C11  0x03, 0x44, 0x04
-  db 0x3B, 0xC2                               ; 02C14  cmp ax, dx
+  cmp_ax_dx                                    ; 02C14  cmp ax, dx
   jbe loc_02BFE                                ; 02C16  0x76, 0xE6
   push dx                                      ; 02C18  0x52
   push si                                      ; 02C19  0x56
@@ -738,8 +738,8 @@ loc_02BFE:  ; 02BFE
   jne loc_02BFE                                ; 02C22  0x75, 0xDA
 
 loc_02C24:  ; 02C24
-  db 0x2B, 0xDB                               ; 02C24  sub bx, bx
-  db 0x8B, 0xCB                               ; 02C26  mov cx, bx
+  sub_bx_bx                                    ; 02C24  sub bx, bx
+  mov_cx_bx                                    ; 02C26  mov cx, bx
   ret                                          ; 02C28  0xC3
 
 loc_02C29:  ; 02C29
@@ -754,12 +754,12 @@ mem_free_mau_call:  ; 02C30
   push dx                                      ; 02C33  0x52
   push word [si + 2]                           ; 02C34  0xFF, 0x74, 0x02
   push word [si + 8]                           ; 02C37  0xFF, 0x74, 0x08
-  db 0x8B, 0xD4                               ; 02C3A  mov dx, sp
+  mov_dx_sp                                    ; 02C3A  mov dx, sp
   push ss                                      ; 02C3C  0x16
   pop ds                                       ; 02C3D  0x1F
   mov cx, 0x30a                                ; 02C3E  0xB9, 0x0A, 0x03
   call rtm_call_0x80_entry                     ; 02C41  0xE8, 0x4F, 0xFB
-  db 0x8B, 0xEB                               ; 02C44  mov bp, bx
+  mov_bp_bx                                    ; 02C44  mov bp, bx
   mov ds, [cs:6]                               ; 02C46  0x2E, 0x8E, 0x1E, 0x06, 0x00
   pop ax                                       ; 02C4B  0x58
   pop ax                                       ; 02C4C  0x58
@@ -780,7 +780,7 @@ loc_02C63:  ; 02C63
   mov [bx], ax                                 ; 02C65  0x89, 0x07
   push word [si + 8]                           ; 02C67  0xFF, 0x74, 0x08
   push bp                                      ; 02C6A  0x55
-  db 0x8B, 0xDE                               ; 02C6B  mov bx, si
+  mov_bx_si                                    ; 02C6B  mov bx, si
   call mem_freemd                               ; 02C6D  0xE8, 0xD8, 0x04
   pop bp                                       ; 02C70  0x5D
   pop dx                                       ; 02C71  0x5A
@@ -789,9 +789,9 @@ loc_02C63:  ; 02C63
   mov di, 0x76                                 ; 02C77  0xBF, 0x76, 0x00
 
 loc_02C7A:  ; 02C7A
-  db 0x8B, 0xF7                               ; 02C7A  mov si, di
+  mov_si_di                                    ; 02C7A  mov si, di
   mov di, [si]                                 ; 02C7C  0x8B, 0x3C
-  db 0x3B, 0xFA                               ; 02C7E  cmp di, dx
+  cmp_di_dx                                    ; 02C7E  cmp di, dx
   jne loc_02C7A                                ; 02C80  0x75, 0xF8
   mov ax, [di]                                 ; 02C82  0x8B, 0x05
   mov [si], ax                                 ; 02C84  0x89, 0x04
@@ -808,10 +808,10 @@ mem_fn08_share:  ; 02C93
   jmp near loc_02D31                           ; 02C9A  0xE9, 0x94, 0x00
 
 loc_02C9D:  ; 02C9D
-  db 0x8B, 0xEB                               ; 02C9D  mov bp, bx
+  mov_bp_bx                                    ; 02C9D  mov bp, bx
   push ds                                      ; 02C9F  0x1E
   mov ds, [es:0x2e]                            ; 02CA0  0x26, 0x8E, 0x1E, 0x2E, 0x00
-  db 0x8B, 0xFA                               ; 02CA5  mov di, dx
+  mov_di_dx                                    ; 02CA5  mov di, dx
   mov bx, [di]                                 ; 02CA7  0x8B, 0x1D
   mov si, [di + 2]                             ; 02CA9  0x8B, 0x75, 0x02
   mov dx, [di + 4]                             ; 02CAC  0x8B, 0x55, 0x04
@@ -826,7 +826,7 @@ loc_02CB9:  ; 02CB9
   mov si, [0x68]                               ; 02CBE  0x8B, 0x36, 0x68, 0x00
 
 loc_02CC2:  ; 02CC2
-  db 0x3B, 0xF3                               ; 02CC2  cmp si, bx
+  cmp_si_bx                                    ; 02CC2  cmp si, bx
   je loc_02D35                                 ; 02CC4  0x74, 0x6F
   lea di, [bx + 0x16]                          ; 02CC6  0x8D, 0x7F, 0x16
 
@@ -836,7 +836,7 @@ loc_02CC9:  ; 02CC9
   je loc_02D2E                                 ; 02CCE  0x74, 0x5E
   cmp [di + 2], dx                             ; 02CD0  0x39, 0x55, 0x02
   jne loc_02CC9                                ; 02CD3  0x75, 0xF4
-  db 0x8B, 0xDD                               ; 02CD5  mov bx, bp
+  mov_bx_bp                                    ; 02CD5  mov bx, bp
   mov [bx + 2], dx                             ; 02CD7  0x89, 0x57, 0x02
   mov ax, [di + 4]                             ; 02CDA  0x8B, 0x45, 0x04
   mov [bx + 4], ax                             ; 02CDD  0x89, 0x47, 0x04
@@ -844,11 +844,11 @@ loc_02CC9:  ; 02CC9
   mov [bx + 6], ax                             ; 02CE3  0x89, 0x47, 0x06
   mov ax, [di + 8]                             ; 02CE6  0x8B, 0x45, 0x08
   mov [bx + 8], ax                             ; 02CE9  0x89, 0x47, 0x08
-  db 0x8B, 0xFB                               ; 02CEC  mov di, bx
-  db 0x8B, 0xD8                               ; 02CEE  mov bx, ax
+  mov_di_bx                                    ; 02CEC  mov di, bx
+  mov_bx_ax                                    ; 02CEE  mov bx, ax
   push ds                                      ; 02CF0  0x1E
   mov ds, [bx + 2]                             ; 02CF1  0x8E, 0x5F, 0x02
-  db 0x2B, 0xDB                               ; 02CF4  sub bx, bx
+  sub_bx_bx                                    ; 02CF4  sub bx, bx
   mov cl, [0]                                  ; 02CF6  0x8A, 0x0E, 0x00, 0x00
 
 loc_02CFA:  ; 02CFA
@@ -869,7 +869,7 @@ loc_02D12:  ; 02D12
   je loc_02D22                                 ; 02D17  0x74, 0x09
   cmp dx, [si + 8]                             ; 02D19  0x3B, 0x54, 0x08
   je loc_02D22                                 ; 02D1C  0x74, 0x04
-  db 0x8B, 0xDE                               ; 02D1E  mov bx, si
+  mov_bx_si                                    ; 02D1E  mov bx, si
   jmp short loc_02D12                          ; 02D20  0xEB, 0xF0
 
 loc_02D22:  ; 02D22
@@ -879,7 +879,7 @@ loc_02D22:  ; 02D22
 
 loc_02D28:  ; 02D28
   pop ds                                       ; 02D28  0x1F
-  db 0x8B, 0xDD                               ; 02D29  mov bx, bp
+  mov_bx_bp                                    ; 02D29  mov bx, bp
   call mem_freemd                               ; 02D2B  0xE8, 0x1A, 0x04
 
 loc_02D2E:  ; 02D2E
@@ -890,30 +890,30 @@ loc_02D31:  ; 02D31
   ret                                          ; 02D34  0xC3
 
 loc_02D35:  ; 02D35
-  db 0x2B, 0xDB                               ; 02D35  sub bx, bx
-  db 0x8B, 0xCB                               ; 02D37  mov cx, bx
+  sub_bx_bx                                    ; 02D35  sub bx, bx
+  mov_cx_bx                                    ; 02D37  mov cx, bx
   ret                                          ; 02D39  0xC3
 
 mem_fn09_maualloc:  ; 02D3A
   push es                                      ; 02D3A  0x06
   mov es, [es:0x2e]                            ; 02D3B  0x26, 0x8E, 0x06, 0x2E, 0x00
-  db 0x8B, 0xF2                               ; 02D40  mov si, dx
+  mov_si_dx                                    ; 02D40  mov si, dx
   mov cx, [es:si]                              ; 02D42  0x26, 0x8B, 0x0C
   cmp cx, 0                                    ; 02D45  0x83, 0xF9, 0x00
   je loc_02D58                                 ; 02D48  0x74, 0x0E
   mov ax, [bx + 2]                             ; 02D4A  0x8B, 0x47, 0x02
-  db 0x3B, 0xC8                               ; 02D4D  cmp cx, ax
+  cmp_cx_ax                                    ; 02D4D  cmp cx, ax
   jb loc_02D97                                 ; 02D4F  0x72, 0x46
   add ax, [bx + 4]                             ; 02D51  0x03, 0x47, 0x04
-  db 0x3B, 0xC8                               ; 02D54  cmp cx, ax
+  cmp_cx_ax                                    ; 02D54  cmp cx, ax
   jae loc_02D97                                ; 02D56  0x73, 0x3F
 
 loc_02D58:  ; 02D58
   mov ds, [bx + 2]                             ; 02D58  0x8E, 0x5F, 0x02
 
 loc_02D5B:  ; 02D5B
-  db 0x2B, 0xDB                               ; 02D5B  sub bx, bx
-  db 0x8A, 0xD3                               ; 02D5D  mov dl, bl
+  sub_bx_bx                                    ; 02D5B  sub bx, bx
+  mov_dl_bl                                    ; 02D5D  mov dl, bl
 
 loc_02D5F:  ; 02D5F
   inc dl                                       ; 02D5F  0xFE, 0xC2
@@ -928,10 +928,10 @@ loc_02D5F:  ; 02D5F
   cmp cx, 0                                    ; 02D78  0x83, 0xF9, 0x00
   je loc_02D9F                                 ; 02D7B  0x74, 0x22
   mov ax, [bx]                                 ; 02D7D  0x8B, 0x07
-  db 0x3B, 0xC8                               ; 02D7F  cmp cx, ax
+  cmp_cx_ax                                    ; 02D7F  cmp cx, ax
   jb loc_02D5F                                 ; 02D81  0x72, 0xDC
   add ax, [bx + 2]                             ; 02D83  0x03, 0x47, 0x02
-  db 0x3B, 0xC8                               ; 02D86  cmp cx, ax
+  cmp_cx_ax                                    ; 02D86  cmp cx, ax
   jae loc_02D5F                                ; 02D88  0x73, 0xD5
   cmp cx, [bx]                                 ; 02D8A  0x3B, 0x0F
   je loc_02D9F                                 ; 02D8C  0x74, 0x11
@@ -949,10 +949,10 @@ loc_02D97:  ; 02D97
 loc_02D9F:  ; 02D9F
   mov cx, [es:si + 2]                          ; 02D9F  0x26, 0x8B, 0x4C, 0x02
   mov ax, [bx + 2]                             ; 02DA3  0x8B, 0x47, 0x02
-  db 0x3B, 0xC8                               ; 02DA6  cmp cx, ax
+  cmp_cx_ax                                    ; 02DA6  cmp cx, ax
   ja loc_02D5F                                 ; 02DA8  0x77, 0xB5
   mov cx, [es:si + 4]                          ; 02DAA  0x26, 0x8B, 0x4C, 0x04
-  db 0x3B, 0xC8                               ; 02DAE  cmp cx, ax
+  cmp_cx_ax                                    ; 02DAE  cmp cx, ax
   jae loc_02DC8                                ; 02DB0  0x73, 0x16
   cmp byte [bx + 4], 0                         ; 02DB2  0x80, 0x7F, 0x04, 0x00
   je loc_02DC3                                 ; 02DB6  0x74, 0x0B
@@ -974,8 +974,8 @@ loc_02DC8:  ; 02DC8
   mov [es:si], ax                              ; 02DD5  0x26, 0x89, 0x04
   inc byte [bx + 4]                            ; 02DD8  0xFE, 0x47, 0x04
   call mem_mau_collapse                               ; 02DDB  0xE8, 0x94, 0x00
-  db 0x2B, 0xDB                               ; 02DDE  sub bx, bx
-  db 0x8B, 0xCB                               ; 02DE0  mov cx, bx
+  sub_bx_bx                                    ; 02DDE  sub bx, bx
+  mov_cx_bx                                    ; 02DE0  mov cx, bx
   jmp short loc_02DE4                          ; 02DE2  0xEB, 0x00
 
 loc_02DE4:  ; 02DE4
@@ -986,11 +986,11 @@ loc_02DE4:  ; 02DE4
 mem_fn10_maufree:  ; 02DEB
   push es                                      ; 02DEB  0x06
   mov es, [es:0x2e]                            ; 02DEC  0x26, 0x8E, 0x06, 0x2E, 0x00
-  db 0x8B, 0xF2                               ; 02DF1  mov si, dx
+  mov_si_dx                                    ; 02DF1  mov si, dx
   mov bx, [es:si]                              ; 02DF3  0x26, 0x8B, 0x1C
   mov ds, [bx + 2]                             ; 02DF6  0x8E, 0x5F, 0x02
-  db 0x2B, 0xDB                               ; 02DF9  sub bx, bx
-  db 0x8B, 0xCB                               ; 02DFB  mov cx, bx
+  sub_bx_bx                                    ; 02DF9  sub bx, bx
+  mov_cx_bx                                    ; 02DFB  mov cx, bx
   mov dx, [es:si + 2]                          ; 02DFD  0x26, 0x8B, 0x54, 0x02
 
 loc_02E01:  ; 02E01
@@ -1010,12 +1010,12 @@ loc_02E1D:  ; 02E1D
   mov cx, [es:si + 4]                          ; 02E1D  0x26, 0x8B, 0x4C, 0x04
   mov ax, [bx]                                 ; 02E21  0x8B, 0x07
   add ax, [bx + 2]                             ; 02E23  0x03, 0x47, 0x02
-  db 0x3B, 0xC1                               ; 02E26  cmp ax, cx
+  cmp_ax_cx                                    ; 02E26  cmp ax, cx
   jb loc_02E3D                                 ; 02E28  0x72, 0x13
-  db 0x2B, 0xCA                               ; 02E2A  sub cx, dx
+  sub_cx_dx                                    ; 02E2A  sub cx, dx
   call mem_mau_split                               ; 02E2C  0xE8, 0x1B, 0x00
-  db 0x2B, 0xC9                               ; 02E2F  sub cx, cx
-  db 0x8B, 0xD9                               ; 02E31  mov bx, cx
+  sub_cx_cx                                    ; 02E2F  sub cx, cx
+  mov_bx_cx                                    ; 02E31  mov bx, cx
   jmp short loc_02E38                          ; 02E33  0xEB, 0x03
 
 loc_02E35:  ; 02E35
@@ -1045,9 +1045,9 @@ mem_mau_split:  ; 02E4A
   jne loc_02E6E                                ; 02E57  0x75, 0x15
   lea di, [bx + 5]                             ; 02E59  0x8D, 0x7F, 0x05
   mov dx, [bx + 2]                             ; 02E5C  0x8B, 0x57, 0x02
-  db 0x2B, 0xD1                               ; 02E5F  sub dx, cx
+  sub_dx_cx                                    ; 02E5F  sub dx, cx
   mov [di + 2], dx                             ; 02E61  0x89, 0x55, 0x02
-  db 0x8B, 0xD1                               ; 02E64  mov dx, cx
+  mov_dx_cx                                    ; 02E64  mov dx, cx
   add dx, [bx]                                 ; 02E66  0x03, 0x17
   mov [di], dx                                 ; 02E68  0x89, 0x15
   mov byte [di + 4], 0                         ; 02E6A  0xC6, 0x45, 0x04, 0x00
@@ -1057,8 +1057,8 @@ loc_02E6E:  ; 02E6E
   ret                                          ; 02E71  0xC3
 
 mem_mau_collapse:  ; 02E72
-  db 0x2B, 0xDB                               ; 02E72  sub bx, bx
-  db 0x8B, 0xCB                               ; 02E74  mov cx, bx
+  sub_bx_bx                                    ; 02E72  sub bx, bx
+  mov_cx_bx                                    ; 02E74  mov cx, bx
 
 loc_02E76:  ; 02E76
   inc cx                                       ; 02E76  0x41
@@ -1087,7 +1087,7 @@ loc_02EA3:  ; 02EA3
   add [bx + 2], ax                             ; 02EAC  0x01, 0x47, 0x02
   push bx                                      ; 02EAF  0x53
   push cx                                      ; 02EB0  0x51
-  db 0x8B, 0xDF                               ; 02EB1  mov bx, di
+  mov_bx_di                                    ; 02EB1  mov bx, di
   call mem_mau_release                               ; 02EB3  0xE8, 0x54, 0x00
   pop cx                                       ; 02EB6  0x59
   pop bx                                       ; 02EB7  0x5B
@@ -1104,7 +1104,7 @@ loc_02EBF:  ; 02EBF
   je loc_02EDA                                 ; 02ECC  0x74, 0x0C
   push bx                                      ; 02ECE  0x53
   push cx                                      ; 02ECF  0x51
-  db 0x8B, 0xFB                               ; 02ED0  mov di, bx
+  mov_di_bx                                    ; 02ED0  mov di, bx
   call mem_mau_insert                               ; 02ED2  0xE8, 0x5F, 0x00
   pop cx                                       ; 02ED5  0x59
   pop bx                                       ; 02ED6  0x5B
@@ -1119,8 +1119,8 @@ loc_02EDA:  ; 02EDA
 
 loc_02EE6:  ; 02EE6
   mov bp, 0xffff                               ; 02EE6  0xBD, 0xFF, 0xFF
-  db 0x33, 0xC9                               ; 02EE9  xor cx, cx
-  db 0x33, 0xDB                               ; 02EEB  xor bx, bx
+  xor_cx_cx                                   ; 02EE9  xor cx, cx
+  xor_bx_bx                                    ; 02EEB  xor bx, bx
 
 loc_02EED:  ; 02EED
   inc cx                                       ; 02EED  0x41
@@ -1134,8 +1134,8 @@ loc_02EED:  ; 02EED
   mov bp, 0                                    ; 02F02  0xBD, 0x00, 0x00
 
 loc_02F05:  ; 02F05
-  db 0x8B, 0xDD                               ; 02F05  mov bx, bp
-  db 0x33, 0xC9                               ; 02F07  xor cx, cx
+  mov_bx_bp                                    ; 02F05  mov bx, bp
+  xor_cx_cx                                   ; 02F07  xor cx, cx
   ret                                          ; 02F09  0xC3
 
 mem_mau_release:  ; 02F0A
@@ -1143,13 +1143,13 @@ mem_mau_release:  ; 02F0A
   mov ax, ds                                   ; 02F0B  0x8C, 0xD8
   mov es, ax                                   ; 02F0D  0x8E, 0xC0
   mov ax, 5                                    ; 02F0F  0xB8, 0x05, 0x00
-  db 0xF6, 0x26, 0x00, 0x00                   ; 02F12  mul byte [0]
+  mul byte [0]                                ; 02F12
   push ax                                      ; 02F16  0x50
-  db 0x8B, 0xC8                               ; 02F17  mov cx, ax
-  db 0x2B, 0xCB                               ; 02F19  sub cx, bx
-  db 0x8B, 0xFB                               ; 02F1B  mov di, bx
+  mov_cx_ax                                    ; 02F17  mov cx, ax
+  sub_cx_bx                                    ; 02F19  sub cx, bx
+  mov_di_bx                                    ; 02F1B  mov di, bx
   add bx, 5                                    ; 02F1D  0x83, 0xC3, 0x05
-  db 0x8B, 0xF3                               ; 02F20  mov si, bx
+  mov_si_bx                                    ; 02F20  mov si, bx
   rep movsb                                    ; 02F22  0xF3, 0xA4
   pop bx                                       ; 02F24  0x5B
   mov word [bx + 2], 0                         ; 02F25  0xC7, 0x47, 0x02, 0x00, 0x00
@@ -1160,13 +1160,13 @@ mem_mau_release:  ; 02F0A
 
 mem_mau_insert:  ; 02F34
   mov ax, 5                                    ; 02F34  0xB8, 0x05, 0x00
-  db 0xF6, 0x26, 0x00, 0x00                   ; 02F37  mul byte [0]
-  db 0x8B, 0xF0                               ; 02F3B  mov si, ax
+  mul byte [0]                                ; 02F37
+  mov_si_ax                                    ; 02F3B  mov si, ax
   mov cx, 0xffff                               ; 02F3D  0xB9, 0xFF, 0xFF
   cmp word [si], 0                             ; 02F40  0x83, 0x3C, 0x00
   jne loc_02F5F                                ; 02F43  0x75, 0x1A
-  db 0x8B, 0xCE                               ; 02F45  mov cx, si
-  db 0x2B, 0xCB                               ; 02F47  sub cx, bx
+  mov_cx_si                                    ; 02F45  mov cx, si
+  sub_cx_bx                                    ; 02F47  sub cx, bx
   dec si                                       ; 02F49  0x4E
   lea di, [si + 5]                             ; 02F4A  0x8D, 0x7C, 0x05
   push es                                      ; 02F4D  0x06
@@ -1176,7 +1176,7 @@ mem_mau_insert:  ; 02F34
   rep movsb                                    ; 02F51  0xF3, 0xA4
   cld                                          ; 02F53  0xFC
   pop es                                       ; 02F54  0x07
-  db 0x2B, 0xC9                               ; 02F55  sub cx, cx
+  sub_cx_cx                                    ; 02F55  sub cx, cx
   mov [bx], cx                                 ; 02F57  0x89, 0x0F
   mov [bx + 2], cx                             ; 02F59  0x89, 0x4F, 0x02
   mov [bx + 4], cl                             ; 02F5C  0x88, 0x4F, 0x04
@@ -1185,9 +1185,9 @@ loc_02F5F:  ; 02F5F
   ret                                          ; 02F5F  0xC3
 
 mem_fn11_mlalloc:  ; 02F60
-  db 0x8B, 0xF2                               ; 02F60  mov si, dx
-  db 0x2B, 0xC0                               ; 02F62  sub ax, ax
-  db 0x8B, 0xC8                               ; 02F64  mov cx, ax
+  mov_si_dx                                    ; 02F60  mov si, dx
+  sub_ax_ax                                    ; 02F62  sub ax, ax
+  mov_cx_ax                                    ; 02F64  mov cx, ax
   mov dx, 0xffff                               ; 02F66  0xBA, 0xFF, 0xFF
   push ax                                      ; 02F69  0x50
   push cx                                      ; 02F6A  0x51
@@ -1202,13 +1202,13 @@ loc_02F6B:  ; 02F6B
   pop si                                       ; 02F76  0x5E
   pop dx                                       ; 02F77  0x5A
   pop bx                                       ; 02F78  0x5B
-  db 0x3B, 0xCA                               ; 02F79  cmp cx, dx
+  cmp_cx_dx                                    ; 02F79  cmp cx, dx
   jae loc_02F8C                                ; 02F7B  0x73, 0x0F
-  db 0x8B, 0xD1                               ; 02F7D  mov dx, cx
+  mov_dx_cx                                    ; 02F7D  mov dx, cx
   pop cx                                       ; 02F7F  0x59
-  db 0x8B, 0xC8                               ; 02F80  mov cx, ax
+  mov_cx_ax                                    ; 02F80  mov cx, ax
   pop ax                                       ; 02F82  0x58
-  db 0x8B, 0xC3                               ; 02F83  mov ax, bx
+  mov_ax_bx                                    ; 02F83  mov ax, bx
   push ax                                      ; 02F85  0x50
   push cx                                      ; 02F86  0x51
   cmp dx, 0                                    ; 02F87  0x83, 0xFA, 0x00
@@ -1223,8 +1223,8 @@ loc_02F90:  ; 02F90
   pop ax                                       ; 02F91  0x58
   cmp ax, strict word 0                       ; 02F92  3D 00 00
   je loc_02F9E                                 ; 02F95  0x74, 0x07
-  db 0x8B, 0xD8                               ; 02F97  mov bx, ax
-  db 0x8B, 0xC1                               ; 02F99  mov ax, cx
+  mov_bx_ax                                    ; 02F97  mov bx, ax
+  mov_ax_cx                                    ; 02F99  mov ax, cx
   jmp near loc_03051                           ; 02F9B  0xE9, 0xB3, 0x00
 
 loc_02F9E:  ; 02F9E
@@ -1233,10 +1233,10 @@ loc_02F9E:  ; 02F9E
   ret                                          ; 02FA4  0xC3
 
 mem_mla_value:  ; 02FA5
-  db 0x33, 0xED                               ; 02FA5  xor bp, bp
+  xor_bp_bp                                    ; 02FA5  xor bp, bp
   push es                                      ; 02FA7  0x06
   mov es, [es:0x2e]                            ; 02FA8  0x26, 0x8E, 0x06, 0x2E, 0x00
-  db 0x2B, 0xC0                               ; 02FAD  sub ax, ax
+  sub_ax_ax                                    ; 02FAD  sub ax, ax
   mov dx, 0                                    ; 02FAF  0xBA, 0x00, 0x00
   mov di, [bx]                                 ; 02FB2  0x8B, 0x3F
   cmp di, 0                                    ; 02FB4  0x83, 0xFF, 0x00
@@ -1253,14 +1253,14 @@ mem_mla_value:  ; 02FA5
   jae loc_03016                                ; 02FD3  0x73, 0x41
   mov bp, 1                                    ; 02FD5  0xBD, 0x01, 0x00
   inc ax                                       ; 02FD8  0x40
-  db 0x8B, 0xD1                               ; 02FD9  mov dx, cx
+  mov_dx_cx                                    ; 02FD9  mov dx, cx
   sub dx, [es:si]                              ; 02FDB  0x26, 0x2B, 0x14
-  db 0x8B, 0xDF                               ; 02FDE  mov bx, di
+  mov_bx_di                                    ; 02FDE  mov bx, di
   mov di, [bx]                                 ; 02FE0  0x8B, 0x3F
 
 loc_02FE2:  ; 02FE2
   mov cx, [es:si + 4]                          ; 02FE2  0x26, 0x8B, 0x4C, 0x04
-  db 0x3B, 0xCA                               ; 02FE6  cmp cx, dx
+  cmp_cx_dx                                    ; 02FE6  cmp cx, dx
   jb loc_0301D                                 ; 02FE8  0x72, 0x33
 
 loc_02FEA:  ; 02FEA
@@ -1277,7 +1277,7 @@ loc_02FEA:  ; 02FEA
 loc_02FFE:  ; 02FFE
   inc ax                                       ; 02FFE  0x40
   add dx, [di + 4]                             ; 02FFF  0x03, 0x55, 0x04
-  db 0x8B, 0xDF                               ; 03002  mov bx, di
+  mov_bx_di                                    ; 03002  mov bx, di
   mov di, [bx]                                 ; 03004  0x8B, 0x3F
   cmp di, 0                                    ; 03006  0x83, 0xFF, 0x00
   jne loc_02FE2                                ; 03009  0x75, 0xD7
@@ -1285,12 +1285,12 @@ loc_02FFE:  ; 02FFE
 loc_0300B:  ; 0300B
   mov cx, [es:si + 2]                          ; 0300B  0x26, 0x8B, 0x4C, 0x02
   add cx, 0xa                                  ; 0300F  0x83, 0xC1, 0x0A
-  db 0x3B, 0xCA                               ; 03012  cmp cx, dx
+  cmp_cx_dx                                    ; 03012  cmp cx, dx
   jbe loc_03029                                ; 03014  0x76, 0x13
 
 loc_03016:  ; 03016
   mov cx, 0xffff                               ; 03016  0xB9, 0xFF, 0xFF
-  db 0x2B, 0xC0                               ; 03019  sub ax, ax
+  sub_ax_ax                                    ; 03019  sub ax, ax
   pop es                                       ; 0301B  0x07
   ret                                          ; 0301C  0xC3
 
@@ -1298,7 +1298,7 @@ loc_0301D:  ; 0301D
   cmp bp, 1                                    ; 0301D  0x83, 0xFD, 0x01
   je loc_03029                                 ; 03020  0x74, 0x07
   add cx, 0xa                                  ; 03022  0x83, 0xC1, 0x0A
-  db 0x3B, 0xCA                               ; 03025  cmp cx, dx
+  cmp_cx_dx                                    ; 03025  cmp cx, dx
   ja loc_02FEA                                 ; 03027  0x77, 0xC1
 
 loc_03029:  ; 03029
@@ -1313,16 +1313,16 @@ loc_03029:  ; 03029
   mov cx, 0xffff                               ; 0303B  0xB9, 0xFF, 0xFF
 
 loc_0303E:  ; 0303E
-  db 0x3B, 0xCA                               ; 0303E  cmp cx, dx
+  cmp_cx_dx                                    ; 0303E  cmp cx, dx
   jbe loc_03044                                ; 03040  0x76, 0x02
   xchg dx, cx                                 ; 03042  87 D1
 
 loc_03044:  ; 03044
-  db 0x2B, 0xD1                               ; 03044  sub dx, cx
+  sub_dx_cx                                    ; 03044  sub dx, cx
   mov cl, 4                                    ; 03046  0xB1, 0x04
   shr dx, cl                                   ; 03048  0xD3, 0xEA
-  db 0x03, 0xD0                               ; 0304A  add dx, ax
-  db 0x8B, 0xCA                               ; 0304C  mov cx, dx
+  add_dx_ax                                    ; 0304A  add dx, ax
+  mov_cx_dx                                    ; 0304C  mov cx, dx
   pop ax                                       ; 0304E  0x58
   pop es                                       ; 0304F  0x07
   ret                                          ; 03050  0xC3
@@ -1333,8 +1333,8 @@ loc_03051:  ; 03051
   mov si, [bx]                                 ; 03056  0x8B, 0x37
   mov cx, [si]                                 ; 03058  0x8B, 0x0C
   mov [bx], cx                                 ; 0305A  0x89, 0x0F
-  db 0x8B, 0xDE                               ; 0305C  mov bx, si
-  db 0x2B, 0xC9                               ; 0305E  sub cx, cx
+  mov_bx_si                                    ; 0305C  mov bx, si
+  sub_cx_cx                                    ; 0305E  sub cx, cx
   mov [bx + 6], cx                             ; 03060  0x89, 0x4F, 0x06
   mov [bx], cx                                 ; 03063  0x89, 0x0F
   jmp near loc_030A8                           ; 03065  0xE9, 0x40, 0x00
@@ -1343,11 +1343,11 @@ loc_03068:  ; 03068
   push ax                                      ; 03068  0x50
   push bx                                      ; 03069  0x53
   call mem_getmd                               ; 0306A  0xE8, 0xB8, 0x00
-  db 0x8B, 0xFB                               ; 0306D  mov di, bx
+  mov_di_bx                                    ; 0306D  mov di, bx
   pop bx                                       ; 0306F  0x5B
   pop ax                                       ; 03070  0x58
   jcxz loc_03076                               ; 03071  0xE3, 0x03
-  db 0x2B, 0xDB                               ; 03073  sub bx, bx
+  sub_bx_bx                                    ; 03073  sub bx, bx
   ret                                          ; 03075  0xC3
 
 loc_03076:  ; 03076
@@ -1373,8 +1373,8 @@ loc_0309A:  ; 0309A
   mov word [si], 0                             ; 0309D  0xC7, 0x04, 0x00, 0x00
   pop si                                       ; 030A1  0x5E
   mov [si], bx                                 ; 030A2  0x89, 0x1C
-  db 0x8B, 0xDF                               ; 030A4  mov bx, di
-  db 0x2B, 0xC9                               ; 030A6  sub cx, cx
+  mov_bx_di                                    ; 030A4  mov bx, di
+  sub_cx_cx                                    ; 030A6  sub cx, cx
 
 loc_030A8:  ; 030A8
   mov dx, [bx + 2]                             ; 030A8  0x8B, 0x57, 0x02
@@ -1382,8 +1382,8 @@ loc_030A8:  ; 030A8
   push cx                                      ; 030AE  0x51
   push es                                      ; 030AF  0x06
   mov es, dx                                   ; 030B0  0x8E, 0xC2
-  db 0x2B, 0xC0                               ; 030B2  sub ax, ax
-  db 0x8B, 0xF8                               ; 030B4  mov di, ax
+  sub_ax_ax                                    ; 030B2  sub ax, ax
+  mov_di_ax                                    ; 030B4  mov di, ax
   mov cx, 0x50                                 ; 030B6  0xB9, 0x50, 0x00
   rep stosw                                    ; 030B9  0xF3, 0xAB
   pop es                                       ; 030BB  0x07
@@ -1397,14 +1397,14 @@ loc_030A8:  ; 030A8
   mov [si + 2], cx                             ; 030CF  0x89, 0x4C, 0x02
   mov byte [si + 4], 0                         ; 030D2  0xC6, 0x44, 0x04, 0x00
   mov ds, [cs:6]                               ; 030D6  0x2E, 0x8E, 0x1E, 0x06, 0x00
-  db 0x2B, 0xC9                               ; 030DB  sub cx, cx
+  sub_cx_cx                                    ; 030DB  sub cx, cx
   ret                                          ; 030DD  0xC3
 
 mem_fn12_mlfree:  ; 030DE
-  db 0x8B, 0xF2                               ; 030DE  mov si, dx
+  mov_si_dx                                    ; 030DE  mov si, dx
   cmp word [si + 6], 0                         ; 030E0  0x83, 0x7C, 0x06, 0x00
   je loc_03103                                 ; 030E4  0x74, 0x1D
-  db 0x8B, 0xFE                               ; 030E6  mov di, si
+  mov_di_si                                    ; 030E6  mov di, si
   mov si, [si + 6]                             ; 030E8  0x8B, 0x74, 0x06
 
 loc_030EB:  ; 030EB
@@ -1420,7 +1420,7 @@ loc_030EB:  ; 030EB
   jmp short loc_030EB                          ; 030FA  0xEB, 0xEF
 
 loc_030FC:  ; 030FC
-  db 0x8B, 0xDF                               ; 030FC  mov bx, di
+  mov_bx_di                                    ; 030FC  mov bx, di
   call mem_freemd                               ; 030FE  0xE8, 0x47, 0x00
   jmp short loc_03106                          ; 03101  0xEB, 0x03
 
@@ -1428,8 +1428,8 @@ loc_03103:  ; 03103
   call mem_ml_insert                               ; 03103  0xE8, 0x05, 0x00
 
 loc_03106:  ; 03106
-  db 0x2B, 0xDB                               ; 03106  sub bx, bx
-  db 0x8B, 0xCB                               ; 03108  mov cx, bx
+  sub_bx_bx                                    ; 03106  sub bx, bx
+  mov_cx_bx                                    ; 03108  mov cx, bx
   ret                                          ; 0310A  0xC3
 
 mem_ml_insert:  ; 0310B
@@ -1439,7 +1439,7 @@ mem_ml_insert:  ; 0310B
   mov ax, [di + 2]                             ; 03112  0x8B, 0x45, 0x02
   cmp ax, [si + 2]                             ; 03115  0x3B, 0x44, 0x02
   ja loc_0311E                                 ; 03118  0x77, 0x04
-  db 0x8B, 0xDF                               ; 0311A  mov bx, di
+  mov_bx_di                                    ; 0311A  mov bx, di
   jmp short mem_ml_insert                          ; 0311C  0xEB, 0xED
 
 loc_0311E:  ; 0311E
@@ -1455,7 +1455,7 @@ mem_getmd:  ; 03125
   mov bx, [0x58]                               ; 0312A  0x8B, 0x1E, 0x58, 0x00
   cmp bx, 0                                    ; 0312E  0x83, 0xFB, 0x00
   je loc_03146                                 ; 03131  0x74, 0x13
-  db 0x33, 0xC9                               ; 03133  xor cx, cx
+  xor_cx_cx                                   ; 03133  xor cx, cx
   mov si, [bx]                                 ; 03135  0x8B, 0x37
   mov [0x58], si                               ; 03137  0x89, 0x36, 0x58, 0x00
   mov [bx], cx                                 ; 0313B  0x89, 0x0F

@@ -3,10 +3,10 @@
 ; Byg:    nasm -f bin -o clock.rsp clock_rsp.asm
 ; Layout: [128 B .CMD-header][Kodegruppe][Datagruppe][nulpadding til multiplum af 128]
 ; RASM-86-linket færdigbillede: faste segmentvaerdier, INGEN fixup-records.
-; Kilder: kode=raw, data=raw
+; Kilder: kode=annoteret (uaendret), data=annoteret (uaendret)
 
 %include "rspsrc/clock_cmdhdr.asm"
-%include "rspsrc/clock_code_disk.asm"
-%include "rspsrc/clock_data_disk.asm"
+%include "rsp_clock_code.asm"
+%include "rsp_clock_data.asm"
 
 align 128, db 0

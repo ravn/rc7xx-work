@@ -706,8 +706,8 @@ Samtlige Regnecentralen systemdrivere og udvidelsesmoduler fra CCP/M-86 SW1400 d
 |-------|-----------------|-----------|-------------|--------------|
 | **XIOS1.CON** | [xios1.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios1.asm), [xios_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios_code.asm) | 25.728 B | 1-konsol XIOS hardwaredriver | **100% PASS (0 bytes diff)** |
 | **XIOS4.CON** | [xios4.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios4.asm), [xios4_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios4_code.asm) | 29.440 B | 4-konsol XIOS hardwaredriver | **100% PASS (0 bytes diff)** |
-| **NETDRV.RSP** | [netdrv.asm](file:///Users/ravn/z80/tasks/rc759-xios/netdrv.asm), [rsp_netdrv_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_netdrv_code.asm) | 17.664 B | RC-Net Intel 82586 Ethernet LAN controller datalink driver | **100% PASS (0 bytes diff)** |
-| **NETDRVB.RSP** | [netdrvb.asm](file:///Users/ravn/z80/tasks/rc759-xios/netdrvb.asm), [rsp_netdrvb_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_netdrvb_code.asm) | 22.784 B | RC-Net Intel 82586 driver (Revision B) | **100% PASS (0 bytes diff)** |
+| **NETDRV.RSP** | [netdrv.asm](file:///Users/ravn/z80/tasks/rc759-xios/netdrv.asm), [rsp_netdrv_common.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_netdrv_common.asm) | 17.664 B | RC-Net Intel 82586 Ethernet LAN controller datalink driver | **100% PASS (0 bytes diff)** |
+| **NETDRVB.RSP** | [netdrvb.asm](file:///Users/ravn/z80/tasks/rc759-xios/netdrvb.asm), [rsp_netdrv_common.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_netdrv_common.asm) | 22.784 B | RC-Net Intel 82586 driver (Revision B) | **100% PASS (0 bytes diff)** |
 
 ### 6. XIOS1.CON (1-konsol XIOS) & XIOS4.CON (4-konsol XIOS)
 - **Arkitektur**:
@@ -729,7 +729,17 @@ Samtlige Regnecentralen systemdrivere og udvidelsesmoduler fra CCP/M-86 SW1400 d
     - Channel Attention (CA) via I/O port `0x0100` (`in al, 0x100` / `out 0x100, al`).
     - Afbrydelsesstyring via `IR5` (Interrupt 37 = `0x25`).
     - Datalink-interface mod applikationer og CCP/M via `INT 29H` og `INT 28H`.
-- Begge moduler er kompileret via Docker `rc759-nasm` og verificeret **100% byte-identiske mod originalerne (0 bytes diff)**.
+  - **Kildekodedokumentation & Reverse-engineering**:
+    - `NETDRV.RSP` og `NETDRVB.RSP` er begge fuldt rekonstrueret fra rå `db 0x..` byte-dumps (henholdsvis 8.190 og 10.500+ linjer) og **forenet i én fælles master-kildetekst: `rsp_netdrv_common.asm` (2.956 linjer)**.
+    - `netdrv.asm` definerer `%define NETDRV_REV 'A'` og `%include "rsp_netdrv_common.asm"`.
+    - `netdrvb.asm` definerer `%define NETDRV_REV 'B'` og `%include "rsp_netdrv_common.asm"`.
+    - Alle 3 processers UDA, stakke og Process Descriptors (`NETDRV`/`NETDRVB`, `REC`, `XMIT`) er identificeret og annoteret.
+    - Samtlige 9 interne dispatch- og tilstandstabeller er udskilt fra kodeblokke og oprettet som symbolske `dw`-tabeller (`netdrv_req_table`, `sap_state_table_0a11`, `xmit_req_table`, `rec_dispatch_table_0fd2`, `rec_event_table`, `rec_state_table_1118`, `rec_state_table_11aa`, `rec_state_table_120e`, `rec_state_table_1293`).
+    - Revision B udvider SAP- og forbindelsestabellerne fra 32 til 100 forbindelser (`MAX_CONNS` 0x20 $\rightarrow$ 0x64), forbindelsestabelstørrelsen (`CONN_TABLE_SIZE` 0x0960 $\rightarrow$ 0x1D4C) og tabeludfyldningen (`CONN_TABLE_PAD` 2.614 $\rightarrow$ 7.714 B, en forøgelse på præcis +0x13EC / 5.088 B).
+    - Alle øvre rutiner, tabeller og buffere (multicast-adresser, SCB, timere, IR5 ISR, indication acknowledge og lavniveau helpers) er fuldt parameteriseret via symbolske forskydninger (`sym equ (base + SHIFT)`).
+    - Intel 82586 hardware-initialisering, Channel Attention port 0x100 triggers, timer-håndtering, IR5 (INT 37) ISR og INT 29h indication acknowledge ISR er fuldt udredt og symboliseret.
+    - Begge samles med `cpu 186` og `section text vstart=0` i `netdrv.asm` og `netdrvb.asm`.
+- Begge moduler er kompileret via Docker `rc759-nasm` og verificeret **100% byte-identiske mod originalerne (0 bytes diff)**. Integreret i `build_and_verify_rsp.sh`.
 
 ### Samlet Status for Samtlige 9 Regnecentralen Moduler
 Alle 9 moduler fra RC759 Piccoline SW1400 CCP/M-86 release 3.1 distributionen er nu 100% færdigrekonstrueret som assemblerkildetekster og passerer komplet binær verifikation mod originalerne:
@@ -1011,3 +1021,42 @@ Samtlige anonyme `sub_...` rutiner i de centrale RSP-moduler er nu fuldt identif
       * `XIOS1.CON` (25.728 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       * `XIOS4.CON` (29.440 bytes): **100% byte-identisk (0 bytes diff)** mod original.
       * `ccpm.sys` (77.568 bytes): **100% byte-identisk (0 bytes diff)** mod original via `./tasks/rc759-xios/rebuild_and_verify.sh`.
+
+12. **Fuld Forening af Kilder og Udfasning af Monolitter (2026-11-28)**:
+    - **Udfasning af den 24.884-linjers `mod4_xios.asm`**:
+      * `mod4_xios.asm` (den ældre monolitiske disassemblering med over 9.400 `db`-linjer) er fuldstændigt slettet.
+      * Erstattet i [ccpm.asm](file:///Users/ravn/z80/tasks/rc759-xios/ccpm.asm) med den kanoniske, fuldt symboliserede [xios_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/xios_code.asm) (`NUM_VIR_CONS=1`), afgrænset af DRI dispatcheren [mod4_xiosif.asm](file:///Users/ravn/z80/tasks/rc759-xios/mod4_xiosif.asm) og databufferne [mod4_xios_data.asm](file:///Users/ravn/z80/tasks/rc759-xios/mod4_xios_data.asm).
+    - **Udfasning af rå byte-dumps for standalone RSPs**:
+      * Samtlige `rspsrc/*_code_disk.asm` og `rspsrc/*_data_disk.asm` er slettet.
+      * Standalone RSPs ([clock_rsp.asm](file:///Users/ravn/z80/tasks/rc759-xios/clock_rsp.asm), [pin_rsp.asm](file:///Users/ravn/z80/tasks/rc759-xios/pin_rsp.asm), [scroll_rsp.asm](file:///Users/ravn/z80/tasks/rc759-xios/scroll_rsp.asm), [tmp759_rsp.asm](file:///Users/ravn/z80/tasks/rc759-xios/tmp759_rsp.asm), [vout_rsp.asm](file:///Users/ravn/z80/tasks/rc759-xios/vout_rsp.asm), [netdrv.asm](file:///Users/ravn/z80/tasks/rc759-xios/netdrv.asm), [netdrvb.asm](file:///Users/ravn/z80/tasks/rc759-xios/netdrvb.asm)) bygger nu udelukkende fra rene, annoterede kilder.
+    - **Fælles modulære kilder for RSPs i både standalone og `ccpm.sys`**:
+      * [rsp_clock_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_clock_code.asm) og [rsp_clock_data.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_clock_data.asm) deles nu mellem `clock.rsp` og `ccpm.sys`.
+      * [rsp_scroll_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_scroll_code.asm) og [rsp_scroll_data.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_scroll_data.asm) deles nu mellem `scroll.rsp` og `ccpm.sys`.
+      * [rsp_pin_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_pin_code.asm) og [rsp_pin_data.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_pin_data.asm) deles nu mellem `pin.rsp` og `ccpm.sys`.
+      * [rsp_vout_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_vout_code.asm) og [rsp_vout_data.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_vout_data.asm) deles nu mellem `vout.rsp` og `ccpm.sys`.
+      * [rsp_netdrv_common.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_netdrv_common.asm) deles mellem `netdrv.rsp` og `netdrvb.rsp`.
+      * De ældre monolitter `rsp_pin.asm` og `rsp_vout.asm` er slettet.
+    - **Fuld Verifikation (0 bytes diff overalt)**:
+      * `build_and_verify_rsp.sh`: **PASS** for alle 7 RSPs (clock, pin, scroll, tmp759, vout, netdrv, netdrvb).
+      * `build_and_verify_xios.sh`: **PASS** for XIOS1.CON (25.728 B) og XIOS4.CON (29.440 B).
+      * `rebuild_and_verify.sh`: **SUCCESS** for ccpm.sys (77.568 B, 100% byte-identisk).
+
+13. **Standardisering af RASM-86 Instruktionsmakroer i Piccoline ASM-filer (2026-11-28)**:
+    - **Baggrund & Teknisk Analyse**:
+      * RASM-86 genererede konsekvent direction bit $d=1$ for to-registers 8086 ALU- og MOV-instruktioner (`xor`, `mov`, `add`, `sub`, `and`, `cmp`, `or`, `xchg`), modsat NASMs standard $d=0$. Desuden genereredes specifikke encodings for `mul`, `div` og `push`.
+      * Dybdegående undersøgelse af alternative assemblere (GNU as `.d` suffix, FASM/NASM macro-overloading, A86, original RASM-86 under emulering) er dokumenteret i [ASSEMBLER_COMPATIBILITY.md](file:///Users/ravn/z80/tasks/rc759-xios/ASSEMBLER_COMPATIBILITY.md).
+    - **Udvidelse af `rasm86.inc`**:
+      * Tilføjet 117 nye instruktionsmakroer (bl.a. `sub_bx_bx`, `mov_dx_sp`, `sub_cx_cx`, `mov_cx_bx`, `mov_di_dx`, `mul_cx`, `div_cx`, `and_al_cl`, `cmp_al_cl`, `push_es`, `xchg_ah_al` osv.) uden navnekollisioner.
+      * [rasm86.inc](file:///Users/ravn/z80/tasks/rc759-xios/rasm86.inc) indeholder nu 248 præcise instruktionsmakroer.
+    - **Erstatning og Fuld Eliminering af Rå Instruktions-db**:
+      * I alt **1.082 rå `db`-instruktionslinjer** er blevet systematisk erstattet med deres læsbare makrokald på tværs af samtlige aktive ASM-kildetekster.
+      * De resterende ca. 100 rå opkodelignende sekvenser er fuldstændigt afklaret og renset:
+        - **Ægte instruktioner konverteret til NASM mnemonics**: `call pin_xdos` (10x i `rsp_pin_code.asm`), 16-bit displacements `call word [cs:word si + 0x6c]`, `cmp word [cs:word si + 0], -1`, `idiv word [si + 0x3f0]`, `rol word [di], cl`, `imul ax, word [bp + di], 0x7e`, `div word [0x8a3]`, `cs xlatb`, FPU-instruktionerne `fnstcw`, `fnsave`, `frstor`, `fimul`, `fiadd`, samt segment-prefixede `mov`/`and`/`or`-instruktioner.
+        - **Fejldisassemblerede ASCII-tekststrenge genoprettet**: Den store BDOS/XIOS-fejlmeddelelsestabel i `mod4_xiosif.asm` (0x074B0–0x07699: `"Read/Only Disk"`, `"Invalid Drive"`, `"File Currently Open"` osv.), processnavnet `"Init    "` (0x07049), Mutual Exclusion Queue-navnene `"MXdisk  "` (0x076DE, 0x076FC), samt statusstrengen `" Msg Qued\0(User 0)"` i `mod0_rtm.asm` (0x00B35).
+        - **Fejldisassembleret NVRAM-tabel**: Tabellen `xios_nvram_table` i `xios_code.asm` er konverteret fra fejlagtige mnemonics (`pop ss`, `popa`, `pusha`, `inc di` osv.) til rene NVRAM-konfigurationsbytes.
+      * **Resultat**: Der er nu **0** uafklarede rå `db`-instruktionslinjer tilbage i hele kildetræet.
+      * `rasm86.inc` er inkluderet i [rsp_pin_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_pin_code.asm) og [rsp_vout_code.asm](file:///Users/ravn/z80/tasks/rc759-xios/rsp_vout_code.asm).
+    - **Verifikation (0 bytes diff overalt)**:
+      * `rebuild_and_verify.sh`: **SUCCESS** — `ccpm.sys` (77.568 B) er 100% byte-identisk mod originalen.
+      * `build_and_verify_xios.sh`: **PASS** — `XIOS1.CON` (25.728 B) og `XIOS4.CON` (29.440 B) er 100% byte-identiske.
+      * `build_and_verify_rsp.sh`: **PASS** — alle 7 moduler (`clock`, `pin`, `scroll`, `tmp759`, `vout`, `netdrv`, `netdrvb`) er 100% byte-identiske.

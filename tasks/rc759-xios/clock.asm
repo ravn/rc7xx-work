@@ -20,6 +20,8 @@
 bits 16
 org 0
 
+%include "rasm86.inc"
+
 %define CCPM_INT             0xE0 ; BDOS software-interrupt
 %define F_FLAGWAIT           132  ; BDOS funktion 132: Flag Wait
 %define SEC_FLAG             2    ; Flag 2: Sekund-tick fra XIOS
@@ -78,7 +80,7 @@ clock_loop:
 
   ; Opdater statuslinje på en virtuel konsol per sekund (cirkulerer over alle konsoller)
   mov ax, IO_STATLINE                          ; 0x001D: AX = Funktion 8 (io_statline)
-  db 0x33, 0xC9                                ; 0x0020: xor cx, cx
+  xor_cx_cx                                    ; 0x0020: xor cx, cx
   cmp dl, 0                                    ; 0x0022: Er alle konsoller opdateret?
   jne clock_dec_console                        ; 0x0025: Hvis nej, tag næste
   mov dl, [SYSDAT_NPCONS]                      ; 0x0027: Hvis ja, genstart fra npcons

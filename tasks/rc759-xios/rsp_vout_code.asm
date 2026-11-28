@@ -4,12 +4,14 @@
 ; 116 paragraphs = 1.856 bytes (0x125E0 - 0x12D1F)
 ; ===========================================================================
 
+%include "rasm86.inc"
+
   ; Digital Research copyright banner (37 bytes, 0x125E0 - 0x12604)
   db 'COPYRIGHT (C) 1983, DIGITAL RESEARCH '
 
 vout_xdos:                                     ; 12605
   push bp                                      ; 12605  0x55
-  db 0x8B, 0xEC                                ; 12606  mov bp, sp
+  mov_bp_sp                                    ; 12606  mov bp, sp
   mov dx, [bp + 4]                             ; 12608  0x8B, 0x56, 0x04
   mov cx, [bp + 6]                             ; 1260B  0x8B, 0x4E, 0x06
   int 0xe0                                     ; 1260E  0xCD, 0xE0
@@ -18,7 +20,7 @@ vout_xdos:                                     ; 12605
 
 vout_intsys:                                     ; 12614
   push bp                                      ; 12614  0x55
-  db 0x8B, 0xEC                                ; 12615  mov bp, sp
+  mov_bp_sp                                    ; 12615  mov bp, sp
   mov bx, [bp + 4]                             ; 12617  0x8B, 0x5E, 0x04
   mov dx, [bp + 6]                             ; 1261A  0x8B, 0x56, 0x06
   mov cx, [bp + 8]                             ; 1261D  0x8B, 0x4E, 0x08
@@ -34,7 +36,7 @@ vout_intsys:                                     ; 12614
 
 vout_pxios1:                                     ; 12640
   push bp                                      ; 12640  0x55
-  db 0x8B, 0xEC                                ; 12641  mov bp, sp
+  mov_bp_sp                                    ; 12641  mov bp, sp
   mov ax, [bp + 8]                             ; 12643  0x8B, 0x46, 0x08
   mov cx, [bp + 6]                             ; 12646  0x8B, 0x4E, 0x06
   mov dx, [bp + 4]                             ; 12649  0x8B, 0x56, 0x04
@@ -50,7 +52,7 @@ vout_pxios1:                                     ; 12640
 
 vout_sleep:                                     ; 12662
   push bp                                      ; 12662  0x55
-  db 0x8B, 0xEC                                ; 12663  mov bp, sp
+  mov_bp_sp                                    ; 12663  mov bp, sp
   mov ax, 0x212                                ; 12665  0xB8, 0x12, 0x02
   push ax                                      ; 12668  0x50
   push word [bp + 4]                           ; 12669  0xFF, 0x76, 0x04
@@ -62,7 +64,7 @@ vout_sleep:                                     ; 12662
 
 vout_wakeup:                                     ; 12677
   push bp                                      ; 12677  0x55
-  db 0x8B, 0xEC                                ; 12678  mov bp, sp
+  mov_bp_sp                                    ; 12678  mov bp, sp
   mov ax, 0x213                                ; 1267A  0xB8, 0x13, 0x02
   push ax                                      ; 1267D  0x50
   push word [bp + 4]                           ; 1267E  0xFF, 0x76, 0x04
@@ -74,7 +76,7 @@ vout_wakeup:                                     ; 12677
 
 vout_read_change_mxq:                                     ; 1268C
   push bp                                      ; 1268C  0x55
-  db 0x8B, 0xEC                                ; 1268D  mov bp, sp
+  mov_bp_sp                                    ; 1268D  mov bp, sp
   les bx, [vout_cur_ccb]                              ; 1268F  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x16]                       ; 12693  0x26, 0x8B, 0x47, 0x16
   mov [vout_mxq_msg], ax                              ; 12697  0xA3, 0x34, 0x02
@@ -88,7 +90,7 @@ vout_read_change_mxq:                                     ; 1268C
 
 vout_write_change_mxq:                                     ; 126A6
   push bp                                      ; 126A6  0x55
-  db 0x8B, 0xEC                                ; 126A7  mov bp, sp
+  mov_bp_sp                                    ; 126A7  mov bp, sp
   les bx, [vout_cur_ccb]                              ; 126A9  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x16]                       ; 126AD  0x26, 0x8B, 0x47, 0x16
   mov [vout_mxq_msg], ax                              ; 126B1  0xA3, 0x34, 0x02
@@ -102,7 +104,7 @@ vout_write_change_mxq:                                     ; 126A6
 
 vout_delete_file:                                     ; 126C0
   push bp                                      ; 126C0  0x55
-  db 0x8B, 0xEC                                ; 126C1  mov bp, sp
+  mov_bp_sp                                    ; 126C1  mov bp, sp
   mov al, 0x10                                 ; 126C3  0xB0, 0x10
   push ax                                      ; 126C5  0x50
   mov ax, 0x372                                ; 126C6  0xB8, 0x72, 0x03
@@ -120,7 +122,7 @@ vout_delete_file:                                     ; 126C0
 
 vout_make_file:                                     ; 126E3
   push bp                                      ; 126E3  0x55
-  db 0x8B, 0xEC                                ; 126E4  mov bp, sp
+  mov_bp_sp                                    ; 126E4  mov bp, sp
   lea di, [vout_work_buf]                              ; 126E6  0x8D, 0x3E, 0x7E, 0x03
   mov al, 0                                    ; 126EA  0xB0, 0x00
   mov cx, 0x18                                 ; 126EC  0xB9, 0x18, 0x00
@@ -156,7 +158,7 @@ loc_1271D:                                     ; 1271D
 
 vout_reset_file:                                     ; 12726
   push bp                                      ; 12726  0x55
-  db 0x8B, 0xEC                                ; 12727  mov bp, sp
+  mov_bp_sp                                    ; 12727  mov bp, sp
   mov byte [vout_vcmxq_flag1], 0xff                       ; 12729  0xC6, 0x06, 0x45, 0x02, 0xFF
   mov byte [vout_vcmxq_flag3], 0xff                       ; 1272E  0xC6, 0x06, 0x47, 0x02, 0xFF
   mov al, 0                                    ; 12733  0xB0, 0x00
@@ -169,7 +171,7 @@ vout_reset_file:                                     ; 12726
 
 vout_write_buf:                                     ; 12742
   push bp                                      ; 12742  0x55
-  db 0x8B, 0xEC                                ; 12743  mov bp, sp
+  mov_bp_sp                                    ; 12743  mov bp, sp
   mov al, [vout_vcmxq_flag2]                              ; 12745  0xA0, 0x46, 0x02
   rcr al, 1                                    ; 12748  0xD0, 0xD8
   jae loc_12757                                ; 1274A  0x73, 0x0B
@@ -228,11 +230,11 @@ loc_1279D:                                     ; 1279D
   push ax                                      ; 127B0  0x50
   mov ax, [es:bx + 0x10]                       ; 127B1  0x26, 0x8B, 0x47, 0x10
   mov cx, 8                                    ; 127B5  0xB9, 0x08, 0x00
-  db 0xF7, 0xE1                                ; 127B8  mul cx
+  mul_cx                                       ; 127B8  mul cx
   mov cx, ax                                   ; 127BA  0x89, 0xC1
   pop ax                                       ; 127BC  0x58
   xor dx, dx                                   ; 127BD  0x31, 0xD2
-  db 0xF7, 0xF1                                ; 127BF  div cx
+  div_cx                                       ; 127BF  div cx
   mov [vout_q_end], dx                              ; 127C1  0x89, 0x16, 0x50, 0x01
   mov al, 0xff                                 ; 127C5  0xB0, 0xFF
   pop bp                                       ; 127C7  0x5D
@@ -240,7 +242,7 @@ loc_1279D:                                     ; 1279D
 
 vout_read_buf:                                     ; 127C9
   push bp                                      ; 127C9  0x55
-  db 0x8B, 0xEC                                ; 127CA  mov bp, sp
+  mov_bp_sp                                    ; 127CA  mov bp, sp
   mov al, [vout_vcmxq_flag3]                              ; 127CC  0xA0, 0x47, 0x02
   rcr al, 1                                    ; 127CF  0xD0, 0xD8
   jae loc_127E3                                ; 127D1  0x73, 0x10
@@ -290,11 +292,11 @@ loc_12818:                                     ; 12818
   push ax                                      ; 12823  0x50
   mov ax, [es:bx + 0x10]                       ; 12824  0x26, 0x8B, 0x47, 0x10
   mov cx, 8                                    ; 12828  0xB9, 0x08, 0x00
-  db 0xF7, 0xE1                                ; 1282B  mul cx
+  mul_cx                                       ; 1282B  mul cx
   mov cx, ax                                   ; 1282D  0x89, 0xC1
   pop ax                                       ; 1282F  0x58
   xor dx, dx                                   ; 12830  0x31, 0xD2
-  db 0xF7, 0xF1                                ; 12832  div cx
+  div_cx                                       ; 12832  div cx
   mov [vout_q_start], dx                              ; 12834  0x89, 0x16, 0x4E, 0x01
   cmp dx, [vout_q_end]                              ; 12838  0x3B, 0x16, 0x50, 0x01
   jne loc_12841                                ; 1283C  0x75, 0x03
@@ -307,7 +309,7 @@ loc_12841:                                     ; 12841
 
 vout_read_voutq:                                     ; 12846
   push bp                                      ; 12846  0x55
-  db 0x8B, 0xEC                                ; 12847  mov bp, sp
+  mov_bp_sp                                    ; 12847  mov bp, sp
   mov al, [vout_active]                              ; 12849  0xA0, 0x49, 0x03
   rcr al, 1                                    ; 1284C  0xD0, 0xD8
   jae loc_12852                                ; 1284E  0x73, 0x02
@@ -334,7 +336,7 @@ loc_12879:                                     ; 12879
 
 vout_drain_voutq:                                     ; 1287B
   push bp                                      ; 1287B  0x55
-  db 0x8B, 0xEC                                ; 1287C  mov bp, sp
+  mov_bp_sp                                    ; 1287C  mov bp, sp
   les bx, [vout_cur_ccb]                              ; 1287E  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0x14]                       ; 12882  0x26, 0x8B, 0x47, 0x14
   mov [vout_mxq_msg], ax                              ; 12886  0xA3, 0x34, 0x02
@@ -347,7 +349,7 @@ loc_12899:                                     ; 12899
   not al                                       ; 1289C  0xF6, 0xD0
   mov cl, [vout_row]                              ; 1289E  0x8A, 0x0E, 0x4B, 0x03
   not cl                                       ; 128A2  0xF6, 0xD1
-  db 0x22, 0xC1                                ; 128A4  and al, cl
+  and_al_cl                                    ; 128A4  and al, cl
   rcr al, 1                                    ; 128A6  0xD0, 0xD8
   jae loc_128CE                                ; 128A8  0x73, 0x24
   mov al, 0x8a                                 ; 128AA  0xB0, 0x8A
@@ -389,7 +391,7 @@ loc_128E3:                                     ; 128E3
 
 vout_put_char:                                     ; 128E7
   push bp                                      ; 128E7  0x55
-  db 0x8B, 0xEC                                ; 128E8  mov bp, sp
+  mov_bp_sp                                    ; 128E8  mov bp, sp
   mov byte [vout_active], 0                          ; 128EA: active = false
   cmp byte [vout_ccb_busy], 0                          ; 128EF  0x80, 0x3E, 0x4D, 0x01, 0x00
   jne loc_12916                                ; 128F4  0x75, 0x20
@@ -413,7 +415,7 @@ loc_12916:                                     ; 12916
 
 vout_get_char:                                     ; 1291A
   push bp                                      ; 1291A  0x55
-  db 0x8B, 0xEC                                ; 1291B  mov bp, sp
+  mov_bp_sp                                    ; 1291B  mov bp, sp
   mov ax, [vout_attr_pend]                              ; 1291D  0xA1, 0x54, 0x01
   inc ax                                       ; 12920  0x40
   cmp ax, [vout_attr_limit]                              ; 12921  0x3B, 0x06, 0x56, 0x01
@@ -498,14 +500,14 @@ loc_129BA:                                     ; 129BA
 
 vout_full_disk:                                     ; 129BE
   push bp                                      ; 129BE  0x55
-  db 0x8B, 0xEC                                ; 129BF  mov bp, sp
+  mov_bp_sp                                    ; 129BF  mov bp, sp
   call vout_read_change_mxq                               ; 129C1  0xE8, 0xC8, 0xFC
   les bx, [vout_cur_ccb]                              ; 129C4  0xC4, 0x1E, 0x44, 0x01
   mov ax, [es:bx + 0xe]                        ; 129C8  0x26, 0x8B, 0x47, 0x0E
   and ax, strict word 4                        ; 129CC  25 04 00
   cmp ax, 0                                    ; 129CF  0x83, 0xF8, 0x00
   jne loc_129DA                                ; 129D2  0x75, 0x06
-  db 0x26, 0x81, 0x4F, 0x0E, 0x40, 0x00        ; 129D4  or word [es:bx + 0xe], 0x40
+  or word [es:bx + 0xe], strict word 0x40     ; 129D4
 
 loc_129DA:                                     ; 129DA
   call vout_write_change_mxq                               ; 129DA  0xE8, 0xC9, 0xFC
@@ -514,7 +516,7 @@ loc_129DA:                                     ; 129DA
 
 vout_buffer:                                     ; 129DF
   push bp                                      ; 129DF  0x55
-  db 0x8B, 0xEC                                ; 129E0  mov bp, sp
+  mov_bp_sp                                    ; 129E0  mov bp, sp
   mov al, [vout_omode]                              ; 129E2  0xA0, 0x4C, 0x03
   rcr al, 1                                    ; 129E5  0xD0, 0xD8
   jae loc_129EE                                ; 129E7  0x73, 0x05
@@ -545,8 +547,8 @@ loc_12A12:                                     ; 12A12
 
 vout_purge:                                     ; 12A14
   push bp                                      ; 12A14  0x55
-  db 0x8B, 0xEC                                ; 12A15  mov bp, sp
-  mov byte [vout_line_attr], 0xff                       ; 12A17  0xC6, 0x06, 0x50, 0x03, 0xFF
+  mov_bp_sp                                    ; 12A15  mov bp, sp
+  mov byte [vout_line_attr2], 0xff                      ; 12A17  0xC6, 0x06, 0x50, 0x03, 0xFF
 
 loc_12A1C:                                     ; 12A1C
   les bx, [vout_cur_ccb]                              ; 12A1C  0xC4, 0x1E, 0x44, 0x01
@@ -558,7 +560,7 @@ loc_12A1C:                                     ; 12A1C
   inc ax                                       ; 12A2E  0x40
 
 loc_12A2F:                                     ; 12A2F
-  and al, [vout_line_attr]                              ; 12A2F  0x22, 0x06, 0x50, 0x03
+  and al, [vout_line_attr2]                             ; 12A2F  0x22, 0x06, 0x50, 0x03
   rcr al, 1                                    ; 12A33  0xD0, 0xD8
   jb loc_12A3A                                 ; 12A35  0x72, 0x03
   jmp near loc_12B14                           ; 12A37  0xE9, 0xDA, 0x00
@@ -609,13 +611,13 @@ loc_12A87:                                     ; 12A87
   inc ax                                       ; 12A90  0x40
 
 loc_12A91:                                     ; 12A91
-  and al, [vout_line_attr]                              ; 12A91  0x22, 0x06, 0x50, 0x03
+  and al, [vout_line_attr2]                             ; 12A91  0x22, 0x06, 0x50, 0x03
   rcr al, 1                                    ; 12A95  0xD0, 0xD8
   jae loc_12AF5                                ; 12A97  0x73, 0x5C
   mov ax, 0x34d                                ; 12A99  0xB8, 0x4D, 0x03
   push ax                                      ; 12A9C  0x50
   call vout_get_char                               ; 12A9D  0xE8, 0x7A, 0xFE
-  mov [vout_line_attr], al                              ; 12AA0  0xA2, 0x50, 0x03
+  mov [vout_line_attr2], al                             ; 12AA0  0xA2, 0x50, 0x03
   les bx, [vout_cur_ccb]                              ; 12AA3  0xC4, 0x1E, 0x44, 0x01
   mov cx, [es:bx + 0xe]                        ; 12AA7  0x26, 0x8B, 0x4F, 0x0E
   and cx, 0x100                                ; 12AAB  0x81, 0xE1, 0x00, 0x01
@@ -627,7 +629,7 @@ loc_12A91:                                     ; 12A91
 
 loc_12AB8:                                     ; 12AB8
   pop cx                                       ; 12AB8  0x59
-  db 0x22, 0xC1                                ; 12AB9  and al, cl
+  and_al_cl                                    ; 12AB9  and al, cl
   rcr al, 1                                    ; 12ABB  0xD0, 0xD8
   jae loc_12AEF                                ; 12ABD  0x73, 0x30
   mov al, 2                                    ; 12ABF  0xB0, 0x02
@@ -674,7 +676,7 @@ loc_12B11:                                     ; 12B11
   jmp near loc_12A1C                           ; 12B11  0xE9, 0x08, 0xFF
 
 loc_12B14:                                     ; 12B14
-  mov al, [vout_line_attr]                              ; 12B14  0xA0, 0x50, 0x03
+  mov al, [vout_line_attr2]                             ; 12B14  0xA0, 0x50, 0x03
   not al                                       ; 12B17  0xF6, 0xD0
   rcr al, 1                                    ; 12B19  0xD0, 0xD8
   jae loc_12B5C                                ; 12B1B  0x73, 0x3F
@@ -687,7 +689,7 @@ loc_12B14:                                     ; 12B14
   and ax, strict word 4                        ; 12B3A  25 04 00
   cmp ax, 0                                    ; 12B3D  0x83, 0xF8, 0x00
   je loc_12B59                                 ; 12B40  0x74, 0x17
-  db 0x26, 0x81, 0x67, 0x0E, 0xFB, 0xFF        ; 12B42  and word [es:bx + 0xe], 0xfffb
+  and word [es:bx + 0xe], strict word 0xfffb  ; 12B42
   mov al, 8                                    ; 12B48  0xB0, 0x08
   push ax                                      ; 12B4A  0x50
   mov ax, 0                                    ; 12B4B  0xB8, 0x00, 0x00
@@ -710,7 +712,7 @@ loc_12B5C:                                     ; 12B5C
 
 vout_abort:                                     ; 12B69
   push bp                                      ; 12B69  0x55
-  db 0x8B, 0xEC                                ; 12B6A  mov bp, sp
+  mov_bp_sp                                    ; 12B6A  mov bp, sp
 
 loc_12B6C:                                     ; 12B6C
   mov ax, 0x158                                ; 12B6C  0xB8, 0x58, 0x01
@@ -720,7 +722,7 @@ loc_12B6C:                                     ; 12B6C
   jb loc_12B6C                                 ; 12B75  0x72, 0xF5
   call vout_read_change_mxq                               ; 12B77  0xE8, 0x12, 0xFB
   les bx, [vout_cur_ccb]                              ; 12B7A  0xC4, 0x1E, 0x44, 0x01
-  db 0x26, 0x81, 0x67, 0x0E, 0xDF, 0xFF        ; 12B7E  and word [es:bx + 0xe], 0xffdf
+  and word [es:bx + 0xe], strict word 0xffdf  ; 12B7E
   call vout_write_change_mxq                               ; 12B84  0xE8, 0x1F, 0xFB
   call vout_reset_file                               ; 12B87  0xE8, 0x9C, 0xFB
   mov byte [vout_omode], 0                          ; 12B8A  0xC6, 0x06, 0x4C, 0x03, 0x00
@@ -736,7 +738,7 @@ loc_12B6C:                                     ; 12B6C
 
 vout_initq:                                     ; 12BAE
   push bp                                      ; 12BAE  0x55
-  db 0x8B, 0xEC                                ; 12BAF  mov bp, sp
+  mov_bp_sp                                    ; 12BAF  mov bp, sp
   mov si, [bp + 4]                             ; 12BB1  0x8B, 0x76, 0x04
   lea si, [si + 6]                             ; 12BB4  0x8D, 0x74, 0x06
   mov cx, 8                                    ; 12BB7  0xB9, 0x08, 0x00
@@ -771,7 +773,7 @@ vout_initq:                                     ; 12BAE
 ; -----------------------------------------------------------------------------
 vout_plmstart:                                 ; 12BE3
   push bp                                      ; 12BE3  0x55
-  db 0x8B, 0xEC                                ; 12BE4  mov bp, sp
+  mov_bp_sp                                    ; 12BE4  mov bp, sp
   mov al, 0x2d                                 ; 12BE6  0xB0, 0x2D
   push ax                                      ; 12BE8  0x50
   mov ax, 0xff                                 ; 12BE9  0xB8, 0xFF, 0x00
@@ -784,7 +786,7 @@ vout_plmstart:                                 ; 12BE3
   mov al, [4]                                  ; 12BFF  0xA0, 0x04, 0x00
   mov ah, 0                                    ; 12C02  0xB4, 0x00
   mov cx, 0x2c                                 ; 12C04  0xB9, 0x2C, 0x00
-  db 0xF7, 0xE1                                ; 12C07  mul cx
+  mul_cx                                       ; 12C07  mul cx
   les bx, [vout_sysdat_ptr]                              ; 12C09  0xC4, 0x1E, 0x40, 0x01
   add ax, [es:bx + 0x54]                       ; 12C0D  0x26, 0x03, 0x47, 0x54
   mov [vout_cur_ccb], ax                              ; 12C11  0xA3, 0x44, 0x01

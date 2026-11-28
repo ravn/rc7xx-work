@@ -55,30 +55,52 @@ pin_suspend_flag equ 0x0193 ; byte: 0xFF=suspenderet, 0x00=kørende
 pin_drive_list  equ 0x0194  ; byte[]: liste af tilgængelige drev-bogstaver (ASCII)
 pin_drive_count equ 0x01a5  ; byte: antal fundne tilgængelige drev
 
-data_start:
+pin_data_start:
   ; -------------------------------------------------------------------------
   ; RSP Header (4 bytes)
   ; -------------------------------------------------------------------------
+%ifdef CCPM_SYS
+  dw 0x1183                                     ; +0x0000: Link field (p_link til næste RSP)
+%else
   dw 0x0000                                     ; +0x0000: Link field (0 = ulinket)
+%endif
   dw 0x009f                                     ; +0x0002: RSP Code segment size / entry
   times 17 db 0                                 ; +0x0004..+0x0014: Reserveret
 
   ; -------------------------------------------------------------------------
-  ; Process Descriptor (PD): "PIN     "
+  ; Process Descriptor (PD): "PIN     " / "PIN0    "
   ; -------------------------------------------------------------------------
+%ifdef CCPM_SYS
+  db 0xb9                                       ; +0x0015: Prioritet = 185 (0xB9)
+%else
   db 0x60                                       ; +0x0015: Standard prioritet = 96 (0x60)
+%endif
   dw 0x0003                                     ; +0x0016: Status / pf_keep = 3
+%ifdef CCPM_SYS
+  db "PIN0    "                                 ; +0x0018: Procesnavn (PIN0)
+%else
   db "PIN     "                                 ; +0x0018: Procesnavn (8 tegn, uinitialiseret konsolnr)
+%endif
   db 0x04                                       ; +0x0020: Processtatus
   times 5 db 0                                  ; +0x0021..+0x0025: Reserveret
+%ifdef CCPM_SYS
+  dw 0x0008                                     ; +0x0026: p_uda = 8 paragraffer
+%else
   dw 0x00ff                                     ; +0x0026: Parent / console mask (0xFF = alle konsoller)
+%endif
   times 76 db 0                                 ; +0x0028..+0x0073: Reserveret PD felter
 
   ; -------------------------------------------------------------------------
   ; User Data Area (UDA): Stak og kontekst
   ; -------------------------------------------------------------------------
   dw 0x013a                                     ; +0x0074: Initial stack pointer SP = 0x013A
-  times 42 db 0                                 ; +0x0076..+0x009F: Reserveret UDA felter
+  times 26 db 0                                 ; +0x0076..+0x008F: Reserveret UDA felter
+%ifdef CCPM_SYS
+  dw 0x11bd, 0x119f, 0x119f, 0x119f             ; +0x0090: Runtime segmenter patched af GENCCPM
+%else
+  times 8 db 0                                  ; +0x0090..+0x0097
+%endif
+  times 8 db 0                                  ; +0x0098..+0x009F
   dw 0x0001                                     ; +0x00a0: INSYS flag = 1
   times 5 db 0                                  ; +0x00a2..+0x00a6: Reserveret
   times 147 db 0xcc                             ; +0x00a7..+0x0139: INT3 stak-fyld op til SP=0x013A
@@ -97,4 +119,4 @@ data_start:
   db 0x0d, 0x0a, "Open file on drive(s) ", 0    ; +0x01a8: "Open file on drive(s) "
   db ",", 0x0d, 0x0a, 0x0d, 0x0a, "Printer Busy", 0x0d, 0x0a, 0 ; +0x01c2: Printer optaget streng
   times 11 db 0                                 ; +0x01d5..+0x01df: Slutjustering til 480 bytes (0x1E0)
-data_end:
+pin_data_end:

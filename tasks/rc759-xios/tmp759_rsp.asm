@@ -3,10 +3,10 @@
 ; Byg:    nasm -f bin -o tmp759.rsp tmp759_rsp.asm
 ; Layout: [128 B .CMD-header][Kodegruppe][Datagruppe][nulpadding til multiplum af 128]
 ; RASM-86-linket færdigbillede: faste segmentvaerdier, INGEN fixup-records.
-; Kilder: kode=raw, data=annoteret (uaendret)
+; Kilder: kode=annoteret (uaendret), data=annoteret (uaendret)
 
 %include "rspsrc/tmp759_cmdhdr.asm"
-%include "rspsrc/tmp759_code_disk.asm"
+%include "rsp_tmp759.asm"
 %include "rsp_tmp759_data.asm"
 
 align 128, db 0
