@@ -1,0 +1,7 @@
+1300 midtpunktet af papirst|rrelsen i x-aksen
+900  midtpunktet af papirst|rrelsen i y-aksen
+3    faktor der ganger tegningen op, s} den fylder mere
+DA  string for absolute draw, max length is 2
+MA  string for absolute move, do
+HO  string for move home, do
+

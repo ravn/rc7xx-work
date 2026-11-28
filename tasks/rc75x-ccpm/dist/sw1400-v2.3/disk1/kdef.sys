@@ -1,0 +1,73 @@
+KONFIGURATION FILE TO PICCOLINE  1984.11.06  KNEH
+; iSBX351 baud rate.
+ Baud rate =10h     ;  75 bps
+ Baud rate =20h     ; 110 bps
+ Baud rate =30h     ; 150 bps
+ Baud rate =40h     ; 300 bps
+ Baud rate =50h     ; 600 bps
+ Baud rate =60h     ; 1200 bps
+ Baud rate =70h     ; 2400 bps
+ Baud rate =80h     ; 4800 bps
+ Baud rate =90h     ; 9600 bps
+
+; iSBX351 stop bits.
+ Stop bits =04h     ; 1 stop bit
+ Stop bits =08h     ; 1 1/2 stop bits
+ Stop bits =0ch     ; 2 stop bits
+
+; iSBX351 parity mode.
+ Parity    =00h     ; no
+ Parity    =01h     ; odd
+ Parity    =03h     ; even
+
+; iSBX351 databits
+ Databits  =00h     ; 5 databits
+ Databits  =80h     ; 6 databits
+ Databits  =40h     ; 7 databits
+ Databits  =C0h     ; 8 databits
+
+; floppy timer.
+ Flop tim  =02h     ;  2 sec
+ Flop tim  =03h     ;  3 sec
+ Flop tim  =04h	    ;  4 sec
+ Flop tim  =05h     ;  5 sec
+ Flop tim  =0Ah     ; 10 sec
+ Flop tim  =14h     ; 20 sec
+ Flop tim  =1Eh     ; 30 sec
+ Flop tim  =28h     ; 40 sec
+ Flop tim  =32h     ; 50 sec
+ Flop tim  =3Ch     ; 60 sec
+ Flop tim  =5Ah     ; 90 sec
+ Flop tim  =78h     ;120 sec
+ Flop tim  =B4h     ;180 sec
+ Flop tim  =F0h     ;240 sec
+
+; memory disk
+ Mdisk     =00h     ; no
+ Mdisk     =01h     ; 64kbytes
+ Mdisk     =02h     ; 128kbytes
+ Mdisk     =03h     ; 192kbytes
+ Mdisk     =04h     ; 256kbytes
+
+; iSBX type.
+ Isbx type =00h     ; no
+ Isbx type =01h     ; iSBX351
+ Isbx type =02h     ; iSBX488
+
+; foreground colour
+ Colour    =01h     ; blue foreground
+ Colour    =02h     ; green foreground
+ Colour    =03h     ; cyan foreground
+ Colour    =04h     ; red foreground
+ Colour    =05h     ; magenta foreground
+ Colour    =06h     ; yellow foreground
+ Colour    =07h     ; white foreground
+
+; initial state of rts(request to send)
+ Rts       =00h     ; initial low
+ Rts       =02h     ; initial high
+
+#
+ground
+
+; initial state of

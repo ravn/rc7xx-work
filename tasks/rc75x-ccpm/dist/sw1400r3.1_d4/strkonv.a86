@@ -1,0 +1,103 @@
+
+CSEG
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	DSTRKONV	;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+
+       		DB	5, 'UPPER'	;	procedure upper(REF mystr$);
+		DB	PROC		;
+		DW	OFFSET DUPPER	;
+		DW	OFFSET XUPPER	;
+		DB	1		;	1 parameter
+      		DB	5, 'MYSTR'	;
+		DB	REF+STRING,0	;	simple REF string
+
+       		DB	5, 'LOWER'	;	procedure lower(REF mystr$);
+		DB	PROC		;
+		DW	OFFSET DLOWER	;
+		DW	OFFSET XLOWER	;
+		DB	1		;	1 parameter
+      		DB	5, 'MYSTR'	;
+		DB	REF+STRING,0	;	simple REF string
+
+
+		DB	0		;	ikke flere proc og func
+		DW	OFFSET RESERVER	;
+		DW	ASSEMBLER	;
+
+
+INCLUDE	ASSEMBL.A86
+
+
+
+DSTRKONV DW	LENGTH DSTR		;
+DSTR	DB	'konverterer strenge til sm} eller store bogstaver'
+
+
+DLOWER	DW	LENGTH DLSTR		;
+DLSTR	DB	'konverterer strengparameteren til sm} bogstaver'
+
+
+XLOWER:	MOV	BP,RESERVER+6		;
+	PUSH	DS			;
+	MOV	DS,4[BP]		;	get_segment_for_parameter;
+	MOV	ES,4[BP]		;	get_segment_for_parameter;
+	MOV	SI,6[BP]		;	get_address_for_parameter;
+	INC	SI			;	skip_max_length_of_parameter;
+	INC	SI			;
+	LODS	AX			;	get_length_of_parameter;
+	MOV	CX,AX			;
+L10:	OR	CL,CL			;
+	JZ	L30			;
+	MOV	DI,SI			;
+	LODSB				;
+	CMP	AL,'A'			;
+	JB	L20			;
+	CMP	AL,']'			;
+	JA	L20			;
+	ADD	AL,32			;
+	STOSB				;
+L20:	DEC	CX			;
+	JMPS	L10			;
+L30:	POP	DS			;
+	JMP	FINITO			;
+
+
+
+DUPPER	DW	LENGTH DUSTR		;
+DUSTR	DB	'konverterer strengparameteren til store bogstaver'
+
+
+XUPPER:	MOV	BP,RESERVER+6		;
+	PUSH	DS			;
+	MOV	DS,4[BP]		;	get_segment_for_parameter;
+	MOV	ES,4[BP]		;	get_segment_for_parameter;
+	MOV	SI,6[BP]		;	get_address_for_parameter;
+	INC	SI			;	skip_max_length_of_parameter;
+	INC	SI			;
+	LODS	AX			;	get_length_of_parameter;
+	MOV	CX,AX			;
+U10:	OR	CL,CL			;
+	JZ	U30			;
+	MOV	DI,SI			;
+	LODSB				;
+	CMP	AL,'a'			;
+	JB	U20			;
+	CMP	AL,'}'			;
+	JA	U20			;
+	SUB	AL,32			;
+	STOSB				;
+U20:	DEC	CX			;
+	JMPS	U10			;
+U30:	POP	DS			;
+	JMP	FINITO			;
+
+
+
+END
+

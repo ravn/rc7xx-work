@@ -1,0 +1,20 @@
+era a:*.rsp
+era a:*.con
+era a:ddt86.cmd
+era a:sid86.cmd
+era a:asm86.cmd
+era a:systat.cmd
+era a:dir.cmd
+era a:filex.*
+era a:genc*.*
+era a:inst1job.sub
+era a:start80
+era a:startup.0
+ren a:startup.0=start0
+ren a:startup.1=start1
+set a:*.*[ro,sys]
+:*.*[ro,sys]
+
+
+
+

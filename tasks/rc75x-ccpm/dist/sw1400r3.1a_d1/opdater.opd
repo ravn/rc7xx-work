@@ -1,0 +1,32 @@
+:IF \nsker du at opdatere et PICCOLINE 4-konsolsystem (IKKE NET)
+  *Operativsystem opdateres til XIOS Version 3.1
+  CCPM.SYS
+:ELSE
+  :IF \nsker du at opdatere et PICCOLINE 1-konsolsystem (IKKE NET)
+    *Operativsystem opdateres til XIOS Version 3.1
+    CCPM.SYS/CCPM1.SYS
+    CCPM1.SYS>CCPM.SYS
+  :ENDIF
+:ENDIF
+*Grafik opdateres
+GKONFIG.CMD+ASSIGN.DIR
+DD608VC.SYS?DD608VC.SYS er GSX-driver til de nye printere RC607 / RC608  til A4-h|j, og farve.
+DD608HC.SYS?DD608HC.SYS er GSX-driver til den nye printer RC608  til A4-tv{rs, og farve.
+DD609VC.SYS?DD609VC.SYS er GSX-driver til den nye printer RC609  til A4-h|j, og farve.
+DD609HC.SYS?DD609HC.SYS er GSX-driver til den nye printer RC609  til A4-tv{rs, og farve.
+*Hj{lpeprogrammerne opdateres
+DISKVEDL.CMD
+FILADM.CMD
+FUNCTION.CMD
+GKONFIG.CMD
+IMENU.MDF
+INSTAL.CMD
+KONFIG.CMD
+MDISK.CMD
+MENU.MDF
+MENUVEDL.CMD
+OKONFIG.CMD
+*Den nye RcComal80 (m. ASM-, PPas- og Comal-pakker) opdateres
+COMAL80.CMD
+COMAL80.ERM
+GENERRM.CSV

@@ -1,0 +1,82 @@
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	0		;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+
+
+		DB	4,'KALD'	; FUNC kald(kaldstr$, REF fejlindex
+		DB	REALFUNC	;		REF timeout);
+		DW	0		; ingen dokumentation
+		DW	OFFSET XKALD	;
+		DB	3		;
+		DB	7,'KALDSTR'	;
+		DB	VALUE+STRING,0	;
+		DB	9,'FEJLINDEX'	;
+		DB	REF+REAL,0	;
+		DB	7,'TIMEOUT'	;
+		DB	REF+REAL,0	;
+
+
+
+		DB	0		; ikke flere procedurer og funktioner
+		DW	OFFSET RESERVER	;
+		DW	ASSEMBLER	;
+
+
+INCLUDE	ASSEMBL.A86
+
+
+
+XKALD:	MOV	CX,1			;	(* flyt parameteren til
+	MOV	DI,OFFSET command_string ;	   clbuf i pakkens 
+	CALL	STRPAR			;	   data-segment *)
+
+	MOV	AL,0			;
+	STOSB				;	move_zero_to_clbuf;
+
+	mov	dx,offset command_string	; DX := offset(command_string);
+						; DS := segment(command_string);
+	mov	al,68				; XIOS_function:=68;
+	int	28h				; Xfunction_call(XIOS_function);
+
+
+; AX indeholder returv{rdi
+; SI indeholder tegn_index for fejl
+
+	push	ax			;
+
+	MOV	CL,2			;
+	MOV	BX,SI			;
+	CALL	PUTREALPAR		;
+
+	pop	ax			; (* resultat *)
+	push	ax			;
+	and	AH,080h			;
+	mov	si,0			;
+	jz	notout			;
+	inc	si			;
+notout:	
+	MOV	CL,3			;
+	MOV	BX,SI			;
+	CALL	PUTREALPAR		;
+
+	pop	AX			;
+	AND	AH,07FH			;
+	MOV	BX,AX			;
+	CALL	REALRES			;
+
+	jmp	finito
+
+
+
+
+dseg	$
+
+
+command_string	rb	40
+
+

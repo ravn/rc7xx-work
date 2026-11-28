@@ -1,0 +1,3 @@
+asm86 $1 $pzsz
+gencmd $1
+pip $1.pck=$1.cmd

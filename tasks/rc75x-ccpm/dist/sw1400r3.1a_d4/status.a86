@@ -1,0 +1,177 @@
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	0		;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+
+
+		DB	6,'AKTUEL'	; FUNC aktuel
+		DB	REALFUNC	;
+		DW	0		; ingen dokumentation
+		DW	OFFSET XAKTUEL	;        
+		DB	0		;
+
+		DB	7,'SKRIVER'	; FUNC skriver(skrivernr);
+		DB	REALFUNC	;
+		DW	0		; ingen dokumentation
+		DW	OFFSET XSKRIVER	;
+		DB	1		;
+		DB	9,'SKRIVERNR'	;
+		DB	VALUE+REAL,0	;
+
+
+		DB	0		; ikke flere procedurer og funktioner
+		DW	OFFSET RESERVER	;
+		DW	ASSEMBLER	;
+
+
+INCLUDE	ASSEMBL.A86
+
+
+
+;Entry:
+;		Printer device number (0, 1 or 2)
+;
+;Exit:		0 = Printer ready
+;		1 = Unknown printer device number
+;		2 = Printer is attached to another process
+;		    in this PICCOLINE
+;		3 = Printer is reserved by another PICCOLINE 
+;		    sharing the same disk/printer unit
+;		4 = Printer is not ready
+
+
+
+L_SET		EQU	160
+L_CATTACH	EQU	161
+L_GET		EQU	164
+P_PADR		EQU	156
+L_DETACH	EQU	159
+
+
+
+
+XSKRIVER:	
+	MOV	CL,1		;
+	CALL	REALPAR		;
+	mov	dl,bl		; x:=fix(f|rste_parameter);
+
+	JMPS	CHK			;
+					; dl := device_number
+
+XAKTUEL:
+	mov	cl,L_GET		; os_call(L_GET)
+	int	224			;
+	MOV	DL,AL			;
+
+CHK:	cmp	dl,2			; if device_number >2 then
+	mov	al,1			;    error_return(1);
+	ja	error_return		;
+
+	push	dx			; push(device_number)
+	mov	cl,L_GET		; old_device_no := os_call(L_GET)
+	int	224			;
+	mov	old_device_no,al	;
+	pop	dx			; pop(device_number)
+	push	dx			; push(device_number);
+	mov	cl,L_SET		; os_call(L_SET);
+	int	224			;
+	pop	dx			; pop(device_number);
+	cmp	cx,0			; if error_code<>0 then
+	mov	al,1			;   error_return(1);
+	jne	error_return		;
+	
+	push	dx			; push(device_number);
+	mov	cl,L_CATTACH		; os_call(L_CATTACH);
+	int	224			;
+	pop	dx			; pop(device_number);
+	cmp	ax,0			; if error_code <> 0 then
+	mov	ax,2			;   error_return(2);
+	jne	error_return1		;
+
+PRT2:	cmp	dl,2			; if device_number = 2 then
+	jne	PRT1			; begin
+	mov	dx,292h			; 
+	in	al,dx			;
+	and	al,10000000b		;
+	jz	allready		;
+	mov	al,0ffh			; 
+	out	dx,al			;   if reserved then
+	in	al,dx			;     error_return(3);
+	push	ax			;
+	mov	dx,294h			;
+	mov	al,0ffh			;
+	out	dx,al			;   (* release it again *)
+	pop	ax			;
+	and	al,10000000b		;
+	mov	ax,3			;
+	jnz	error_return2		;
+
+allready:
+	mov	dl,2			;   device_number:=2;
+	jmps	just_read_status	;
+
+PRT1:	cmp	dl,1			;
+	jne	just_read_status	;
+	mov	ax,3			;
+	int	28h			;
+	mov	al,es:51[si]		;
+	test	al,1b			;
+	jnz	just_read_status	;
+no_v24:	mov	al,1			;
+	jmps	error_return2		;
+
+just_read_status:
+	call	read_status		; read_printer_status;
+	cmp	al,0			; if error_code = 0 then	
+	mov	ax,4			;
+	jz	error_return2		;   error_return(4);
+	xor	ax,ax
+	jmps	return
+
+error_return2:
+	push	ax			;
+	mov	cl,L_DETACH		;
+	int	224			; os_call(L_DETACH);
+	pop	ax			;
+
+error_return1:
+
+error_return:
+	
+
+return:	
+	push	ax			;
+	mov	dl,old_device_no	; device_number:=old_device_no
+	mov	cl,L_SET		; 
+	int	224			; os_call(L_SET);
+	pop	ax			;
+	MOV	BX,AX		;
+	CALL	REALRES		;
+
+	jmp	finito			;
+
+
+read_status:
+	push	ds
+	push	dx			; push(device_number);
+	mov	cl,P_PADR		; os_call(P_PADR);
+	int	224			;
+	push	es			;
+	pop	ds			; ds:=seg(SYSDAT);
+	mov	es,10h[bx]		; es:=seg(UDA);
+	mov	ax,3			; XIOS-function:=3;
+	pop	dx			; pop(device_number);
+	callf	ds:dword ptr .28h	; (* call internal XIOS routine *)
+	pop	ds			;
+	ret
+
+
+dseg	$
+
+
+old_device_no	db	0
+

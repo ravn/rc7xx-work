@@ -1,0 +1,97 @@
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	0		;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+
+
+		DB	5,'L]SOP' 	; PROC l}sop;
+		DB	PROC		;
+		DW	0		; ingen dokumentation
+		DW	OFFSET unlock_c	;
+		DB	0		;
+
+		DB	3,'L]S' 	; FUNC l}s;
+		DB	REALFUNC	;
+		DW	0		; ingen dokumentation
+		DW	OFFSET lock_c	;
+		DB	0		;
+
+
+		DB	0		; ikke flere procedurer og funktioner
+		DW	OFFSET RESERVER	;
+		DW	ASSEMBLER	;
+
+
+INCLUDE	ASSEMBL.A86
+
+
+
+ccb_size	equ	02ch
+ccb_state	equ	word ptr 0eh
+sy_ccb		equ	054h
+cf_noswitch	equ	00008h
+
+lock_c:			; lock console
+        call	osvalues
+	call	getccbadr
+	mov	bx,ccbadr
+	push	ds
+	mov	ds,sysdat
+	cmp	ccb_state[bx],0
+	je	foreg	;
+	pop	ds	;
+	mov	ax,0	; error consol not in foregr
+	jmp	lock_ret;
+foreg:
+	or	ccb_state[bx],cf_noswitch
+	pop	ds	;
+	mov	ax,1	; ok result
+lock_ret:
+	mov	BX,ax	;
+	CALL	REALRES	;
+	jmp	finito	;
+
+
+unlock_c:		; unlock console
+        call	osvalues
+	call	getccbadr
+	mov	bx,ccbadr
+	push	ds
+	mov	ds,sysdat
+	and	ccb_state[bx],not cf_noswitch
+	pop	ds	;
+	jmp	finito	;
+
+osvalues:
+	push	es	;
+	mov	cl,154	;
+	int	224	; call bdos
+	mov	sysdat,es
+	pop	es	;
+	ret		;
+
+getccbadr:
+	mov	cl,153	;
+	int	224	;
+	xor	ah,ah	;
+	mov	cx,ccb_size
+	mul	cx	;
+	push	ds	;
+	mov	ds,sysdat
+	add	ax,.sy_ccb
+	pop	ds	;
+	mov	ccbadr,ax
+	ret		;
+
+DSEG	$
+
+
+sysdat	dw	0	;
+ccbadr	dw	0	;
+
+
+END

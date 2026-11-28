@@ -1,0 +1,15 @@
+pip b:=a:GENCCPM.CMD
+pip b:=a:pip.cmd
+pip b:=a:ccpm1.sys
+pip b:=a:ccpm4.sys
+pip b:=a:stdkonf
+pip b:=a:netkonf
+pip b:=a:*.con
+pip b:=a:*.rsp
+pip b:=a:NETVEDL.CMD
+pip b:=a:RCGENNET.CMD
+pip b:=a:RCADDNET.CMD
+pip b:=a:rnet.cmd
+pip b:=a:snet.cmd
+pip b:=a:rsnet.cmd
+pip b:=a:rcnios.cmd

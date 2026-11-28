@@ -1,0 +1,9 @@
+type undskyld.txt
+pip m:=$1$2.wp
+set m:*.*[archive=on]
+rctekst
+type dlyksdnu.txt
+set m:*.wpb[archive=off]
+pip $1=m:*.wp?[A]
+era m:*.wp?
+

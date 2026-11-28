@@ -1,0 +1,8 @@
+set kdef.sys[rw]
+era kdef.sys
+ren kdef.sys=kdef.txt
+set startup.0[rw]
+era startup.0
+ren startup.0=startup.txt
+instrct
+

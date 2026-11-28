@@ -1,0 +1,14 @@
+pip $1=logo.cmd
+pip $1=logokom.hlp
+pip $1=logosaet.hlp
+pip $1=polygon.log
+pip $1=stjerne.log
+pip $1=spiral.log
+pip $1=kasse.log
+pip $1=jessop.pad
+pip $1=valiant.pad
+pip $1=bil.pad
+pip $1=rc621.plo
+pip $1=roland.plo
+pip $1=plotter.plo
+

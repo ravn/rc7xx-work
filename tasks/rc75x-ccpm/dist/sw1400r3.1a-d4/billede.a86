@@ -1,0 +1,383 @@
+
+CSEG
+VER		DW 	VERSNO		;
+PACKTYPE	DW	ASSEMBLER	;
+DOC		DW	0		;
+INIT		DW	OFFSET FINITO	;
+EXIT		DW	0		;
+
+
+
+		DB	11,'HENTBILLEDE' ; PROC hentbillede(filnavn$);
+		DB	PROC		;
+		DW	0		; ingen dokumentation
+		DW	OFFSET XHENT	;
+		DB	1		;
+		DB	7,'FILNAVN'	;
+		DB	VALUE+STRING,0	;
+
+		DB	10,'GEMBILLEDE' ; PROC gembillede(filnavn$);
+		DB	PROC		;
+		DW	0		; ingen dokumentation
+		DW	OFFSET XGEM	;
+		DB	1		;
+		DB	7,'FILNAVN'	;
+		DB	VALUE+STRING,0	;
+
+
+		DB	0		; ikke flere procedurer og funktioner
+		DW	OFFSET RESERVER	;
+		DW	ASSEMBLER	;
+
+
+INCLUDE	ASSEMBL.A86
+
+
+
+	BDOS	EQU	224		;
+
+	F_READ	EQU	20		;
+	F_WRITE	EQU	21		;
+	F_OPEN	EQU	15		;
+	F_MAKE	EQU	22		;
+
+	F_PARSE EQU	152		;
+	F_DMASEG EQU	51		;
+	F_DMAOFS EQU	26		;
+	F_DMAGET EQU	52		;
+	F_MULTI	EQU	44		;
+	F_CLOSE	EQU	16		;
+
+	Q_OPEN	EQU	135		;
+
+	C_WRITE	EQU	9		;
+
+	MULCNTRPIC EQU	70		; multicountread:=70;
+	DMALENPIC EQU	MULCNTRPIC*128	; antall{ste (dmalength) := 70*128;
+
+	MULCNTRPAR EQU	128		; multicountread:=128;
+	DMALENPAR  EQU	MULCNTRPAR*128	; antall{ste (dmalength) := 128*128;
+
+	NOOFR	EQU	2		;
+	NOOFWPIC EQU	140		;
+	NOOFWPAR EQU	256		;
+
+	XIOS	EQU	28H		;
+	GET_CONFIG EQU	4		;
+
+
+
+XHENT:	MOV	MODE,F_READ		; mode:=readmode;
+	MOV	OPEN,F_OPEN		; open:=openmode;
+	MOV	MODEERROR,READERR	;
+	MOV	NOOF,NOOFR		;
+	JMPS	XSTART			;
+
+XGEM:	MOV	MODE,F_WRITE		; mode:=writemode;
+	MOV	OPEN,F_MAKE		; open:=makemode;
+	MOV	MODEERROR,WRITEERR ;
+
+XSTART:	
+	MOV	CX,F_DMAGET		;
+	INT	BDOS			; get_dma;
+	MOV	DMAOFS,AX		;
+	MOV	DMASEG,ES		;
+
+	MOV	MULCNT,MULCNTRPAR	;
+	MOV	DMALENGTH,DMALENPAR	;
+	MOV	DX,OFFSET PARTNEREXT	;   extension:="PAR";
+	PUSH	DX			;
+	mov	pixel_segment,0F000H	;   pixel_segment:=0F000H;
+	MOV	NOOFW,NOOFWPAR		;
+	MOV	DX,OFFSET MXCASETTE	;
+	MOV	CX,Q_OPEN		;
+	INT	BDOS			;
+	OR	AX,AX			; if cpu_id = PICCOLINE then
+	JNZ	TSTWRI			;
+
+	mov	pixel_segment,0D000H	; begin (* PICCOLINE *)
+	mov	al,get_config		;   pixel_segment:=0D000H;
+	int	xios			;   if video_hz_50 then
+	test	ES:byte ptr 18[si],010B	;   BEGIN
+	JNZ	TSTWRI			;
+	MOV	MULCNT,MULCNTRPIC	;
+	MOV	DMALENGTH,DMALENPIC	;
+	MOV	NOOFW,NOOFWPIC		;
+	POP	DX			;
+	MOV	DX,OFFSET PICEXT	;     extension:="PIC";
+	PUSH	DX			;   END;
+
+TSTWRI:	CMP	MODE,F_WRITE		;
+	JNE	MAKEFCB			;
+	MOV	MULCNT,1		;
+	MOV	DMALENGTH,128		;
+	MOV	DX,NOOFW		;
+	MOV	NOOF,DX			;
+
+MAKEFCB:MOV	AX,DS			;
+	MOV	ES,AX			;
+	MOV	DI,OFFSET FNAME		;
+	XOR	AL,AL			;
+	MOV	CX,16			;
+	REP	STOSB			; clear fname;
+					;(* flyt parameter til
+					;	   fname i pakkens 
+					;	   data-segment *)
+
+	MOV	CL,1
+	MOV	DI,OFFSET FNAME		;
+	CALL	STRPAR			;
+
+	MOV	CX,4			;
+	POP	SI			;
+	REP	MOVSB			;  move_extension_to_filename;
+
+	MOV	CX,F_PARSE		;
+	MOV	DX,OFFSET PFCB		;
+	INT	BDOS			; parse filename
+	MOV	DX,PARSEERR		;
+	CMP	AX,0FFFFH		;
+	JNE	FCBOK			;
+	JMP	PCKERROR		;
+
+FCBOK:	MOV	BX,OFFSET FCB		;
+	CMP	MODE,F_READ		;
+	JNE	NOTREAD			; IF read_mode THEN
+	OR	BYTE PTR 6[BX],080H	;   read_only_mode;
+NOTREAD:MOV	CX,OPEN			;
+	MOV	DX,BX			;
+	INT 	BDOS			; open/make file
+	MOV	DX,OPENERR		;
+	OR	AL,AL			;
+	JNZ	PCKERROR		;
+	MOV	BX,OFFSET FCB		;
+	MOV	BYTE PTR 32[BX],0	; read/write_from_beginning;
+
+	CALL	LOCK_C			; lock_console;
+	MOV	DX,LOCKERR		;
+	OR	AL,AL			;
+	JNZ	ERRORC			;
+
+	MOV	CX,F_MULTI		;
+	MOV	DL,MULCNT		;
+	INT	BDOS			; set_multisec_counter
+	MOV	DX,MULTIERR		;
+	CMP	AL,0FFH			;
+	JE	ERRORC			;
+
+	MOV	CX,F_DMASEG		;
+	MOV	DX,PIXEL_SEGMENT	;
+	INT	BDOS			; set_dma_segm_to_pixel_segm
+
+	XOR	AX,AX			;
+	MOV	PIXEL_OFS,AX		; clear_pixel_offset
+
+	MOV	CX,NOOF			;
+X1:	PUSH	CX			; FOR I:=1 T0 noof DO
+	
+	MOV	CX,F_DMAOFS		; BEGIN
+	MOV	DX,PIXEL_OFS		;
+	INT 	BDOS			;   set_dma_ofs_to_pixel_offset
+
+	MOV	CX,MODE			;
+	MOV	DX,OFFSET FCB		;
+	INT 	BDOS			;   read/write(128*multicount bytes 
+					;		into/from pixel_mem)
+	POP	CX			;
+	DEC	CX			;
+	JZ	CLOSEF			;
+	MOV	DX,MODEERROR		;
+	OR	AL,AL			;
+	JNZ	ERRORC			;
+	MOV	AX,PIXEL_OFS		;
+	ADD	AX,DMALENGTH		;   pixel_offset:=pixel_offset+128*multicount
+	MOV	PIXEL_OFS,AX		;
+	JMPS	X1			; END
+
+CLOSEF:	MOV	CX,F_CLOSE		;
+	MOV	DX,OFFSET FCB		;
+	INT	BDOS			; close file
+
+	CALL	UNLOCK_C		; unlock_console
+
+	JMPS	STOP			;
+
+
+PCKERROR:
+	MOV	AX,DX			;
+	CALL	ERROR			;
+
+	JMPS	STOP			;
+
+ERRORC:	
+	PUSH	DX			;
+	MOV	CX,F_CLOSE		;
+	MOV	DX,OFFSET FCB		;
+	INT	BDOS			; close file
+
+	POP	AX			;
+	CALL	ERROR			;
+
+	CALL	UNLOCK_C		; unlock_console
+
+STOP:	MOV	CX,F_MULTI		;
+	MOV	DL,1			;
+	INT	BDOS			; set_multisec_counter
+
+	MOV	CX,F_DMASEG		;
+	MOV	DX,DMASEG		;
+	INT	BDOS			; set_dma_segm_to_comal_dma_segm
+
+	MOV	CX,F_DMAOFS		;
+	MOV	DX,DMAOFS		;
+	INT	BDOS			; set_dma_ofs_to_comal_dma_ofs
+
+	JMP	FINITO
+
+
+
+ccb_size	equ	02ch
+ccb_state	equ	word ptr 0eh
+sy_ccb		equ	054h
+cf_noswitch	equ	00008h
+
+lock_c:			; lock console
+	push	bp	;
+	push	si	;
+	push	di	;
+
+        call	osvalues
+	call	getccbadr
+	mov	bx,ccbadr
+	push	ds
+	mov	ds,sysdat
+	cmp	ccb_state[bx],0
+	je	foreg	;
+	pop	ds	;
+	mov	ax,1	; error consol not in foregr
+	jmp	lock_ret;
+foreg:
+	or	ccb_state[bx],cf_noswitch
+	pop	ds	;
+	mov	ax,0	; ok result
+lock_ret:
+	pop	di	;
+	pop	si	;
+	pop	bp	;
+	ret		;
+
+
+unlock_c:		; unlock console
+	push	bp	;
+	push	si	;
+	push	di	;
+
+        call	osvalues
+	call	getccbadr
+	mov	bx,ccbadr
+	push	ds
+	mov	ds,sysdat
+	and	ccb_state[bx],not cf_noswitch
+	pop	ds	;
+	mov	ax,0	; ok result
+
+	pop	di	;
+	pop	si	;
+	pop	bp	;
+	ret		;
+
+osvalues:
+	push	es	;
+	mov	cl,154	;
+	int	224	; call bdos
+	mov	sysdat,es
+	pop	es	;
+	ret		;
+
+getccbadr:
+	mov	cl,153	;
+	int	224	;
+	xor	ah,ah	;
+	mov	cx,ccb_size
+	mul	cx	;
+	push	ds	;
+	mov	ds,sysdat
+	add	ax,.sy_ccb
+	pop	ds	;
+	mov	ccbadr,ax
+	ret		;
+
+sysdat	dw	0	;
+ccbadr	dw	0	;
+
+
+DSEG	$
+
+
+FCB	RB	36
+
+PFCB	DW	OFFSET FNAME
+	DW	OFFSET FCB
+
+FNAME	RB	16
+
+PICEXT	DB	'.PIC'
+
+PARTNEREXT DB	'.PAR'
+
+PARSEERR	EQU	181
+
+OPENERR		EQU	182
+
+LOCKERR		EQU	183
+
+MULTIERR	EQU	184
+
+READERR		EQU	185
+
+WRITEERR	EQU	186
+
+MODE		DW	0
+
+OPEN		DW	0
+
+MULCNT		DB	0
+
+DMALENGTH	DW	0
+
+NOOF		DW	0
+
+NOOFW		DW	0
+
+MODEERROR	DW	READERR
+
+DMASEG		DW	0
+
+DMAOFS		DW	0
+
+PIXEL_SEGMENT	DW	0D000H
+
+PIXEL_OFS	DW	0
+
+MXCASETTE	DW	0
+		DW	0
+		DW	0
+		DW	0
+		DB	'MXcass  '
+
+END
+Xcass  '
+
+END
+
+ '
+
+END
+
+
+		DB	'MXcass  '
+
+END
+
+	0
+		DB	'MXcas
